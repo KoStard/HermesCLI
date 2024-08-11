@@ -1,0 +1,7 @@
+anthropic
+boto3
+google-generativeai
+python-docx
+PyPDF2
+rich
+openai
