@@ -7,6 +7,8 @@ Hermes is a versatile command-line chat application that supports multiple AI mo
 - Support for multiple AI models:
   - Claude (Anthropic)
   - Bedrock Claude
+  - Bedrock Claude 3.5
+  - Bedrock Opus
   - Bedrock Mistral
   - Gemini (Google)
   - GPT-4 (OpenAI)
@@ -16,6 +18,7 @@ Hermes is a versatile command-line chat application that supports multiple AI mo
 - Markdown rendering for formatted output
 - Raw output option for unformatted responses
 - Confirmation prompt to prevent unnecessary API calls
+- Autocomplete support for model selection
 
 ## Installation
 
@@ -48,10 +51,20 @@ Hermes is a versatile command-line chat application that supports multiple AI mo
    chmod +x hermes.py
    ```
 
-5. Copy to `/usr/local/bin/` for convenience
+5. Copy to `/usr/local/bin/` for convenience:
     ```
     sudo ln -s /absolute/path/hermes.py /usr/local/bin/hermes
     ```
+
+6. Enable autocomplete (optional):
+   Add the following line to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
+   ```
+   eval "$(register-python-argcomplete hermes)"
+   ```
+   For fish shell, run this:
+   ```
+   register-python-argcomplete --shell fish hermes > ~/.config/fish/completions/hermes.fish
+   ```
 
 ## Usage
 
@@ -74,11 +87,14 @@ hermes claude \
 - `--update` or `-u`: Update a specified file with the AI's response
 - `--raw` or `-r`: Print the output without rendering markdown
 - `--confirm-before-starting`: Prompt for confirmation before sending requests to the AI model
+- `--ask-for-user-prompt` or `-up`: Prompt for additional user input before sending the initial request
 
 ### Supported Models
 
 - `claude`: Anthropic's Claude model
 - `bedrock-claude`: AWS Bedrock Claude model
+- `bedrock-claude-3.5`: AWS Bedrock Claude 3.5 model
+- `bedrock-opus`: AWS Bedrock Claude 3 Opus model
 - `bedrock-mistral`: AWS Bedrock Mistral model
 - `gemini`: Google's Gemini model
 - `openai`: OpenAI's GPT-4 model
@@ -94,3 +110,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Acknowledgements
 
 - Thanks to all the AI model providers for their APIs and services.
+- [argcomplete](https://github.com/kislyuk/argcomplete) for providing autocompletion support.

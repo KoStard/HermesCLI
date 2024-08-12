@@ -105,6 +105,10 @@ class PromptFormatter(ABC):
     @abstractmethod
     def format_prompt(self, files: Dict[str, str], prompt: str, special_command: Optional[Dict[str, str]] = None) -> Any:
         pass
+    
+    @abstractmethod
+    def add_content(self, current, content_to_add: str) -> Any:
+        pass
 
 class XMLPromptFormatter(PromptFormatter):
     def __init__(self, file_processor: FileProcessor):
@@ -138,6 +142,9 @@ class XMLPromptFormatter(PromptFormatter):
                 prompt_elem.text = f"Please provide the entire new content for the file '{special_command['update']}'. The output should contain only the new file content, without any explanations or additional comments."
         
         return ET.tostring(root, encoding='unicode')
+    
+    def add_content(self, current, content_to_add: str) -> Any:
+        return current + '\n\n' + content_to_add
 
 class BedrockPromptFormatter(PromptFormatter):
     def __init__(self, file_processor: FileProcessor):
@@ -179,7 +186,7 @@ class BedrockPromptFormatter(PromptFormatter):
                 file_elem = ET.Element("document", name=processed_name)
                 file_elem.text = file_content
                 contents.append({'text': ET.tostring(file_elem, encoding='unicode')})
-        contents.append({'text': prompt})
+        contents.append({'text': prompt + '\n'})
 
         if special_command:
             special_prompt = ""
@@ -188,8 +195,11 @@ class BedrockPromptFormatter(PromptFormatter):
             elif 'update' in special_command:
                 special_prompt = f"Please provide the entire new content for the file '{special_command['update']}'. The output should contain only the new file content, without any explanations or additional comments."
             if special_prompt:
-                contents.append({'text': special_prompt})
+                contents.append({'text': special_prompt + '\n'})
         return contents
+    
+    def add_content(self, current, content_to_add: str) -> Any:
+        return [*current, {'text': content_to_add + '\n'}]
 
 class ChatModel(ABC):
     def __init__(self, config: configparser.ConfigParser):
@@ -229,6 +239,10 @@ class BedrockModel(ChatModel):
         self.client = boto3.client('bedrock-runtime')
         if self.model_tag == 'claude':
             self.model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
+        elif self.model_tag == 'claude-3.5':
+            self.model_id = 'anthropic.claude-3-5-sonnet-20240620-v1:0'
+        elif self.model_tag == 'opus':
+            self.model_id = 'anthropic.claude-3-opus-20240229-v1:0'
         else:
             self.model_id = 'mistral.mistral-large-2407-v1:0'
         self.messages = []
@@ -328,12 +342,13 @@ class ChatUI:
         self.console.print(message)
 
 class ChatApplication:
-    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor):
+    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, prompt_formatter: PromptFormatter):
         self.model = model
         self.ui = ui
         self.file_processor = file_processor
+        self.prompt_formatter = prompt_formatter
 
-    def run(self, initial_content: str, special_command: Optional[Dict[str, str]] = None):
+    def run(self, initial_content: any, special_command: Optional[Dict[str, str]] = None, ask_for_user_prompt: bool = False):
         if special_command:
             self.model.initialize()
             response = self.ui.display_response(self.model.send_message(initial_content))
@@ -343,19 +358,24 @@ class ChatApplication:
                 self.update_file(special_command['update'], response)
         else:
             latest_input = ""
+            print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation.")
             while True:
-                print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation.")
                 self.model.initialize()
                 current_initial_content = initial_content
+                
+                if not latest_input and ask_for_user_prompt:
+                    latest_input = self.ui.get_user_input()
+                
                 if latest_input:
-                    current_initial_content += '\n\n' + latest_input
+                    current_initial_content = self.prompt_formatter.add_content(initial_content, latest_input)
+
                 self.ui.display_response(self.model.send_message(current_initial_content))
                 
                 while True:
                     user_input = self.ui.get_user_input()
                     used_input_lw = user_input.lower()
                     if used_input_lw.startswith('/new') or used_input_lw.startswith('/n'):
-                        latest_input = ' '.join(user_input.split()[1:])
+                        latest_input = ' '.join(user_input.split(' ')[1:])
                         break
                     if used_input_lw in ['exit', 'quit', 'q']:
                         return
@@ -381,16 +401,17 @@ def process_file_name(file_path: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application")
-    parser.add_argument("model", choices=["claude", "bedrock-claude", "bedrock-mistral", "gemini", "openai"], help="Choose the model to use")
+    parser.add_argument("model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai"], help="Choose the model to use")
     parser.add_argument("files", nargs='+', help="Input files followed by prompt or prompt file")
     parser.add_argument("--append", "-a", help="Append to the specified file")
     parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--raw", "-r", help="Print the output without rendering markdown", action="store_true")
     parser.add_argument("--confirm-before-starting", help="Will confirm before sending the LLM requests, in case you want to prevent unnecessary calls", action="store_true")
+    parser.add_argument("--ask-for-user-prompt", "-up", action="store_true", help="Prompt for additional user input before sending the initial request")
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
-    config_path = "/Users/kostard/.config/multillmchat/config.ini"
+    config_path = "~/.config/multillmchat/config.ini"
     config.read(config_path)
 
     files = args.files[:-1]
@@ -433,6 +454,14 @@ def main():
         model = BedrockModel(config, 'claude')
         file_processor = BedrockFileProcessor()
         prompt_formatter = BedrockPromptFormatter(file_processor)
+    elif args.model == "bedrock-claude-3.5":
+        model = BedrockModel(config, 'claude-3.5')
+        file_processor = BedrockFileProcessor()
+        prompt_formatter = BedrockPromptFormatter(file_processor)
+    elif args.model == "bedrock-opus":
+        model = BedrockModel(config, 'opus')
+        file_processor = BedrockFileProcessor()
+        prompt_formatter = BedrockPromptFormatter(file_processor)
     elif args.model == "bedrock-mistral":
         model = BedrockModel(config, 'mistral')
         file_processor = BedrockFileProcessor()
@@ -452,8 +481,8 @@ def main():
 
     prints_raw = bool(args.raw)
     ui = ChatUI(prints_raw=prints_raw)
-    app = ChatApplication(model, ui, file_processor)
-    app.run(initial_content, special_command_raw if special_command_raw else None)
+    app = ChatApplication(model, ui, file_processor, prompt_formatter)
+    app.run(initial_content, special_command_raw if special_command_raw else None, args.ask_for_user_prompt)
 
 if __name__ == "__main__":
     main()
