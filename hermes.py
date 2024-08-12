@@ -30,6 +30,9 @@ def is_binary(file_path):
     """
     TEXT_CHARACTERS = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
     NULL_BYTE = b'\x00'
+    
+    if not os.path.exists(file_path):
+        return False
 
     try:
         with open(file_path, 'rb') as f:
@@ -181,8 +184,7 @@ class BedrockPromptFormatter(PromptFormatter):
                     })
             else:
                 print(f"{file_path} is not binary")
-                with open(file_path, 'r') as file:
-                    file_content = file.read()
+                file_content = self.file_processor.read_file(file_path).decode('utf-8')
                 file_elem = ET.Element("document", name=processed_name)
                 file_elem.text = file_content
                 contents.append({'text': ET.tostring(file_elem, encoding='unicode')})
