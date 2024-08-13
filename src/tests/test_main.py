@@ -1,15 +1,15 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import configparser
-from src.hermes.main import create_model_and_processors
-from src.hermes.chat_models.claude import ClaudeModel
-from src.hermes.chat_models.bedrock import BedrockModel
-from src.hermes.chat_models.gemini import GeminiModel
-from src.hermes.chat_models.openai import OpenAIModel
-from src.hermes.file_processors.default import DefaultFileProcessor
-from src.hermes.file_processors.bedrock import BedrockFileProcessor
-from src.hermes.prompt_formatters.xml import XMLPromptFormatter
-from src.hermes.prompt_formatters.bedrock import BedrockPromptFormatter
+from hermes.main import create_model_and_processors
+from hermes.chat_models.claude import ClaudeModel
+from hermes.chat_models.bedrock import BedrockModel
+from hermes.chat_models.gemini import GeminiModel
+from hermes.chat_models.openai import OpenAIModel
+from hermes.file_processors.default import DefaultFileProcessor
+from hermes.file_processors.bedrock import BedrockFileProcessor
+from hermes.prompt_formatters.xml import XMLPromptFormatter
+from hermes.prompt_formatters.bedrock import BedrockPromptFormatter
 
 class TestCreateModelAndProcessors(unittest.TestCase):
     def setUp(self):

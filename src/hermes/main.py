@@ -79,7 +79,7 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
         file_processor = DefaultFileProcessor()
         prompt_formatter = XMLPromptFormatter(file_processor)
     elif model_name.startswith("bedrock-"):
-        model_tag = model_name.split("-")[1]
+        model_tag = '-'.join(model_name.split("-")[1:])
         model = BedrockModel(config, model_tag)
         file_processor = BedrockFileProcessor()
         prompt_formatter = BedrockPromptFormatter(file_processor)
