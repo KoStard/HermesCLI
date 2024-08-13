@@ -5,6 +5,7 @@ import sys
 import argparse
 import configparser
 from typing import Dict
+import readline
 
 from .utils.file_utils import process_file_name
 from .file_processors.default import DefaultFileProcessor
