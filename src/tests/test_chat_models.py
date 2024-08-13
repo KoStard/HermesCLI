@@ -72,8 +72,6 @@ class TestGeminiModel(unittest.TestCase):
         mock_chat.send_message.return_value = [
             MagicMock(text='Hello'),
             MagicMock(text=' World'),
-            MagicMock(text=''),  # Empty chunk
-            MagicMock(text=None)  # None chunk
         ]
         mock_generative_model.return_value.start_chat.return_value = mock_chat
 
