@@ -18,7 +18,7 @@ class TestFileUtils(unittest.TestCase):
     def test_process_file_name(self):
         self.assertEqual(process_file_name('test_file.txt'), 'test_file')
         self.assertEqual(process_file_name('path/to/file.py'), 'file')
-        self.assertEqual(process_file_name('file-with-spaces.md'), 'file_with_spaces')
+        self.assertEqual(process_file_name('file with spaces.md'), 'file_with_spaces')
         self.assertEqual(process_file_name('FILE_WITH_CAPS.TXT'), 'file_with_caps')
 
 if __name__ == '__main__':

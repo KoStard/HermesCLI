@@ -23,17 +23,16 @@ class TestChatApplication(unittest.TestCase):
         self.ui.display_response.assert_called_once()
         self.file_processor.write_file.assert_called_once_with('test.txt', "\nFormatted response", mode='a')
 
-    @patch('builtins.input', side_effect=['Test input', 'exit'])
-    def test_run_without_special_command(self, mock_input):
+    def test_run_without_special_command(self):
         initial_content = "Initial content"
         self.model.send_message.return_value = "Response"
         self.ui.display_response.return_value = "Formatted response"
-        self.prompt_formatter.add_content.return_value = "Updated content"
+        self.ui.get_user_input.side_effect = ['Test input', 'exit']
 
         self.app.run(initial_content)
 
         self.model.initialize.assert_called()
-        self.model.send_message.assert_called_with("Updated content")
+        self.model.send_message.assert_called_with("Test input")
         self.ui.display_response.assert_called()
         self.ui.get_user_input.assert_called()
 

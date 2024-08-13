@@ -1,6 +1,7 @@
 from .base import FileProcessor
 import PyPDF2
 from docx import Document
+import os
 
 class DefaultFileProcessor(FileProcessor):
     def read_file(self, file_path: str) -> str:
