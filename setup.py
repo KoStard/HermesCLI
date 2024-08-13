@@ -21,4 +21,11 @@ setup(
             "hermes=hermes.main:main",
         ],
     },
+    extras_require={
+        'test': [
+            'pytest',
+            'pytest-cov',
+        ],
+    },
+    test_suite='tests',
 )
