@@ -69,10 +69,14 @@ class TestGeminiModel(unittest.TestCase):
     def test_send_message(self, mock_generative_model, mock_configure):
         self.model.initialize()
         mock_chat = MagicMock()
-        mock_chat.send_message.return_value = [
+        mock_response = MagicMock()
+        mock_response.__iter__.return_value = [
             MagicMock(text='Hello'),
             MagicMock(text=' World'),
+            MagicMock(text=''),
+            MagicMock(text=None)
         ]
+        mock_chat.send_message.return_value = mock_response
         mock_generative_model.return_value.start_chat.return_value = mock_chat
 
         result = list(self.model.send_message('Test message'))
