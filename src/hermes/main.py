@@ -1,41 +1,21 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 import os
 import sys
 import argparse
 import configparser
-from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Generator, Optional
-import xml.etree.ElementTree as ET
-import readline
-import openai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from typing import Dict
 
-import anthropic
-import boto3
-import google.generativeai as genai
-from docx import Document
-import PyPDF2
-from rich.console import Console
-from rich.markdown import Markdown
-from rich.live import Live
-from rich.spinner import Spinner
-
-from utils.file_utils import is_binary, process_file_name
-
+from utils.file_utils import process_file_name
 from file_processors.default import DefaultFileProcessor
 from file_processors.bedrock import BedrockFileProcessor
-
 from prompt_formatters.xml import XMLPromptFormatter
 from prompt_formatters.bedrock import BedrockPromptFormatter
-
 from chat_models.claude import ClaudeModel
 from chat_models.bedrock import BedrockModel
 from chat_models.gemini import GeminiModel
 from chat_models.openai import OpenAIModel
-
 from ui.chat_ui import ChatUI
-
 from chat_application import ChatApplication
 
 def main():
@@ -50,7 +30,7 @@ def main():
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
-    config_path = "~/.config/multillmchat/config.ini"
+    config_path = os.path.expanduser("~/.config/multillmchat/config.ini")
     config.read(config_path)
 
     files = args.files[:-1]
@@ -63,11 +43,10 @@ def main():
     else:
         prompt = prompt_or_file
 
-    # Process file names
     processed_files = {process_file_name(file): file for file in files}
 
-    special_command = {}
-    special_command_raw = {}
+    special_command: Dict[str, str] = {}
+    special_command_raw: Dict[str, str] = {}
     if args.append:
         special_command['append'] = process_file_name(args.append)
         special_command_raw['append'] = args.append
@@ -85,43 +64,39 @@ def main():
             elif confirm.lower() == 'y' or not confirm:
                 break
 
-    if args.model == "claude":
+    model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
+
+    initial_content = prompt_formatter.format_prompt(processed_files, prompt, special_command if special_command else None)
+
+    ui = ChatUI(prints_raw=args.raw)
+    app = ChatApplication(model, ui, file_processor, prompt_formatter)
+    app.run(initial_content, special_command_raw if special_command_raw else None, args.ask_for_user_prompt)
+
+def create_model_and_processors(model_name: str, config: configparser.ConfigParser):
+    if model_name == "claude":
         model = ClaudeModel(config)
         file_processor = DefaultFileProcessor()
         prompt_formatter = XMLPromptFormatter(file_processor)
-    elif args.model == "bedrock-claude":
-        model = BedrockModel(config, 'claude')
+    elif model_name.startswith("bedrock-"):
+        model_tag = model_name.split("-")[1]
+        model = BedrockModel(config, model_tag)
         file_processor = BedrockFileProcessor()
         prompt_formatter = BedrockPromptFormatter(file_processor)
-    elif args.model == "bedrock-claude-3.5":
-        model = BedrockModel(config, 'claude-3.5')
-        file_processor = BedrockFileProcessor()
-        prompt_formatter = BedrockPromptFormatter(file_processor)
-    elif args.model == "bedrock-opus":
-        model = BedrockModel(config, 'opus')
-        file_processor = BedrockFileProcessor()
-        prompt_formatter = BedrockPromptFormatter(file_processor)
-    elif args.model == "bedrock-mistral":
-        model = BedrockModel(config, 'mistral')
-        file_processor = BedrockFileProcessor()
-        prompt_formatter = BedrockPromptFormatter(file_processor)
-    elif args.model == "gemini":
+    elif model_name == "gemini":
         model = GeminiModel(config)
         file_processor = DefaultFileProcessor()
         prompt_formatter = XMLPromptFormatter(file_processor)
-    elif args.model == "openai":
+    elif model_name == "openai":
         model = OpenAIModel(config)
         file_processor = DefaultFileProcessor()
         prompt_formatter = XMLPromptFormatter(file_processor)
     else:
-        raise ValueError(f"Unsupported model: {args.model}")
+        raise ValueError(f"Unsupported model: {model_name}")
+    
+    return model, file_processor, prompt_formatter
 
-    initial_content = prompt_formatter.format_prompt(processed_files, prompt, special_command if special_command else None)
-
-    prints_raw = bool(args.raw)
-    ui = ChatUI(prints_raw=prints_raw)
-    app = ChatApplication(model, ui, file_processor, prompt_formatter)
-    app.run(initial_content, special_command_raw if special_command_raw else None, args.ask_for_user_prompt)
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
