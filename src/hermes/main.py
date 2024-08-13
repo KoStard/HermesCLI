@@ -6,17 +6,17 @@ import argparse
 import configparser
 from typing import Dict
 
-from utils.file_utils import process_file_name
-from file_processors.default import DefaultFileProcessor
-from file_processors.bedrock import BedrockFileProcessor
-from prompt_formatters.xml import XMLPromptFormatter
-from prompt_formatters.bedrock import BedrockPromptFormatter
-from chat_models.claude import ClaudeModel
-from chat_models.bedrock import BedrockModel
-from chat_models.gemini import GeminiModel
-from chat_models.openai import OpenAIModel
-from ui.chat_ui import ChatUI
-from chat_application import ChatApplication
+from .utils.file_utils import process_file_name
+from .file_processors.default import DefaultFileProcessor
+from .file_processors.bedrock import BedrockFileProcessor
+from .prompt_formatters.xml import XMLPromptFormatter
+from .prompt_formatters.bedrock import BedrockPromptFormatter
+from .chat_models.claude import ClaudeModel
+from .chat_models.bedrock import BedrockModel
+from .chat_models.gemini import GeminiModel
+from .chat_models.openai import OpenAIModel
+from .ui.chat_ui import ChatUI
+from .chat_application import ChatApplication
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application")
