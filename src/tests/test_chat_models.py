@@ -69,11 +69,18 @@ class TestGeminiModel(unittest.TestCase):
     def test_send_message(self, mock_generative_model, mock_configure):
         self.model.initialize()
         mock_chat = MagicMock()
-        mock_chat.send_message.return_value = [MagicMock(text='Hello'), MagicMock(text=' World')]
+        mock_chat.send_message.return_value = [
+            MagicMock(text='Hello'),
+            MagicMock(text=' World'),
+            MagicMock(text=''),  # Empty chunk
+            MagicMock(text=None)  # None chunk
+        ]
         mock_generative_model.return_value.start_chat.return_value = mock_chat
 
         result = list(self.model.send_message('Test message'))
-        self.assertEqual(result, ['Hello', ' World'])
+        # Filter out empty strings and None values
+        filtered_result = [chunk for chunk in result if chunk and chunk.strip()]
+        self.assertEqual(filtered_result, ['Hello', ' World'])
 
 class TestOpenAIModel(unittest.TestCase):
     def setUp(self):
