@@ -4,6 +4,7 @@ from hermes.chat_models.claude import ClaudeModel
 from hermes.chat_models.bedrock import BedrockModel
 from hermes.chat_models.gemini import GeminiModel
 from hermes.chat_models.openai import OpenAIModel
+from hermes.chat_models.ollama import OllamaModel
 
 class TestClaudeModel(unittest.TestCase):
     def setUp(self):
@@ -98,6 +99,40 @@ class TestOpenAIModel(unittest.TestCase):
 
         result = list(self.model.send_message('Test message'))
         self.assertEqual(result, ['Hello', ' World'])
+
+class TestOllamaModel(unittest.TestCase):
+    def setUp(self):
+        self.config = MagicMock()
+        self.config.__getitem__.return_value = {'base_url': 'http://localhost:11434'}
+        self.model = OllamaModel(self.config)
+
+    def test_initialize(self):
+        self.model.initialize()
+        self.assertEqual(self.model.base_url, 'http://localhost:11434')
+        self.assertEqual(self.model.model, 'llama2:3.1')
+
+    @patch('requests.post')
+    def test_send_message(self, mock_post):
+        self.model.initialize()
+        mock_response = MagicMock()
+        mock_response.iter_lines.return_value = [
+            b'data: {"content":"Hello"}',
+            b'data: {"content":" World"}',
+        ]
+        mock_post.return_value = mock_response
+
+        result = list(self.model.send_message('Test message'))
+        self.assertEqual(result, ['Hello', ' World'])
+
+        mock_post.assert_called_once_with(
+            'http://localhost:11434/api/chat',
+            json={
+                'model': 'llama2:3.1',
+                'messages': [{'role': 'user', 'content': 'Test message'}],
+                'stream': True
+            },
+            stream=True
+        )
 
 if __name__ == '__main__':
     unittest.main()

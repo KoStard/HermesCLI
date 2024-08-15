@@ -16,12 +16,13 @@ from .chat_models.claude import ClaudeModel
 from .chat_models.bedrock import BedrockModel
 from .chat_models.gemini import GeminiModel
 from .chat_models.openai import OpenAIModel
+from .chat_models.ollama import OllamaModel
 from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application")
-    parser.add_argument("model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai"], help="Choose the model to use")
+    parser.add_argument("model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama"], help="Choose the model to use")
     parser.add_argument("files", nargs='+', help="Input files followed by prompt or prompt file")
     parser.add_argument("--append", "-a", help="Append to the specified file")
     parser.add_argument("--update", "-u", help="Update the specified file")
@@ -89,6 +90,10 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
         prompt_formatter = XMLPromptFormatter(file_processor)
     elif model_name == "openai":
         model = OpenAIModel(config)
+        file_processor = DefaultFileProcessor()
+        prompt_formatter = XMLPromptFormatter(file_processor)
+    elif model_name == "ollama":
+        model = OllamaModel(config)
         file_processor = DefaultFileProcessor()
         prompt_formatter = XMLPromptFormatter(file_processor)
     else:
