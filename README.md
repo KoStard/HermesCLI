@@ -12,8 +12,10 @@ Hermes is a versatile command-line chat application that supports multiple AI mo
   - Bedrock Mistral
   - Gemini (Google)
   - GPT-4 (OpenAI)
+  - Ollama (Local models)
 - File input support for context-aware conversations
 - Image inputs for supported models
+- Support for local models through Ollama integration
 - Ability to append or update files based on AI responses
 - Markdown rendering for formatted output
 - Raw output option for unformatted responses
@@ -98,6 +100,22 @@ hermes claude \
 - `bedrock-mistral`: AWS Bedrock Mistral model
 - `gemini`: Google's Gemini model
 - `openai`: OpenAI's GPT-4 model
+- `ollama`: Local models through Ollama
+
+## Configuration
+
+### Ollama Setup
+
+To use Ollama models:
+
+1. Install Ollama from [ollama.ai](https://ollama.ai)
+2. Run Ollama locally
+3. In your `~/.config/multillmchat/config.ini`, add:
+   ```ini
+   [OLLAMA]
+   model = llama2
+   ```
+   Replace `llama2` with your preferred model.
 
 ## Contributing
 
