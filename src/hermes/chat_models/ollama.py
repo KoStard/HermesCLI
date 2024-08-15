@@ -5,7 +5,7 @@ import requests
 class OllamaModel(ChatModel):
     def initialize(self):
         self.base_url = self.config["OLLAMA"]["base_url"]
-        self.model = "llama2:3.1"
+        self.model = "llama3.1"
         self.messages = []
 
     def send_message(self, message: str) -> Generator[str, None, None]:
