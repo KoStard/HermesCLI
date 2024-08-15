@@ -103,36 +103,35 @@ class TestOpenAIModel(unittest.TestCase):
 class TestOllamaModel(unittest.TestCase):
     def setUp(self):
         self.config = MagicMock()
-        self.config.__getitem__.return_value = {'base_url': 'http://localhost:11434'}
+        self.config.__getitem__.return_value = {'model': 'llama2'}
         self.model = OllamaModel(self.config)
 
     def test_initialize(self):
         self.model.initialize()
-        self.assertEqual(self.model.base_url, 'http://localhost:11434')
-        self.assertEqual(self.model.model, 'llama2:3.1')
+        self.assertEqual(self.model.model, 'llama2')
+        self.assertEqual(self.model.messages, [])
 
-    @patch('requests.post')
-    def test_send_message(self, mock_post):
+    @patch('ollama.chat')
+    def test_send_message(self, mock_chat):
         self.model.initialize()
-        mock_response = MagicMock()
-        mock_response.iter_lines.return_value = [
-            b'data: {"content":"Hello"}',
-            b'data: {"content":" World"}',
+        mock_chat.return_value = [
+            {'message': {'content': 'Hello'}},
+            {'message': {'content': ' World'}},
         ]
-        mock_post.return_value = mock_response
 
         result = list(self.model.send_message('Test message'))
         self.assertEqual(result, ['Hello', ' World'])
 
-        mock_post.assert_called_once_with(
-            'http://localhost:11434/api/chat',
-            json={
-                'model': 'llama2:3.1',
-                'messages': [{'role': 'user', 'content': 'Test message'}],
-                'stream': True
-            },
+        mock_chat.assert_called_once_with(
+            model='llama2',
+            messages=[{'role': 'user', 'content': 'Test message'}],
             stream=True
         )
+
+        self.assertEqual(self.model.messages, [
+            {'role': 'user', 'content': 'Test message'},
+            {'role': 'assistant', 'content': 'Hello World'}
+        ])
 
 if __name__ == '__main__':
     unittest.main()
