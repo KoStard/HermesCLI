@@ -12,7 +12,7 @@ class OllamaModel(ChatModel):
         
         stream = ollama.chat(
             model=self.model,
-            messages=self.messages,
+            messages=list(self.messages),
             stream=True,
         )
 
