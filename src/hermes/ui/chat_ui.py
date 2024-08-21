@@ -33,6 +33,14 @@ class ChatUI:
     def get_user_input(self) -> str:
         while True:
             user_input = input("You: ").strip()
+            if user_input == "{":
+                lines = []
+                while True:
+                    line = input()
+                    if line.strip() == "}":
+                        break
+                    lines.append(line)
+                user_input = "\n".join(lines)
             if user_input:
                 return user_input
             print("Please enter a non-empty message.")
