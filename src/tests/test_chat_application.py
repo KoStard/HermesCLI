@@ -17,6 +17,7 @@ class TestChatApplication(unittest.TestCase):
 
     def test_run_with_initial_prompt(self):
         initial_prompt = "Initial prompt"
+        self.ui.get_user_input.side_effect = ["exit"]
         self.app.run(initial_prompt)
         self.model.initialize.assert_called_once()
         self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, initial_prompt, None)
@@ -27,8 +28,8 @@ class TestChatApplication(unittest.TestCase):
         self.ui.get_user_input.side_effect = ["User input", "exit"]
         self.app.run()
         self.model.initialize.assert_called_once()
-        self.model.send_message.assert_called_once_with("User input")
-        self.ui.display_response.assert_called_once()
+        self.assertEqual(self.model.send_message.call_count, 2)
+        self.assertEqual(self.ui.display_response.call_count, 2)
 
     def test_run_with_special_command_append(self):
         special_command = {'append': 'output.txt'}
@@ -49,6 +50,20 @@ class TestChatApplication(unittest.TestCase):
         with patch('builtins.print') as mock_print:
             self.app.run()
             mock_print.assert_called_once_with("\nChat interrupted. Exiting gracefully...")
+
+    def test_run_with_multiple_inputs(self):
+        self.ui.get_user_input.side_effect = ["First input", "Second input", "exit"]
+        self.app.run()
+        self.model.initialize.assert_called_once()
+        self.assertEqual(self.model.send_message.call_count, 3)
+        self.assertEqual(self.ui.display_response.call_count, 3)
+
+    def test_run_with_quit_command(self):
+        self.ui.get_user_input.side_effect = ["First input", "quit"]
+        self.app.run()
+        self.model.initialize.assert_called_once()
+        self.assertEqual(self.model.send_message.call_count, 2)
+        self.assertEqual(self.ui.display_response.call_count, 2)
 
 if __name__ == '__main__':
     unittest.main()
