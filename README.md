@@ -72,24 +72,36 @@ Hermes is a versatile command-line chat application that supports multiple AI mo
 
 Basic usage:
 ```
-hermes <model> <file1> <file2> ... <fileN> <prompt>
+hermes <model> [<file1> <file2> ... <fileN>]
 ```
 
 Example:
 ```
-hermes claude \
-    document1.txt \
-    document2.txt \
-    "Summarize these documents."
+hermes claude document1.txt document2.txt
 ```
+
+After running the command, you will be prompted to enter your initial message or question.
 
 ### Command-line Options
 
+- `--prompt`: Specify the initial prompt directly from the command line
+- `--prompt-file`: Specify a file containing the initial prompt
 - `--append` or `-a`: Append the AI's response to a specified file
 - `--update` or `-u`: Update a specified file with the AI's response
 - `--raw` or `-r`: Print the output without rendering markdown
 - `--confirm-before-starting`: Prompt for confirmation before sending requests to the AI model
-- `--ask-for-user-prompt` or `-up`: Prompt for additional user input before sending the initial request
+
+Examples:
+
+Using --prompt:
+```
+hermes claude document1.txt document2.txt --prompt "Summarize these documents."
+```
+
+Using --prompt-file:
+```
+hermes claude document1.txt document2.txt --prompt-file my_prompt.txt
+```
 
 ### Supported Models
 
