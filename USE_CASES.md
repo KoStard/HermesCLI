@@ -1,71 +1,61 @@
 # Hermes Use Cases
 
-## 1. Code Review and Explanation
+## 1. Context-Aware File Analysis
+**Need**: Analyze multiple documents for a project.
+**Usage**: User runs Hermes with Claude model and multiple file inputs.
+**Action**: Hermes processes files and allows user to ask questions about their content.
+**Outcome**: User gains insights across multiple documents efficiently.
 
-Customer Need: Understand complex code in a project.
-Tool Usage: Run Hermes with code files as input.
-Tool Action: Analyzes code and provides explanations.
-Process Completion: Customer gains clear understanding of code structure and functionality.
+## 2. Immediate Prompt Execution
+**Need**: Quick answer to a specific question about a document.
+**Usage**: User runs Hermes with a file and --prompt option.
+**Action**: Hermes sends the prompt and file content to the AI model immediately.
+**Outcome**: User receives an instant response without entering the chat interface.
 
-## 2. Document Summarization
+## 3. Collaborative Document Editing
+**Need**: Improve a draft document with AI assistance.
+**Usage**: User runs Hermes with a file and --update option.
+**Action**: Hermes allows user to discuss the document and apply AI suggestions directly.
+**Outcome**: Document is updated with AI-assisted improvements.
 
-Customer Need: Quickly grasp content of long documents.
-Tool Usage: Input multiple document files to Hermes.
-Tool Action: Reads documents and generates concise summaries.
-Process Completion: Customer receives summarized version of document contents.
+## 4. Research Note-Taking
+**Need**: Compile research notes from an AI conversation.
+**Usage**: User runs Hermes with --append option pointing to a notes file.
+**Action**: Hermes appends AI responses to the specified file during the conversation.
+**Outcome**: User builds a comprehensive set of notes from the AI interaction.
 
-## 3. Writing Assistance
+## 5. Careful API Usage
+**Need**: Avoid accidental API calls and associated costs.
+**Usage**: User runs Hermes with --confirm-before-starting flag.
+**Action**: Hermes prompts for confirmation before sending any requests to the AI model.
+**Outcome**: User has control over when API calls are made, preventing unintended usage.
 
-Customer Need: Improve writing quality and style.
-Tool Usage: Input draft document and request improvements.
-Tool Action: Analyzes text, suggests edits, and refines content.
-Process Completion: Customer obtains polished, well-written document.
+## 6. Local Model Interaction
+**Need**: Work with AI models without internet connection or for privacy.
+**Usage**: User runs Hermes with Ollama model option.
+**Action**: Hermes connects to locally running Ollama for AI interactions.
+**Outcome**: User can work with AI models offline or with enhanced privacy.
 
-## 4. Data Analysis
+## 7. Multi-Model Comparison
+**Need**: Compare responses from different AI models.
+**Usage**: User runs Hermes multiple times with different model options.
+**Action**: Hermes facilitates conversations with various AI models.
+**Outcome**: User can assess and compare the performance of different AI models.
 
-Customer Need: Extract insights from data files.
-Tool Usage: Input data files and specify analysis requirements.
-Tool Action: Processes data, identifies patterns, and generates insights.
-Process Completion: Customer receives comprehensive data analysis report.
+## 8. Image Analysis (for supported models)
+**Need**: Analyze or describe an image.
+**Usage**: User runs Hermes with a supported model and an image file.
+**Action**: Hermes processes the image and allows user to ask questions about it.
+**Outcome**: User receives AI-generated analysis or description of the image.
 
-## 5. Brainstorming and Ideation
+## 9. Code Review and Explanation
+**Need**: Understand or improve a piece of code.
+**Usage**: User runs Hermes with a code file as input.
+**Action**: Hermes allows user to ask questions or request explanations about the code.
+**Outcome**: User gains better understanding or receives suggestions for code improvement.
 
-Customer Need: Generate creative ideas for a project.
-Tool Usage: Describe project context and goals to Hermes.
-Tool Action: Provides diverse range of ideas and suggestions.
-Process Completion: Customer has list of innovative concepts to explore.
-
-## 6. Technical Troubleshooting
-
-Customer Need: Resolve complex technical issues.
-Tool Usage: Input error logs and system information.
-Tool Action: Analyzes data, identifies potential causes, suggests solutions.
-Process Completion: Customer receives step-by-step troubleshooting guide.
-
-## 7. Language Translation
-
-Customer Need: Translate documents between languages.
-Tool Usage: Input source document and specify target language.
-Tool Action: Translates content while maintaining context and nuance.
-Process Completion: Customer obtains accurately translated document.
-
-## 8. Research Assistance
-
-Customer Need: Gather information on specific topics.
-Tool Usage: Input research questions and relevant documents.
-Tool Action: Analyzes provided information, searches for additional data.
-Process Completion: Customer receives comprehensive research summary.
-
-## 9. Code Generation
-
-Customer Need: Quickly prototype software features.
-Tool Usage: Describe desired functionality to Hermes.
-Tool Action: Generates code snippets or entire functions based on description.
-Process Completion: Customer has working code prototype to build upon.
-
-## 10. Document Comparison
-
-Customer Need: Identify differences between document versions.
-Tool Usage: Input multiple versions of a document.
-Tool Action: Compares documents, highlights changes and additions.
-Process Completion: Customer receives detailed comparison report.
+## 10. Custom Prompt Templates
+**Need**: Use a pre-defined prompt structure for consistent interactions.
+**Usage**: User creates a prompt file and runs Hermes with --prompt-file option.
+**Action**: Hermes uses the custom prompt to initiate the conversation with the AI.
+**Outcome**: User maintains consistency in AI interactions across multiple sessions.
