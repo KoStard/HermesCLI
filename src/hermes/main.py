@@ -20,9 +20,14 @@ from .chat_models.ollama import OllamaModel
 from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
 
+def get_default_model(config):
+    if 'DEFAULT' in config and 'model' in config['DEFAULT']:
+        return config['DEFAULT']['model']
+    return None
+
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application")
-    parser.add_argument("model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama"], help="Choose the model to use")
+    parser.add_argument("model", nargs='?', choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama"], help="Choose the model to use")
     parser.add_argument("files", nargs='*', help="Input files (optional)")
     parser.add_argument("--prompt", help="Prompt text to send immediately")
     parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
@@ -35,6 +40,13 @@ def main():
     config = configparser.ConfigParser()
     config_path = os.path.expanduser("~/.config/multillmchat/config.ini")
     config.read(config_path)
+
+    if args.model is None:
+        default_model = get_default_model(config)
+        if default_model:
+            args.model = default_model
+        else:
+            parser.error("No model specified and no default model found in config.")
 
     run_chat_application(args, config)
 
