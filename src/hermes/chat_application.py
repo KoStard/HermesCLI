@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+import signal
 from hermes.chat_models.base import ChatModel
 from hermes.ui.chat_ui import ChatUI
 from hermes.file_processors.base import FileProcessor
@@ -20,26 +21,30 @@ class ChatApplication:
         
         print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation.")
 
-        first_message = initial_prompt if initial_prompt else self.ui.get_user_input()
-        
-        if first_message.lower() in ['exit', 'quit', 'q']:
-            return
-
-        context = self.prompt_formatter.format_prompt(self.files, first_message, special_command)
-        response = self.ui.display_response(self.model.send_message(context))
-        
-        if special_command:
-            self.handle_special_command(special_command, response)
-            return
-
-        while True:
-            user_input = self.ui.get_user_input()
-            user_input_lower = user_input.lower()
+        try:
+            first_message = initial_prompt if initial_prompt else self.ui.get_user_input()
             
-            if user_input_lower in ['exit', 'quit', 'q']:
+            if first_message.lower() in ['exit', 'quit', 'q']:
                 return
 
-            self.ui.display_response(self.model.send_message(user_input))
+            context = self.prompt_formatter.format_prompt(self.files, first_message, special_command)
+            response = self.ui.display_response(self.model.send_message(context))
+            
+            if special_command:
+                self.handle_special_command(special_command, response)
+                return
+
+            while True:
+                user_input = self.ui.get_user_input()
+                user_input_lower = user_input.lower()
+                
+                if user_input_lower in ['exit', 'quit', 'q']:
+                    return
+
+                self.ui.display_response(self.model.send_message(user_input))
+
+        except KeyboardInterrupt:
+            print("\nChat interrupted. Exiting gracefully...")
 
     def handle_special_command(self, special_command: Dict[str, str], content: str):
         if 'append' in special_command:
