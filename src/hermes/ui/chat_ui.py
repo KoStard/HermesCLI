@@ -1,6 +1,6 @@
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.live import Live
+from rich import live as Live
 from rich.spinner import Spinner
 from typing import Generator
 
@@ -18,7 +18,7 @@ class ChatUI:
             print()
             return buffer
         
-        with Live(console=self.console, auto_refresh=False) as live:
+        with Live.Live(console=self.console, auto_refresh=False) as live:
             live.update(Spinner("dots", text="Assistant is thinking..."))
             
             buffer = ""
@@ -31,7 +31,11 @@ class ChatUI:
         return buffer
 
     def get_user_input(self) -> str:
-        return input("You: ")
+        while True:
+            user_input = input("You: ").strip()
+            if user_input:
+                return user_input
+            print("Please enter a non-empty message.")
 
     def display_status(self, message: str):
         self.console.print(message)
