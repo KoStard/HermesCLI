@@ -42,22 +42,19 @@ def run_chat_application(args, config):
     processed_files = {process_file_name(file): file for file in args.files}
 
     special_command: Dict[str, str] = {}
-    special_command_raw: Dict[str, str] = {}
     if args.append:
-        special_command['append'] = process_file_name(args.append)
-        special_command_raw['append'] = args.append
-        processed_files[special_command['append']] = args.append
+        special_command['append'] = args.append
+        processed_files[process_file_name(args.append)] = args.append
     elif args.update:
-        special_command['update'] = process_file_name(args.update)
-        special_command_raw['update'] = args.update
-        processed_files[special_command['update']] = args.update
+        special_command['update'] = args.update
+        processed_files[process_file_name(args.update)] = args.update
 
-    prompt = None
+    initial_prompt = None
     if args.prompt:
-        prompt = args.prompt
+        initial_prompt = args.prompt
     elif args.prompt_file:
         with open(args.prompt_file, 'r') as f:
-            prompt = f.read().strip()
+            initial_prompt = f.read().strip()
 
     if args.confirm_before_starting:
         confirm = input("Are you sure you want to continue? (y/n) ").lower()
@@ -66,11 +63,10 @@ def run_chat_application(args, config):
 
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
-    initial_content = prompt_formatter.format_prompt(processed_files, prompt, special_command if special_command else None) if prompt else None
-
     ui = ChatUI(prints_raw=args.raw)
     app = ChatApplication(model, ui, file_processor, prompt_formatter)
-    app.run(initial_content, special_command_raw if special_command_raw else None)
+    app.set_files(processed_files)
+    app.run(initial_prompt, special_command if special_command else None)
 
 def create_model_and_processors(model_name: str, config: configparser.ConfigParser):
     if model_name == "claude":

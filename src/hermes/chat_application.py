@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, Generator
+from typing import Dict, List, Optional
 from hermes.chat_models.base import ChatModel
 from hermes.ui.chat_ui import ChatUI
 from hermes.file_processors.base import FileProcessor
@@ -10,23 +10,28 @@ class ChatApplication:
         self.ui = ui
         self.file_processor = file_processor
         self.prompt_formatter = prompt_formatter
+        self.files: Dict[str, str] = {}
 
-    def run(self, initial_content: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
+    def set_files(self, files: Dict[str, str]):
+        self.files = files
+
+    def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.model.initialize()
         
-        if initial_content:
-            response = self.process_message(initial_content)
+        context = self.prompt_formatter.format_prompt(self.files, initial_prompt, special_command)
+        
+        if context:
+            response = self.process_message(context)
             if special_command:
                 self.handle_special_command(special_command, response)
-                return
 
         print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation.")
 
         while True:
             user_input = self.ui.get_user_input()
-            used_input_lw = user_input.lower()
+            user_input_lower = user_input.lower()
             
-            if used_input_lw in ['exit', 'quit', 'q']:
+            if user_input_lower in ['exit', 'quit', 'q']:
                 return
 
             self.ui.display_response(self.model.send_message(user_input))
