@@ -36,8 +36,11 @@ Hermes is a command-line tool that lets you chat with different AI models. It's 
    ```
 
 3. Set up your configuration file:
-   Create a file at `~/.config/multillmchat/config.ini` with your API keys:
+   Create a file at `~/.config/multillmchat/config.ini` with your API keys and default model:
    ```ini
+   [DEFAULT]
+   model = claude
+
    [ANTHROPIC]
    api_key = your_anthropic_api_key
 
@@ -47,6 +50,8 @@ Hermes is a command-line tool that lets you chat with different AI models. It's 
    [OPENAI]
    api_key = your_openai_api_key
    ```
+   
+   You can set any supported model as the default in the `[DEFAULT]` section.
 
 4. Install the package in editable mode:
    ```
@@ -57,10 +62,16 @@ Hermes is a command-line tool that lets you chat with different AI models. It's 
 
 Basic usage:
 ```
-hermes <model> [<file1> <file2> ... <fileN>]
+hermes [<file1> <file2> ... <fileN>]
 ```
 
 Example:
+```
+hermes document1.txt document2.txt
+```
+
+Hermes will use the default model specified in your config file. If you want to use a different model, you can still specify it:
+
 ```
 hermes claude document1.txt document2.txt
 ```
