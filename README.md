@@ -131,8 +131,3 @@ Contributions to Hermes are welcome! Please feel free to submit pull requests, c
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Acknowledgements
-
-- Thanks to all the AI model providers for their APIs and services.
-- [argcomplete](https://github.com/kislyuk/argcomplete) for providing autocompletion support.
