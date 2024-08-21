@@ -112,7 +112,7 @@ class TestRunChatApplication(unittest.TestCase):
         run_chat_application(self.args, self.config)
 
         mock_prompt_formatter.format_prompt.assert_called_once_with(
-            {'file1.txt': 'file1.txt', 'file2.txt': 'file2.txt'},
+            {'file1': 'file1.txt', 'file2': 'file2.txt'},
             None,
             None
         )
