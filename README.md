@@ -1,10 +1,10 @@
-# Hermes: Multi-Model Chat Application
+# Hermes: Chat with AI Models and Files
 
-Hermes is a versatile command-line chat application that supports multiple AI models, allowing users to interact with various language models through a unified interface. Named after the messenger god of Greek mythology, Hermes efficiently relays messages between users and AI models.
+Hermes is a command-line tool that lets you chat with different AI models. It's named after the messenger god in Greek myths. With Hermes, you can talk to AI about files on your computer.
 
-## Features
+## What Hermes Can Do
 
-- Support for multiple AI models:
+- Chat with many AI models:
   - Claude (Anthropic)
   - Bedrock Claude
   - Bedrock Claude 3.5
