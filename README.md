@@ -48,17 +48,12 @@ Hermes is a versatile command-line chat application that supports multiple AI mo
    api_key = your_openai_api_key
    ```
 
-4. Make it executable:
+4. Install the package in editable mode:
    ```
-   chmod +x hermes.py
+   pip install -e .
    ```
 
-5. Copy to `/usr/local/bin/` for convenience:
-    ```
-    sudo ln -s /absolute/path/hermes.py /usr/local/bin/hermes
-    ```
-
-6. Enable autocomplete (optional):
+5. Enable autocomplete (optional):
    Add the following line to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
    ```
    eval "$(register-python-argcomplete hermes)"
