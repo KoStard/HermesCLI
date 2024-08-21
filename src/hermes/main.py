@@ -57,12 +57,9 @@ def main():
             prompt = f.read().strip()
 
     if args.confirm_before_starting:
-        while True:
-            confirm = input("Are you sure you want to continue? (y/n) ")
-            if confirm.lower() == 'n':
-                return
-            elif confirm.lower() == 'y' or not confirm:
-                break
+        confirm = input("Are you sure you want to continue? (y/n) ").lower()
+        if confirm != 'y' and confirm != '':
+            return
 
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
@@ -98,9 +95,6 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
         raise ValueError(f"Unsupported model: {model_name}")
     
     return model, file_processor, prompt_formatter
-
-if __name__ == "__main__":
-    main()
 
 if __name__ == "__main__":
     main()
