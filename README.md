@@ -101,6 +101,16 @@ hermes claude document1.txt document2.txt --prompt-file my_prompt.txt
 
 ## Configuration
 
+### Bedrock Setup
+
+To use AWS Bedrock models:
+
+Hermes will rely on your AWS credentials, which can be provided through:
+1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN)
+2. The AWS credentials file (~/.aws/credentials)
+
+Make sure you have the necessary permissions to access Bedrock services in your AWS account.
+
 ### Ollama Setup
 
 To use Ollama models:
