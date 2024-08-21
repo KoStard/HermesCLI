@@ -66,7 +66,7 @@ def run_chat_application(args, config):
 
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
-    initial_content = prompt_formatter.format_prompt(processed_files, prompt, special_command if special_command else None)
+    initial_content = prompt_formatter.format_prompt(processed_files, prompt, special_command if special_command else None) if prompt else None
 
     ui = ChatUI(prints_raw=args.raw)
     app = ChatApplication(model, ui, file_processor, prompt_formatter)
