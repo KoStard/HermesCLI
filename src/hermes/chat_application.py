@@ -30,6 +30,7 @@ class ChatApplication:
         
         if special_command:
             self.handle_special_command(special_command, response)
+            return
 
         while True:
             user_input = self.ui.get_user_input()
