@@ -51,7 +51,7 @@ class TestRunChatApplication(unittest.TestCase):
     def setUp(self):
         self.config = configparser.ConfigParser()
         self.args = MagicMock()
-        self.args.model = "claude"
+        self.args.model = None
         self.args.files = []
         self.args.prompt = None
         self.args.prompt_file = None
@@ -63,9 +63,13 @@ class TestRunChatApplication(unittest.TestCase):
     @patch('hermes.main.ChatApplication')
     @patch('hermes.main.ChatUI')
     @patch('hermes.main.create_model_and_processors')
-    def test_run_chat_application_basic(self, mock_create, mock_ChatUI, mock_ChatApplication):
+    @patch('hermes.main.get_default_model')
+    def test_run_chat_application_basic(self, mock_get_default_model, mock_create, mock_ChatUI, mock_ChatApplication):
+        mock_get_default_model.return_value = "claude"
         mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
         run_chat_application(self.args, self.config)
+        mock_get_default_model.assert_called_once_with(self.config)
+        mock_create.assert_called_once_with("claude", self.config)
         mock_ChatApplication.return_value.run.assert_called_once_with(None, None)
 
     @patch('hermes.main.ChatApplication')

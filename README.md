@@ -62,7 +62,7 @@ Hermes is a command-line tool that lets you chat with different AI models. It's 
 
 Basic usage:
 ```
-hermes [<file1> <file2> ... <fileN>]
+hermes [--model MODEL] [<file1> <file2> ... <fileN>]
 ```
 
 Example:
@@ -70,16 +70,17 @@ Example:
 hermes document1.txt document2.txt
 ```
 
-Hermes will use the default model specified in your config file. If you want to use a different model, you can still specify it:
+Hermes will use the default model specified in your config file. If you want to use a different model, you can specify it with the --model option:
 
 ```
-hermes claude document1.txt document2.txt
+hermes --model claude document1.txt document2.txt
 ```
 
 After running the command, you will be prompted to enter your initial message or question.
 
 ### Command-line Options
 
+- `--model`: Specify the AI model to use (e.g., claude, bedrock-claude, gemini, openai, ollama)
 - `--prompt`: Specify the initial prompt directly from the command line
 - `--prompt-file`: Specify a file containing the initial prompt
 - `--append` or `-a`: Append the AI's response to a specified file

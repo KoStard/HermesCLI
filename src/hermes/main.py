@@ -27,8 +27,8 @@ def get_default_model(config):
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application")
-    parser.add_argument("model", nargs='?', choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama"], help="Choose the model to use")
-    parser.add_argument("files", nargs='*', help="Input files (optional)")
+    parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama"], help="Choose the model to use")
+    parser.add_argument("files", nargs='*', help="Input files")
     parser.add_argument("--prompt", help="Prompt text to send immediately")
     parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
     parser.add_argument("--append", "-a", help="Append to the specified file")
@@ -42,11 +42,9 @@ def main():
     config.read(config_path)
 
     if args.model is None:
-        default_model = get_default_model(config)
-        if default_model:
-            args.model = default_model
-        else:
-            parser.error("No model specified and no default model found in config.")
+        args.model = get_default_model(config)
+        if args.model is None:
+            parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
     run_chat_application(args, config)
 
