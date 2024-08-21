@@ -18,14 +18,18 @@ class ChatApplication:
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.model.initialize()
         
-        context = self.prompt_formatter.format_prompt(self.files, initial_prompt, special_command)
-        
-        if context:
-            response = self.process_message(context)
-            if special_command:
-                self.handle_special_command(special_command, response)
-
         print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation.")
+
+        first_message = initial_prompt if initial_prompt else self.ui.get_user_input()
+        
+        if first_message.lower() in ['exit', 'quit', 'q']:
+            return
+
+        context = self.prompt_formatter.format_prompt(self.files, first_message, special_command)
+        response = self.process_message(context)
+        
+        if special_command:
+            self.handle_special_command(special_command, response)
 
         while True:
             user_input = self.ui.get_user_input()
