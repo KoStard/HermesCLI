@@ -111,11 +111,11 @@ class TestRunChatApplication(unittest.TestCase):
 
         run_chat_application(self.args, self.config)
 
-        mock_prompt_formatter.format_prompt.assert_called_once()
-        args, kwargs = mock_prompt_formatter.format_prompt.call_args
-        self.assertEqual(len(args[0]), 2)  # Two files in processed_files
-        self.assertIsNone(args[1])  # prompt is None
-        self.assertIsNone(args[2])  # special_command is None
+        mock_prompt_formatter.format_prompt.assert_called_once_with(
+            {'file1.txt': 'file1.txt', 'file2.txt': 'file2.txt'},
+            None,
+            None
+        )
 
     @patch('hermes.main.ChatApplication')
     @patch('hermes.main.ChatUI')
