@@ -53,16 +53,6 @@ Hermes is a versatile command-line chat application that supports multiple AI mo
    pip install -e .
    ```
 
-5. Enable autocomplete (optional):
-   Add the following line to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
-   ```
-   eval "$(register-python-argcomplete hermes)"
-   ```
-   For fish shell, run this:
-   ```
-   register-python-argcomplete --shell fish hermes > ~/.config/fish/completions/hermes.fish
-   ```
-
 ## Usage
 
 Basic usage:
