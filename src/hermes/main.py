@@ -36,6 +36,9 @@ def main():
     config_path = os.path.expanduser("~/.config/multillmchat/config.ini")
     config.read(config_path)
 
+    run_chat_application(args, config)
+
+def run_chat_application(args, config):
     processed_files = {process_file_name(file): file for file in args.files}
 
     special_command: Dict[str, str] = {}
