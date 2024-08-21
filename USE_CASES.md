@@ -36,25 +36,13 @@
 **Action**: Hermes connects to locally running Ollama for AI interactions.
 **Outcome**: User can work with AI models offline or with enhanced privacy.
 
-## 7. Multi-Model Comparison
-**Need**: Compare responses from different AI models.
-**Usage**: User runs Hermes multiple times with different model options.
-**Action**: Hermes facilitates conversations with various AI models.
-**Outcome**: User can assess and compare the performance of different AI models.
-
-## 8. Image Analysis (for supported models)
+## 7. Image Analysis (for supported models)
 **Need**: Analyze or describe an image.
 **Usage**: User runs Hermes with a supported model and an image file.
 **Action**: Hermes processes the image and allows user to ask questions about it.
 **Outcome**: User receives AI-generated analysis or description of the image.
 
-## 9. Code Review and Explanation
-**Need**: Understand or improve a piece of code.
-**Usage**: User runs Hermes with a code file as input.
-**Action**: Hermes allows user to ask questions or request explanations about the code.
-**Outcome**: User gains better understanding or receives suggestions for code improvement.
-
-## 10. Custom Prompt Templates
+## 8. Custom Prompt Templates
 **Need**: Use a pre-defined prompt structure for consistent interactions.
 **Usage**: User creates a prompt file and runs Hermes with --prompt-file option.
 **Action**: Hermes uses the custom prompt to initiate the conversation with the AI.
