@@ -23,29 +23,20 @@ from .chat_application import ChatApplication
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application")
     parser.add_argument("model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama"], help="Choose the model to use")
-    parser.add_argument("files", nargs='+', help="Input files followed by prompt or prompt file")
+    parser.add_argument("files", nargs='*', help="Input files (optional)")
+    parser.add_argument("--prompt", help="Prompt text to send immediately")
+    parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
     parser.add_argument("--append", "-a", help="Append to the specified file")
     parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--raw", "-r", help="Print the output without rendering markdown", action="store_true")
     parser.add_argument("--confirm-before-starting", help="Will confirm before sending the LLM requests, in case you want to prevent unnecessary calls", action="store_true")
-    parser.add_argument("--ask-for-user-prompt", "-up", action="store_true", help="Prompt for additional user input before sending the initial request")
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
     config_path = os.path.expanduser("~/.config/multillmchat/config.ini")
     config.read(config_path)
 
-    files = args.files[:-1]
-    prompt_or_file = args.files[-1]
-
-    if os.path.isfile(prompt_or_file):
-        print(f"Reading prompt from {prompt_or_file}")
-        with open(prompt_or_file, 'r') as f:
-            prompt = f.read().strip()
-    else:
-        prompt = prompt_or_file
-
-    processed_files = {process_file_name(file): file for file in files}
+    processed_files = {process_file_name(file): file for file in args.files}
 
     special_command: Dict[str, str] = {}
     special_command_raw: Dict[str, str] = {}
@@ -57,7 +48,14 @@ def main():
         special_command['update'] = process_file_name(args.update)
         special_command_raw['update'] = args.update
         processed_files[special_command['update']] = args.update
-    
+
+    prompt = None
+    if args.prompt:
+        prompt = args.prompt
+    elif args.prompt_file:
+        with open(args.prompt_file, 'r') as f:
+            prompt = f.read().strip()
+
     if args.confirm_before_starting:
         while True:
             confirm = input("Are you sure you want to continue? (y/n) ")
@@ -68,11 +66,11 @@ def main():
 
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
-    initial_content = prompt_formatter.format_prompt(processed_files, prompt, special_command if special_command else None)
+    initial_content = prompt_formatter.format_prompt(processed_files, prompt, special_command if special_command else None) if prompt else None
 
     ui = ChatUI(prints_raw=args.raw)
     app = ChatApplication(model, ui, file_processor, prompt_formatter)
-    app.run(initial_content, special_command_raw if special_command_raw else None, args.ask_for_user_prompt)
+    app.run(initial_content, special_command_raw if special_command_raw else None)
 
 def create_model_and_processors(model_name: str, config: configparser.ConfigParser):
     if model_name == "claude":
