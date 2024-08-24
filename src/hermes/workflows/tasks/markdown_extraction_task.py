@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Callable
 
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTChar, LTTextContainer
@@ -9,8 +9,8 @@ from .base import Task
 
 
 class MarkdownExtractionTask(Task):
-    def __init__(self, task_id: str, task_config: Dict[str, Any]):
-        super().__init__(task_id, task_config)
+    def __init__(self, task_id: str, task_config: Dict[str, Any], printer: Callable[[str], None]):
+        super().__init__(task_id, task_config, printer)
 
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
         input_files = context.get_global('input_files', [])

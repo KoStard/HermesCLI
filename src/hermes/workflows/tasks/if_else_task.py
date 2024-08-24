@@ -1,10 +1,10 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable
 from .base import Task
 from ..context import WorkflowContext
 
 class IfElseTask(Task):
-    def __init__(self, task_id: str, task_config: Dict[str, Any], if_task: Task, else_task: Optional[Task] = None):
-        super().__init__(task_id, task_config)
+    def __init__(self, task_id: str, task_config: Dict[str, Any], if_task: Task, else_task: Optional[Task] = None, printer: Callable[[str], None]):
+        super().__init__(task_id, task_config, printer)
         self.condition = task_config['condition']
         self.if_task = if_task
         self.else_task = else_task

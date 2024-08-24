@@ -1,10 +1,10 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Callable
 from .base import Task
 from ..context import WorkflowContext
 
 class MapTask(Task):
-    def __init__(self, task_id: str, task_config: Dict[str, Any], sub_task: Task):
-        super().__init__(task_id, task_config)
+    def __init__(self, task_id: str, task_config: Dict[str, Any], sub_task: Task, printer: Callable[[str], None]):
+        super().__init__(task_id, task_config, printer)
         self.iterable = task_config['iterable']
         self.sub_task = sub_task
 
