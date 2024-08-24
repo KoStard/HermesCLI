@@ -4,7 +4,7 @@ from .context import WorkflowContext
 from .tasks.base import Task
 from .tasks.llm_task import LLMTask
 from .tasks.shell_task import ShellTask
-from .tasks.text_extraction_task import TextExtractionTask
+from .tasks.markdown_extraction_task import MarkdownExtractionTask
 from ..chat_models.base import ChatModel
 from ..file_processors.base import FileProcessor
 from ..prompt_formatters.base import PromptFormatter
@@ -31,8 +31,8 @@ class WorkflowExecutor:
                 self.tasks.append(LLMTask(task_id, task_config, self.model))
             elif task_type == 'shell':
                 self.tasks.append(ShellTask(task_id, task_config))
-            elif task_type == 'text_extraction':
-                self.tasks.append(TextExtractionTask(task_id, task_config))
+            elif task_type == 'markdown_extract':
+                self.tasks.append(MarkdownExtractionTask(task_id, task_config))
             else:
                 raise ValueError(f"Unknown task type: {task_type}")
 
