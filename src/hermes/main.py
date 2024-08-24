@@ -35,7 +35,7 @@ def main():
     parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--raw", "-r", help="Print the output without rendering markdown", action="store_true")
     parser.add_argument("--confirm-before-starting", help="Will confirm before sending the LLM requests, in case you want to prevent unnecessary calls", action="store_true")
-    parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
+    add_workflow_arguments(parser)
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -52,10 +52,11 @@ def main():
 
         run_chat_application(args, config)
 
+from .cli.workflow_commands import add_workflow_arguments, execute_workflow
+
 def run_workflow(args, config):
-    # TODO: Implement workflow execution
-    print("Workflow execution is not yet implemented.")
-    sys.exit(1)
+    model, _, _ = create_model_and_processors(args.model, config)
+    execute_workflow(args, model)
 
 def run_chat_application(args, config):
     processed_files = {process_file_name(file): file for file in args.files}
