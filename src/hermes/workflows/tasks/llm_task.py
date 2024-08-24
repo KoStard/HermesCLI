@@ -1,12 +1,12 @@
-from typing import Any, Dict
+from typing import Any, Dict, Callable
 from .base import Task
 from ...chat_models.base import ChatModel
 from ...workflows.context import WorkflowContext
 from ...utils.file_utils import process_file_name
 
 class LLMTask(Task):
-    def __init__(self, task_id: str, task_config: Dict[str, Any], model: ChatModel):
-        super().__init__(task_id, task_config)
+    def __init__(self, task_id: str, task_config: Dict[str, Any], model: ChatModel, printer: Callable[[str], None]):
+        super().__init__(task_id, task_config, printer)
         self.model = model
 
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
@@ -45,9 +45,11 @@ class LLMTask(Task):
         # Send the message to the model and collect the response
         response = ""
         for chunk in self.model.send_message(full_message):
-            print(chunk, end='')
+            if self.print_output:
+                self.printer(chunk)
             response += chunk
-        print()
+        if self.print_output:
+            self.printer("\n")
 
         return {
             'response': response,

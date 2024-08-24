@@ -6,7 +6,7 @@ from ..chat_models.base import ChatModel
 from ..prompt_formatters.base import PromptFormatter
 
 class WorkflowExecutor:
-    def __init__(self, workflow_file: str, model: ChatModel, prompt_formatter: PromptFormatter, input_files: List[str], initial_prompt: str):
+    def __init__(self, workflow_file: str, model: ChatModel, prompt_formatter: PromptFormatter, input_files: List[str], initial_prompt: str, printer: Callable[[str], None]):
         self.model = model
         self.parser = WorkflowParser(self.model)
         self.context = WorkflowContext()
@@ -18,13 +18,14 @@ class WorkflowExecutor:
         self.context.set_global('input_files', input_files)
         self.context.set_global('initial_prompt', initial_prompt)
         self.context.set_global('prompt_formatter', prompt_formatter)
+        self.printer = printer
 
     def execute(self) -> Dict[str, Any]:
         """Execute the workflow and return the final context."""
         self.model.initialize()
 
         for task_id, task in self.tasks.items():
-            print(f"Executing task: {task_id}")
+            self.printer(f"Executing task: {task_id}")
             result = task.execute(self.context)
 
             # Check for output mapping

@@ -1,5 +1,5 @@
 import yaml
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Callable
 
 from hermes.chat_models.base import ChatModel
 from .tasks.base import Task
@@ -10,8 +10,9 @@ from .tasks.map_task import MapTask
 from .tasks.if_else_task import IfElseTask
 
 class WorkflowParser:
-    def __init__(self, model: ChatModel):
+    def __init__(self, model: ChatModel, printer: Callable[[str], None]):
         self.model = model
+        self.printer = printer
 
     def parse(self, workflow_file: str) -> Dict[str, Any]:
         """
@@ -34,7 +35,7 @@ class WorkflowParser:
             if self.validate_workflow(workflow):
                 parsed_tasks = {}
                 for task_id, task_config in workflow.get('tasks', {}).items():
-                    parsed_tasks[task_id] = self.parse_task(task_id, task_config)
+                    parsed_tasks[task_id] = self.parse_task(task_id, task_config, self.printer)
                 workflow['tasks'] = parsed_tasks
                 return workflow
             else:
@@ -61,7 +62,7 @@ class WorkflowParser:
                 return False
         return True
 
-    def parse_task(self, task_id: str, task_config: Dict[str, Any]) -> Task:
+    def parse_task(self, task_id: str, task_config: Dict[str, Any], printer: Callable[[str], None]) -> Task:
         """
         Parse a single task configuration and return the appropriate Task object.
 
@@ -77,19 +78,19 @@ class WorkflowParser:
         """
         task_type = task_config.get('type')
         if task_type == 'llm':
-            return LLMTask(task_id, task_config, self.model)
+            return LLMTask(task_id, task_config, self.model, printer)
         elif task_type == 'shell':
-            return ShellTask(task_id, task_config)
+            return ShellTask(task_id, task_config, printer)
         elif task_type == 'markdown_extract':
-            return MarkdownExtractionTask(task_id, task_config)
+            return MarkdownExtractionTask(task_id, task_config, printer)
         elif task_type == 'map':
-            sub_task = self.parse_task(f"{task_id}_sub", task_config['task'])
-            return MapTask(task_id, task_config, sub_task)
+            sub_task = self.parse_task(f"{task_id}_sub", task_config['task'], printer)
+            return MapTask(task_id, task_config, sub_task, printer)
         elif task_type == 'if_else':
-            if_task = self.parse_task(f"{task_id}_if", task_config['if_task'])
+            if_task = self.parse_task(f"{task_id}_if", task_config['if_task'], printer)
             else_task = None
             if 'else_task' in task_config:
-                else_task = self.parse_task(f"{task_id}_else", task_config['else_task'])
-            return IfElseTask(task_id, task_config, if_task, else_task)
+                else_task = self.parse_task(f"{task_id}_else", task_config['else_task'], printer)
+            return IfElseTask(task_id, task_config, if_task, else_task, printer)
         else:
             raise ValueError(f"Unknown task type: {task_type}")

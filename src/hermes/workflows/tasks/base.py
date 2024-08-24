@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Callable
 
 from hermes.workflows.context import WorkflowContext
 
 class Task(ABC):
-    def __init__(self, task_id: str, task_config: Dict[str, Any]):
+    def __init__(self, task_id: str, task_config: Dict[str, Any], printer: Callable[[str], None]):
         self.task_id = task_id
         self.task_config = task_config
+        self.printer = printer
+        self.print_output = task_config.get('print_output', False)
 
     @abstractmethod
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
