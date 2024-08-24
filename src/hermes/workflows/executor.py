@@ -28,6 +28,9 @@ class WorkflowExecutor:
             self.printer(f"Executing task: {task_id}")
             result = task.execute(self.context)
 
+            # Store the task result in the task context
+            self.context.task_contexts[task_id] = result
+
             # Check for output mapping
             output_mapping = task.get_config('output_mapping', {})
             for key, value in output_mapping.items():
