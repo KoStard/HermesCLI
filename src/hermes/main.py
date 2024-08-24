@@ -20,6 +20,7 @@ from .chat_models.ollama import OllamaModel
 from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
 from .cli.workflow_commands import add_workflow_arguments, execute_workflow
+from .workflows.executor import WorkflowExecutor
 
 def get_default_model(config):
     if 'DEFAULT' in config and 'model' in config['DEFAULT']:
