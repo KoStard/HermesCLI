@@ -3,7 +3,7 @@ from .base import Task
 from ..context import WorkflowContext
 
 class IfElseTask(Task):
-    def __init__(self, task_id: str, task_config: Dict[str, Any], if_task: Task, else_task: Optional[Task] = None, printer: Callable[[str], None]):
+    def __init__(self, task_id: str, task_config: Dict[str, Any], if_task: Task, printer: Callable[[str], None], else_task: Optional[Task] = None):
         super().__init__(task_id, task_config, printer)
         self.condition = task_config['condition']
         self.if_task = if_task
