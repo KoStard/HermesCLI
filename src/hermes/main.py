@@ -36,7 +36,7 @@ def main():
     parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--raw", "-r", help="Print the output without rendering markdown", action="store_true")
     parser.add_argument("--confirm-before-starting", help="Will confirm before sending the LLM requests, in case you want to prevent unnecessary calls", action="store_true")
-    add_workflow_arguments(parser)
+    parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -51,12 +51,18 @@ def main():
     if args.workflow:
         run_workflow(args, config)
     else:
-
         run_chat_application(args, config)
 
 def run_workflow(args, config):
-    model, _, _ = create_model_and_processors(args.model, config)
-    execute_workflow(args, model)
+    model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
+
+    executor = WorkflowExecutor(args.workflow, model, input_files, initial_prompt)
+    result = executor.execute()
+
+    print("Workflow execution completed.")
+    print("Final context:")
+    for key, value in result.items():
+        print(f"{key}: {value}")
 
 def run_chat_application(args, config):
     processed_files = {process_file_name(file): file for file in args.files}
@@ -112,7 +118,7 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
         prompt_formatter = XMLPromptFormatter(file_processor)
     else:
         raise ValueError(f"Unsupported model: {model_name}")
-    
+
     return model, file_processor, prompt_formatter
 
 if __name__ == "__main__":

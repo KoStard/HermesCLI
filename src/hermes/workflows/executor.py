@@ -13,7 +13,7 @@ class WorkflowExecutor:
         self.model = model
         self.workflow = self.parser.parse(workflow_file)
         self.tasks: List[Task] = []
-        
+
         # Set initial global context
         self.context.set_global('input_files', input_files)
         self.context.set_global('initial_prompt', initial_prompt)
@@ -32,14 +32,11 @@ class WorkflowExecutor:
     def execute(self) -> Dict[str, Any]:
         """Execute the workflow and return the final context."""
         self.prepare_tasks()
-        
+
         for task in self.tasks:
             print(f"Executing task: {task.task_id}")
-            result = task.execute(self.context.global_context)
-            
-            # Update global context with task result
-            self.context.set_global(f"{task.task_id}_result", result)
-            
+            result = task.execute(self.context)
+
             # Check for output mapping
             output_mapping = task.get_config('output_mapping', {})
             for key, value in output_mapping.items():
@@ -47,5 +44,5 @@ class WorkflowExecutor:
                     result_key = value.split('.', 1)[1]
                     if result_key in result:
                         self.context.set_global(key, result[result_key])
-        
+
         return self.context.global_context
