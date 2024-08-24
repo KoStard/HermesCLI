@@ -7,12 +7,16 @@ from .tasks.shell_task import ShellTask
 from ..chat_models.base import ChatModel
 
 class WorkflowExecutor:
-    def __init__(self, workflow_file: str, model: ChatModel):
+    def __init__(self, workflow_file: str, model: ChatModel, input_files: List[str], initial_prompt: str):
         self.parser = WorkflowParser()
         self.context = WorkflowContext()
         self.model = model
         self.workflow = self.parser.parse(workflow_file)
         self.tasks: List[Task] = []
+        
+        # Set initial global context
+        self.context.set_global('input_files', input_files)
+        self.context.set_global('initial_prompt', initial_prompt)
 
     def prepare_tasks(self):
         """Prepare the list of tasks based on the parsed workflow."""
@@ -32,7 +36,6 @@ class WorkflowExecutor:
         for task in self.tasks:
             print(f"Executing task: {task.task_id}")
             result = task.execute(self.context.global_context)
-            self.context.set_task_context(task.task_id, 'result', result)
             
             # Update global context with task result
             self.context.set_global(f"{task.task_id}_result", result)
