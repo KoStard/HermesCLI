@@ -59,7 +59,7 @@ def run_workflow(args, config):
     input_files = args.files
     initial_prompt = args.prompt or (open(args.prompt_file, 'r').read().strip() if args.prompt_file else "")
 
-    executor = WorkflowExecutor(args.workflow, model, file_processor, prompt_formatter, input_files, initial_prompt)
+    executor = WorkflowExecutor(args.workflow, model, prompt_formatter, input_files, initial_prompt)
     result = executor.execute()
 
     print("Workflow execution completed.")
