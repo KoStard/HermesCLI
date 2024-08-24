@@ -144,3 +144,41 @@ Contributions to Hermes are welcome! Please feel free to submit pull requests, c
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Using Workflows
+
+Hermes now supports executing complex workflows defined in YAML files. Here's a simple example of how to use workflows:
+
+1. Create a YAML file defining your workflow (e.g., `my_workflow.yaml`):
+
+```yaml
+tasks:
+  task1:
+    type: llm
+    prompt: "Summarize the following text: {input_text}"
+    output_mapping:
+      summary: result.response
+
+  task2:
+    type: shell
+    command: "echo 'Summary: {summary}' > summary.txt"
+
+  task3:
+    type: llm
+    prompt: "Generate 3 questions based on this summary: {summary}"
+    output_mapping:
+      questions: result.response
+```
+
+2. Run the workflow using the Hermes CLI:
+
+```
+hermes --workflow my_workflow.yaml --model claude
+```
+
+This workflow does the following:
+1. Sends a prompt to the LLM to summarize some input text.
+2. Saves the summary to a file using a shell command.
+3. Generates questions based on the summary using the LLM.
+
+You can define more complex workflows with multiple LLM and shell tasks, using the output of one task as input for another.
