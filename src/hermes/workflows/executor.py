@@ -2,11 +2,7 @@ from typing import Dict, Any, List
 from .parser import WorkflowParser
 from .context import WorkflowContext
 from .tasks.base import Task
-from .tasks.llm_task import LLMTask
-from .tasks.shell_task import ShellTask
-from .tasks.markdown_extraction_task import MarkdownExtractionTask
 from ..chat_models.base import ChatModel
-from ..file_processors.base import FileProcessor
 from ..prompt_formatters.base import PromptFormatter
 
 class WorkflowExecutor:
@@ -16,33 +12,19 @@ class WorkflowExecutor:
         self.model = model
         self.prompt_formatter = prompt_formatter
         self.workflow = self.parser.parse(workflow_file)
-        self.tasks: List[Task] = []
+        self.tasks: Dict[str, Task] = self.workflow.get('tasks', {})
 
         # Set initial global context
         self.context.set_global('input_files', input_files)
         self.context.set_global('initial_prompt', initial_prompt)
         self.context.set_global('prompt_formatter', prompt_formatter)
 
-    def prepare_tasks(self):
-        """Prepare the list of tasks based on the parsed workflow."""
-        for task_id, task_config in self.workflow.get('tasks', {}).items():
-            task_type = task_config.get('type')
-            if task_type == 'llm':
-                self.tasks.append(LLMTask(task_id, task_config, self.model))
-            elif task_type == 'shell':
-                self.tasks.append(ShellTask(task_id, task_config))
-            elif task_type == 'markdown_extract':
-                self.tasks.append(MarkdownExtractionTask(task_id, task_config))
-            else:
-                raise ValueError(f"Unknown task type: {task_type}")
-
     def execute(self) -> Dict[str, Any]:
         """Execute the workflow and return the final context."""
-        self.prepare_tasks()
         self.model.initialize()
 
-        for task in self.tasks:
-            print(f"Executing task: {task.task_id}")
+        for task_id, task in self.tasks.items():
+            print(f"Executing task: {task_id}")
             result = task.execute(self.context)
 
             # Check for output mapping
