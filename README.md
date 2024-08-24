@@ -1,10 +1,10 @@
-# Hermes: Chat with AI Models and Files
+# Hermes: Chat with AI Models, Files, and Execute Workflows
 
-Hermes is a command-line tool that lets you chat with different AI models. It's named after the messenger god in Greek myths. With Hermes, you can talk to AI about files on your computer.
+Hermes is a powerful command-line tool that enables you to interact with various AI models, process files, and execute complex workflows. Named after the messenger god in Greek mythology, Hermes facilitates seamless communication between you, AI models, and your local files.
 
 ## What Hermes Can Do
 
-- Chat with many AI models:
+- Chat with a variety of AI models:
   - Claude (Anthropic)
   - Bedrock Claude
   - Bedrock Claude 3.5
@@ -21,6 +21,7 @@ Hermes is a command-line tool that lets you chat with different AI models. It's 
 - Raw output option for unformatted responses
 - Confirmation prompt to prevent unnecessary API calls
 - Autocomplete support for model selection
+- **NEW: Execute complex workflows defined in YAML files**
 
 ## Installation
 

@@ -26,7 +26,7 @@ def get_default_model(config):
     return None
 
 def main():
-    parser = argparse.ArgumentParser(description="Multi-model chat application")
+    parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
     parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama"], help="Choose the model to use")
     parser.add_argument("files", nargs='*', help="Input files")
     parser.add_argument("--prompt", help="Prompt text to send immediately")
@@ -35,18 +35,27 @@ def main():
     parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--raw", "-r", help="Print the output without rendering markdown", action="store_true")
     parser.add_argument("--confirm-before-starting", help="Will confirm before sending the LLM requests, in case you want to prevent unnecessary calls", action="store_true")
+    parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
     config_path = os.path.expanduser("~/.config/multillmchat/config.ini")
     config.read(config_path)
 
-    if args.model is None:
-        args.model = get_default_model(config)
+    if args.workflow:
+        run_workflow(args, config)
+    else:
         if args.model is None:
-            parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
+            args.model = get_default_model(config)
+            if args.model is None:
+                parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
-    run_chat_application(args, config)
+        run_chat_application(args, config)
+
+def run_workflow(args, config):
+    # TODO: Implement workflow execution
+    print("Workflow execution is not yet implemented.")
+    sys.exit(1)
 
 def run_chat_application(args, config):
     processed_files = {process_file_name(file): file for file in args.files}
