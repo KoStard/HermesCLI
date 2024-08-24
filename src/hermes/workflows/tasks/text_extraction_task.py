@@ -1,24 +1,34 @@
-from typing import Any, Dict
+import os
+from typing import Any, Dict, List
+from PyPDF2 import PdfReader
 from .base import Task
 from ...workflows.context import WorkflowContext
-from ...file_processors.default import DefaultFileProcessor
 
 class TextExtractionTask(Task):
     def __init__(self, task_id: str, task_config: Dict[str, Any]):
         super().__init__(task_id, task_config)
-        self.file_processor = DefaultFileProcessor()
 
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
-        file_path = self.get_config('file_path')
-        if not file_path:
-            raise ValueError(f"No file path specified for text extraction task {self.task_id}")
+        input_files = context.get_global('input_files', [])
+        if not input_files:
+            raise ValueError(f"No input files specified for text extraction task {self.task_id}")
 
-        # Use the file path from the config, or try to get it from the context
-        file_path = file_path.format(**context.global_context)
-
-        extracted_text = self.file_processor.read_file(file_path)
+        extracted_texts = {}
+        for file_path in input_files:
+            if file_path.lower().endswith('.pdf'):
+                extracted_text = self.extract_text_from_pdf(file_path)
+                extracted_texts[os.path.basename(file_path)] = extracted_text
+            else:
+                print(f"Warning: Skipping non-PDF file: {file_path}")
 
         return {
-            'extracted_text': extracted_text,
-            'file_path': file_path
+            'extracted_texts': extracted_texts
         }
+
+    def extract_text_from_pdf(self, file_path: str) -> str:
+        with open(file_path, 'rb') as file:
+            reader = PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+        return text

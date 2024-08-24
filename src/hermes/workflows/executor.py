@@ -10,11 +10,10 @@ from ..file_processors.base import FileProcessor
 from ..prompt_formatters.base import PromptFormatter
 
 class WorkflowExecutor:
-    def __init__(self, workflow_file: str, model: ChatModel, file_processor: FileProcessor, prompt_formatter: PromptFormatter, input_files: List[str], initial_prompt: str):
+    def __init__(self, workflow_file: str, model: ChatModel, prompt_formatter: PromptFormatter, input_files: List[str], initial_prompt: str):
         self.parser = WorkflowParser()
         self.context = WorkflowContext()
         self.model = model
-        self.file_processor = file_processor
         self.prompt_formatter = prompt_formatter
         self.workflow = self.parser.parse(workflow_file)
         self.tasks: List[Task] = []
@@ -22,7 +21,6 @@ class WorkflowExecutor:
         # Set initial global context
         self.context.set_global('input_files', input_files)
         self.context.set_global('initial_prompt', initial_prompt)
-        self.context.set_global('file_processor', file_processor)
         self.context.set_global('prompt_formatter', prompt_formatter)
 
     def prepare_tasks(self):
