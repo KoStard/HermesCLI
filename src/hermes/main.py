@@ -19,6 +19,7 @@ from .chat_models.openai import OpenAIModel
 from .chat_models.ollama import OllamaModel
 from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
+from .cli.workflow_commands import add_workflow_arguments, execute_workflow
 
 def get_default_model(config):
     if 'DEFAULT' in config and 'model' in config['DEFAULT']:
@@ -42,17 +43,16 @@ def main():
     config_path = os.path.expanduser("~/.config/multillmchat/config.ini")
     config.read(config_path)
 
+    if args.model is None:
+        args.model = get_default_model(config)
+        if args.model is None:
+            parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
+
     if args.workflow:
         run_workflow(args, config)
     else:
-        if args.model is None:
-            args.model = get_default_model(config)
-            if args.model is None:
-                parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
         run_chat_application(args, config)
-
-from .cli.workflow_commands import add_workflow_arguments, execute_workflow
 
 def run_workflow(args, config):
     model, _, _ = create_model_and_processors(args.model, config)
