@@ -14,22 +14,33 @@ class LLMTask(Task):
         if not prompt:
             raise ValueError(f"No prompt specified for LLM task {self.task_id}")
 
-        # Get the prompt formatter and file processor from the global context
+        # Get the prompt formatter from the global context
         prompt_formatter = context.get_global('prompt_formatter')
 
-        # Process input files
-        input_files = context.get_global('input_files', [])
-        processed_files = {}
-        for file_path in input_files:
-            processed_name = process_file_name(file_path)
-            processed_files[processed_name] = file_path
+        # Check if we should pass input files
+        pass_input_files = self.get_config('pass_input_files', False)
 
-        # Prepare the full context for the LLM
-        full_message = prompt_formatter.format_prompt(
-            processed_files,
-            prompt,
-            context.get_global('initial_prompt', '')
-        )
+        if pass_input_files:
+            # Process input files
+            input_files = context.get_global('input_files', [])
+            processed_files = {}
+            for file_path in input_files:
+                processed_name = process_file_name(file_path)
+                processed_files[processed_name] = file_path
+
+            # Prepare the full context for the LLM with input files
+            full_message = prompt_formatter.format_prompt(
+                processed_files,
+                prompt,
+                context.get_global('initial_prompt', '')
+            )
+        else:
+            # Prepare the full context for the LLM without input files
+            full_message = prompt_formatter.format_prompt(
+                {},
+                prompt,
+                context.get_global('initial_prompt', '')
+            )
 
         # Send the message to the model and collect the response
         response = ""
