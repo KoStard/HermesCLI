@@ -63,6 +63,42 @@ This sub-project aims to enhance Hermes by adding support for workflows, allowin
 9. Write documentation and create example workflows
 10. Develop comprehensive testing suite
 
+## Package Structure
+
+To implement workflow support, we'll add the following new folders and files to the existing Hermes package structure:
+
+```
+src/hermes/
+├── workflows/
+│   ├── __init__.py
+│   ├── parser.py
+│   ├── executor.py
+│   ├── context.py
+│   ├── tasks/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── llm_task.py
+│   │   └── shell_task.py
+│   └── repository.py
+└── cli/
+    └── workflow_commands.py
+
+```
+
+### Description of new components:
+
+1. `workflows/`: Main package for workflow-related functionality
+   - `parser.py`: Responsible for parsing YAML workflow definitions
+   - `executor.py`: Handles the execution of parsed workflows
+   - `context.py`: Manages global and task-specific context during workflow execution
+   - `tasks/`: Subpackage for different types of workflow tasks
+     - `base.py`: Defines the base Task class
+     - `llm_task.py`: Implements LLM interaction tasks
+     - `shell_task.py`: Implements shell command execution tasks
+   - `repository.py`: Manages the central repository of workflow files
+
+2. `cli/workflow_commands.py`: Implements CLI commands for workflow execution and management
+
 ## Future Enhancements
 
 - GUI for workflow creation and management
