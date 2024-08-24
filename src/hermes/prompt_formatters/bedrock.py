@@ -11,7 +11,7 @@ class BedrockPromptFormatter(PromptFormatter):
 
     def format_prompt(self, files: Dict[str, str], prompt: str, special_command: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
         contents = []
-    
+
         for processed_name, file_path in files.items():
             if is_binary(file_path):
                 _, ext = os.path.splitext(file_path)
@@ -55,6 +55,6 @@ class BedrockPromptFormatter(PromptFormatter):
             if special_prompt:
                 contents.append({'text': special_prompt + '\n'})
         return contents
-    
+
     def add_content(self, current, content_to_add: str) -> Any:
         return [*current, {'text': content_to_add + '\n'}]

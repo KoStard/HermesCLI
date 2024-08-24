@@ -10,39 +10,36 @@ class LLMTask(Task):
         self.model = model
 
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
-        prompt = self.get_config('prompt')
+        prompt = self.get_config('prompt').format(**context.global_context)
         if not prompt:
             raise ValueError(f"No prompt specified for LLM task {self.task_id}")
 
         # Get the prompt formatter and file processor from the global context
         prompt_formatter = context.get_global('prompt_formatter')
-        file_processor = context.get_global('file_processor')
-
-        # Format the prompt using the prompt formatter
-        formatted_prompt = prompt_formatter.format(prompt, context.global_context)
 
         # Process input files
         input_files = context.get_global('input_files', [])
         processed_files = {}
         for file_path in input_files:
             processed_name = process_file_name(file_path)
-            processed_files[processed_name] = file_processor.read_file(file_path)
+            processed_files[processed_name] = file_path
 
         # Prepare the full context for the LLM
-        full_context = prompt_formatter.format_prompt(
+        full_message = prompt_formatter.format_prompt(
             processed_files,
-            formatted_prompt,
+            prompt,
             context.get_global('initial_prompt', '')
         )
 
         # Send the message to the model and collect the response
         response = ""
-        for chunk in self.model.send_message(full_context):
+        for chunk in self.model.send_message(full_message):
+            print(chunk, end='')
             response += chunk
+        print()
 
         return {
             'response': response,
-            'prompt': formatted_prompt,
-            'full_context': full_context,
-            'processed_files': processed_files
+            'prompt': prompt,
+            'full_message': full_message
         }

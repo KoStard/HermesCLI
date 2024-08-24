@@ -7,9 +7,8 @@ def is_binary(file_path):
     :param file_path: Path to the file.
     :return: True if the file is likely binary, False if it is likely text.
     """
-    TEXT_CHARACTERS = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
     NULL_BYTE = b'\x00'
-    
+
     if not os.path.exists(file_path):
         return False
 
@@ -22,12 +21,14 @@ def is_binary(file_path):
         if NULL_BYTE in sample:
             return True
 
-        # Check for non-text characters
-        if not all(c in TEXT_CHARACTERS for c in sample.decode('latin1', errors='ignore')):
+        # Try to decode as UTF-8, which covers all Unicode characters
+        try:
+            sample.decode('utf-8')
+            return False
+        except UnicodeDecodeError:
             return True
 
-        return False
-    except (OSError, UnicodeDecodeError):
+    except OSError:
         # If we encounter an error reading the file, assume it's binary
         return True
 

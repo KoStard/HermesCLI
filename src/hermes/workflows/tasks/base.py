@@ -1,18 +1,20 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
+from hermes.workflows.context import WorkflowContext
+
 class Task(ABC):
     def __init__(self, task_id: str, task_config: Dict[str, Any]):
         self.task_id = task_id
         self.task_config = task_config
 
     @abstractmethod
-    def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, context: WorkflowContext) -> Dict[str, Any]:
         """
         Execute the task and return the result.
 
         Args:
-            context (Dict[str, Any]): The current workflow context.
+            context (WorkflowContext): The workflow context.
 
         Returns:
             Dict[str, Any]: The result of the task execution.

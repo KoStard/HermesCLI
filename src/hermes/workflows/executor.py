@@ -38,6 +38,7 @@ class WorkflowExecutor:
     def execute(self) -> Dict[str, Any]:
         """Execute the workflow and return the final context."""
         self.prepare_tasks()
+        self.model.initialize()
 
         for task in self.tasks:
             print(f"Executing task: {task.task_id}")
