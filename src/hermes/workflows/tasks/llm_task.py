@@ -2,6 +2,7 @@ from typing import Any, Dict
 from .base import Task
 from ...chat_models.base import ChatModel
 from ...workflows.context import WorkflowContext
+from ...utils.file_utils import process_file_name
 
 class LLMTask(Task):
     def __init__(self, task_id: str, task_config: Dict[str, Any], model: ChatModel):
@@ -24,12 +25,13 @@ class LLMTask(Task):
         input_files = context.get_global('input_files', [])
         processed_files = {}
         for file_path in input_files:
-            processed_files[file_path] = file_processor.read_file(file_path)
+            processed_name = process_file_name(file_path)
+            processed_files[processed_name] = file_processor.read_file(file_path)
 
         # Prepare the full context for the LLM
-        full_context = prompt_formatter.build_context(
-            formatted_prompt,
+        full_context = prompt_formatter.format_prompt(
             processed_files,
+            formatted_prompt,
             context.get_global('initial_prompt', '')
         )
 
