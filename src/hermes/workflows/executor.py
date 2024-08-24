@@ -7,9 +7,9 @@ from ..prompt_formatters.base import PromptFormatter
 
 class WorkflowExecutor:
     def __init__(self, workflow_file: str, model: ChatModel, prompt_formatter: PromptFormatter, input_files: List[str], initial_prompt: str):
-        self.parser = WorkflowParser()
-        self.context = WorkflowContext()
         self.model = model
+        self.parser = WorkflowParser(self.model)
+        self.context = WorkflowContext()
         self.prompt_formatter = prompt_formatter
         self.workflow = self.parser.parse(workflow_file)
         self.tasks: Dict[str, Task] = self.workflow.get('tasks', {})

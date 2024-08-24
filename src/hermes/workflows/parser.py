@@ -1,5 +1,7 @@
 import yaml
 from typing import Dict, Any, List
+
+from hermes.chat_models.base import ChatModel
 from .tasks.base import Task
 from .tasks.llm_task import LLMTask
 from .tasks.shell_task import ShellTask
@@ -8,8 +10,8 @@ from .tasks.map_task import MapTask
 from .tasks.if_else_task import IfElseTask
 
 class WorkflowParser:
-    def __init__(self):
-        pass
+    def __init__(self, model: ChatModel):
+        self.model = model
 
     def parse(self, workflow_file: str) -> Dict[str, Any]:
         """
@@ -75,7 +77,7 @@ class WorkflowParser:
         """
         task_type = task_config.get('type')
         if task_type == 'llm':
-            return LLMTask(task_id, task_config)
+            return LLMTask(task_id, task_config, self.model)
         elif task_type == 'shell':
             return ShellTask(task_id, task_config)
         elif task_type == 'markdown_extract':
