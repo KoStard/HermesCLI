@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import os
+import yaml
+from datetime import datetime
 import sys
 import argparse
 import configparser
@@ -65,10 +67,23 @@ def run_workflow(args, config):
     executor = WorkflowExecutor(args.workflow, model, prompt_formatter, input_files, initial_prompt, custom_print)
     result = executor.execute()
 
-    print("Workflow execution completed.")
-    print("Final context:")
-    for key, value in result.items():
-        print(f"{key}: {value}")
+    # Create a detailed report of all context
+    report = {
+        'global_context': result,
+        'task_contexts': executor.context.task_contexts
+    }
+
+    # Create /tmp/hermes/ directory if it doesn't exist
+    os.makedirs('/tmp/hermes/', exist_ok=True)
+
+    # Generate filename with matching name and date-time suffix
+    filename = f"/tmp/hermes/{os.path.basename(args.workflow)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
+
+    # Save the report as a YAML file
+    with open(filename, 'w') as f:
+        yaml.dump(report, f)
+
+    print(f"Workflow execution completed. Detailed report saved to {filename}")
 
 def run_chat_application(args, config):
     processed_files = {process_file_name(file): file for file in args.files}
