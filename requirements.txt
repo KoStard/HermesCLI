@@ -6,3 +6,4 @@ PyPDF2
 rich
 openai
 argcomplete
+pyyaml
