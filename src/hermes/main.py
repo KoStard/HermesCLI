@@ -52,6 +52,9 @@ def main():
         run_workflow(args, config)
     else:
         run_chat_application(args, config)
+        
+def custom_print(text, *args, **kwargs):
+    print(text, flush=True, *args, **kwargs)
 
 def run_workflow(args, config):
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
@@ -59,7 +62,7 @@ def run_workflow(args, config):
     input_files = args.files
     initial_prompt = args.prompt or (open(args.prompt_file, 'r').read().strip() if args.prompt_file else "")
 
-    executor = WorkflowExecutor(args.workflow, model, prompt_formatter, input_files, initial_prompt, print)
+    executor = WorkflowExecutor(args.workflow, model, prompt_formatter, input_files, initial_prompt, custom_print)
     result = executor.execute()
 
     print("Workflow execution completed.")

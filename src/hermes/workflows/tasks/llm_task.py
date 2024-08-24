@@ -46,7 +46,7 @@ class LLMTask(Task):
         response = ""
         for chunk in self.model.send_message(full_message):
             if self.print_output:
-                self.printer(chunk)
+                self.printer(chunk, end='')
             response += chunk
         if self.print_output:
             self.printer("\n")

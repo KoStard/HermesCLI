@@ -8,7 +8,8 @@ from ..prompt_formatters.base import PromptFormatter
 class WorkflowExecutor:
     def __init__(self, workflow_file: str, model: ChatModel, prompt_formatter: PromptFormatter, input_files: List[str], initial_prompt: str, printer: Callable[[str], None]):
         self.model = model
-        self.parser = WorkflowParser(self.model)
+        self.printer = printer
+        self.parser = WorkflowParser(self.model, self.printer)
         self.context = WorkflowContext()
         self.prompt_formatter = prompt_formatter
         self.workflow = self.parser.parse(workflow_file)
@@ -18,7 +19,6 @@ class WorkflowExecutor:
         self.context.set_global('input_files', input_files)
         self.context.set_global('initial_prompt', initial_prompt)
         self.context.set_global('prompt_formatter', prompt_formatter)
-        self.printer = printer
 
     def execute(self) -> Dict[str, Any]:
         """Execute the workflow and return the final context."""
