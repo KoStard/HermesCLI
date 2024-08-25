@@ -85,13 +85,13 @@ class WorkflowParser:
             sub_task = self.parse_task(f"{task_id}_sub", task_config['task'])
             return MapTask(task_id, task_config, sub_task, self.printer)
         elif task_type == 'if_else':
-            if_task = self.parse_task(f"{task_id}_if", task_config['if_task'])
+            if_task = self.parse_task(f"{task_id}.if", task_config['if_task'])
             else_task = None
             if 'else_task' in task_config:
-                else_task = self.parse_task(f"{task_id}_else", task_config['else_task'])
+                else_task = self.parse_task(f"{task_id}.else", task_config['else_task'])
             return IfElseTask(task_id, task_config, if_task, self.printer, else_task)
         elif task_type == 'sequential':
-            sub_tasks = [self.parse_task(f"{task_id}_{i}", sub_task) for i, sub_task in enumerate(task_config['tasks'])]
+            sub_tasks = [self.parse_task(f"{task_id}.{subtask_id}", sub_task) for subtask_id, sub_task in task_config['tasks'].items()]
             return SequentialTask(task_id, task_config, sub_tasks, self.printer)
         else:
             raise ValueError(f"Unknown task type: {task_type}")

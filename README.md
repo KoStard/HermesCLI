@@ -152,23 +152,15 @@ Hermes now supports executing complex workflows defined in YAML files. Here's a 
 1. Create a YAML file defining your workflow (e.g., `my_workflow.yaml`):
 
 ```yaml
-type: sequential
-tasks:
-  - id: task1
-    type: llm
-    prompt: "Summarize the following text: {input_text}"
-    output_mapping:
-      summary: result.response
-
-  - id: task2
-    type: shell
-    command: "echo 'Summary: {summary}' > summary.txt"
-
-  - id: task3
-    type: llm
-    prompt: "Generate 3 questions based on this summary: {summary}"
-    output_mapping:
-      questions: result.response
+my_root_task:
+  type: sequential
+  tasks:
+    task1:
+      type: llm
+      prompt: "Hello, world!"
+    task2:
+      type: shell
+      command: "echo 'Task completed'"
 ```
 
 2. Run the workflow using the Hermes CLI:
