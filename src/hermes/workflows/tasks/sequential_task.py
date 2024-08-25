@@ -13,9 +13,14 @@ class SequentialTask(Task):
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
         context = context.copy()
         results = {}
+        debug_results = []
         for sub_task in self.sub_tasks:
             sub_result = sub_task.execute(context)
             results[sub_task.task_id] = sub_result
+            debug_results.append({
+                'task_id': sub_task.task_id,
+                'result': sub_result
+            })
 
             # Update global context with output mappings
             output_mapping = sub_task.get_config('output_mapping', {})
@@ -26,4 +31,7 @@ class SequentialTask(Task):
                         context.set_global(key, sub_result[result_key])
                         results[key] = sub_result[result_key]
 
+        results['_debug'] = {
+            'task_results': debug_results
+        }
         return results

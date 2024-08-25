@@ -13,6 +13,7 @@ class MapTask(Task):
 
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
         results = []
+        debug_results = []
         iterable_value = context.get_global(self.iterable)
         output_mapping = self.sub_task.get_config('output_mapping', {})
         mapped_results = {key: [] for key in output_mapping}
@@ -23,6 +24,10 @@ class MapTask(Task):
             sub_context.set_global('item', item)
             task_result = self.sub_task.execute(sub_context)
             results.append(task_result)
+            debug_results.append({
+                'item': item,
+                'result': task_result
+            })
 
             # Collect results for each output mapping
             for key, value in output_mapping.items():
@@ -31,4 +36,11 @@ class MapTask(Task):
                     if result_key in task_result:
                         mapped_results[key].append(task_result[result_key])
 
-        return {'iteration_results': results, **mapped_results}
+        return {
+            'iteration_results': results,
+            '_debug': {
+                'iterable': self.iterable,
+                'results': debug_results
+            },
+            **mapped_results
+        }
