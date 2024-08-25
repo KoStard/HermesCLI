@@ -12,8 +12,7 @@ class WorkflowExecutor:
         self.parser = WorkflowParser(self.model, self.printer)
         self.context = WorkflowContext()
         self.prompt_formatter = prompt_formatter
-        self.workflow = self.parser.parse(workflow_file)
-        self.root_task: Task = list(self.workflow['tasks'].values())[0]
+        self.root_task: Task = self.parser.parse(workflow_file)
 
         # Set initial global context
         self.context.set_global('input_files', input_files)

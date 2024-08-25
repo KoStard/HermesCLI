@@ -152,18 +152,19 @@ Hermes now supports executing complex workflows defined in YAML files. Here's a 
 1. Create a YAML file defining your workflow (e.g., `my_workflow.yaml`):
 
 ```yaml
+type: sequential
 tasks:
-  task1:
+  - id: task1
     type: llm
     prompt: "Summarize the following text: {input_text}"
     output_mapping:
       summary: result.response
 
-  task2:
+  - id: task2
     type: shell
     command: "echo 'Summary: {summary}' > summary.txt"
 
-  task3:
+  - id: task3
     type: llm
     prompt: "Generate 3 questions based on this summary: {summary}"
     output_mapping:
@@ -181,4 +182,35 @@ This workflow does the following:
 2. Saves the summary to a file using a shell command.
 3. Generates questions based on the summary using the LLM.
 
-You can define more complex workflows with multiple LLM and shell tasks, using the output of one task as input for another.
+You can define more complex workflows with multiple LLM and shell tasks, using the output of one task as input for another. The new structure allows for nesting sequential tasks, providing more flexibility in workflow design.
+
+Example of a nested sequential task:
+
+```yaml
+type: sequential
+tasks:
+  - id: task1
+    type: llm
+    prompt: "Summarize the following text: {input_text}"
+    output_mapping:
+      summary: result.response
+
+  - id: nested_tasks
+    type: sequential
+    tasks:
+      - id: subtask1
+        type: shell
+        command: "echo 'Summary: {summary}' > summary.txt"
+
+      - id: subtask2
+        type: llm
+        prompt: "Generate 3 questions based on this summary: {summary}"
+        output_mapping:
+          questions: result.response
+
+  - id: task3
+    type: shell
+    command: "echo 'Questions: {questions}' >> summary.txt"
+```
+
+This structure allows for more complex and organized workflows, with the ability to group related tasks together using nested sequential tasks.

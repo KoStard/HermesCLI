@@ -15,15 +15,15 @@ class WorkflowParser:
         self.model = model
         self.printer = printer
 
-    def parse(self, workflow_file: str) -> Dict[str, Any]:
+    def parse(self, workflow_file: str) -> Task:
         """
-        Parse a YAML workflow file and return a dictionary representation.
+        Parse a YAML workflow file and return the root task.
 
         Args:
             workflow_file (str): Path to the YAML workflow file.
 
         Returns:
-            Dict[str, Any]: Parsed workflow as a dictionary.
+            Task: The root task of the workflow.
 
         Raises:
             FileNotFoundError: If the workflow file doesn't exist.
@@ -35,9 +35,8 @@ class WorkflowParser:
                 workflow = yaml.safe_load(file)
             
             if self.validate_workflow(workflow):
-                parsed_tasks = self.parse_task('root', workflow['tasks'])
-                workflow['tasks'] = parsed_tasks
-                return workflow
+                root_task = self.parse_task('root', workflow)
+                return root_task
             else:
                 raise ValueError("Invalid workflow structure")
         except FileNotFoundError:
@@ -55,9 +54,7 @@ class WorkflowParser:
         Returns:
             bool: True if the workflow is valid, False otherwise.
         """
-        if 'tasks' not in workflow or not isinstance(workflow['tasks'], dict):
-            return False
-        if len(workflow['tasks']) != 1:
+        if not isinstance(workflow, dict) or len(workflow) != 1:
             return False
         return True
 
