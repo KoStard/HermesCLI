@@ -13,7 +13,7 @@ class WorkflowExecutor:
         self.context = WorkflowContext()
         self.prompt_formatter = prompt_formatter
         self.workflow = self.parser.parse(workflow_file)
-        self.tasks: Dict[str, Task] = self.workflow.get('tasks', {})
+        self.root_task: Task = list(self.workflow['tasks'].values())[0]
 
         # Set initial global context
         self.context.set_global('input_files', input_files)
@@ -24,19 +24,7 @@ class WorkflowExecutor:
         """Execute the workflow and return the final context."""
         self.model.initialize()
 
-        for task_id, task in self.tasks.items():
-            self.printer(f"Executing task: {task_id}")
-            result = task.execute(self.context)
-
-            # Store the task result in the task context
-            self.context.task_contexts[task_id] = result
-
-            # Check for output mapping
-            output_mapping = task.get_config('output_mapping', {})
-            for key, value in output_mapping.items():
-                if isinstance(value, str) and value.startswith('result.'):
-                    result_key = value.split('.', 1)[1]
-                    if result_key in result:
-                        self.context.set_global(key, result[result_key])
+        result = self.root_task.execute(self.context)
+        self.context.task_contexts['root'] = result
 
         return self.context.global_context
