@@ -37,10 +37,6 @@ class MapTask(Task):
                         mapped_results[key].append(task_result[result_key])
 
         return {
-            'iteration_results': results,
-            '_debug': {
-                'iterable': self.iterable,
-                'results': debug_results
-            },
+            '_debug': debug_results,
             **mapped_results
         }

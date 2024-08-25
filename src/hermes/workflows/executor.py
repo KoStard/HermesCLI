@@ -26,4 +26,4 @@ class WorkflowExecutor:
         result = self.root_task.execute(self.context)
         self.context.task_contexts[self.root_task.task_id] = result
 
-        return self.context.global_context
+        return result

@@ -31,7 +31,5 @@ class SequentialTask(Task):
                         context.set_global(key, sub_result[result_key])
                         results[key] = sub_result[result_key]
 
-        results['_debug'] = {
-            'task_results': debug_results
-        }
+        results['_debug'] = debug_results
         return results

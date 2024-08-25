@@ -67,12 +67,6 @@ def run_workflow(args, config):
     executor = WorkflowExecutor(args.workflow, model, prompt_formatter, input_files, initial_prompt, custom_print)
     result = executor.execute()
 
-    # Create a detailed report of all context
-    report = {
-        'global_context': result,
-        'task_contexts': executor.context.task_contexts
-    }
-
     # Create /tmp/hermes/ directory if it doesn't exist
     os.makedirs('/tmp/hermes/', exist_ok=True)
 
@@ -81,7 +75,7 @@ def run_workflow(args, config):
 
     # Save the report as a YAML file
     with open(filename, 'w') as f:
-        yaml.dump(report, f)
+        yaml.dump(result, f)
 
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
