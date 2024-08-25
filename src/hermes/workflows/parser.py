@@ -35,7 +35,8 @@ class WorkflowParser:
                 workflow = yaml.safe_load(file)
             
             if self.validate_workflow(workflow):
-                root_task = self.parse_task('root', workflow)
+                root_id, root_config = next(iter(workflow.items()))
+                root_task = self.parse_task(root_id, root_config)
                 return root_task
             else:
                 raise ValueError("Invalid workflow structure")
@@ -56,7 +57,8 @@ class WorkflowParser:
         """
         if not isinstance(workflow, dict) or len(workflow) != 1:
             return False
-        return True
+        root_id, root_config = next(iter(workflow.items()))
+        return isinstance(root_config, dict) and 'type' in root_config
 
     def parse_task(self, task_id: str, task_config: Dict[str, Any]) -> Task:
         """
