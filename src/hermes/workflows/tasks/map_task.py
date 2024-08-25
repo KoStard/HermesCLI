@@ -17,4 +17,13 @@ class MapTask(Task):
             sub_context.set_global('item', item)
             task_result = self.sub_task.execute(sub_context)
             results.append(task_result)
+
+            # Apply output mapping for the subtask
+            output_mapping = self.sub_task.get_config('output_mapping', {})
+            for key, value in output_mapping.items():
+                if isinstance(value, str) and value.startswith('result.'):
+                    result_key = value.split('.', 1)[1]
+                    if result_key in task_result:
+                        context.set_global(key, task_result[result_key])
+
         return {'results': results}
