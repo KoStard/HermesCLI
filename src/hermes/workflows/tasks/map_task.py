@@ -7,6 +7,9 @@ class MapTask(Task):
         super().__init__(task_id, task_config, printer)
         self.iterable = task_config['iterable']
         self.sub_task = sub_task
+        self.task_config['output_mapping'] = {
+            key: f'result.{key}' for key in self.sub_task.get_config('output_mapping', {})
+        }
 
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
         results = []
@@ -28,8 +31,4 @@ class MapTask(Task):
                     if result_key in task_result:
                         mapped_results[key].append(task_result[result_key])
 
-        # Set collected results in the global context
-        for key, value in mapped_results.items():
-            context.set_global(key, value)
-
-        return {'results': results}
+        return {'iteration_results': results, **mapped_results}

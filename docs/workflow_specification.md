@@ -40,9 +40,9 @@ Example:
 my_sequential_task:
   type: sequential
   tasks:
-    - task1:
+    task1:
         # ... task1 configuration ...
-    - task2:
+    task2:
         # ... task2 configuration ...
 ```
 
@@ -121,7 +121,7 @@ A map task applies a subtask to each item in an iterable.
 Properties:
 - `type`: "map"
 - `iterable`: The name of the global context variable containing the iterable
-- `task`: The subtask configuration to apply to each item
+- `task`: The subtask configuration to apply to each item. Without Id.
 
 Example:
 
@@ -180,10 +180,10 @@ Here's an example of a more complex workflow that demonstrates various task type
 process_documents:
   type: sequential
   tasks:
-    - extract_content:
+    extract_content:
         type: markdown_extract
 
-    - summarize_documents:
+    summarize_documents:
         type: map
         iterable: input_files
         task:
@@ -192,17 +192,17 @@ process_documents:
           output_mapping:
             summaries: result.response
 
-    - combine_summaries:
+    combine_summaries:
         type: llm
         prompt: "Combine the following summaries into a single coherent summary: {summaries}"
         output_mapping:
           final_summary: result.response
 
-    - save_summary:
+    save_summary:
         type: shell
         command: "echo '{final_summary}' > final_summary.txt"
 
-    - generate_questions:
+    generate_questions:
         type: if_else
         condition: "len(final_summary) > 500"
         if_task:
@@ -214,7 +214,7 @@ process_documents:
         output_mapping:
           questions: result.response
 
-    - save_questions:
+    save_questions:
         type: shell
         command: "echo '{questions}' >> final_summary.txt"
 ```

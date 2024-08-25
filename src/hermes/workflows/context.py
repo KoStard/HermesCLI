@@ -31,3 +31,10 @@ class WorkflowContext:
         """Clear all context data."""
         self.global_context.clear()
         self.task_contexts.clear()
+    
+    def copy(self):
+        """Create a copy of the current context."""
+        new_context = WorkflowContext()
+        new_context.global_context = self.global_context.copy()
+        new_context.task_contexts = {task_id: context.copy() for task_id, context in self.task_contexts.items()}
+        return new_context
