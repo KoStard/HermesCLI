@@ -11,24 +11,22 @@ from .base import Task
 class MarkdownExtractionTask(Task):
     def __init__(self, task_id: str, task_config: Dict[str, Any], printer: Callable[[str], None]):
         super().__init__(task_id, task_config, printer)
+        self.file_path_var = task_config.get('file_path_var', 'file_path')
 
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
-        input_files = context.get_global('input_files', [])
-        if not input_files:
-            raise ValueError(f"No input files specified for text extraction task {self.task_id}")
+        file_path = context.get_global(self.file_path_var)
+        if not file_path:
+            raise ValueError(f"No file path specified for text extraction task {self.task_id}")
 
-        extracted_texts = []
-        for file_path in input_files:
-            if file_path.lower().endswith('.pdf'):
-                extracted_text = self.pdf_to_markdown(file_path)
-                file_name = os.path.basename(file_path)
-                extracted_texts.append(f"--- Content from {file_name} ---\n{extracted_text}\n")
-            else:
-                print(f"Warning: Skipping non-PDF file: {file_path}")
+        if file_path.lower().endswith('.pdf'):
+            extracted_text = self.pdf_to_markdown(file_path)
+            file_name = os.path.basename(file_path)
+            result = f"--- Content from {file_name} ---\n{extracted_text}\n"
+        else:
+            raise ValueError(f"Unsupported file type: {file_path}")
 
-        combined_text = "\n".join(extracted_texts)
         return {
-            'extracted_text': combined_text
+            'extracted_text': result
         }
 
     def pdf_to_markdown(self, pdf_path):

@@ -85,17 +85,34 @@ shell_task:
 
 ### Markdown Extraction Task
 
-A markdown extraction task processes PDF files and extracts their content as markdown.
+A markdown extraction task processes a single PDF file and extracts its content as markdown.
 
 Properties:
 - `type`: "markdown_extract"
+- `file_path_var`: (Optional) The name of the global context variable containing the file path (default: "file_path")
 
 Example:
 
 ```yaml
 extract_task:
   type: markdown_extract
+  file_path_var: input_file
 ```
+
+To process multiple PDF files, you can use the `MapTask` in combination with the `MarkdownExtractionTask`:
+
+```yaml
+process_pdfs:
+  type: map
+  iterable: pdf_files
+  task:
+    type: markdown_extract
+    file_path_var: item
+    output_mapping:
+      extracted_texts: result.extracted_text
+```
+
+In this example, `pdf_files` should be a list of file paths in the global context.
 
 ### Map Task
 
