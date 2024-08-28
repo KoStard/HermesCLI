@@ -7,7 +7,16 @@ import sys
 import argparse
 import configparser
 from typing import Dict
-import readline
+import os
+
+if os.name == 'posix':
+    import readline
+elif os.name == 'nt':
+    try:
+        import pyreadline3 as readline
+    except ImportError:
+        print("Warning: pyreadline3 is not installed. Autocomplete functionality may be limited on Windows.")
+        readline = None
 
 from .utils.file_utils import process_file_name
 from .file_processors.default import DefaultFileProcessor
