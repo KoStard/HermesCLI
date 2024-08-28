@@ -2,6 +2,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich import live as Live
 from rich.spinner import Spinner
+from rich.panel import Panel
 from typing import Generator
 
 class ChatUI:
@@ -32,18 +33,19 @@ class ChatUI:
 
     def get_user_input(self) -> str:
         while True:
-            user_input = input("You: ").strip()
-            if user_input == "{":
+            self.console.print("─" * self.console.width, style="dim")
+            user_input = self.console.input("[bold cyan]You:[/bold cyan] ")
+            if user_input.strip() == "{":
                 lines = []
                 while True:
-                    line = input()
+                    line = self.console.input()
                     if line.strip() == "}":
                         break
                     lines.append(line)
                 user_input = "\n".join(lines)
-            if user_input:
+            if user_input.strip():
                 return user_input
-            print("Please enter a non-empty message.")
+            self.console.print("Please enter a non-empty message.", style="bold red")
 
     def display_status(self, message: str):
-        self.console.print(message)
+        self.console.print(Panel(message, expand=False), style="bold yellow")
