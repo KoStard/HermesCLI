@@ -54,7 +54,6 @@ Hermes is a powerful command-line tool that enables you to interact with various
 
    [DEEPSEEK]
    api_key = your_deepseek_api_key
-   base_url = https://api.deepseek.com
    model = deepseek-coder
    ```
    
