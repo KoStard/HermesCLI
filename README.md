@@ -13,6 +13,7 @@ Hermes is a powerful command-line tool that enables you to interact with various
   - Gemini (Google)
   - GPT-4 (OpenAI)
   - Ollama (Local models)
+  - DeepSeek (DeepSeek AI)
 - File input support for context-aware conversations
 - Image inputs for supported models
 - Support for local models through Ollama integration
@@ -50,6 +51,11 @@ Hermes is a powerful command-line tool that enables you to interact with various
 
    [OPENAI]
    api_key = your_openai_api_key
+
+   [DEEPSEEK]
+   api_key = your_deepseek_api_key
+   base_url = https://api.deepseek.com
+   model = deepseek-coder
    ```
    
    You can set any supported model as the default in the `[DEFAULT]` section.
@@ -81,7 +87,7 @@ After running the command, you will be prompted to enter your initial message or
 
 ### Command-line Options
 
-- `--model`: Specify the AI model to use (e.g., claude, bedrock-claude, gemini, openai, ollama)
+- `--model`: Specify the AI model to use (e.g., claude, bedrock-claude, gemini, openai, ollama, deepseek)
 - `--prompt`: Specify the initial prompt directly from the command line
 - `--prompt-file`: Specify a file containing the initial prompt
 - `--append` or `-a`: Append the AI's response to a specified file
@@ -111,6 +117,7 @@ hermes claude document1.txt document2.txt --prompt-file my_prompt.txt
 - `gemini`: Google's Gemini model
 - `openai`: OpenAI's GPT-4 model
 - `ollama`: Local models through Ollama
+- `deepseek`: DeepSeek AI's models
 
 ## Configuration
 
@@ -136,6 +143,21 @@ To use Ollama models:
    model = llama2
    ```
    Replace `llama2` with your preferred model.
+
+### DeepSeek Setup
+
+To use DeepSeek models:
+
+1. Sign up for an account at [DeepSeek AI](https://platform.deepseek.com/)
+2. Obtain your API key from the DeepSeek platform
+3. In your `~/.config/multillmchat/config.ini`, add:
+   ```ini
+   [DEEPSEEK]
+   api_key = your_deepseek_api_key
+   base_url = https://api.deepseek.com
+   model = deepseek-coder
+   ```
+   You can replace `deepseek-coder` with other available DeepSeek models if desired.
 
 ## Contributing
 
