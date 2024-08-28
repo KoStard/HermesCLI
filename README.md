@@ -29,7 +29,7 @@ Hermes is a powerful command-line tool that enables you to interact with various
 1. Clone the repository:
    ```
    git clone https://github.com/KoStard/HermesCLI
-   cd hermes
+   cd HermesCLI
    ```
 
 2. Install the required dependencies:

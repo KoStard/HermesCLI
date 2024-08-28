@@ -1,0 +1,1 @@
+- Add support for --context, it's like --prompt, but doesn't count as a the user input, it's just context, like --file.

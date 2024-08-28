@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "Python: Hermes CLI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "hermes.main",
+            "args": ["--workflow", "workflows/test.yaml", "/Users/kostard/Downloads/TOPIC-11Summer-Voc_Q&A_Froen.pdf"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        }
+    ]
+}
