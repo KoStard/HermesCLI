@@ -2,11 +2,11 @@ from typing import Generator
 from .base import ChatModel
 from openai import OpenAI
 
-class OpenAIModel(ChatModel):
+class DeepSeekModel(ChatModel):
     def initialize(self):
-        api_key = self.config["OPENAI"]["api_key"]
-        base_url = self.config["OPENAI"].get("base_url", "https://api.openai.com/v1")
-        model = self.config["OPENAI"].get("model", "gpt-4-0125-preview")
+        api_key = self.config["DEEPSEEK"]["api_key"]
+        base_url = self.config["DEEPSEEK"].get("base_url", "https://api.deepseek.com")
+        model = self.config["DEEPSEEK"].get("model", "deepseek-coder")
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
         self.messages = []
