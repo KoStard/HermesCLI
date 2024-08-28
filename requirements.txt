@@ -6,3 +6,4 @@ rich
 openai
 argcomplete
 pyyaml
+pyreadline3; sys_platform == 'win32'
