@@ -43,7 +43,9 @@ def main():
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
-    config_path = os.path.expanduser("~/.config/multillmchat/config.ini")
+    config_dir = os.path.join(os.path.expanduser("~"), ".config", "multillmchat")
+    config_path = os.path.join(config_dir, "config.ini")
+    os.makedirs(config_dir, exist_ok=True)
     config.read(config_path)
 
     if args.model is None:

@@ -38,7 +38,11 @@ Hermes is a powerful command-line tool that enables you to interact with various
    ```
 
 3. Set up your configuration file:
-   Create a file at `~/.config/multillmchat/config.ini` with your API keys and default model:
+   Create a file named `config.ini` in the following location:
+   - On Unix-like systems (Linux, macOS): `~/.config/multillmchat/config.ini`
+   - On Windows: `C:\Users\YourUsername\.config\multillmchat\config.ini`
+
+   Add your API keys and default model to the config file:
    ```ini
    [DEFAULT]
    model = claude
@@ -58,6 +62,8 @@ Hermes is a powerful command-line tool that enables you to interact with various
    ```
    
    You can set any supported model as the default in the `[DEFAULT]` section.
+
+   Note: The application will create the necessary directories if they don't exist.
 
 4. Install the package in editable mode:
    ```
