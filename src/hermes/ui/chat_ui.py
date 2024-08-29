@@ -4,6 +4,7 @@ from rich import live as Live
 from rich.spinner import Spinner
 from rich.panel import Panel
 from typing import Generator
+import os
 
 class ChatUI:
     def __init__(self, prints_raw: bool):
@@ -49,3 +50,7 @@ class ChatUI:
 
     def display_status(self, message: str):
         self.console.print(Panel(message, expand=False), style="bold yellow")
+
+    def clear_screen(self):
+        # Clear the console screen
+        os.system('cls' if os.name == 'nt' else 'clear')
