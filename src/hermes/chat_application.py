@@ -19,10 +19,20 @@ class ChatApplication:
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.model.initialize()
         
-        print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation. Type '/clear' to clear the chat history.")
 
         try:
-            first_message = initial_prompt if initial_prompt else self.ui.get_user_input()
+            if not initial_prompt:
+                if special_command:
+                    if 'append' in special_command:
+                        first_message = f"""You are a multi-dimensional thoughts tree autocomplete engine. Your goal is to assist as effectively as possible to the user in their thinking goals. Even if the user takes a dead-end thoughts route, you assist by showing that and taking a better route. You are given certain context for the thoughts, and a main file {special_command['append']}. Your thoughts tree autocompletion will be appended to the end of this file."""
+                    elif 'update' in special_command:
+                        first_message = f"""You are a multi-dimensional thoughts tree autocomplete engine. Your goal is to assist as effectively as possible to the user in their thinking goals. Even if the user takes a dead-end thoughts route, you assist by showing that and taking a better route. You are given certain context for the thoughts, and a main file {special_command['append']}. Your thoughts tree autocompletion will create/replace this file, so make sure to include everything."""
+                else:
+                    print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation. Type '/clear' to clear the chat history.")
+                    first_message = self.ui.get_user_input()
+            else:
+                first_message = initial_prompt
+                    
             
             if first_message.lower() in ['exit', 'quit', 'q']:
                 return
@@ -51,10 +61,10 @@ class ChatApplication:
 
     def handle_special_command(self, special_command: Dict[str, str], content: str):
         if 'append' in special_command:
-            self.file_processor.write_file(special_command['append'], "\n" + content, mode='a')
+            self.file_processor.write_file(self.files[special_command['append']], "\n" + content, mode='a')
             self.ui.display_status(f"Content appended to {special_command['append']}")
         elif 'update' in special_command:
-            self.file_processor.write_file(special_command['update'], content, mode='w')
+            self.file_processor.write_file(self.files[special_command['update']], content, mode='w')
             self.ui.display_status(f"File {special_command['update']} updated")
 
     def clear_chat(self):

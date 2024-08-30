@@ -96,10 +96,10 @@ def run_chat_application(args, config):
 
     special_command: Dict[str, str] = {}
     if args.append:
-        special_command['append'] = args.append
+        special_command['append'] = process_file_name(args.append)
         processed_files[process_file_name(args.append)] = args.append
     elif args.update:
-        special_command['update'] = args.update
+        special_command['update'] = process_file_name(args.update)
         processed_files[process_file_name(args.update)] = args.update
 
     initial_prompt = None
