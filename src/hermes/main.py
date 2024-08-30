@@ -62,10 +62,15 @@ def main():
         if args.model is None:
             parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
+    # Load special command prompts
+    special_command_prompts_path = os.path.join(os.path.dirname(__file__), "config", "special_command_prompts.yaml")
+    with open(special_command_prompts_path, 'r') as f:
+        special_command_prompts = yaml.safe_load(f)
+
     if args.workflow:
         run_workflow(args, config)
     else:
-        run_chat_application(args, config)
+        run_chat_application(args, config, special_command_prompts)
         
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)
@@ -91,7 +96,7 @@ def run_workflow(args, config):
 
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
-def run_chat_application(args, config):
+def run_chat_application(args, config, special_command_prompts):
     processed_files = {process_file_name(file): file for file in args.files}
 
     special_command: Dict[str, str] = {}
@@ -117,7 +122,7 @@ def run_chat_application(args, config):
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
     ui = ChatUI(prints_raw=args.raw)
-    app = ChatApplication(model, ui, file_processor, prompt_formatter)
+    app = ChatApplication(model, ui, file_processor, prompt_formatter, special_command_prompts)
     app.set_files(processed_files)
     app.run(initial_prompt, special_command if special_command else None)
 

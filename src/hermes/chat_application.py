@@ -6,12 +6,13 @@ from hermes.file_processors.base import FileProcessor
 from hermes.prompt_formatters.base import PromptFormatter
 
 class ChatApplication:
-    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, prompt_formatter: PromptFormatter):
+    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, prompt_formatter: PromptFormatter, special_command_prompts: Dict[str, str]):
         self.model = model
         self.ui = ui
         self.file_processor = file_processor
         self.prompt_formatter = prompt_formatter
         self.files: Dict[str, str] = {}
+        self.special_command_prompts = special_command_prompts
 
     def set_files(self, files: Dict[str, str]):
         self.files = files
@@ -19,14 +20,13 @@ class ChatApplication:
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.model.initialize()
         
-
         try:
             if not initial_prompt:
                 if special_command:
                     if 'append' in special_command:
-                        first_message = f"""You are a multi-dimensional thoughts tree autocomplete engine. Your goal is to assist as effectively as possible to the user in their thinking goals. Even if the user takes a dead-end thoughts route, you assist by showing that and taking a better route. You are given certain context for the thoughts, and a main file {special_command['append']}. Your thoughts tree autocompletion will be appended to the end of this file."""
+                        first_message = self.special_command_prompts['append'].format(file_name=special_command['append'])
                     elif 'update' in special_command:
-                        first_message = f"""You are a multi-dimensional thoughts tree autocomplete engine. Your goal is to assist as effectively as possible to the user in their thinking goals. Even if the user takes a dead-end thoughts route, you assist by showing that and taking a better route. You are given certain context for the thoughts, and a main file {special_command['append']}. Your thoughts tree autocompletion will create/replace this file, so make sure to include everything."""
+                        first_message = self.special_command_prompts['update'].format(file_name=special_command['update'])
                 else:
                     print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation. Type '/clear' to clear the chat history.")
                     first_message = self.ui.get_user_input()
