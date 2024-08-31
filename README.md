@@ -23,6 +23,7 @@ Hermes is a powerful command-line tool that enables you to interact with various
 - Confirmation prompt to prevent unnecessary API calls
 - Autocomplete support for model selection
 - **NEW: Execute complex workflows defined in YAML files**
+- **NEW: Context extension feature for dynamic file inclusion in workflows**
 
 ## Installation
 
@@ -233,3 +234,36 @@ tasks:
 ```
 
 This structure allows for more complex and organized workflows, with the ability to group related tasks together using nested sequential tasks.
+
+## NEW: Context Extension Feature
+
+Hermes now supports dynamic file inclusion in workflows using the context extension feature. This allows you to add files to the context during workflow execution, making your workflows more flexible and powerful.
+
+To use the context extension feature, you can include a `context_extension` task in your workflow YAML file. Here's an example:
+
+```yaml
+my_workflow:
+  type: sequential
+  tasks:
+    task1:
+      type: context_extension
+      files:
+        - additional_file1.txt
+        - additional_file2.txt
+
+    task2:
+      type: llm
+      prompt: "Analyze the content of all files in the context."
+      pass_input_files: true
+```
+
+In this example:
+
+1. The `context_extension` task adds `additional_file1.txt` and `additional_file2.txt` to the context.
+2. The subsequent `llm` task can now access these additional files along with any files initially provided when running the Hermes command.
+
+The `pass_input_files: true` option in the LLM task ensures that all files in the context (including the newly added ones) are passed to the AI model for analysis.
+
+This feature is particularly useful when you need to include different sets of files for different parts of your workflow, or when you want to dynamically add files based on the results of previous tasks.
+
+Remember to ensure that the files specified in the `context_extension` task exist in the directory where you're running the Hermes command, or provide the full path to these files.
