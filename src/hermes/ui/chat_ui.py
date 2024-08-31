@@ -52,5 +52,5 @@ class ChatUI:
         self.console.print(Panel(message, expand=False), style="bold yellow")
 
     def clear_screen(self):
-        # This method is now only used to display a message about clearing chat history
-        self.console.print("Chat history has been cleared.", style="bold green")
+        # This method is now empty as we don't need to display any message
+        pass
