@@ -11,12 +11,18 @@ from .tasks.map_task import MapTask
 from .tasks.if_else_task import IfElseTask
 from .tasks.sequential_task import SequentialTask
 from .tasks.context_extension_task import ContextExtensionTask
+from .tasks.chat_application_task import ChatApplicationTask
+from hermes.chat_application import ChatApplication
+from hermes.ui.chat_ui import ChatUI
+from hermes.file_processors.default import DefaultFileProcessor
+from hermes.prompt_formatters.xml import XMLPromptFormatter
 
 class WorkflowParser:
     def __init__(self, model: ChatModel, printer: Callable[[str], None], workflow_file: str):
         self.model = model
         self.printer = printer
         self.workflow_dir = os.path.dirname(os.path.abspath(workflow_file))
+        self.chat_application = None
 
     def parse(self, workflow_file: str) -> Task:
         """
@@ -98,5 +104,27 @@ class WorkflowParser:
             return SequentialTask(task_id, task_config, sub_tasks, self.printer)
         elif task_type == 'context_extension':
             return ContextExtensionTask(task_id, task_config, self.printer, self.workflow_dir)
+        elif task_type == 'chat_application':
+            return self.parse_chat_application_task(task_id, task_config)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
+
+    def parse_chat_application_task(self, task_id: str, task_config: Dict[str, Any]) -> ChatApplicationTask:
+        """
+        Parse and create a ChatApplicationTask.
+
+        Args:
+            task_id (str): The ID of the task.
+            task_config (Dict[str, Any]): The configuration for the task.
+
+        Returns:
+            ChatApplicationTask: An instance of the ChatApplicationTask.
+        """
+        if self.chat_application is None:
+            ui = ChatUI(prints_raw=False)
+            file_processor = DefaultFileProcessor()
+            prompt_formatter = XMLPromptFormatter(file_processor)
+            special_command_prompts = {}  # You may want to load this from a config file
+            self.chat_application = ChatApplication(self.model, ui, file_processor, prompt_formatter, special_command_prompts)
+
+        return ChatApplicationTask(task_id, task_config, self.chat_application, self.printer)
