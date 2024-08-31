@@ -1,4 +1,5 @@
 import yaml
+import os
 from typing import Dict, Any, List, Callable
 
 from hermes.chat_models.base import ChatModel
@@ -12,9 +13,10 @@ from .tasks.sequential_task import SequentialTask
 from .tasks.context_extension_task import ContextExtensionTask
 
 class WorkflowParser:
-    def __init__(self, model: ChatModel, printer: Callable[[str], None]):
+    def __init__(self, model: ChatModel, printer: Callable[[str], None], workflow_file: str):
         self.model = model
         self.printer = printer
+        self.workflow_dir = os.path.dirname(os.path.abspath(workflow_file))
 
     def parse(self, workflow_file: str) -> Task:
         """
@@ -95,6 +97,6 @@ class WorkflowParser:
             sub_tasks = [self.parse_task(f"{task_id}.{subtask_id}", sub_task) for subtask_id, sub_task in task_config['tasks'].items()]
             return SequentialTask(task_id, task_config, sub_tasks, self.printer)
         elif task_type == 'context_extension':
-            return ContextExtensionTask(task_id, task_config, self.printer)
+            return ContextExtensionTask(task_id, task_config, self.printer, self.workflow_dir)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
