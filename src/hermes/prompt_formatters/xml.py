@@ -21,7 +21,7 @@ class XMLPromptFormatter(PromptFormatter):
         prompt_elem = ET.SubElement(root, "prompt")
         prompt_elem.text = prompt
 
-        if special_command:            
+        if special_command:
             command_elem = ET.SubElement(root, "specialCommand")
             for key, value in special_command.items():
                 cmd_elem = ET.SubElement(command_elem, key)

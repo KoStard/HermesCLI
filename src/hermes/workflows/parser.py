@@ -18,10 +18,9 @@ from hermes.file_processors.default import DefaultFileProcessor
 from hermes.prompt_formatters.xml import XMLPromptFormatter
 
 class WorkflowParser:
-    def __init__(self, model: ChatModel, printer: Callable[[str], None], workflow_file: str):
+    def __init__(self, model: ChatModel, printer: Callable[[str], None]):
         self.model = model
         self.printer = printer
-        self.workflow_dir = os.path.dirname(os.path.abspath(workflow_file))
         self.chat_application = None
 
     def parse(self, workflow_file: str) -> Task:
@@ -39,13 +38,15 @@ class WorkflowParser:
             yaml.YAMLError: If there's an error parsing the YAML file.
             ValueError: If the workflow structure is invalid.
         """
+        workflow_dir = os.path.dirname(os.path.abspath(workflow_file))
+        
         try:
             with open(workflow_file, 'r') as file:
                 workflow = yaml.safe_load(file)
             
             if self.validate_workflow(workflow):
                 root_id, root_config = next(iter(workflow.items()))
-                root_task = self.parse_task(root_id, root_config)
+                root_task = self.parse_task(root_id, root_config, workflow_dir)
                 return root_task
             else:
                 raise ValueError("Invalid workflow structure")
@@ -69,7 +70,7 @@ class WorkflowParser:
         root_id, root_config = next(iter(workflow.items()))
         return isinstance(root_config, dict) and 'type' in root_config
 
-    def parse_task(self, task_id: str, task_config: Dict[str, Any]) -> Task:
+    def parse_task(self, task_id: str, task_config: Dict[str, Any], workflow_dir: str) -> Task:
         """
         Parse a single task configuration and return the appropriate Task object.
 
@@ -91,19 +92,19 @@ class WorkflowParser:
         elif task_type == 'markdown_extract':
             return MarkdownExtractionTask(task_id, task_config, self.printer)
         elif task_type == 'map':
-            sub_task = self.parse_task(f"{task_id}_sub", task_config['task'])
+            sub_task = self.parse_task(f"{task_id}_sub", task_config['task'], workflow_dir)
             return MapTask(task_id, task_config, sub_task, self.printer)
         elif task_type == 'if_else':
-            if_task = self.parse_task(f"{task_id}.if", task_config['if_task'])
+            if_task = self.parse_task(f"{task_id}.if", task_config['if_task'], workflow_dir)
             else_task = None
             if 'else_task' in task_config:
-                else_task = self.parse_task(f"{task_id}.else", task_config['else_task'])
+                else_task = self.parse_task(f"{task_id}.else", task_config['else_task'], workflow_dir)
             return IfElseTask(task_id, task_config, if_task, self.printer, else_task)
         elif task_type == 'sequential':
-            sub_tasks = [self.parse_task(f"{task_id}.{subtask_id}", sub_task) for subtask_id, sub_task in task_config['tasks'].items()]
+            sub_tasks = [self.parse_task(f"{task_id}.{subtask_id}", sub_task, workflow_dir) for subtask_id, sub_task in task_config['tasks'].items()]
             return SequentialTask(task_id, task_config, sub_tasks, self.printer)
         elif task_type == 'context_extension':
-            return ContextExtensionTask(task_id, task_config, self.printer, self.workflow_dir)
+            return ContextExtensionTask(task_id, task_config, self.printer, workflow_dir)
         elif task_type == 'chat_application':
             return self.parse_chat_application_task(task_id, task_config)
         else:
