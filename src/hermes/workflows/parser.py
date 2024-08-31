@@ -9,6 +9,7 @@ from .tasks.markdown_extraction_task import MarkdownExtractionTask
 from .tasks.map_task import MapTask
 from .tasks.if_else_task import IfElseTask
 from .tasks.sequential_task import SequentialTask
+from .tasks.context_extension_task import ContextExtensionTask
 
 class WorkflowParser:
     def __init__(self, model: ChatModel, printer: Callable[[str], None]):
@@ -93,5 +94,7 @@ class WorkflowParser:
         elif task_type == 'sequential':
             sub_tasks = [self.parse_task(f"{task_id}.{subtask_id}", sub_task) for subtask_id, sub_task in task_config['tasks'].items()]
             return SequentialTask(task_id, task_config, sub_tasks, self.printer)
+        elif task_type == 'context_extension':
+            return ContextExtensionTask(task_id, task_config, self.printer)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
