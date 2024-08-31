@@ -52,7 +52,8 @@ class ChatApplication:
                     return
                 elif user_input_lower == '/clear':
                     self.clear_chat()
-                    continue
+                    self.run(initial_prompt, special_command)
+                    return
 
                 self.ui.display_response(self.model.send_message(user_input))
 
