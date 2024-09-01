@@ -10,8 +10,10 @@ class WorkflowExecutor:
         self.model = model
         self.printer = printer
         self.parser = WorkflowParser(self.model, self.printer)
+        self.root_task: Task = self.parser.parse(workflow_file)  # This will raise FileNotFoundError if the file doesn't exist
         self.context = WorkflowContext()
         self.prompt_formatter = prompt_formatter
+
         self.root_task: Task = self.parser.parse(workflow_file)
 
         # Set initial global context

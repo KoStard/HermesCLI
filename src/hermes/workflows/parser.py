@@ -39,19 +39,18 @@ class WorkflowParser:
             ValueError: If the workflow structure is invalid.
         """
         workflow_dir = os.path.dirname(os.path.abspath(workflow_file))
-        
+
         try:
             with open(workflow_file, 'r') as file:
                 workflow = yaml.safe_load(file)
-            
-            if self.validate_workflow(workflow):
-                root_id, root_config = next(iter(workflow.items()))
-                root_task = self.parse_task(root_id, root_config, workflow_dir)
-                return root_task
-            else:
+
+            if not self.validate_workflow(workflow):
                 raise ValueError("Invalid workflow structure")
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Workflow file not found: {workflow_file}")
+
+            
+            root_id, root_config = next(iter(workflow.items()))
+            root_task = self.parse_task(root_id, root_config, workflow_dir)
+            return root_task
         except yaml.YAMLError as e:
             raise yaml.YAMLError(f"Error parsing workflow YAML: {e}")
 
