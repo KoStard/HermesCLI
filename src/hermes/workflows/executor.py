@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Callable
-from .parser import WorkflowParser
+from . import parser
 from .context import WorkflowContext
 from .tasks.base import Task
 from ..chat_models.base import ChatModel
@@ -9,12 +9,10 @@ class WorkflowExecutor:
     def __init__(self, workflow_file: str, model: ChatModel, prompt_formatter: PromptFormatter, input_files: List[str], initial_prompt: str, printer: Callable[[str], None]):
         self.model = model
         self.printer = printer
-        self.parser = WorkflowParser(self.model, self.printer)
-        self.root_task: Task = self.parser.parse(workflow_file)  # This will raise FileNotFoundError if the file doesn't exist
+        self.parser = parser.WorkflowParser(self.model, self.printer)
+        self.root_task: Task = self.parser.parse(workflow_file)
         self.context = WorkflowContext()
         self.prompt_formatter = prompt_formatter
-
-        self.root_task: Task = self.parser.parse(workflow_file)
 
         # Set initial global context
         self.context.set_global('input_files', input_files)

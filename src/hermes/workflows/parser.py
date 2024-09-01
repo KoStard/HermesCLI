@@ -43,16 +43,15 @@ class WorkflowParser:
         try:
             with open(workflow_file, 'r') as file:
                 workflow = yaml.safe_load(file)
-
-            if not self.validate_workflow(workflow):
-                raise ValueError("Invalid workflow structure")
-
-            
-            root_id, root_config = next(iter(workflow.items()))
-            root_task = self.parse_task(root_id, root_config, workflow_dir)
-            return root_task
         except yaml.YAMLError as e:
             raise yaml.YAMLError(f"Error parsing workflow YAML: {e}")
+
+        if not self.validate_workflow(workflow):
+            raise ValueError("Invalid workflow structure")
+        
+        root_id, root_config = next(iter(workflow.items()))
+        root_task = self.parse_task(root_id, root_config, workflow_dir)
+        return root_task
 
     def validate_workflow(self, workflow: Dict[str, Any]) -> bool:
         """

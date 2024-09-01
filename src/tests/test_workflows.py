@@ -64,7 +64,7 @@ class TestWorkflowParser(unittest.TestCase):
 
     @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="invalid_yaml:")
     def test_parse_invalid_yaml(self, mock_open):
-        with self.assertRaises(yaml.YAMLError):
+        with self.assertRaises(ValueError):
             self.parser.parse('dummy_file.yaml')
 
     def test_parse_nonexistent_file(self):
@@ -86,7 +86,7 @@ class TestWorkflowExecutor(unittest.TestCase):
     def setUp(self, MockParser):
         self.model_mock = Mock(spec=ChatModel)
         self.prompt_formatter_mock = Mock(spec=PromptFormatter)
-        self.root_task_mock = Mock(spec=Task)
+        self.root_task_mock = Mock(spec=Task, task_id="test_task")
 
         self.mock_parser = MockParser.return_value
         self.mock_parser.parse.return_value = self.root_task_mock
