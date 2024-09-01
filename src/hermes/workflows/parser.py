@@ -122,7 +122,7 @@ class WorkflowParser:
             ChatApplicationTask: An instance of the ChatApplicationTask.
         """
         if self.chat_application is None:
-            ui = ChatUI(prints_raw=False)
+            ui = ChatUI(prints_raw=True)
             file_processor = DefaultFileProcessor()
             prompt_formatter = XMLPromptFormatter(file_processor)
             special_command_prompts = {}  # You may want to load this from a config file
