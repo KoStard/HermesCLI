@@ -8,7 +8,8 @@ class TestChatApplication(unittest.TestCase):
         self.ui = MagicMock()
         self.file_processor = MagicMock()
         self.prompt_formatter = MagicMock()
-        self.app = ChatApplication(self.model, self.ui, self.file_processor, self.prompt_formatter)
+        self.special_command_prompts = MagicMock()
+        self.app = ChatApplication(self.model, self.ui, self.file_processor, self.prompt_formatter, self.special_command_prompts)
 
     def test_set_files(self):
         files = {'file1': 'path/to/file1', 'file2': 'path/to/file2'}
@@ -34,15 +35,17 @@ class TestChatApplication(unittest.TestCase):
     def test_run_with_special_command_append(self):
         special_command = {'append': 'output.txt'}
         self.ui.display_response.return_value = "Response content"
+        self.app.files = {'output.txt': 'path/to/output.txt'}  # Set up the files dictionary
         self.app.run(initial_prompt="Test", special_command=special_command)
-        self.file_processor.write_file.assert_called_once_with('output.txt', "\nResponse content", mode='a')
+        self.file_processor.write_file.assert_called_once_with('path/to/output.txt', "\nResponse content", mode='a')
         self.ui.display_status.assert_called_once_with("Content appended to output.txt")
 
     def test_run_with_special_command_update(self):
         special_command = {'update': 'output.txt'}
         self.ui.display_response.return_value = "Response content"
+        self.app.files = {'output.txt': 'path/to/output.txt'}  # Set up the files dictionary
         self.app.run(initial_prompt="Test", special_command=special_command)
-        self.file_processor.write_file.assert_called_once_with('output.txt', "Response content", mode='w')
+        self.file_processor.write_file.assert_called_once_with('path/to/output.txt', "Response content", mode='w')
         self.ui.display_status.assert_called_once_with("File output.txt updated")
 
     def test_run_with_keyboard_interrupt(self):

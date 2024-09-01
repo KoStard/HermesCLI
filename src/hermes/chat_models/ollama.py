@@ -10,14 +10,14 @@ class OllamaModel(ChatModel):
     def send_message(self, message: str) -> Generator[str, None, None]:
         self.messages.append({"role": "user", "content": message})
         
-        stream = ollama.chat(
+
+        response = ollama.chat(
             model=self.model,
-            messages=list(self.messages),
+            messages=self.messages.copy(),
             stream=True,
         )
-
         full_response = ""
-        for chunk in stream:
+        for chunk in response:
             content = chunk['message']['content']
             full_response += content
             yield content

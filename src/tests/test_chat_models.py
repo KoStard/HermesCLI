@@ -86,7 +86,7 @@ class TestOpenAIModel(unittest.TestCase):
     @patch('openai.Client')
     def test_initialize(self, mock_client):
         self.model.initialize()
-        mock_client.assert_called_once_with(api_key='test_key')
+        mock_client.assert_called_once_with(api_key='test_key', base_url='https://api.openai.com/v1')
 
     @patch('openai.Client')
     def test_send_message(self, mock_client):
@@ -95,7 +95,7 @@ class TestOpenAIModel(unittest.TestCase):
             MagicMock(choices=[MagicMock(delta=MagicMock(content='Hello'))]),
             MagicMock(choices=[MagicMock(delta=MagicMock(content=' World'))]),
         ]
-        mock_client.return_value.chat.completions.create.return_value = mock_stream
+        mock_client.return_value.chat.completions.create.return_value = iter(mock_stream)
 
         result = list(self.model.send_message('Test message'))
         self.assertEqual(result, ['Hello', ' World'])
@@ -122,11 +122,17 @@ class TestOllamaModel(unittest.TestCase):
         result = list(self.model.send_message('Test message'))
         self.assertEqual(result, ['Hello', ' World'])
 
-        mock_chat.assert_called_once_with(
+    @patch('ollama.chat')
+    def test_send_message_assert(self, mock_ollama_chat):
+        self.model.initialize()
+        mock_ollama_chat.return_value = iter([{'message': {'content': 'Hello World'}}])
+        list(self.model.send_message('Test message'))
+        mock_ollama_chat.assert_called_once_with(
             model='llama2',
-            messages=[{'role': 'user', 'content': 'Test message'}],
+            messages=[{'role': 'user', 'content': 'Test message'}].copy(),
             stream=True
         )
+
 
         self.assertEqual(self.model.messages, [
             {'role': 'user', 'content': 'Test message'},

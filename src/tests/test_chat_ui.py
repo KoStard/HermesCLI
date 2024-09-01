@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from io import StringIO
+from rich.panel import Panel
 from hermes.ui.chat_ui import ChatUI
 
 class TestChatUI(unittest.TestCase):
@@ -35,7 +36,10 @@ class TestChatUI(unittest.TestCase):
     @patch('rich.console.Console.print')
     def test_display_status(self, mock_print):
         self.chat_ui.display_status("Test message")
-        mock_print.assert_called_once_with("Test message")
+        mock_print.assert_called_once()
+        args, kwargs = mock_print.call_args
+        self.assertIsInstance(args[0], Panel)
+        self.assertEqual(kwargs, {'style': 'bold yellow'})
 
 if __name__ == '__main__':
     unittest.main()

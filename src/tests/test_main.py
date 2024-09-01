@@ -67,7 +67,8 @@ class TestRunChatApplication(unittest.TestCase):
     def test_run_chat_application_basic(self, mock_get_default_model, mock_create, mock_ChatUI, mock_ChatApplication):
         mock_get_default_model.return_value = "claude"
         mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
-        run_chat_application(self.args, self.config)
+        special_command_prompts = {}
+        run_chat_application(self.args, self.config, special_command_prompts)
         mock_get_default_model.assert_called_once_with(self.config)
         mock_create.assert_called_once_with("claude", self.config)
         mock_ChatApplication.return_value.run.assert_called_once_with(None, None)
@@ -78,7 +79,8 @@ class TestRunChatApplication(unittest.TestCase):
     def test_run_chat_application_with_files(self, mock_create, mock_ChatUI, mock_ChatApplication):
         self.args.files = ["file1.txt", "file2.txt"]
         mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
-        run_chat_application(self.args, self.config)
+        special_command_prompts = {}
+        run_chat_application(self.args, self.config, special_command_prompts)
         mock_ChatApplication.return_value.set_files.assert_called_once()
 
     @patch('hermes.main.ChatApplication')
@@ -87,7 +89,8 @@ class TestRunChatApplication(unittest.TestCase):
     def test_run_chat_application_with_prompt(self, mock_create, mock_ChatUI, mock_ChatApplication):
         self.args.prompt = "Test prompt"
         mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
-        run_chat_application(self.args, self.config)
+        special_command_prompts = {}
+        run_chat_application(self.args, self.config, special_command_prompts)
         mock_ChatApplication.return_value.run.assert_called_once_with("Test prompt", None)
 
     @patch('hermes.main.ChatApplication')
@@ -97,7 +100,8 @@ class TestRunChatApplication(unittest.TestCase):
     def test_run_chat_application_with_prompt_file(self, mock_file, mock_create, mock_ChatUI, mock_ChatApplication):
         self.args.prompt_file = "prompt.txt"
         mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
-        run_chat_application(self.args, self.config)
+        special_command_prompts = {}
+        run_chat_application(self.args, self.config, special_command_prompts)
         mock_ChatApplication.return_value.run.assert_called_once_with("File prompt content", None)
 
     @patch('hermes.main.ChatApplication')
@@ -105,13 +109,14 @@ class TestRunChatApplication(unittest.TestCase):
     @patch('hermes.main.create_model_and_processors')
     def test_run_chat_application_with_special_commands(self, mock_create, mock_ChatUI, mock_ChatApplication):
         test_cases = [
-            ('append', 'output.txt', {'append': 'output.txt'}),
-            ('update', 'update.txt', {'update': 'update.txt'})
+            ('append', 'output.txt', {'append': 'output'}),
+            ('update', 'update.txt', {'update': 'update'})
         ]
         for attr, value, expected in test_cases:
             setattr(self.args, attr, value)
             mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
-            run_chat_application(self.args, self.config)
+            special_command_prompts = {}
+            run_chat_application(self.args, self.config, special_command_prompts)
             mock_ChatApplication.return_value.run.assert_called_with(None, expected)
             setattr(self.args, attr, None)
 
@@ -121,7 +126,8 @@ class TestRunChatApplication(unittest.TestCase):
     def test_run_chat_application_with_raw_output(self, mock_create, mock_ChatUI, mock_ChatApplication):
         self.args.raw = True
         mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
-        run_chat_application(self.args, self.config)
+        special_command_prompts = {}
+        run_chat_application(self.args, self.config, special_command_prompts)
         mock_ChatUI.assert_called_once_with(prints_raw=True)
 
     @patch('hermes.main.ChatApplication')
@@ -131,7 +137,8 @@ class TestRunChatApplication(unittest.TestCase):
     def test_run_chat_application_with_confirmation(self, mock_input, mock_create, mock_ChatUI, mock_ChatApplication):
         self.args.confirm_before_starting = True
         mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
-        run_chat_application(self.args, self.config)
+        special_command_prompts = {}
+        run_chat_application(self.args, self.config, special_command_prompts)
         mock_input.assert_called_once()
         mock_ChatApplication.return_value.run.assert_called_once()
 

@@ -99,6 +99,8 @@ def run_workflow(args, config):
 def run_chat_application(args, config, special_command_prompts):
     processed_files = {process_file_name(file): file for file in args.files}
 
+    if args.model is None:
+        args.model = get_default_model(config)
     special_command: Dict[str, str] = {}
     if args.append:
         special_command['append'] = process_file_name(args.append)
