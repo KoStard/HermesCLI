@@ -52,11 +52,6 @@ class BedrockPromptFormatter(PromptFormatter):
                 text_inputs_content += f"{text}\n"
             contents.append({'text': text_inputs_content})
 
-        if text_inputs:
-            prompt += "Additional text inputs:\n"
-            for text in text_inputs:
-                prompt += f"{text}\n"
-
         if special_command:
             special_prompt = ""
             if 'append' in special_command:

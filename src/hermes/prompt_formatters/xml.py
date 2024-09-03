@@ -9,23 +9,17 @@ class XMLPromptFormatter(PromptFormatter):
 
     def format_prompt(self, files: Dict[str, str], prompt: str, special_command: Optional[Dict[str, str]] = None, text_inputs: List[str] = []) -> str:
         root = ET.Element("input")
-        
+
         prompt_elem = ET.SubElement(root, "systemMessage")
         prompt_elem.text = "You are a helpful assistant, helping with the requests your manager will assign to you. You gain bonus at the end of each week if you meaningfully help your manager with his goals."
-        
+
         for processed_name, file_path in files.items():
             content = self.file_processor.read_file(file_path)
             file_elem = ET.SubElement(root, "document", name=processed_name)
             file_elem.text = content
-        
+
         prompt_elem = ET.SubElement(root, "prompt")
         prompt_elem.text = prompt
-
-        if text_inputs:
-            prompt += "<text_inputs>\n"
-            for text in text_inputs:
-                prompt += f"{text}\n"
-            prompt += "</text_inputs>\n"
 
         if text_inputs:
             text_inputs_elem = ET.SubElement(root, "text_inputs")
@@ -45,8 +39,8 @@ class XMLPromptFormatter(PromptFormatter):
             elif 'update' in special_command:
                 prompt_elem = ET.SubElement(root, "prompt")
                 prompt_elem.text = f"Please provide the entire new content for the file '{special_command['update']}'. The output should contain only the new file content, without any explanations or additional comments."
-        
+
         return ET.tostring(root, encoding='unicode')
-    
+
     def add_content(self, current, content_to_add: str) -> Any:
         return current + '\n\n' + content_to_add
