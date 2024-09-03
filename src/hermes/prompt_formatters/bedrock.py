@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 from .base import PromptFormatter
 from hermes.file_processors.base import FileProcessor
@@ -9,7 +9,7 @@ class BedrockPromptFormatter(PromptFormatter):
     def __init__(self, file_processor: FileProcessor):
         self.file_processor = file_processor
 
-    def format_prompt(self, files: Dict[str, str], prompt: str, special_command: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+    def format_prompt(self, files: Dict[str, str], prompt: str, special_command: Optional[Dict[str, str]] = None, text_inputs: List[str] = []) -> List[Dict[str, Union[str, Dict[str, Any]]]]:
         contents = []
 
         for processed_name, file_path in files.items():
@@ -45,6 +45,12 @@ class BedrockPromptFormatter(PromptFormatter):
                 file_elem.text = file_content
                 contents.append({'text': ET.tostring(file_elem, encoding='unicode')})
         contents.append({'text': prompt + '\n'})
+
+        if text_inputs:
+            text_inputs_content = "Additional text inputs:\n"
+            for text in text_inputs:
+                text_inputs_content += f"{text}\n"
+            contents.append({'text': text_inputs_content})
 
         if text_inputs:
             prompt += "Additional text inputs:\n"

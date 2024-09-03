@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 import xml.etree.ElementTree as ET
 from .base import PromptFormatter
 from hermes.file_processors.base import FileProcessor
@@ -7,7 +7,7 @@ class XMLPromptFormatter(PromptFormatter):
     def __init__(self, file_processor: FileProcessor):
         self.file_processor = file_processor
 
-    def format_prompt(self, files: Dict[str, str], prompt: str, special_command: Optional[Dict[str, str]] = None) -> str:
+    def format_prompt(self, files: Dict[str, str], prompt: str, special_command: Optional[Dict[str, str]] = None, text_inputs: List[str] = []) -> str:
         root = ET.Element("input")
         
         prompt_elem = ET.SubElement(root, "systemMessage")
@@ -26,6 +26,12 @@ class XMLPromptFormatter(PromptFormatter):
             for text in text_inputs:
                 prompt += f"{text}\n"
             prompt += "</text_inputs>\n"
+
+        if text_inputs:
+            text_inputs_elem = ET.SubElement(root, "text_inputs")
+            for text in text_inputs:
+                text_elem = ET.SubElement(text_inputs_elem, "text")
+                text_elem.text = text
 
         if special_command:
             command_elem = ET.SubElement(root, "specialCommand")
