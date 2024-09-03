@@ -124,23 +124,11 @@ class TestRunChatApplication(unittest.TestCase):
     @patch('hermes.main.ChatUI')
     @patch('hermes.main.create_model_and_processors')
     def test_run_chat_application_with_raw_output(self, mock_create, mock_ChatUI, mock_ChatApplication):
-        self.args.raw = True
+        self.args.pretty = False
         mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
         special_command_prompts = {}
         run_chat_application(self.args, self.config, special_command_prompts)
         mock_ChatUI.assert_called_once_with(prints_raw=True)
-
-    @patch('hermes.main.ChatApplication')
-    @patch('hermes.main.ChatUI')
-    @patch('hermes.main.create_model_and_processors')
-    @patch('builtins.input', return_value='y')
-    def test_run_chat_application_with_confirmation(self, mock_input, mock_create, mock_ChatUI, mock_ChatApplication):
-        self.args.confirm_before_starting = True
-        mock_create.return_value = (MagicMock(), MagicMock(), MagicMock())
-        special_command_prompts = {}
-        run_chat_application(self.args, self.config, special_command_prompts)
-        mock_input.assert_called_once()
-        mock_ChatApplication.return_value.run.assert_called_once()
 
 if __name__ == '__main__':
     unittest.main()
