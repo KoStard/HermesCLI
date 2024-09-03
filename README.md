@@ -98,19 +98,30 @@ After running the command, you will be prompted to enter your initial message or
 - `--prompt-file`: Specify a file containing the initial prompt
 - `--append` or `-a`: Append the AI's response to a specified file
 - `--update` or `-u`: Update a specified file with the AI's response
-- `--raw` or `-r`: Print the output without rendering markdown
-- `--confirm-before-starting`: Prompt for confirmation before sending requests to the AI model
+- `--pretty`: Print the output by rendering markdown (default behavior)
+- `--workflow`: Specify a workflow YAML file to execute
+- `--text`: Additional text to be included with prompts (can be used multiple times)
 
 Examples:
 
 Using --prompt:
 ```
-hermes claude document1.txt document2.txt --prompt "Summarize these documents."
+hermes --model claude document1.txt document2.txt --prompt "Summarize these documents."
 ```
 
 Using --prompt-file:
 ```
-hermes claude document1.txt document2.txt --prompt-file my_prompt.txt
+hermes --model claude document1.txt document2.txt --prompt-file my_prompt.txt
+```
+
+Using --workflow:
+```
+hermes --workflow my_workflow.yaml --model claude
+```
+
+Using --text:
+```
+hermes --model claude document1.txt --text "Consider this context" --text "And this additional information"
 ```
 
 ### Supported Models
