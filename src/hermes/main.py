@@ -34,8 +34,8 @@ from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
 
 def get_default_model(config):
-    if 'DEFAULT' in config and 'model' in config['DEFAULT']:
-        return config['DEFAULT']['model']
+    if 'BASE' in config and 'model' in config['BASE']:
+        return config['BASE']['model']
     return None
 
 def main():
