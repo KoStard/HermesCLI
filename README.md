@@ -98,7 +98,7 @@ After running the command, you will be prompted to enter your initial message or
 - `--prompt-file`: Specify a file containing the initial prompt
 - `--append` or `-a`: Append the AI's response to a specified file
 - `--update` or `-u`: Update a specified file with the AI's response
-- `--pretty`: Print the output by rendering markdown (default behavior)
+- `--pretty`: Print the output by rendering markdown
 - `--workflow`: Specify a workflow YAML file to execute
 - `--text`: Additional text to be included with prompts (can be used multiple times)
 
