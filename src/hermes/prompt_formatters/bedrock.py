@@ -46,6 +46,11 @@ class BedrockPromptFormatter(PromptFormatter):
                 contents.append({'text': ET.tostring(file_elem, encoding='unicode')})
         contents.append({'text': prompt + '\n'})
 
+        if text_inputs:
+            prompt += "Additional text inputs:\n"
+            for text in text_inputs:
+                prompt += f"{text}\n"
+
         if special_command:
             special_prompt = ""
             if 'append' in special_command:

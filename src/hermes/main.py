@@ -48,6 +48,7 @@ def main():
     parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
+    parser.add_argument("--text", action="append", help="Additional text to be included with prompts", default=[])
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -100,6 +101,7 @@ def run_chat_application(args, config, special_command_prompts):
 
     if args.model is None:
         args.model = get_default_model(config)
+        args.model = get_default_model(config)
     special_command: Dict[str, str] = {}
     if args.append:
         special_command['append'] = process_file_name(args.append)
@@ -118,7 +120,7 @@ def run_chat_application(args, config, special_command_prompts):
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
     ui = ChatUI(prints_raw=not args.pretty)
-    app = ChatApplication(model, ui, file_processor, prompt_formatter, special_command_prompts)
+    app = ChatApplication(model, ui, file_processor, prompt_formatter, special_command_prompts, args.text)
     app.set_files(processed_files)
     app.run(initial_prompt, special_command if special_command else None)
 

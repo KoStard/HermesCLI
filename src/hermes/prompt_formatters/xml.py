@@ -21,6 +21,12 @@ class XMLPromptFormatter(PromptFormatter):
         prompt_elem = ET.SubElement(root, "prompt")
         prompt_elem.text = prompt
 
+        if text_inputs:
+            prompt += "<text_inputs>\n"
+            for text in text_inputs:
+                prompt += f"{text}\n"
+            prompt += "</text_inputs>\n"
+
         if special_command:
             command_elem = ET.SubElement(root, "specialCommand")
             for key, value in special_command.items():

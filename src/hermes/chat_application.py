@@ -6,12 +6,13 @@ from hermes.file_processors.base import FileProcessor
 from hermes.prompt_formatters.base import PromptFormatter
 
 class ChatApplication:
-    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, prompt_formatter: PromptFormatter, special_command_prompts: Dict[str, str]):
+    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, prompt_formatter: PromptFormatter, special_command_prompts: Dict[str, str], text_inputs: List[str]):
         self.model = model
         self.ui = ui
         self.file_processor = file_processor
         self.prompt_formatter = prompt_formatter
         self.files: Dict[str, str] = {}
+        self.text_inputs = text_inputs
         self.special_command_prompts = special_command_prompts
 
     def set_files(self, files: Dict[str, str]):
@@ -28,7 +29,7 @@ class ChatApplication:
                 user_input = sys.stdin.read().strip()
 
             if user_input:
-                context = self.prompt_formatter.format_prompt(self.files, user_input, special_command)
+                context = self.prompt_formatter.format_prompt(self.files, user_input, special_command, self.text_inputs)
                 response = self.ui.display_response(self.model.send_message(context))
                 if special_command:
                     self.handle_special_command(special_command, response)
@@ -52,7 +53,7 @@ class ChatApplication:
             if first_message.lower() in ['exit', 'quit', 'q']:
                 return
 
-            context = self.prompt_formatter.format_prompt(self.files, first_message, special_command)
+            context = self.prompt_formatter.format_prompt(self.files, first_message, special_command, self.text_inputs)
             response = self.ui.display_response(self.model.send_message(context))
 
             if special_command:
@@ -66,11 +67,10 @@ class ChatApplication:
                 if user_input_lower in ['exit', 'quit', 'q']:
                     return
                 elif user_input_lower == '/clear':
-                    self.clear_chat()
-                    self.run(initial_prompt, special_command)
-                    return
+                    self.clear_chat(keep_text_inputs=True)
+                    continue
 
-                self.ui.display_response(self.model.send_message(user_input))
+                self.ui.display_response(self.model.send_message(self.prompt_formatter.format_prompt({}, user_input, None, self.text_inputs)))
 
         except KeyboardInterrupt:
             print("\nChat interrupted. Exiting gracefully...")
@@ -83,6 +83,9 @@ class ChatApplication:
             self.file_processor.write_file(self.files[special_command['update']], content, mode='w')
             self.ui.display_status(f"File {special_command['update']} updated")
 
-    def clear_chat(self):
+    def clear_chat(self, keep_text_inputs=False):
         self.model.initialize()  # This will reset the chat history in the model
+        if not keep_text_inputs:
+            self.text_inputs = []
         self.ui.display_status("Chat history cleared.")
+
