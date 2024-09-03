@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-import signal
+import signal, sys
 from hermes.chat_models.base import ChatModel
 from hermes.ui.chat_ui import ChatUI
 from hermes.file_processors.base import FileProcessor
@@ -20,6 +20,21 @@ class ChatApplication:
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.model.initialize()
 
+        # Check if input is coming from a pipe
+        if not sys.stdin.isatty():
+            if initial_prompt:
+                user_input = initial_prompt
+            else:
+                user_input = sys.stdin.read().strip()
+
+            if user_input:
+                context = self.prompt_formatter.format_prompt(self.files, user_input, special_command)
+                response = self.ui.display_response(self.model.send_message(context))
+                if special_command:
+                    self.handle_special_command(special_command, response)
+            return
+
+        # Interactive mode
         try:
             if not initial_prompt:
                 if special_command:
