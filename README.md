@@ -45,7 +45,7 @@ Hermes is a powerful command-line tool that enables you to interact with various
 
    Add your API keys and default model to the config file:
    ```ini
-   [DEFAULT]
+   [BASE]
    model = claude
 
    [ANTHROPIC]
@@ -62,7 +62,7 @@ Hermes is a powerful command-line tool that enables you to interact with various
    model = deepseek-coder
    ```
    
-   You can set any supported model as the default in the `[DEFAULT]` section.
+   You can set any supported model as the default in the `[BASE]` section.
 
    Note: The application will create the necessary directories if they don't exist.
 
