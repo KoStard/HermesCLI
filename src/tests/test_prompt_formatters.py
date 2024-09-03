@@ -59,9 +59,11 @@ class TestXMLPromptFormatter(unittest.TestCase):
 
         root = ET.fromstring(result)
         prompts = root.findall('prompt')
-        self.assertEqual(len(prompts), 2)
+        additional_content = root.findall('additional_content')
+        self.assertEqual(len(prompts), 1)
         self.assertEqual(prompts[0].text, 'Initial prompt')
-        self.assertEqual(prompts[1].text, 'Additional content')
+        self.assertEqual(len(additional_content), 1)
+        self.assertEqual(additional_content[0].text, 'Additional content')
 
 class TestBedrockPromptFormatter(unittest.TestCase):
     def setUp(self):
@@ -73,8 +75,6 @@ class TestBedrockPromptFormatter(unittest.TestCase):
         files = {'test_file': 'path/to/test_file.txt'}
         prompt = 'Test prompt'
         self.file_processor.read_file.return_value = b"File content"
-
-        self.file_processor.read_file.return_value = "File content"
 
         result = self.formatter.format_prompt(files, prompt)
 

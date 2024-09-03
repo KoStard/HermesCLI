@@ -22,7 +22,7 @@ class TestChatApplication(unittest.TestCase):
         self.ui.get_user_input.side_effect = ["exit"]
         self.app.run(initial_prompt)
         self.model.initialize.assert_called()
-        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, initial_prompt, None)
+        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, initial_prompt, None, [])
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()
 
@@ -90,7 +90,7 @@ class TestChatApplication(unittest.TestCase):
         mock_stdin_read.return_value = "Piped input"
         self.app.run()
         self.model.initialize.assert_called_once()
-        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, "Piped input", None)
+        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, "Piped input", None, [])
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()
 
@@ -100,7 +100,7 @@ class TestChatApplication(unittest.TestCase):
         mock_stdin_read.return_value = "Piped input"
         self.app.run(initial_prompt="Initial prompt")
         self.model.initialize.assert_called_once()
-        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, "Initial prompt", None)
+        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, "Initial prompt", None, [])
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()
 

@@ -42,5 +42,18 @@ class XMLPromptFormatter(PromptFormatter):
 
         return ET.tostring(root, encoding='unicode')
 
-    def add_content(self, current, content_to_add: str) -> Any:
-        return current + '\n\n' + content_to_add
+    def add_content(self, current: str, content_to_add: str) -> str:
+        """
+        Adds new content to the existing XML structure.
+    
+        Args:
+            current (str): The current XML string.
+            content_to_add (str): The content to be added, which may be any text.
+    
+        Returns:
+            str: Updated XML string with the new content added.
+        """
+        root = ET.fromstring(current)
+        new_content = ET.SubElement(root, "additional_content")
+        new_content.text = content_to_add
+        return ET.tostring(root, encoding='unicode')
