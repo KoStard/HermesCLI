@@ -1,1 +1,4 @@
-- Add support for --context, it's like --prompt, but doesn't count as a the user input, it's just context, like --file.
+- Add support for --context, it's like --prompt, but doesn't count as a the user input, it's just context, like --file. Or maybe call it `--prompt_as_file`
+- Experiment with piping for inputs
+- Add a flag for one-input-only execution. Allow configuring that from the workflow as well.
+- ctrl+c shouldn't kill the whole app from the first try, first it should stop whatever is happening at the moment, and if it's done second time, then kill the app

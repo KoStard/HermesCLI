@@ -24,14 +24,16 @@ class TestChatUI(unittest.TestCase):
         mock_live.return_value.__enter__.return_value.update.assert_called()
 
     @patch('builtins.input', side_effect=["", "  ", "Hello", "{", "This is a", "multi-line", "input", "}"])
-    def test_get_user_input(self, mock_input):
+    @patch('os.isatty', return_value=True)
+    def test_get_user_input(self, mock_isatty, mock_input):
         result1 = self.chat_ui.get_user_input()
         self.assertEqual(result1, "Hello")
-        
+
         result2 = self.chat_ui.get_user_input()
         self.assertEqual(result2, "This is a\nmulti-line\ninput")
-        
+
         self.assertEqual(mock_input.call_count, 8)
+        self.assertEqual(mock_isatty.call_count, 2)
 
     @patch('rich.console.Console.print')
     def test_display_status(self, mock_print):

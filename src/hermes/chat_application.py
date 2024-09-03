@@ -19,7 +19,7 @@ class ChatApplication:
 
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.model.initialize()
-        
+
         try:
             if not initial_prompt:
                 if special_command:
@@ -32,14 +32,14 @@ class ChatApplication:
                     first_message = self.ui.get_user_input()
             else:
                 first_message = initial_prompt
-                    
-            
+
+
             if first_message.lower() in ['exit', 'quit', 'q']:
                 return
 
             context = self.prompt_formatter.format_prompt(self.files, first_message, special_command)
             response = self.ui.display_response(self.model.send_message(context))
-            
+
             if special_command:
                 self.handle_special_command(special_command, response)
                 return
@@ -47,7 +47,7 @@ class ChatApplication:
             while True:
                 user_input = self.ui.get_user_input()
                 user_input_lower = user_input.lower()
-                
+
                 if user_input_lower in ['exit', 'quit', 'q']:
                     return
                 elif user_input_lower == '/clear':
@@ -70,5 +70,4 @@ class ChatApplication:
 
     def clear_chat(self):
         self.model.initialize()  # This will reset the chat history in the model
-        self.ui.clear_screen()
         self.ui.display_status("Chat history cleared.")
