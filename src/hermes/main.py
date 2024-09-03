@@ -46,7 +46,7 @@ def main():
     parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
     parser.add_argument("--append", "-a", help="Append to the specified file")
     parser.add_argument("--update", "-u", help="Update the specified file")
-    parser.add_argument("--raw", "-r", help="Print the output without rendering markdown", action="store_true")
+    parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
     args = parser.parse_args()
 
@@ -117,7 +117,7 @@ def run_chat_application(args, config, special_command_prompts):
 
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
-    ui = ChatUI(prints_raw=args.raw)
+    ui = ChatUI(prints_raw=not args.pretty)
     app = ChatApplication(model, ui, file_processor, prompt_formatter, special_command_prompts)
     app.set_files(processed_files)
     app.run(initial_prompt, special_command if special_command else None)
