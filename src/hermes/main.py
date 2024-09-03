@@ -47,7 +47,6 @@ def main():
     parser.add_argument("--append", "-a", help="Append to the specified file")
     parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--raw", "-r", help="Print the output without rendering markdown", action="store_true")
-    parser.add_argument("--confirm-before-starting", help="Will confirm before sending the LLM requests, in case you want to prevent unnecessary calls", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
     args = parser.parse_args()
 
@@ -71,7 +70,7 @@ def main():
         run_workflow(args, config)
     else:
         run_chat_application(args, config, special_command_prompts)
-        
+
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)
 
@@ -115,11 +114,6 @@ def run_chat_application(args, config, special_command_prompts):
     elif args.prompt_file:
         with open(args.prompt_file, 'r') as f:
             initial_prompt = f.read().strip()
-
-    if args.confirm_before_starting:
-        confirm = input("Are you sure you want to continue? (y/n) ").lower()
-        if confirm != 'y' and confirm != '':
-            return
 
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
