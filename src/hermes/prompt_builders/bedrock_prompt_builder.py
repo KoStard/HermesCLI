@@ -1,3 +1,4 @@
+import os
 from typing import Optional, List, Dict, Union, Any
 
 from hermes.file_processors.base import FileProcessor
@@ -20,19 +21,47 @@ class BedrockPromptBuilder(PromptBuilder):
         content = text if not name else f"{name}:\n{text}"
         self.contents.append({'text': content + '\n'})
 
-    def add_file(self, file_path: str, name: str):
+    def add_file(self, file_path: str, name: Optional[str] = None):
         file_name = name or file_path
-        self.contents.append({
-            'text': f"File: {file_name}\nContent:\n{{file_content:{file_path}}}\n"
-        })
+        if is_binary(file_path):
+            _, ext = os.path.splitext(file_path)
+            ext = ext.lower()
+            content_bytes = self.file_processor.read_file(file_path)
+            if ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp']:
+                self.contents.append({
+                    'image': {
+                        'format': ext[1:],
+                        'source': {
+                            'bytes': content_bytes
+                        }
+                    }
+                })
+            else:
+                self.contents.append({
+                    'document': {
+                        'format': ext[1:],
+                        'name': file_name,
+                        'source': {
+                            'bytes': content_bytes
+                        }
+                    }
+                })
+        else:
+            file_content = self.file_processor.read_file(file_path).decode('utf-8')
+            self.contents.append({
+                'text': f"File: {file_name}\nContent:\n{file_content}\n"
+            })
 
     def add_image(self, image_path: str, name: Optional[str] = None):
         image_name = name or image_path
+        _, ext = os.path.splitext(image_path)
+        ext = ext.lower()
+        content_bytes = self.file_processor.read_file(image_path)
         self.contents.append({
             'image': {
-                'name': image_name,
+                'format': ext[1:],
                 'source': {
-                    'path': image_path
+                    'bytes': content_bytes
                 }
             }
         })
