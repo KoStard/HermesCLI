@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import Mock, patch
 from argparse import ArgumentParser
 from requests.exceptions import RequestException
+from tenacity import RetryError
 
 from hermes.context_providers.url_context_provider import URLContextProvider
 from hermes.prompt_builders.base import PromptBuilder
@@ -43,7 +44,7 @@ class TestURLContextProvider:
     def test_fetch_url_content_failure(self, mock_get, url_provider):
         mock_get.side_effect = RequestException
 
-        with pytest.raises(RequestException):
+        with pytest.raises(RetryError):
             url_provider.fetch_url_content('http://example.com')
 
     def test_load_context(self, url_provider):

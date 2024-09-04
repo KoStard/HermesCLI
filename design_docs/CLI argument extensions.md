@@ -65,5 +65,5 @@ Tasks:
 - [x] Update unit-tests for main.py
 - [x] Update the workflow execution to use this model. Update tests.
 - [x] Manual Test of main.py
-- [ ] Add the URL provider and tests
+- [x] Add the URL provider and tests
 - [ ] Add image provider and tests
