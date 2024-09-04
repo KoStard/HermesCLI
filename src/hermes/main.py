@@ -32,6 +32,9 @@ from .chat_models.deepseek import DeepSeekModel
 from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
+from .context_orchestrator import ContextOrchestrator
+from .context_providers.file_context_provider import FileContextProvider
+from .context_providers.text_context_provider import TextContextProvider
 
 def get_default_model(config):
     if 'BASE' in config and 'model' in config['BASE']:
@@ -41,14 +44,21 @@ def get_default_model(config):
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
     parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama", "deepseek"], help="Choose the model to use")
-    parser.add_argument("files", nargs='*', help="Input files")
     parser.add_argument("--prompt", help="Prompt text to send immediately")
     parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
     parser.add_argument("--append", "-a", help="Append to the specified file")
     parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
-    parser.add_argument("--text", action="append", help="Additional text to be included with prompts", default=[])
+
+    # Create context providers
+    file_provider = FileContextProvider()
+    text_provider = TextContextProvider()
+    context_orchestrator = ContextOrchestrator([file_provider, text_provider])
+
+    # Add arguments from context providers
+    context_orchestrator.add_arguments(parser)
+
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -67,10 +77,20 @@ def main():
     with open(special_command_prompts_path, 'r') as f:
         special_command_prompts = yaml.safe_load(f)
 
+    # Create context providers
+    file_provider = FileContextProvider()
+    text_provider = TextContextProvider()
+    context_orchestrator = ContextOrchestrator([file_provider, text_provider])
+
+    # Add arguments from context providers
+    context_orchestrator.add_arguments(parser)
+
+    args = parser.parse_args()
+
     if args.workflow:
         run_workflow(args, config)
     else:
-        run_chat_application(args, config, special_command_prompts)
+        run_chat_application(args, config, special_command_prompts, context_orchestrator)
 
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)
@@ -96,18 +116,14 @@ def run_workflow(args, config):
 
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
-def run_chat_application(args, config, special_command_prompts):
-    processed_files = {process_file_name(file): file for file in args.files}
-
+def run_chat_application(args, config, special_command_prompts, context_orchestrator):
     if args.model is None:
         args.model = get_default_model(config)
     special_command: Dict[str, str] = {}
     if args.append:
         special_command['append'] = process_file_name(args.append)
-        processed_files[process_file_name(args.append)] = args.append
     elif args.update:
         special_command['update'] = process_file_name(args.update)
-        processed_files[process_file_name(args.update)] = args.update
 
     initial_prompt = None
     if args.prompt:
@@ -118,9 +134,17 @@ def run_chat_application(args, config, special_command_prompts):
 
     model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
 
+    # Load contexts from arguments
+    context_orchestrator.load_contexts(args)
+
     ui = ChatUI(prints_raw=not args.pretty)
-    app = ChatApplication(model, ui, file_processor, prompt_formatter, special_command_prompts, args.text)
-    app.set_files(processed_files)
+    app = ChatApplication(model, ui, file_processor, prompt_formatter, special_command_prompts)
+    
+    # Build the prompt using the context orchestrator
+    prompt_builder = prompt_formatter.create_prompt_builder()
+    context_orchestrator.build_prompt(prompt_builder)
+    initial_prompt = prompt_builder.build_prompt() + (initial_prompt or "")
+
     app.run(initial_prompt, special_command if special_command else None)
 
 def create_model_and_processors(model_name: str, config: configparser.ConfigParser):
