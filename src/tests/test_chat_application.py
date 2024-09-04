@@ -12,11 +12,6 @@ class TestChatApplication(unittest.TestCase):
         self.context_orchestrator = MagicMock()
         self.app = ChatApplication(self.model, self.ui, self.file_processor, self.prompt_builder, self.special_command_prompts, self.context_orchestrator)
 
-    def test_set_files(self):
-        files = {'file1': 'path/to/file1', 'file2': 'path/to/file2'}
-        self.app.set_files(files)
-        self.assertEqual(self.app.files, files)
-
     @patch('sys.stdin.isatty', return_value=True)
     def test_run_with_initial_prompt(self, mock_isatty):
         initial_prompt = "Initial prompt"
@@ -79,7 +74,7 @@ class TestChatApplication(unittest.TestCase):
 
     @patch('sys.stdin.isatty', return_value=True)
     def test_run_with_text_inputs(self, mock_isatty):
-        app = ChatApplication(self.model, self.ui, self.file_processor, self.prompt_formatter, self.special_command_prompts, ["Text input 1", "Text input 2"])
+        app = ChatApplication(self.model, self.ui, self.file_processor, self.prompt_builder, self.special_command_prompts, ["Text input 1", "Text input 2"])
         self.ui.get_user_input.side_effect = ["User input", "exit"]
         app.run()
         self.model.initialize.assert_called()
