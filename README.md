@@ -27,23 +27,19 @@ Hermes is a powerful command-line tool that enables you to interact with various
 
 ## Installation
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/KoStard/HermesCLI
-   cd HermesCLI
-   ```
+You can install Hermes CLI using pip:
 
-2. Install the required dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+```
+pip install hermes-cli
+```
 
-3. Set up your configuration file:
-   Create a file named `config.ini` in the following location:
+After installation, set up your configuration file:
+
+1. Create a file named `config.ini` in the following location:
    - On Unix-like systems (Linux, macOS): `~/.config/multillmchat/config.ini`
    - On Windows: `C:\Users\YourUsername\.config\multillmchat\config.ini`
 
-   Add your API keys and default model to the config file:
+2. Add your API keys and default model to the config file:
    ```ini
    [BASE]
    model = claude
@@ -66,7 +62,17 @@ Hermes is a powerful command-line tool that enables you to interact with various
 
    Note: The application will create the necessary directories if they don't exist.
 
-4. Install the package in editable mode:
+### Development Installation
+
+If you want to contribute to Hermes CLI or install it in editable mode:
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/KoStard/HermesCLI
+   cd HermesCLI
+   ```
+
+2. Install the package in editable mode:
    ```
    pip install -e .
    ```
