@@ -61,8 +61,8 @@ Tasks:
 - [x] Implement unit tests for the prompt builders.
 - [x] Update the chat application to use prompt builders and context providers.
 - [x] Final update of main.py
-- [ ] Deprecate prompt formatters.
-- [ ] Update unit-tests for main.py
+- [x] Deprecate prompt formatters.
+- [x] Update unit-tests for main.py
 - [ ] Update the workflow execution to use this model. Update tests.
 - [ ] Manual Test of main.py
 - [ ] Add the URL provider and tests

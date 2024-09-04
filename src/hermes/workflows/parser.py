@@ -124,7 +124,7 @@ class WorkflowParser:
             ui = ChatUI(prints_raw=True)
             file_processor = DefaultFileProcessor()
             prompt_builder = XMLPromptBuilder(file_processor)
-            context_orchestrator = ContextOrchestrator()
+            context_orchestrator = ContextOrchestrator([])
             special_command_prompts = {}  # You may want to load this from a config file
             self.chat_application = ChatApplication(self.model, ui, file_processor, prompt_builder, special_command_prompts, context_orchestrator)
 
