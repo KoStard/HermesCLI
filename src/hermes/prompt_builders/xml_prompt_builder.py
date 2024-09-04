@@ -3,16 +3,11 @@ from typing import Optional
 from .base import PromptBuilder
 
 class XMLPromptBuilder(PromptBuilder):
-    def __init__(self):
+    def __init__(self, file_processor: FileProcessor):
         self.root = ET.Element("input")
-        self.system_message_added = False
+        self.file_processor = file_processor
 
     def add_text(self, text: str, name: Optional[str] = None):
-        if not self.system_message_added:
-            system_message = ET.SubElement(self.root, "systemMessage")
-            system_message.text = "You are a helpful assistant, helping with the requests your manager will assign to you. You gain bonus at the end of each week if you meaningfully help your manager with his goals."
-            self.system_message_added = True
-
         if name:
             text_elem = ET.SubElement(self.root, "text", name=name)
         else:
