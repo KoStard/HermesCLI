@@ -45,7 +45,6 @@ class BedrockPromptBuilder(PromptBuilder):
         self.contents.append({
             'image': {
                 'format': ext[1:],
-                'name': name,
                 'source': {
                     'bytes': content_bytes
                 }
