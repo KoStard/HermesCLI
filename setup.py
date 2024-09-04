@@ -17,8 +17,7 @@ setup(
         "argcomplete",
         "requests",
         "tenacity",
-        "html2text",
-        "Pillow"
+        "html2text"
     ],
     entry_points={
         "console_scripts": [
