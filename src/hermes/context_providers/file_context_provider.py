@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from typing import List, Any
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
+from hermes.utils.file_utils import process_file_name
 
 class FileContextProvider(ContextProvider):
     def __init__(self):
@@ -15,4 +16,4 @@ class FileContextProvider(ContextProvider):
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for file_path in self.files:
-            prompt_builder.add_file(file_path)
+            prompt_builder.add_file(file_path, process_file_name(file_path))

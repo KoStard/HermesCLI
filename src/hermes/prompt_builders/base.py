@@ -13,22 +13,22 @@ class PromptBuilder(ABC):
         pass
 
     @abstractmethod
-    def add_file(self, file_path: str, name: Optional[str] = None):
+    def add_file(self, file_path: str, name: str):
         """
         Add a file to the prompt.
         
         :param file_path: Path to the file to add
-        :param name: Optional name for the file, allowing reference from another piece
+        :param name: Name for the file, allowing reference from another piece
         """
         pass
 
     @abstractmethod
-    def add_image(self, image_path: str, name: Optional[str] = None):
+    def add_image(self, image_path: str, name: str):
         """
         Add an image to the prompt.
         
         :param image_path: Path to the image file to add
-        :param name: Optional name for the image, allowing reference from another piece
+        :param name: Name for the image, allowing reference from another piece
         """
         pass
 

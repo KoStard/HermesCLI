@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 from typing import TypeVar, Any
 
+from hermes.prompt_builders.base import PromptBuilder
+
 T = TypeVar('T')  # Define a type variable
 
 class ContextProvider(ABC):
@@ -24,7 +26,7 @@ class ContextProvider(ABC):
         pass
 
     @abstractmethod
-    def add_to_prompt(self, prompt_builder: Any):
+    def add_to_prompt(self, prompt_builder: PromptBuilder):
         """
         Add the loaded context to the prompt builder.
         

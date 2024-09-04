@@ -19,14 +19,12 @@ class XMLPromptBuilder(PromptBuilder):
             text_elem = ET.SubElement(self.root, "text")
         text_elem.text = text
 
-    def add_file(self, file_path: str, name: Optional[str] = None):
-        file_elem = ET.SubElement(self.root, "document", name=name or file_path)
+    def add_file(self, file_path: str, name: str):
+        file_elem = ET.SubElement(self.root, "document", name=name)
         file_elem.text = f"{{file_content:{file_path}}}"
 
-    def add_image(self, image_path: str, name: Optional[str] = None):
-        image_elem = ET.SubElement(self.root, "image", path=image_path)
-        if name:
-            image_elem.set("name", name)
+    def add_image(self, image_path: str, name: str):
+        image_elem = ET.SubElement(self.root, "image", path=image_path, name=name)
 
     def build_prompt(self) -> str:
         return ET.tostring(self.root, encoding='unicode')

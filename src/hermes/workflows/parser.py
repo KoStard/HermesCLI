@@ -1,8 +1,10 @@
 import yaml
 import os
-from typing import Dict, Any, List, Callable
+from typing import Dict, Any, Callable
 
 from hermes.chat_models.base import ChatModel
+from hermes.context_orchestrator import ContextOrchestrator
+from hermes.prompt_builders.xml_prompt_builder import XMLPromptBuilder
 from .tasks.base import Task
 from .tasks.llm_task import LLMTask
 from .tasks.shell_task import ShellTask
@@ -15,7 +17,6 @@ from .tasks.chat_application_task import ChatApplicationTask
 from hermes.chat_application import ChatApplication
 from hermes.ui.chat_ui import ChatUI
 from hermes.file_processors.default import DefaultFileProcessor
-from hermes.prompt_formatters.xml import XMLPromptFormatter
 
 class WorkflowParser:
     def __init__(self, model: ChatModel, printer: Callable[[str], None]):
@@ -122,8 +123,9 @@ class WorkflowParser:
         if self.chat_application is None:
             ui = ChatUI(prints_raw=True)
             file_processor = DefaultFileProcessor()
-            prompt_formatter = XMLPromptFormatter(file_processor)
+            prompt_builder = XMLPromptBuilder(file_processor)
+            context_orchestrator = ContextOrchestrator()
             special_command_prompts = {}  # You may want to load this from a config file
-            self.chat_application = ChatApplication(self.model, ui, file_processor, prompt_formatter, special_command_prompts)
+            self.chat_application = ChatApplication(self.model, ui, file_processor, prompt_builder, special_command_prompts, context_orchestrator)
 
         return ChatApplicationTask(task_id, task_config, self.chat_application, self.printer)

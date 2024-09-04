@@ -37,4 +37,6 @@ Decision: We'll use **Prompt Builder** as it aligns well with the Builder patter
 - We'll keep the term "add" for methods like `add_text`, `add_file`, etc., as it's clear and consistent with the Builder pattern.
 - For the main class that manages context providers, we could consider names like `ContextManager` or `ContextOrchestrator`.
 
+Decision: Use `ContextOrchestrator` for the class managing context providers.
+
 These naming decisions will be reflected in our implementation of the base classes and throughout the project.

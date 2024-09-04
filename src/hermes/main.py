@@ -9,6 +9,9 @@ import configparser
 from typing import Dict
 import os
 
+from hermes.prompt_builders.bedrock_prompt_builder import BedrockPromptBuilder
+from hermes.prompt_builders.xml_prompt_builder import XMLPromptBuilder
+
 if os.name == 'posix':
     import readline
 elif os.name == 'nt':
@@ -21,8 +24,6 @@ elif os.name == 'nt':
 from .utils.file_utils import process_file_name
 from .file_processors.default import DefaultFileProcessor
 from .file_processors.bedrock import BedrockFileProcessor
-from .prompt_formatters.xml import XMLPromptFormatter
-from .prompt_formatters.bedrock import BedrockPromptFormatter
 from .chat_models.claude import ClaudeModel
 from .chat_models.bedrock import BedrockModel
 from .chat_models.gemini import GeminiModel
@@ -77,16 +78,6 @@ def main():
     with open(special_command_prompts_path, 'r') as f:
         special_command_prompts = yaml.safe_load(f)
 
-    # Create context providers
-    file_provider = FileContextProvider()
-    text_provider = TextContextProvider()
-    context_orchestrator = ContextOrchestrator([file_provider, text_provider])
-
-    # Add arguments from context providers
-    context_orchestrator.add_arguments(parser)
-
-    args = parser.parse_args()
-
     if args.workflow:
         run_workflow(args, config)
     else:
@@ -96,12 +87,12 @@ def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)
 
 def run_workflow(args, config):
-    model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
+    model, file_processor, prompt_builder = create_model_and_processors(args.model, config)
 
     input_files = args.files
     initial_prompt = args.prompt or (open(args.prompt_file, 'r').read().strip() if args.prompt_file else "")
 
-    executor = WorkflowExecutor(args.workflow, model, prompt_formatter, input_files, initial_prompt, custom_print)
+    executor = WorkflowExecutor(args.workflow, model, prompt_builder, input_files, initial_prompt, custom_print)
     result = executor.execute()
 
     # Create /tmp/hermes/ directory if it doesn't exist
@@ -132,51 +123,46 @@ def run_chat_application(args, config, special_command_prompts, context_orchestr
         with open(args.prompt_file, 'r') as f:
             initial_prompt = f.read().strip()
 
-    model, file_processor, prompt_formatter = create_model_and_processors(args.model, config)
+    model, file_processor, prompt_builder = create_model_and_processors(args.model, config)
 
     # Load contexts from arguments
     context_orchestrator.load_contexts(args)
 
     ui = ChatUI(prints_raw=not args.pretty)
-    app = ChatApplication(model, ui, file_processor, prompt_formatter, special_command_prompts)
-    
-    # Build the prompt using the context orchestrator
-    prompt_builder = prompt_formatter.create_prompt_builder()
-    context_orchestrator.build_prompt(prompt_builder)
-    initial_prompt = prompt_builder.build_prompt() + (initial_prompt or "")
+    app = ChatApplication(model, ui, file_processor, prompt_builder, special_command_prompts, context_orchestrator)
 
-    app.run(initial_prompt, special_command if special_command else None)
+    app.run(initial_prompt, special_command)
 
 def create_model_and_processors(model_name: str, config: configparser.ConfigParser):
     if model_name == "claude":
         model = ClaudeModel(config)
         file_processor = DefaultFileProcessor()
-        prompt_formatter = XMLPromptFormatter(file_processor)
+        prompt_builder = XMLPromptBuilder(file_processor)
     elif model_name.startswith("bedrock-"):
         model_tag = '-'.join(model_name.split("-")[1:])
         model = BedrockModel(config, model_tag)
         file_processor = BedrockFileProcessor()
-        prompt_formatter = BedrockPromptFormatter(file_processor)
+        prompt_builder = BedrockPromptBuilder(file_processor)
     elif model_name == "gemini":
         model = GeminiModel(config)
         file_processor = DefaultFileProcessor()
-        prompt_formatter = XMLPromptFormatter(file_processor)
+        prompt_builder = XMLPromptBuilder(file_processor)
     elif model_name == "openai":
         model = OpenAIModel(config)
         file_processor = DefaultFileProcessor()
-        prompt_formatter = XMLPromptFormatter(file_processor)
+        prompt_builder = XMLPromptBuilder(file_processor)
     elif model_name == "ollama":
         model = OllamaModel(config)
         file_processor = DefaultFileProcessor()
-        prompt_formatter = XMLPromptFormatter(file_processor)
+        prompt_builder = XMLPromptBuilder(file_processor)
     elif model_name == "deepseek":
         model = DeepSeekModel(config)
         file_processor = DefaultFileProcessor()
-        prompt_formatter = XMLPromptFormatter(file_processor)
+        prompt_builder = XMLPromptBuilder(file_processor)
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 
-    return model, file_processor, prompt_formatter
+    return model, file_processor, prompt_builder
 
 if __name__ == "__main__":
     main()
