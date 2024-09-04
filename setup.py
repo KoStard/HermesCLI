@@ -20,6 +20,9 @@ setup(
         "pdfminer.six",
         "html2text"
     ],
+    setup_requires=[
+        "wheel",
+    ],
     entry_points={
         "console_scripts": [
             "hermes=hermes.main:main",
