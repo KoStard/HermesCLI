@@ -2,6 +2,7 @@ import requests
 from argparse import ArgumentParser
 from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
+import html2text
 
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
@@ -10,6 +11,10 @@ class URLContextProvider(ContextProvider):
     def __init__(self):
         self.urls: List[str] = []
         self.contents: List[str] = []
+        self.html_converter = html2text.HTML2Text()
+        self.html_converter.ignore_links = False
+        self.html_converter.ignore_images = False
+        self.html_converter.ignore_tables = False
 
     def add_argument(self, parser: ArgumentParser):
         parser.add_argument("--url", action="append", help="URL to fetch content from")
@@ -32,7 +37,4 @@ class URLContextProvider(ContextProvider):
         return self.html_to_markdown(response.text)
 
     def html_to_markdown(self, html: str) -> str:
-        # This is a placeholder. In a real implementation, you would use a library
-        # like html2text or beautifulsoup to convert HTML to Markdown.
-        # For now, we'll just return the raw HTML.
-        return f"Content from URL (HTML):\n\n{html}"
+        return self.html_converter.handle(html)

@@ -16,7 +16,8 @@ setup(
         "openai",
         "argcomplete",
         "requests",
-        "tenacity"
+        "tenacity",
+        "html2text"
     ],
     entry_points={
         "console_scripts": [
