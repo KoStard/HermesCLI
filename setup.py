@@ -18,7 +18,7 @@ setup(
         "pyreadline3; sys_platform == 'win32'",
         "ollama",
         "pdfminer.six",
-        "html2text"
+        "markdownify",
     ],
     setup_requires=[
         "wheel",
