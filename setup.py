@@ -14,7 +14,9 @@ setup(
         "PyPDF2",
         "rich",
         "openai",
-        "argcomplete"
+        "argcomplete",
+        "requests",
+        "tenacity"
     ],
     entry_points={
         "console_scripts": [
