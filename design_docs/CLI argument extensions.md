@@ -63,7 +63,7 @@ Tasks:
 - [x] Final update of main.py
 - [x] Deprecate prompt formatters.
 - [x] Update unit-tests for main.py
-- [ ] Update the workflow execution to use this model. Update tests.
-- [ ] Manual Test of main.py
+- [x] Update the workflow execution to use this model. Update tests.
+- [x] Manual Test of main.py
 - [ ] Add the URL provider and tests
 - [ ] Add image provider and tests
