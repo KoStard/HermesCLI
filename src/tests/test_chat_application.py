@@ -7,9 +7,10 @@ class TestChatApplication(unittest.TestCase):
         self.model = MagicMock()
         self.ui = MagicMock()
         self.file_processor = MagicMock()
-        self.prompt_formatter = MagicMock()
+        self.prompt_builder = MagicMock()
         self.special_command_prompts = MagicMock()
-        self.app = ChatApplication(self.model, self.ui, self.file_processor, self.prompt_formatter, self.special_command_prompts, [])
+        self.context_orchestrator = MagicMock()
+        self.app = ChatApplication(self.model, self.ui, self.file_processor, self.prompt_builder, self.special_command_prompts, self.context_orchestrator)
 
     def test_set_files(self):
         files = {'file1': 'path/to/file1', 'file2': 'path/to/file2'}
@@ -22,7 +23,9 @@ class TestChatApplication(unittest.TestCase):
         self.ui.get_user_input.side_effect = ["exit"]
         self.app.run(initial_prompt)
         self.model.initialize.assert_called()
-        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, initial_prompt, None, [])
+        self.context_orchestrator.build_prompt.assert_called_once_with(self.prompt_builder)
+        self.prompt_builder.add_text.assert_called_once_with(initial_prompt)
+        self.prompt_builder.build_prompt.assert_called_once()
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()
 
@@ -80,7 +83,9 @@ class TestChatApplication(unittest.TestCase):
         self.ui.get_user_input.side_effect = ["User input", "exit"]
         app.run()
         self.model.initialize.assert_called()
-        self.prompt_formatter.format_prompt.assert_called_with({}, "User input", None, ["Text input 1", "Text input 2"])
+        self.context_orchestrator.build_prompt.assert_called_with(self.prompt_builder)
+        self.prompt_builder.add_text.assert_called_with("User input")
+        self.prompt_builder.build_prompt.assert_called()
         self.assertEqual(self.model.send_message.call_count, 1)
         self.assertEqual(self.ui.display_response.call_count, 1)
 
@@ -90,7 +95,9 @@ class TestChatApplication(unittest.TestCase):
         mock_stdin_read.return_value = "Piped input"
         self.app.run()
         self.model.initialize.assert_called_once()
-        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, "Piped input", None, [])
+        self.context_orchestrator.build_prompt.assert_called_once_with(self.prompt_builder)
+        self.prompt_builder.add_text.assert_called_once_with("Piped input")
+        self.prompt_builder.build_prompt.assert_called_once()
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()
 
@@ -100,7 +107,9 @@ class TestChatApplication(unittest.TestCase):
         mock_stdin_read.return_value = "Piped input"
         self.app.run(initial_prompt="Initial prompt")
         self.model.initialize.assert_called_once()
-        self.prompt_formatter.format_prompt.assert_called_once_with(self.app.files, "Initial prompt", None, [])
+        self.context_orchestrator.build_prompt.assert_called_once_with(self.prompt_builder)
+        self.prompt_builder.add_text.assert_called_once_with("Initial prompt")
+        self.prompt_builder.build_prompt.assert_called_once()
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()
 
