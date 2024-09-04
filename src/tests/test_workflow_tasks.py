@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import os
 import tempfile
 
+from hermes.context_orchestrator import ContextOrchestrator
 from hermes.workflows.context import WorkflowContext
 from hermes.workflows.tasks.base import Task
 from hermes.workflows.tasks.markdown_extraction_task import MarkdownExtractionTask
@@ -82,7 +83,7 @@ class TestLLMTask(unittest.TestCase):
     def test_execute(self):
         context = WorkflowContext()
         context.set_global("input_files", ["file1.txt", "file2.txt"])
-        context.set_global("prompt_formatter", MagicMock())
+        context.set_global("prompt_builder", MagicMock())
 
         self.model.send_message.return_value = iter(["Response"])
 
@@ -118,22 +119,21 @@ class TestContextExtensionTask(unittest.TestCase):
         result = self.task.execute(context)
 
         self.assertIn("extended_files", result)
-        self.assertIn("processed_files", result)
+        self.assertIn("input_files", result)
         self.assertEqual(len(result["extended_files"]), 3)
-        self.assertEqual(len(result["processed_files"]), 3)
+        self.assertEqual(len(result["input_files"]), 3)
 
 class TestChatApplicationTask(unittest.TestCase):
     def setUp(self):
-        self.chat_app = MagicMock(spec=ChatApplication)
+        self.chat_app = MagicMock(spec=ChatApplication, context_orchestrator=ContextOrchestrator([]))
         self.task = ChatApplicationTask("chat_app", {}, self.chat_app, print)
 
     def test_execute(self):
         context = WorkflowContext()
-        context.set_global("processed_files", {"file1": "path/to/file1"})
+        context.set_global("input_files", ["path/to/file1"])
 
         result = self.task.execute(context)
 
-        self.chat_app.set_files.assert_called_once_with({"file1": "path/to/file1"})
         self.chat_app.run.assert_called_once()
         self.assertEqual(result["status"], "completed")
 

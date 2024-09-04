@@ -1,4 +1,6 @@
 from typing import Any, Dict, Callable
+
+from hermes.context_providers.file_context_provider import FileContextProvider
 from .base import Task
 from ..context import WorkflowContext
 from ...chat_application import ChatApplication
@@ -9,14 +11,16 @@ class ChatApplicationTask(Task):
         self.chat_application = chat_application
 
     def execute(self, context: WorkflowContext) -> Dict[str, Any]:
-        processed_files = context.get_global('processed_files', {})
-        self.chat_application.set_files(processed_files)
+        input_files = context.get_global('input_files', {})
+        file_context_provider = FileContextProvider()
+        file_context_provider.files = input_files
+        self.chat_application.context_orchestrator.context_providers = [file_context_provider]
 
         initial_prompt = self.get_config('initial_prompt')
         special_command = self.get_config('special_command')
 
         if self.print_output:
-            self.printer(f"Starting chat application with {len(processed_files)} files")
+            self.printer(f"Starting chat application with {len(input_files)} files")
 
         self.chat_application.run(initial_prompt, special_command)
 

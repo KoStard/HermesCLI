@@ -1,11 +1,11 @@
 import unittest
 from unittest.mock import Mock, patch
 import yaml
+from hermes.prompt_builders.base import PromptBuilder
 from hermes.workflows.context import WorkflowContext
 from hermes.workflows.executor import WorkflowExecutor
 from hermes.workflows.parser import WorkflowParser
 from hermes.chat_models.base import ChatModel
-from hermes.prompt_formatters.base import PromptFormatter
 from hermes.workflows.tasks.base import Task
 
 class TestWorkflowContext(unittest.TestCase):
@@ -85,7 +85,7 @@ class TestWorkflowExecutor(unittest.TestCase):
     @patch('hermes.workflows.parser.WorkflowParser')
     def setUp(self, MockParser):
         self.model_mock = Mock(spec=ChatModel)
-        self.prompt_formatter_mock = Mock(spec=PromptFormatter)
+        self.prompt_builder_mock = Mock(spec=PromptBuilder)
         self.root_task_mock = Mock(spec=Task, task_id="test_task")
 
         self.mock_parser = MockParser.return_value
@@ -95,7 +95,7 @@ class TestWorkflowExecutor(unittest.TestCase):
             self.executor = WorkflowExecutor(
                 'dummy_workflow.yaml',
                 self.model_mock,
-                self.prompt_formatter_mock,
+                self.prompt_builder_mock,
                 ['input1.txt', 'input2.txt'],
                 'initial prompt',
                 print
@@ -104,7 +104,7 @@ class TestWorkflowExecutor(unittest.TestCase):
     def test_initialization(self):
         self.assertEqual(self.executor.context.get_global('input_files'), ['input1.txt', 'input2.txt'])
         self.assertEqual(self.executor.context.get_global('initial_prompt'), 'initial prompt')
-        self.assertEqual(self.executor.context.get_global('prompt_formatter'), self.prompt_formatter_mock)
+        self.assertEqual(self.executor.context.get_global('prompt_builder'), self.prompt_builder_mock)
 
     def test_execute(self):
         self.root_task_mock.execute.return_value = {'result': 'task_result'}

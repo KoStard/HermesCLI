@@ -58,9 +58,9 @@ Tasks:
 - [x] Implement context orchestrator, that will handle loading and using the context providers. This part should be flexible enough that later we'll add extension model.
 - [x] Add logic into the main.py that will use the context orchestrator, update the arguments, etc.
 - [x] Implement the prompt builders based on the existing prompt_formatters.
-- [ ] Implement unit tests for the prompt builders.
-- [ ] Update the chat application to use prompt builders and context providers.
-- [ ] Final update of main.py
+- [x] Implement unit tests for the prompt builders.
+- [x] Update the chat application to use prompt builders and context providers.
+- [x] Final update of main.py
 - [ ] Deprecate prompt formatters.
 - [ ] Update unit-tests for main.py
 - [ ] Update the workflow execution to use this model. Update tests.

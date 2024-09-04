@@ -76,8 +76,7 @@ class TestRunChatApplication(unittest.TestCase):
         mock_get_default_model.assert_called_once_with(self.config)
         mock_create.assert_called_once_with("claude", self.config)
         mock_context_orchestrator.load_contexts.assert_called_once_with(self.args)
-        mock_context_orchestrator.build_prompt.assert_called_once()
-        mock_ChatApplication.return_value.run.assert_called_once_with(None, None)
+        mock_ChatApplication.return_value.run.assert_called_once_with(None, {})
 
     @patch('hermes.main.ChatApplication')
     @patch('hermes.main.ChatUI')
@@ -91,8 +90,7 @@ class TestRunChatApplication(unittest.TestCase):
         mock_ContextOrchestrator.return_value = mock_context_orchestrator
         run_chat_application(self.args, self.config, special_command_prompts, mock_context_orchestrator)
         mock_context_orchestrator.load_contexts.assert_called_once_with(self.args)
-        mock_context_orchestrator.build_prompt.assert_called_once()
-        mock_ChatApplication.return_value.run.assert_called_once_with("Test prompt", None)
+        mock_ChatApplication.return_value.run.assert_called_once_with("Test prompt", {})
 
     @patch('hermes.main.ChatApplication')
     @patch('hermes.main.ChatUI')
@@ -107,8 +105,7 @@ class TestRunChatApplication(unittest.TestCase):
         mock_ContextOrchestrator.return_value = mock_context_orchestrator
         run_chat_application(self.args, self.config, special_command_prompts, mock_context_orchestrator)
         mock_context_orchestrator.load_contexts.assert_called_once_with(self.args)
-        mock_context_orchestrator.build_prompt.assert_called_once()
-        mock_ChatApplication.return_value.run.assert_called_once_with("File prompt content", None)
+        mock_ChatApplication.return_value.run.assert_called_once_with("File prompt content", {})
 
     @patch('hermes.main.ChatApplication')
     @patch('hermes.main.ChatUI')
@@ -116,8 +113,8 @@ class TestRunChatApplication(unittest.TestCase):
     @patch('hermes.main.ContextOrchestrator')
     def test_run_chat_application_with_special_commands(self, mock_ContextOrchestrator, mock_create, mock_ChatUI, mock_ChatApplication):
         test_cases = [
-            ('append', 'output.txt', {'append': 'output'}),
-            ('update', 'update.txt', {'update': 'update'})
+            ('append', 'output.txt', {'append': 'output.txt'}),
+            ('update', 'update.txt', {'update': 'update.txt'})
         ]
         for attr, value, expected in test_cases:
             setattr(self.args, attr, value)
@@ -127,7 +124,6 @@ class TestRunChatApplication(unittest.TestCase):
             mock_ContextOrchestrator.return_value = mock_context_orchestrator
             run_chat_application(self.args, self.config, special_command_prompts, mock_context_orchestrator)
             mock_context_orchestrator.load_contexts.assert_called_once_with(self.args)
-            mock_context_orchestrator.build_prompt.assert_called_once()
             mock_ChatApplication.return_value.run.assert_called_with(None, expected)
             setattr(self.args, attr, None)
 
@@ -143,7 +139,6 @@ class TestRunChatApplication(unittest.TestCase):
         mock_ContextOrchestrator.return_value = mock_context_orchestrator
         run_chat_application(self.args, self.config, special_command_prompts, mock_context_orchestrator)
         mock_context_orchestrator.load_contexts.assert_called_once_with(self.args)
-        mock_context_orchestrator.build_prompt.assert_called_once()
         mock_ChatUI.assert_called_once_with(prints_raw=True)
 
 if __name__ == '__main__':

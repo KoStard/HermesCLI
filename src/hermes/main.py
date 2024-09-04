@@ -112,9 +112,9 @@ def run_chat_application(args, config, special_command_prompts, context_orchestr
         args.model = get_default_model(config)
     special_command: Dict[str, str] = {}
     if args.append:
-        special_command['append'] = process_file_name(args.append)
+        special_command['append'] = args.append
     elif args.update:
-        special_command['update'] = process_file_name(args.update)
+        special_command['update'] = args.update
 
     initial_prompt = None
     if args.prompt:

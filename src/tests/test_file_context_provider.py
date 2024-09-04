@@ -24,8 +24,8 @@ class TestFileContextProvider(unittest.TestCase):
         self.provider.files = ['file1.txt', 'file2.txt']
         prompt_builder = MagicMock(spec=PromptBuilder)
         self.provider.add_to_prompt(prompt_builder)
-        prompt_builder.add_file.assert_any_call('file1.txt')
-        prompt_builder.add_file.assert_any_call('file2.txt')
+        prompt_builder.add_file.assert_any_call('file1.txt', 'file1')
+        prompt_builder.add_file.assert_any_call('file2.txt', 'file2')
         self.assertEqual(prompt_builder.add_file.call_count, 2)
 
 if __name__ == '__main__':

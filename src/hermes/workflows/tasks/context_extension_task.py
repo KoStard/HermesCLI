@@ -14,19 +14,14 @@ class ContextExtensionTask(Task):
         existing_files = context.get_global('input_files', [])
         extended_files = existing_files + [self.resolve_path(file) for file in self.files]
 
-        # Process file names
-        processed_files = {process_file_name(file): file for file in extended_files}
-
         # Update the global context with the extended file list
         context.set_global('input_files', extended_files)
-        context.set_global('processed_files', processed_files)
 
         if self.print_output:
             self.printer(f"Extended context with files: {', '.join(self.files)}")
 
         return {
-            'extended_files': extended_files,
-            'processed_files': processed_files
+            'input_files': extended_files,
         }
 
     def resolve_path(self, file_path: str) -> str:

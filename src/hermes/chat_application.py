@@ -5,6 +5,7 @@ from hermes.context_orchestrator import ContextOrchestrator
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.ui.chat_ui import ChatUI
 from hermes.file_processors.base import FileProcessor
+from hermes.utils.file_utils import process_file_name
 
 class ChatApplication:
     def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, prompt_builder: PromptBuilder, special_command_prompts: Dict[str, str], context_orchestrator: ContextOrchestrator):
@@ -16,6 +17,8 @@ class ChatApplication:
         self.context_orchestrator = context_orchestrator
 
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
+        if not special_command:
+            special_command = {}
         self.model.initialize()
         self.context_orchestrator.build_prompt(self.prompt_builder)
 
@@ -29,9 +32,9 @@ class ChatApplication:
             if user_input:
                 self.prompt_builder.add_text(user_input)
                 if 'append' in special_command:
-                    self.prompt_builder.add_text(self.special_command_prompts['append'].format(file_name=special_command['append']))
+                    self.prompt_builder.add_text(self.special_command_prompts['append'].format(file_name=process_file_name(special_command['append'])))
                 elif 'update' in special_command:
-                    self.prompt_builder.add_text(self.special_command_prompts['update'].format(file_name=special_command['update']))
+                    self.prompt_builder.add_text(self.special_command_prompts['update'].format(file_name=process_file_name(special_command['update'])))
                 context = self.prompt_builder.build_prompt()
                 response = self.ui.display_response(self.model.send_message(context))
                 if special_command:
@@ -85,10 +88,10 @@ class ChatApplication:
 
     def handle_special_command(self, special_command: Dict[str, str], content: str):
         if 'append' in special_command:
-            self.file_processor.write_file(self.files[special_command['append']], "\n" + content, mode='a')
+            self.file_processor.write_file(special_command['append'], "\n" + content, mode='a')
             self.ui.display_status(f"Content appended to {special_command['append']}")
         elif 'update' in special_command:
-            self.file_processor.write_file(self.files[special_command['update']], content, mode='w')
+            self.file_processor.write_file(special_command['update'], content, mode='w')
             self.ui.display_status(f"File {special_command['update']} updated")
 
     def clear_chat(self, keep_text_inputs=False):
