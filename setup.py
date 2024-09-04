@@ -28,6 +28,7 @@ setup(
         'test': [
             'pytest',
             'pytest-cov',
+            'pytest-mock',
         ],
     },
     test_suite='tests',
