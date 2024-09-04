@@ -162,3 +162,8 @@ cython_debug/
 #.idea/
 .aider*
 .obsidian
+.vscode/
+workflows/
+tasks/
+docs/
+design_docs/

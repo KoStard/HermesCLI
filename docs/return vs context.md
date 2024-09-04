@@ -1,2 +1,0 @@
-You influence the context of the upstream through your output_mapping and returned dict.
-You manage the context of the current flow through the context object. It's read-only. Map creates duplicates for each branch. You create a copy before adding things to it.
