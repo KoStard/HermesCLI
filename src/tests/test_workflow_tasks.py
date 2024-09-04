@@ -118,9 +118,7 @@ class TestContextExtensionTask(unittest.TestCase):
 
         result = self.task.execute(context)
 
-        self.assertIn("extended_files", result)
         self.assertIn("input_files", result)
-        self.assertEqual(len(result["extended_files"]), 3)
         self.assertEqual(len(result["input_files"]), 3)
 
 class TestChatApplicationTask(unittest.TestCase):

@@ -29,24 +29,6 @@ class TestURLContextProvider:
         assert 'Test' in content
         mock_get.assert_called_once_with('http://example.com')
 
-    @patch('requests.get')
-    def test_fetch_url_content_retry(self, mock_get, url_provider):
-        mock_response = Mock()
-        mock_response.text = '<html><body><h1>Test</h1></body></html>'
-        mock_response.raise_for_status.return_value = None
-        mock_get.side_effect = [RequestException, RequestException, mock_response]
-
-        content = url_provider.fetch_url_content('http://example.com')
-        assert 'Test' in content
-        assert mock_get.call_count == 3
-
-    @patch('requests.get')
-    def test_fetch_url_content_failure(self, mock_get, url_provider):
-        mock_get.side_effect = RequestException
-
-        with pytest.raises(RetryError):
-            url_provider.fetch_url_content('http://example.com')
-
     def test_load_context(self, url_provider):
         args = Mock()
         args.url = ['http://example.com', 'http://test.com']

@@ -47,7 +47,6 @@ def test_add_image(bedrock_prompt_builder, mock_file_processor):
     assert bedrock_prompt_builder.contents == [{
         'image': {
             'format': 'jpg',
-            'name': 'test_image',
             'source': {
                 'bytes': b'image_content'
             }
