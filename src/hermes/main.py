@@ -37,6 +37,7 @@ from .context_orchestrator import ContextOrchestrator
 from .context_providers.file_context_provider import FileContextProvider
 from .context_providers.text_context_provider import TextContextProvider
 from .context_providers.url_context_provider import URLContextProvider
+from .context_providers.image_context_provider import ImageContextProvider
 
 def get_default_model(config):
     if 'BASE' in config and 'model' in config['BASE']:
@@ -57,7 +58,8 @@ def main():
     file_provider = FileContextProvider()
     text_provider = TextContextProvider()
     url_provider = URLContextProvider()
-    context_orchestrator = ContextOrchestrator([file_provider, text_provider, url_provider])
+    image_provider = ImageContextProvider()
+    context_orchestrator = ContextOrchestrator([file_provider, text_provider, url_provider, image_provider])
 
     # Add arguments from context providers
     context_orchestrator.add_arguments(parser)
