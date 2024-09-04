@@ -3,6 +3,7 @@ from .base import Task
 from ...chat_models.base import ChatModel
 from ...workflows.context import WorkflowContext
 from ...utils.file_utils import process_file_name
+from ...prompt_builders.base import PromptBuilder
 
 class LLMTask(Task):
     def __init__(self, task_id: str, task_config: Dict[str, Any], model: ChatModel, printer: Callable[[str], None]):
@@ -15,7 +16,7 @@ class LLMTask(Task):
             raise ValueError(f"No prompt specified for LLM task {self.task_id}")
 
         # Get the prompt builder from the global context
-        prompt_builder = context.get_global('prompt_builder')
+        prompt_builder: PromptBuilder = context.get_global('prompt_builder')
 
         # Check if we should pass input files
         pass_input_files = self.get_config('pass_input_files', False)
@@ -23,24 +24,20 @@ class LLMTask(Task):
         if pass_input_files:
             # Process input files
             input_files = context.get_global('input_files', [])
-            processed_files = {}
             for file_path in input_files:
                 processed_name = process_file_name(file_path)
-                processed_files[processed_name] = file_path
+                prompt_builder.add_file(file_path, processed_name)
 
-            # Prepare the full context for the LLM with input files
-            full_message = prompt_formatter.format_prompt(
-                processed_files,
-                prompt,
-                context.get_global('initial_prompt', '')
-            )
-        else:
-            # Prepare the full context for the LLM without input files
-            full_message = prompt_formatter.format_prompt(
-                {},
-                prompt,
-                context.get_global('initial_prompt', '')
-            )
+        # Add the prompt text
+        prompt_builder.add_text(prompt, "Task Prompt")
+
+        # Add initial prompt if it exists
+        initial_prompt = context.get_global('initial_prompt', '')
+        if initial_prompt:
+            prompt_builder.add_text(initial_prompt, "Initial Prompt")
+
+        # Build the full message
+        full_message = prompt_builder.build_prompt()
 
         # Send the message to the model and collect the response
         response = ""
