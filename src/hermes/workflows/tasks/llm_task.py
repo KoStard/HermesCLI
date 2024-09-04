@@ -14,8 +14,8 @@ class LLMTask(Task):
         if not prompt:
             raise ValueError(f"No prompt specified for LLM task {self.task_id}")
 
-        # Get the prompt formatter from the global context
-        prompt_formatter = context.get_global('prompt_formatter')
+        # Get the prompt builder from the global context
+        prompt_builder = context.get_global('prompt_builder')
 
         # Check if we should pass input files
         pass_input_files = self.get_config('pass_input_files', False)
