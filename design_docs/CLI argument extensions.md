@@ -67,3 +67,12 @@ Tasks:
 - [x] Manual Test of main.py
 - [x] Add the URL provider and tests
 - [x] Add image provider and tests
+- [x] Make the providers "installation" self-service for each provider. Don't have a hardcoded list. Just adding the file should be enough. But try to find solution without file-system calls.
+
+## Extension model
+Now that we support the context providers, it's time we support private extensions.
+These extensions will allow the user to define their own set of private custom context providers. Maybe they have internal web pages, etc, that they want to get access to through hermes.
+
+- [ ] Decide the location. I imagine something like `~/.config/hermes/extra_context_providers/<subfolder>/<provider>.py`
+- [ ] Implement the loader in a way that from each provider, it will import classes that are ContextProvider subclasses.
+- [ ] Update the context loader logic to handle scenario when one provider is imported into another one. Keep a set of provider classes that have been initiated, don't create duplicates.
