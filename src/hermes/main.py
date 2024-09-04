@@ -34,10 +34,7 @@ from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
 from .context_orchestrator import ContextOrchestrator
-from .context_providers.file_context_provider import FileContextProvider
-from .context_providers.text_context_provider import TextContextProvider
-from .context_providers.url_context_provider import URLContextProvider
-from .context_providers.image_context_provider import ImageContextProvider
+from .context_provider_loader import load_context_providers
 
 def get_default_model(config):
     if 'BASE' in config and 'model' in config['BASE']:
@@ -54,12 +51,9 @@ def main():
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
 
-    # Create context providers
-    file_provider = FileContextProvider()
-    text_provider = TextContextProvider()
-    url_provider = URLContextProvider()
-    image_provider = ImageContextProvider()
-    context_orchestrator = ContextOrchestrator([file_provider, text_provider, url_provider, image_provider])
+    # Load context providers dynamically
+    context_providers = load_context_providers()
+    context_orchestrator = ContextOrchestrator(context_providers)
 
     # Add arguments from context providers
     context_orchestrator.add_arguments(parser)
