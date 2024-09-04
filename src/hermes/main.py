@@ -51,11 +51,11 @@ def main():
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
 
-    # Load context providers dynamically
+    # Load context providers dynamically (including extensions)
     context_providers = load_context_providers()
     context_orchestrator = ContextOrchestrator(context_providers)
 
-    # Add arguments from context providers
+    # Add arguments from context providers (including extensions)
     context_orchestrator.add_arguments(parser)
 
     args = parser.parse_args()
