@@ -27,11 +27,16 @@ Hermes is a powerful command-line tool that enables you to interact with various
 
 ## Installation
 
-You can install Hermes CLI using pip:
+1. Clone the repository:
+   ```
+   git clone https://github.com/KoStard/HermesCLI
+   cd HermesCLI
+   ```
 
-```
-pip install hermes-cli
-```
+2. Install the package in editable mode:
+   ```
+   pip install -e .
+   ```
 
 After installation, set up your configuration file:
 
@@ -62,20 +67,6 @@ After installation, set up your configuration file:
 
    Note: The application will create the necessary directories if they don't exist.
 
-### Development Installation
-
-If you want to contribute to Hermes CLI or install it in editable mode:
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/KoStard/HermesCLI
-   cd HermesCLI
-   ```
-
-2. Install the package in editable mode:
-   ```
-   pip install -e .
-   ```
 
 ## Usage
 

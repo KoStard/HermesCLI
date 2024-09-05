@@ -58,7 +58,7 @@ class ChatApplication:
                     if user_input_lower in ['exit', 'quit', 'q']:
                         return
                     elif user_input_lower == '/clear':
-                        self.clear_chat(keep_text_inputs=True)
+                        self.clear_chat()
                         continue
                     else:
                         self.prompt_builder.add_text(text)
@@ -78,7 +78,7 @@ class ChatApplication:
                 if user_input_lower in ['exit', 'quit', 'q']:
                     return
                 elif user_input_lower == '/clear':
-                    self.clear_chat(keep_text_inputs=True)
+                    self.clear_chat()
                     continue
 
                 self.ui.display_response(self.model.send_message(user_input))
@@ -94,9 +94,7 @@ class ChatApplication:
             self.file_processor.write_file(special_command['update'], content, mode='w')
             self.ui.display_status(f"File {special_command['update']} updated")
 
-    def clear_chat(self, keep_text_inputs=False):
-        self.model.initialize()  # This will reset the chat history in the model
-        if not keep_text_inputs:
-            self.text_inputs = []
+    def clear_chat(self):
+        self.model.initialize()
         self.ui.display_status("Chat history cleared.")
 
