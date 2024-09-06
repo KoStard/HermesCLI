@@ -3,6 +3,7 @@ from .openai import OpenAIModel
 
 class DeepSeekModel(OpenAIModel):
     def initialize(self):
+        self.config = dict(self.config)
         self.config["OPENAI"] = {
             "api_key": self.config["DEEPSEEK"]["api_key"],
             "base_url": self.config["DEEPSEEK"].get("base_url", "https://api.deepseek.com"),
