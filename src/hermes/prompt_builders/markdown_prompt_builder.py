@@ -9,16 +9,16 @@ class MarkdownPromptBuilder(PromptBuilder):
 
     def add_text(self, text: str, name: Optional[str] = None):
         if name:
-            self.content.append(f"## {name}\n\n{text}\n")
+            self.content.append(f"## {name}\n\n{text}")
         else:
-            self.content.append(f"{text}\n")
+            self.content.append(f"{text}")
 
     def add_file(self, file_path: str, name: str):
         content = self.file_processor.read_file(file_path)
-        self.content.append(f"## {name}\n\n```\n{content}\n```\n")
+        self.content.append(f"## {name}\n\n```\n{content}\n```")
 
     def add_image(self, image_path: str, name: str):
-        self.content.append(f"## {name}\n\n![{name}]({image_path})\n")
+        self.content.append(f"## {name}\n\n![{name}]({image_path})")
 
     def build_prompt(self) -> str:
         return "\n".join(self.content)

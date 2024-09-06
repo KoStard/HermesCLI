@@ -10,6 +10,7 @@ from typing import Dict
 import os
 
 from hermes.prompt_builders.bedrock_prompt_builder import BedrockPromptBuilder
+from hermes.prompt_builders.markdown_prompt_builder import MarkdownPromptBuilder
 from hermes.prompt_builders.xml_prompt_builder import XMLPromptBuilder
 
 if os.name == 'posix':
@@ -30,6 +31,7 @@ from .chat_models.gemini import GeminiModel
 from .chat_models.openai import OpenAIModel
 from .chat_models.ollama import OllamaModel
 from .chat_models.deepseek import DeepSeekModel
+from .chat_models.reflection import ReflectionModel
 from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
@@ -43,7 +45,7 @@ def get_default_model(config):
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
-    parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama", "deepseek"], help="Choose the model to use")
+    parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama", "deepseek", "reflection"], help="Choose the model to use")
     parser.add_argument("--prompt", help="Prompt text to send immediately")
     parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
     parser.add_argument("--append", "-a", help="Append to the specified file")
@@ -157,6 +159,10 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
         model = DeepSeekModel(config)
         file_processor = DefaultFileProcessor()
         prompt_builder = XMLPromptBuilder(file_processor)
+    elif model_name == "reflection":
+        model = ReflectionModel(config)
+        file_processor = DefaultFileProcessor()
+        prompt_builder = MarkdownPromptBuilder(file_processor)
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 

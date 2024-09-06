@@ -10,6 +10,9 @@ class OpenAIModel(ChatModel):
         self.client = openai.Client(api_key=api_key, base_url=base_url)
         self.model = model
         self.messages = []
+        
+    def add_system_message(self, message: str):
+        self.messages.append({"role": "system", "content": message})
 
     def send_message(self, message: str) -> Generator[str, None, None]:
         self.messages.append({"role": "user", "content": message})
