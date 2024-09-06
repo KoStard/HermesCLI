@@ -11,3 +11,4 @@ ollama
 pdfminer.six
 markdownify==0.11.6
 wheel
+groq

@@ -7,7 +7,9 @@ class GroqModel(ChatModel):
         api_key = self.config["GROQ"]["api_key"]
         self.model = self.config["GROQ"].get("model", "llama3-8b-8192")
         self.client = Groq(api_key=api_key)
-        self.messages = []
+        self.messages = [
+            {"role": "system", "content": "You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags."}
+        ]
 
     def send_message(self, message: str) -> Generator[str, None, None]:
         self.messages.append({"role": "user", "content": message})

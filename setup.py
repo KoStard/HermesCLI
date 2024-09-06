@@ -19,6 +19,7 @@ setup(
         "ollama",
         "pdfminer.six",
         "markdownify",
+        "groq",
     ],
     setup_requires=[
         "wheel",

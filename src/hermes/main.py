@@ -167,7 +167,7 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
     elif model_name == "groq":
         model = GroqModel(config)
         file_processor = DefaultFileProcessor()
-        prompt_builder = XMLPromptBuilder(file_processor)
+        prompt_builder = MarkdownPromptBuilder(file_processor)
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 
