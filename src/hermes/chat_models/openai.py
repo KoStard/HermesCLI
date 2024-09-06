@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, Dict, Any
 from .base import ChatModel
 import openai
 
@@ -10,6 +10,7 @@ class OpenAIModel(ChatModel):
         self.client = openai.Client(api_key=api_key, base_url=base_url)
         self.model = model
         self.messages = []
+        self.extra_headers: Dict[str, str] = {}
 
     def send_message(self, message: str) -> Generator[str, None, None]:
         self.messages.append({"role": "user", "content": message})
@@ -17,7 +18,8 @@ class OpenAIModel(ChatModel):
             stream = self.client.chat.completions.create(
                 model=self.model,
                 messages=self.messages,
-                stream=True
+                stream=True,
+                extra_headers=self.extra_headers
             )
         except openai.AuthenticationError:
             raise Exception("Authentication failed. Please check your API key.")
