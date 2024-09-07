@@ -16,14 +16,42 @@ class ChatApplication:
         self.special_command_prompts = special_command_prompts
         self.context_orchestrator = context_orchestrator
 
+    def make_first_request(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
+        self.prompt_builder.erase()
+        self.context_orchestrator.build_prompt(self.prompt_builder)
+        if initial_prompt:
+            self.prompt_builder.add_text(initial_prompt)
+        if 'append' in special_command:
+            self.prompt_builder.add_text(self.special_command_prompts['append'].format(file_name=special_command['append']))
+        elif 'update' in special_command:
+            self.prompt_builder.add_text(self.special_command_prompts['update'].format(file_name=special_command['update']))
+        elif not initial_prompt:
+            print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation. Type '/clear' to clear the chat history.")
+            while True:
+                text = self.ui.get_user_input()
+                user_input_lower = text.lower()
+
+                if user_input_lower in ['exit', 'quit', 'q']:
+                    return
+                elif user_input_lower == '/clear':
+                    self.clear_chat()
+                    continue
+                else:
+                    self.prompt_builder.add_text(text)
+                    break
+
+        context = self.prompt_builder.build_prompt()
+        response = self.ui.display_response(self.model.send_message(context))
+        return response
+
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         if not special_command:
             special_command = {}
         self.model.initialize()
-        self.context_orchestrator.build_prompt(self.prompt_builder)
 
         # Check if input is coming from a pipe
         if not sys.stdin.isatty():
+            self.context_orchestrator.build_prompt(self.prompt_builder)
             if initial_prompt:
                 user_input = initial_prompt
             else:
@@ -43,29 +71,7 @@ class ChatApplication:
 
         # Interactive mode
         try:
-            if initial_prompt:
-                self.prompt_builder.add_text(initial_prompt)
-            if 'append' in special_command:
-                self.prompt_builder.add_text(self.special_command_prompts['append'].format(file_name=special_command['append']))
-            elif 'update' in special_command:
-                self.prompt_builder.add_text(self.special_command_prompts['update'].format(file_name=special_command['update']))
-            elif not initial_prompt:
-                print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation. Type '/clear' to clear the chat history.")
-                while True:
-                    text = self.ui.get_user_input()
-                    user_input_lower = text.lower()
-
-                    if user_input_lower in ['exit', 'quit', 'q']:
-                        return
-                    elif user_input_lower == '/clear':
-                        self.clear_chat()
-                        continue
-                    else:
-                        self.prompt_builder.add_text(text)
-                        break
-
-            context = self.prompt_builder.build_prompt()
-            response = self.ui.display_response(self.model.send_message(context))
+            self.make_first_request(initial_prompt, special_command)
 
             if special_command:
                 self.handle_special_command(special_command, response)
@@ -79,6 +85,7 @@ class ChatApplication:
                     return
                 elif user_input_lower == '/clear':
                     self.clear_chat()
+                    self.make_first_request(initial_prompt, special_command)
                     continue
 
                 self.ui.display_response(self.model.send_message(user_input))
