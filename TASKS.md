@@ -1,2 +1,2 @@
-- ctrl+c shouldn't kill the whole app from the first try, first it should stop whatever is happening at the moment, and if it's done second time, then kill the app
-- The /clear is clearing out all the initial inputs. Figure out a better way to think about this.
+- allow adding context mid-way while running the app
+- history recovery feature

@@ -41,8 +41,16 @@ class ChatApplication:
                     break
 
         context = self.prompt_builder.build_prompt()
-        response = self.ui.display_response(self.model.send_message(context))
+        response = self.send_message_and_print_output(context)
         return response
+
+    def send_message_and_print_output(self, user_input: str):
+        try:
+            response = self.ui.display_response(self.model.send_message(user_input))
+            return response
+        except KeyboardInterrupt:
+            print()
+            self.ui.display_status(f"Interrupted...")
 
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         if not special_command:
@@ -64,7 +72,7 @@ class ChatApplication:
                 elif 'update' in special_command:
                     self.prompt_builder.add_text(self.special_command_prompts['update'].format(file_name=process_file_name(special_command['update'])))
                 context = self.prompt_builder.build_prompt()
-                response = self.ui.display_response(self.model.send_message(context))
+                response = self.send_message_and_print_output(context)
                 if special_command:
                     self.handle_special_command(special_command, response)
             return
@@ -88,7 +96,7 @@ class ChatApplication:
                     self.make_first_request(initial_prompt, special_command)
                     continue
 
-                self.ui.display_response(self.model.send_message(user_input))
+                self.send_message_and_print_output(user_input)
 
         except KeyboardInterrupt:
             print("\nChat interrupted. Exiting gracefully...")
