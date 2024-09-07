@@ -20,6 +20,7 @@ setup(
         "pdfminer.six",
         "markdownify",
         "groq",
+        "python-docx",
     ],
     setup_requires=[
         "wheel",
