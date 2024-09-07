@@ -1,19 +1,19 @@
 from typing import List, Optional
-from collections import namedtuple
+from dataclasses import dataclass, field
 
-HermesConfig = namedtuple('HermesConfig', [
-    'model',
-    'prompt',
-    'prompt_file',
-    'append',
-    'update',
-    'pretty',
-    'workflow',
-    'files',
-    'text',
-    'url',
-    'image'
-], defaults=(None,) * 11)
+@dataclass
+class HermesConfig:
+    model: Optional[str] = None
+    prompt: Optional[str] = None
+    prompt_file: Optional[str] = None
+    append: Optional[str] = None
+    update: Optional[str] = None
+    pretty: bool = False
+    workflow: Optional[str] = None
+    files: List[str] = field(default_factory=list)
+    text: List[str] = field(default_factory=list)
+    url: List[str] = field(default_factory=list)
+    image: List[str] = field(default_factory=list)
 
 def create_config_from_args(args):
     return HermesConfig(
@@ -24,8 +24,8 @@ def create_config_from_args(args):
         update=args.update,
         pretty=args.pretty,
         workflow=args.workflow,
-        files=args.files if hasattr(args, 'files') else None,
-        text=args.text if hasattr(args, 'text') else None,
-        url=args.url if hasattr(args, 'url') else None,
-        image=args.image if hasattr(args, 'image') else None
+        files=args.files if hasattr(args, 'files') else [],
+        text=args.text if hasattr(args, 'text') else [],
+        url=args.url if hasattr(args, 'url') else [],
+        image=args.image if hasattr(args, 'image') else []
     )
