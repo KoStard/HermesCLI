@@ -13,7 +13,7 @@ class FileContextProvider(ContextProvider):
         parser.add_argument('files', nargs='*', help='Files to be included in the context')
 
     def load_context(self, config: HermesConfig):
-        self.files = config.files if config.files else []
+        self.files = config.get('files', [])
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for file_path in self.files:

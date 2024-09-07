@@ -17,11 +17,10 @@ class URLContextProvider(ContextProvider):
         parser.add_argument("--url", action="append", help="URL to fetch content from")
 
     def load_context(self, config: HermesConfig):
-        if config.url:
-            self.urls = config.url
-            for url in self.urls:
-                content = self.fetch_url_content(url)
-                self.contents.append(content)
+        self.urls = config.get('url', [])
+        for url in self.urls:
+            content = self.fetch_url_content(url)
+            self.contents.append(content)
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for url, content in zip(self.urls, self.contents):
