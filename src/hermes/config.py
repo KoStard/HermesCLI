@@ -1,31 +1,25 @@
-from typing import List, Optional
-from dataclasses import dataclass, field
+from typing import Dict, Any
 
-@dataclass
-class HermesConfig:
-    model: Optional[str] = None
-    prompt: Optional[str] = None
-    prompt_file: Optional[str] = None
-    append: Optional[str] = None
-    update: Optional[str] = None
-    pretty: bool = False
-    workflow: Optional[str] = None
-    files: List[str] = field(default_factory=list)
-    text: List[str] = field(default_factory=list)
-    url: List[str] = field(default_factory=list)
-    image: List[str] = field(default_factory=list)
+class HermesConfig(dict):
+    def __getattr__(self, name):
+        return self.get(name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
 
 def create_config_from_args(args):
-    return HermesConfig(
-        model=args.model,
-        prompt=args.prompt,
-        prompt_file=args.prompt_file,
-        append=args.append,
-        update=args.update,
-        pretty=args.pretty,
-        workflow=args.workflow,
-        files=args.files if hasattr(args, 'files') else [],
-        text=args.text if hasattr(args, 'text') else [],
-        url=args.url if hasattr(args, 'url') else [],
-        image=args.image if hasattr(args, 'image') else []
-    )
+    config = HermesConfig(vars(args))
+    
+    # Ensure these keys exist with default values if not present
+    defaults = {
+        'files': [],
+        'text': [],
+        'url': [],
+        'image': []
+    }
+    
+    for key, default_value in defaults.items():
+        if key not in config or config[key] is None:
+            config[key] = default_value
+    
+    return config

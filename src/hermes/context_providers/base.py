@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from typing import TypeVar, Any
 
 from hermes.prompt_builders.base import PromptBuilder
+from hermes.config import HermesConfig
 
 T = TypeVar('T')  # Define a type variable
 
@@ -17,11 +18,11 @@ class ContextProvider(ABC):
         pass
 
     @abstractmethod
-    def load_context(self, args: Any):
+    def load_context(self, config: HermesConfig):
         """
-        Load and process the context from the parsed arguments.
+        Load and process the context from the config.
         
-        :param args: The parsed arguments from ArgumentParser
+        :param config: The HermesConfig object
         """
         pass
 
