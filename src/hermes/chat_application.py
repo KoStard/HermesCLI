@@ -71,7 +71,7 @@ class ChatApplication:
 
         # Interactive mode
         try:
-            self.make_first_request(initial_prompt, special_command)
+            response = self.make_first_request(initial_prompt, special_command)
 
             if special_command:
                 self.handle_special_command(special_command, response)

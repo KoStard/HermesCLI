@@ -33,4 +33,4 @@ class URLContextProvider(ContextProvider):
         return self.html_to_markdown(response.text)
 
     def html_to_markdown(self, html: str) -> str:
-        return md(html)
+        return md(html, heading_style='atx')
