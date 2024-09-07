@@ -11,9 +11,9 @@ class ImageContextProvider(ContextProvider):
     def add_argument(self, parser: ArgumentParser):
         parser.add_argument("--image", action="append", help="Path to image file to include in the context")
 
-    def load_context(self, args):
-        if args.image:
-            self.image_paths = args.image
+    def load_context(self, config: HermesConfig):
+        if config.image:
+            self.image_paths = config.image
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for image_path in self.image_paths:

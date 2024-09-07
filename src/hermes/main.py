@@ -87,20 +87,20 @@ def main():
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)
 
-def run_workflow(args, config):
-    model, file_processor, prompt_builder = create_model_and_processors(args.model, config)
+def run_workflow(hermes_config: HermesConfig, config):
+    model, file_processor, prompt_builder = create_model_and_processors(hermes_config.model, config)
 
-    input_files = args.files
-    initial_prompt = args.prompt or (open(args.prompt_file, 'r').read().strip() if args.prompt_file else "")
+    input_files = hermes_config.files
+    initial_prompt = hermes_config.prompt or (open(hermes_config.prompt_file, 'r').read().strip() if hermes_config.prompt_file else "")
 
-    executor = WorkflowExecutor(args.workflow, model, prompt_builder, input_files, initial_prompt, custom_print)
+    executor = WorkflowExecutor(hermes_config.workflow, model, prompt_builder, input_files, initial_prompt, custom_print)
     result = executor.execute()
 
     # Create /tmp/hermes/ directory if it doesn't exist
     os.makedirs('/tmp/hermes/', exist_ok=True)
 
     # Generate filename with matching name and date-time suffix
-    filename = f"/tmp/hermes/{os.path.basename(args.workflow)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
+    filename = f"/tmp/hermes/{os.path.basename(hermes_config.workflow)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
 
     # Save the report as a YAML file
     with open(filename, 'w') as f:
@@ -108,28 +108,28 @@ def run_workflow(args, config):
 
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
-def run_chat_application(args, config, special_command_prompts, context_orchestrator):
-    if args.model is None:
-        args.model = get_default_model(config)
+def run_chat_application(hermes_config: HermesConfig, config, special_command_prompts, context_orchestrator):
+    if hermes_config.model is None:
+        hermes_config = hermes_config._replace(model=get_default_model(config))
     special_command: Dict[str, str] = {}
-    if args.append:
-        special_command['append'] = args.append
-    elif args.update:
-        special_command['update'] = args.update
+    if hermes_config.append:
+        special_command['append'] = hermes_config.append
+    elif hermes_config.update:
+        special_command['update'] = hermes_config.update
 
     initial_prompt = None
-    if args.prompt:
-        initial_prompt = args.prompt
-    elif args.prompt_file:
-        with open(args.prompt_file, 'r') as f:
+    if hermes_config.prompt:
+        initial_prompt = hermes_config.prompt
+    elif hermes_config.prompt_file:
+        with open(hermes_config.prompt_file, 'r') as f:
             initial_prompt = f.read().strip()
 
-    model, file_processor, prompt_builder = create_model_and_processors(args.model, config)
+    model, file_processor, prompt_builder = create_model_and_processors(hermes_config.model, config)
 
-    # Load contexts from arguments
-    context_orchestrator.load_contexts(args)
+    # Load contexts from hermes_config
+    context_orchestrator.load_contexts(hermes_config)
 
-    ui = ChatUI(prints_raw=not args.pretty)
+    ui = ChatUI(prints_raw=not hermes_config.pretty)
     app = ChatApplication(model, ui, file_processor, prompt_builder, special_command_prompts, context_orchestrator)
 
     app.run(initial_prompt, special_command)
