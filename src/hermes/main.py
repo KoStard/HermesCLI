@@ -13,6 +13,7 @@ from hermes.prompt_builders.bedrock_prompt_builder import BedrockPromptBuilder
 from hermes.prompt_builders.markdown_prompt_builder import MarkdownPromptBuilder
 from hermes.prompt_builders.xml_prompt_builder import XMLPromptBuilder
 from hermes.prompt_builders.claude_prompt_builder import ClaudePromptBuilder
+from hermes.prompt_builders.openai_prompt_builder import OpenAIPromptBuilder
 
 if os.name == 'posix':
     import readline
@@ -154,7 +155,7 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
     elif model_name == "openai":
         model = OpenAIModel(config)
         file_processor = DefaultFileProcessor()
-        prompt_builder = XMLPromptBuilder(file_processor)
+        prompt_builder = OpenAIPromptBuilder(file_processor)
     elif model_name == "ollama":
         model = OllamaModel(config)
         file_processor = DefaultFileProcessor()
