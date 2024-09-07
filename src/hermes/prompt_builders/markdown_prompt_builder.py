@@ -18,7 +18,7 @@ class MarkdownPromptBuilder(PromptBuilder):
         self.content.append(f"## {name}\n\n```\n{content}\n```")
 
     def add_image(self, image_path: str, name: str):
-        self.content.append(f"## {name}\n\n![{name}]({image_path})")
+        raise NotImplementedError("Images are not supported in Markdown format")
 
     def build_prompt(self) -> str:
         return "\n".join(self.content)

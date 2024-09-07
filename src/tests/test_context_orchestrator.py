@@ -25,7 +25,7 @@ class TestContextOrchestrator(unittest.TestCase):
 
     def test_build_prompt(self):
         mock_prompt_builder = MagicMock(spec=PromptBuilder)
-        self.orchestrator.build_prompt(mock_prompt_builder)
+        self.orchestrator.add_to_prompt(mock_prompt_builder)
         self.mock_provider1.add_to_prompt.assert_called_once_with(mock_prompt_builder)
         self.mock_provider2.add_to_prompt.assert_called_once_with(mock_prompt_builder)
 

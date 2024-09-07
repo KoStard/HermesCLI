@@ -6,7 +6,7 @@ class OpenAIModel(ChatModel):
     def initialize(self):
         api_key = self.config["OPENAI"]["api_key"]
         base_url = self.config["OPENAI"].get("base_url", "https://api.openai.com/v1")
-        model = self.config["OPENAI"].get("model", "gpt-4-0125-preview")
+        model = self.config["OPENAI"].get("model", "gpt-4o")
         self.client = openai.Client(api_key=api_key, base_url=base_url)
         self.model = model
         self.messages = []

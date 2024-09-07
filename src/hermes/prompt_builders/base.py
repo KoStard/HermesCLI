@@ -33,11 +33,11 @@ class PromptBuilder(ABC):
         pass
 
     @abstractmethod
-    def build_prompt(self) -> str:
+    def build_prompt(self):
         """
-        Build and return the final prompt string.
+        Build and return the final prompt object.
         
-        :return: The constructed prompt as a string
+        :return: The constructed prompt
         """
         pass
 

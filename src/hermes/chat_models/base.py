@@ -11,5 +11,5 @@ class ChatModel(ABC):
         pass
 
     @abstractmethod
-    def send_message(self, message: str) -> Generator[str, None, None]:
+    def send_message(self, message) -> Generator[str, None, None]:
         pass

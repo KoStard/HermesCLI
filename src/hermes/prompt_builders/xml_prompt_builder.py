@@ -21,7 +21,7 @@ class XMLPromptBuilder(PromptBuilder):
         file_elem.text = content
 
     def add_image(self, image_path: str, name: str):
-        image_elem = ET.SubElement(self.root, "image", path=image_path, name=name)
+        raise NotImplementedError("Images are not supported in XML format")
 
     def build_prompt(self) -> str:
         return ET.tostring(self.root, encoding='unicode')

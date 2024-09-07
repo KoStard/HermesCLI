@@ -16,6 +16,6 @@ class ContextOrchestrator:
         for provider in self.context_providers:
             provider.load_context(config)
 
-    def build_prompt(self, prompt_builder: PromptBuilder):
+    def add_to_prompt(self, prompt_builder: PromptBuilder):
         for provider in self.context_providers:
             provider.add_to_prompt(prompt_builder)

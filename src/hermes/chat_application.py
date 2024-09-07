@@ -49,7 +49,7 @@ class ChatApplication:
     
     def make_first_request(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.prompt_builder.erase()
-        self.context_orchestrator.build_prompt(self.prompt_builder)
+        self.context_orchestrator.add_to_prompt(self.prompt_builder)
         if initial_prompt:
             self.prompt_builder.add_text(initial_prompt)
         if not self.add_special_command_to_prompt(special_command) and not initial_prompt:
@@ -67,8 +67,8 @@ class ChatApplication:
                     self.prompt_builder.add_text(text)
                     break
 
-        context = self.prompt_builder.build_prompt()
-        response = self.send_message_and_print_output(context)
+        message = self.prompt_builder.build_prompt()
+        response = self.send_message_and_print_output(message)
         
         if special_command:
             self.apply_special_command(special_command, response)
@@ -76,7 +76,7 @@ class ChatApplication:
         return True
     
     def handle_piped_input(self, initial_prompt, special_command):
-        self.context_orchestrator.build_prompt(self.prompt_builder)
+        self.context_orchestrator.add_to_prompt(self.prompt_builder)
 
         if initial_prompt:
             self.prompt_builder.add_text(initial_prompt)
@@ -106,7 +106,7 @@ class ChatApplication:
             file_utils.write_file(special_command['update'], content, mode='w')
             self.ui.display_status(f"File {special_command['update']} updated")
 
-    def send_message_and_print_output(self, user_input: str):
+    def send_message_and_print_output(self, user_input):
         try:
             response = self.ui.display_response(self.model.send_message(user_input))
             return response

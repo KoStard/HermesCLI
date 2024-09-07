@@ -8,7 +8,7 @@ class ClaudeModel(ChatModel):
         self.client = anthropic.Anthropic(api_key=api_key)
         self.messages = []
 
-    def send_message(self, message: str) -> Generator[str, None, None]:
+    def send_message(self, message) -> Generator[str, None, None]:
         temp_messages = self.messages.copy()
         temp_messages.append({"role": "user", "content": message})
         with self.client.messages.stream(
