@@ -4,6 +4,7 @@ from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 from markdownify import markdownify as md
 
+from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 

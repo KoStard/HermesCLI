@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from typing import List
 
+from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 

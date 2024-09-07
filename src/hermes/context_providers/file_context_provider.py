@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from typing import List, Any
+from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.utils.file_utils import process_file_name
