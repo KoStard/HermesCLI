@@ -14,12 +14,12 @@ class ChatUI:
 
     def display_response(self, response_generator: Generator[str, None, None]):
         if self.prints_raw:
-            buffer = ""
+            buffer = []
             for text in response_generator:
-                buffer += text
+                buffer.append(text)
                 print(text, end="", flush=True)
             print()
-            return buffer
+            return ''.join(buffer)
 
         with Live.Live(console=self.console, auto_refresh=False) as live:
             live.update(Spinner("dots", text="Assistant is thinking..."))
