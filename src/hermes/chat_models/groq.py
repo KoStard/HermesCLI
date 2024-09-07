@@ -19,7 +19,7 @@ class GroqModel(ChatModel):
                 stream=True
             )
         except Exception as e:
-            raise Exception(f"Error communicating with Groq API: {str(e)}")
+            raise Exception(f"Error communicating with Groq API:", e)
 
         full_response = ""
         for chunk in response:
