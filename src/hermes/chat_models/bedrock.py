@@ -25,10 +25,11 @@ class BedrockModel(ChatModel):
             message = [{'text': message}]
         # Sorting to put the texts in the end, fails with strange error otherwise
         message.sort(key=lambda x: 'text' in x)
-        self.messages.append(self.create_message('user', message))
+        temp_messages = self.messages.copy()
+        temp_messages.append(self.create_message('user', message))
         response = self.client.converse_stream(
             modelId=self.model_id,
-            messages=self.messages
+            messages=temp_messages
         )
 
         full_response = ""
@@ -40,6 +41,7 @@ class BedrockModel(ChatModel):
             elif 'messageStop' in event:
                 break
 
+        self.messages.append(self.create_message('user', message))
         self.messages.append(self.create_message('assistant', [{'text': full_response}]))
 
     def create_message(self, role, content):

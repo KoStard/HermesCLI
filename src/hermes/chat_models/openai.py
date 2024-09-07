@@ -15,11 +15,12 @@ class OpenAIModel(ChatModel):
         self.messages.append({"role": "system", "content": message})
 
     def send_message(self, message: str) -> Generator[str, None, None]:
-        self.messages.append({"role": "user", "content": message})
+        temp_messages = self.messages.copy()
+        temp_messages.append({"role": "user", "content": message})
         try:
             stream = self.client.chat.completions.create(
                 model=self.model,
-                messages=self.messages,
+                messages=temp_messages,
                 stream=True
             )
         except openai.AuthenticationError:
@@ -30,4 +31,5 @@ class OpenAIModel(ChatModel):
                 content = chunk.choices[0].delta.content
                 full_response += content
                 yield content
+        self.messages.append({"role": "user", "content": message})
         self.messages.append({"role": "assistant", "content": full_response})

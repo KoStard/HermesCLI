@@ -10,10 +10,11 @@ class GroqModel(ChatModel):
         self.messages = []
 
     def send_message(self, message: str) -> Generator[str, None, None]:
-        self.messages.append({"role": "user", "content": message})
+        temp_messages = self.messages.copy()
+        temp_messages.append({"role": "user", "content": message})
         try:
             response = self.client.chat.completions.create(
-                messages=self.messages,
+                messages=temp_messages,
                 model=self.model,
                 stream=True
             )
@@ -26,4 +27,5 @@ class GroqModel(ChatModel):
                 content = chunk.choices[0].delta.content
                 full_response += content
                 yield content
+        self.messages.append({"role": "user", "content": message})
         self.messages.append({"role": "assistant", "content": full_response})

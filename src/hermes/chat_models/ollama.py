@@ -8,12 +8,12 @@ class OllamaModel(ChatModel):
         self.messages = []
 
     def send_message(self, message: str) -> Generator[str, None, None]:
-        self.messages.append({"role": "user", "content": message})
+        temp_messages = self.messages.copy()
+        temp_messages.append({"role": "user", "content": message})
         
-
         response = ollama.chat(
             model=self.model,
-            messages=self.messages.copy(),
+            messages=temp_messages,
             stream=True,
         )
         full_response = ""
@@ -22,4 +22,5 @@ class OllamaModel(ChatModel):
             full_response += content
             yield content
 
+        self.messages.append({"role": "user", "content": message})
         self.messages.append({"role": "assistant", "content": full_response})

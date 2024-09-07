@@ -9,12 +9,16 @@ class ClaudeModel(ChatModel):
         self.messages = []
 
     def send_message(self, message: str) -> Generator[str, None, None]:
-        self.messages.append({"role": "user", "content": message})
+        temp_messages = self.messages.copy()
+        temp_messages.append({"role": "user", "content": message})
         with self.client.messages.stream(
             model="claude-3-5-sonnet-20240620",
-            messages=self.messages,
+            messages=temp_messages,
             max_tokens=1024
         ) as stream:
+            full_response = ""
             for text in stream.text_stream:
+                full_response += text
                 yield text
-        self.messages.append({"role": "assistant", "content": message})
+        self.messages.append({"role": "user", "content": message})
+        self.messages.append({"role": "assistant", "content": full_response})
