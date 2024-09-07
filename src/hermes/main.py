@@ -38,6 +38,7 @@ from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
 from .context_orchestrator import ContextOrchestrator
 from .context_provider_loader import load_context_providers
+from .config import create_config_from_args, HermesConfig
 
 def get_default_model(config):
     if 'BASE' in config and 'model' in config['BASE']:
@@ -62,6 +63,7 @@ def main():
     context_orchestrator.add_arguments(parser)
 
     args = parser.parse_args()
+    hermes_config = create_config_from_args(args)
 
     config = configparser.ConfigParser()
     config_dir = os.path.join(os.path.expanduser("~"), ".config", "multillmchat")
@@ -69,9 +71,9 @@ def main():
     os.makedirs(config_dir, exist_ok=True)
     config.read(config_path)
 
-    if args.model is None:
-        args.model = get_default_model(config)
-        if args.model is None:
+    if hermes_config.model is None:
+        hermes_config = hermes_config._replace(model=get_default_model(config))
+        if hermes_config.model is None:
             parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
     # Load special command prompts
@@ -79,10 +81,10 @@ def main():
     with open(special_command_prompts_path, 'r') as f:
         special_command_prompts = yaml.safe_load(f)
 
-    if args.workflow:
-        run_workflow(args, config)
+    if hermes_config.workflow:
+        run_workflow(hermes_config, config)
     else:
-        run_chat_application(args, config, special_command_prompts, context_orchestrator)
+        run_chat_application(hermes_config, config, special_command_prompts, context_orchestrator)
 
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)

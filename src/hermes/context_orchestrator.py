@@ -11,9 +11,9 @@ class ContextOrchestrator:
         for provider in self.context_providers:
             provider.add_argument(parser)
 
-    def load_contexts(self, args: Any):
+    def load_contexts(self, config: HermesConfig):
         for provider in self.context_providers:
-            provider.load_context(args)
+            provider.load_context(config)
 
     def build_prompt(self, prompt_builder: PromptBuilder):
         for provider in self.context_providers:
