@@ -1,13 +1,16 @@
 from typing import Dict, Any
 
-class HermesConfig(dict):
-    def __getattr__(self, name):
-        return self.get(name)
+class HermesConfig:
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
 
-    def __setattr__(self, name, value):
-        self[name] = value
+    def get(self, key, default=None):
+        return self.config.get(key, default)
 
-def create_config_from_args(args):
+    def set(self, key, value):
+        self.config[key] = value
+
+def create_config_from_args(args) -> HermesConfig:
     config = HermesConfig(vars(args))
     
     # Ensure these keys exist with default values if not present

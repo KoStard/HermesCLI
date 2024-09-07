@@ -72,7 +72,7 @@ def main():
     config.read(config_path)
 
     if hermes_config.model is None:
-        hermes_config = hermes_config._replace(model=get_default_model(config))
+        hermes_config.model=get_default_model(config)
         if hermes_config.model is None:
             parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
@@ -112,7 +112,7 @@ def run_workflow(hermes_config: HermesConfig, config):
 
 def run_chat_application(hermes_config: HermesConfig, config, special_command_prompts, context_orchestrator):
     if hermes_config.model is None:
-        hermes_config = hermes_config._replace(model=get_default_model(config))
+        hermes_config.model=get_default_model(config)
     special_command: Dict[str, str] = {}
     if hermes_config.append:
         special_command['append'] = hermes_config.append
