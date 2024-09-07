@@ -37,7 +37,7 @@ class ChatUI:
         if os.isatty(0):  # Check if input is coming from a terminal
             while True:
                 self.console.print("─" * self.console.width, style="dim")
-                user_input = self.console.input("[bold cyan]You:[/bold cyan] ")
+                user_input = input("You: ")
                 if user_input.strip() == "{":
                     lines = []
                     while True:
