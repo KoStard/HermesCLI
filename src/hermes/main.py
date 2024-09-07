@@ -90,7 +90,7 @@ def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)
 
 def run_workflow(hermes_config: HermesConfig, config):
-    model, file_processor, prompt_builder = create_model_and_processors(hermes_config.get('model'), config)
+    model, prompt_builder = create_model_and_processors(hermes_config.get('model'), config)
 
     input_files = hermes_config.get('files', [])
     initial_prompt = hermes_config.get('prompt') or (open(hermes_config.get('prompt_file'), 'r').read().strip() if hermes_config.get('prompt_file') else "")
@@ -126,7 +126,7 @@ def run_chat_application(hermes_config: HermesConfig, config, special_command_pr
         with open(hermes_config.get('prompt_file'), 'r') as f:
             initial_prompt = f.read().strip()
 
-    model, file_processor, prompt_builder = create_model_and_processors(hermes_config.get('model'), config)
+    model, prompt_builder = create_model_and_processors(hermes_config.get('model'), config)
 
     # Load contexts from hermes_config
     context_orchestrator.load_contexts(hermes_config)
@@ -173,7 +173,7 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 
-    return model, file_processor, prompt_builder
+    return model, prompt_builder
 
 if __name__ == "__main__":
     main()
