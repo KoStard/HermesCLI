@@ -1,7 +1,8 @@
 from argparse import ArgumentParser
-from typing import List, Any
+from typing import List
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
+from hermes.config import HermesConfig
 
 class ContextOrchestrator:
     def __init__(self, context_providers: List[ContextProvider]):
