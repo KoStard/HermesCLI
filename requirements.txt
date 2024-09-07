@@ -10,6 +10,7 @@ pyreadline3; sys_platform == 'win32'
 ollama
 pdfminer.six
 markdownify==0.11.6
+tenacity
 wheel
 groq
 python-docx

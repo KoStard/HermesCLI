@@ -19,6 +19,7 @@ setup(
         "ollama",
         "pdfminer.six",
         "markdownify",
+        "tenacity",
         "groq",
         "python-docx",
     ],
