@@ -12,6 +12,7 @@ import os
 from hermes.prompt_builders.bedrock_prompt_builder import BedrockPromptBuilder
 from hermes.prompt_builders.markdown_prompt_builder import MarkdownPromptBuilder
 from hermes.prompt_builders.xml_prompt_builder import XMLPromptBuilder
+from hermes.prompt_builders.claude_prompt_builder import ClaudePromptBuilder
 
 if os.name == 'posix':
     import readline
@@ -140,7 +141,7 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
     if model_name == "claude":
         model = ClaudeModel(config)
         file_processor = DefaultFileProcessor()
-        prompt_builder = XMLPromptBuilder(file_processor)
+        prompt_builder = ClaudePromptBuilder(file_processor)
     elif model_name.startswith("bedrock-"):
         model_tag = '-'.join(model_name.split("-")[1:])
         model = BedrockModel(config, model_tag)
