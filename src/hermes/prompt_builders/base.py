@@ -40,3 +40,10 @@ class PromptBuilder(ABC):
         :return: The constructed prompt as a string
         """
         pass
+
+    @abstractmethod
+    def erase(self):
+        """
+        Erase the entire prompt and give it a fresh start.
+        """
+        pass

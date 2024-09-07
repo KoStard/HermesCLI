@@ -25,3 +25,6 @@ class XMLPromptBuilder(PromptBuilder):
 
     def build_prompt(self) -> str:
         return ET.tostring(self.root, encoding='unicode')
+
+    def erase(self):
+        self.root = ET.Element("input")

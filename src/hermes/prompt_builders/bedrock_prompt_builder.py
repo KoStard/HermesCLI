@@ -53,3 +53,6 @@ class BedrockPromptBuilder(PromptBuilder):
 
     def build_prompt(self) -> List[Dict[str, Union[str, Dict[str, Any]]]]:
         return self.contents
+
+    def erase(self):
+        self.contents = []

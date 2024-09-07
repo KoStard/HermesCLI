@@ -22,3 +22,6 @@ class MarkdownPromptBuilder(PromptBuilder):
 
     def build_prompt(self) -> str:
         return "\n".join(self.content)
+
+    def erase(self):
+        self.content = []
