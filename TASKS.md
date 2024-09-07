@@ -3,3 +3,4 @@
 - improve the model configuration, instead of if/else, convert it to separate entries
 - move config to ~/.config/hermes/
 - error handling for the LLM requests, if it fails the message should just be discarded and go back
+- special commands as context providers, for now with a hardcoded action in the chat application

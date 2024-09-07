@@ -132,7 +132,7 @@ def run_chat_application(hermes_config: HermesConfig, config, special_command_pr
     context_orchestrator.load_contexts(hermes_config)
 
     ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
-    app = ChatApplication(model, ui, file_processor, prompt_builder, special_command_prompts, context_orchestrator)
+    app = ChatApplication(model, ui, prompt_builder, special_command_prompts, context_orchestrator)
 
     app.run(initial_prompt, special_command)
 
