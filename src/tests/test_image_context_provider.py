@@ -18,13 +18,13 @@ class TestImageContextProvider:
 
     def test_load_context(self, image_provider):
         args = Mock()
-        args.image = ['image1.jpg', 'image2.png']
+        args.get.return_value = ['image1.jpg', 'image2.png']
         image_provider.load_context(args)
         assert image_provider.image_paths == ['image1.jpg', 'image2.png']
 
     def test_load_context_no_images(self, image_provider):
         args = Mock()
-        args.image = None
+        args.get.return_value = []
         image_provider.load_context(args)
         assert image_provider.image_paths == []
 

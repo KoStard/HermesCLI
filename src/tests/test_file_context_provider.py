@@ -16,7 +16,7 @@ class TestFileContextProvider(unittest.TestCase):
 
     def test_load_context(self):
         args = MagicMock()
-        args.files = ['file1.txt', 'file2.txt']
+        args.get.return_value = ['file1.txt', 'file2.txt']
         self.provider.load_context(args)
         self.assertEqual(self.provider.files, ['file1.txt', 'file2.txt'])
 

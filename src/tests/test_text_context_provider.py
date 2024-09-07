@@ -1,6 +1,7 @@
 import unittest
 from argparse import ArgumentParser
 from unittest.mock import MagicMock
+from hermes.config import HermesConfig
 from hermes.context_providers.text_context_provider import TextContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 
@@ -15,14 +16,14 @@ class TestTextContextProvider(unittest.TestCase):
         self.assertEqual(args.text, ['Sample text 1', 'Sample text 2'])
 
     def test_load_context(self):
-        args = MagicMock()
-        args.text = ['Sample text 1', 'Sample text 2']
+        args = HermesConfig({
+            'text': ['Sample text 1', 'Sample text 2']
+        })
         self.provider.load_context(args)
         self.assertEqual(self.provider.texts, ['Sample text 1', 'Sample text 2'])
 
     def test_load_context_empty(self):
-        args = MagicMock()
-        args.text = None
+        args = HermesConfig({})
         self.provider.load_context(args)
         self.assertEqual(self.provider.texts, [])
 

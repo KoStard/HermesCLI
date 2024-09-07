@@ -6,11 +6,10 @@ class TestChatApplication(unittest.TestCase):
     def setUp(self):
         self.model = MagicMock()
         self.ui = MagicMock()
-        self.file_processor = MagicMock()
         self.prompt_builder = MagicMock()
         self.special_command_prompts = MagicMock()
         self.context_orchestrator = MagicMock()
-        self.app = ChatApplication(self.model, self.ui, self.file_processor, self.prompt_builder, self.special_command_prompts, self.context_orchestrator)
+        self.app = ChatApplication(self.model, self.ui, self.prompt_builder, self.special_command_prompts, self.context_orchestrator)
 
     @patch('sys.stdin.isatty', return_value=True)
     def test_run_with_initial_prompt(self, mock_isatty):
@@ -33,7 +32,8 @@ class TestChatApplication(unittest.TestCase):
         self.assertEqual(self.ui.display_response.call_count, 1)
 
     @patch('sys.stdin.isatty', return_value=True)
-    def test_run_with_special_command_append(self, mock_isatty):
+    @patch('hermes.utils.file_utils.write_file')
+    def test_run_with_special_command_append(self, mock_write_file, mock_isatty):
         special_command = {'append': 'output.txt'}
         self.ui.display_response.return_value = "Response content"
         self.app.run(initial_prompt="Test", special_command=special_command)
@@ -43,9 +43,11 @@ class TestChatApplication(unittest.TestCase):
         ])
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()
-
+        mock_write_file.assert_called_once_with('output.txt', '\nResponse content', mode='a')
+    
     @patch('sys.stdin.isatty', return_value=True)
-    def test_run_with_special_command_update(self, mock_isatty):
+    @patch('hermes.utils.file_utils.write_file')
+    def test_run_with_special_command_update(self, mock_write_file, mock_isatty):
         special_command = {'update': 'output.txt'}
         self.ui.display_response.return_value = "Response content"
         self.app.run(initial_prompt="Test", special_command=special_command)
@@ -55,6 +57,7 @@ class TestChatApplication(unittest.TestCase):
         ])
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()
+        mock_write_file.assert_called_once_with('output.txt', 'Response content', mode='w')
 
     @patch('sys.stdin.isatty', return_value=True)
     def test_run_with_keyboard_interrupt(self, mock_isatty):
@@ -106,7 +109,7 @@ class TestChatApplication(unittest.TestCase):
         self.app.run(initial_prompt="Initial prompt")
         self.model.initialize.assert_called_once()
         self.context_orchestrator.build_prompt.assert_called_once_with(self.prompt_builder)
-        self.prompt_builder.add_text.assert_called_once_with("Initial prompt")
+        self.prompt_builder.add_text.assert_has_calls([call('Initial prompt'), call('Piped input')])
         self.prompt_builder.build_prompt.assert_called_once()
         self.model.send_message.assert_called_once()
         self.ui.display_response.assert_called_once()

@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from requests.exceptions import RequestException
 from tenacity import RetryError
 
+from hermes.config import HermesConfig
 from hermes.context_providers.url_context_provider import URLContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 
@@ -29,8 +30,9 @@ class TestURLContextProvider(unittest.TestCase):
         mock_get.assert_called_once_with('http://example.com')
 
     def test_load_context(self):
-        args = Mock()
-        args.url = ['http://example.com', 'http://test.com']
+        args = HermesConfig({
+            'url': ['http://example.com', 'http://test.com']
+        })
         
         with patch.object(self.url_provider, 'fetch_url_content') as mock_fetch:
             mock_fetch.side_effect = ['Content 1', 'Content 2']

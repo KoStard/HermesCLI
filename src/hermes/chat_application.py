@@ -4,7 +4,7 @@ from hermes.chat_models.base import ChatModel
 from hermes.context_orchestrator import ContextOrchestrator
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.ui.chat_ui import ChatUI
-from hermes.utils.file_utils import process_file_name, write_file
+from hermes.utils import file_utils
 
 class ChatApplication:
     def __init__(self, model: ChatModel, ui: ChatUI, prompt_builder: PromptBuilder, special_command_prompts: Dict[str, str], context_orchestrator: ContextOrchestrator):
@@ -78,7 +78,8 @@ class ChatApplication:
     def handle_piped_input(self, initial_prompt, special_command):
         self.context_orchestrator.build_prompt(self.prompt_builder)
 
-        self.prompt_builder.add_text(initial_prompt)
+        if initial_prompt:
+            self.prompt_builder.add_text(initial_prompt)
         self.prompt_builder.add_text(sys.stdin.read().strip())
         self.add_special_command_to_prompt(special_command)
         
@@ -90,19 +91,19 @@ class ChatApplication:
     
     def add_special_command_to_prompt(self, special_command: Dict[str, str]):
         if 'append' in special_command:
-            self.prompt_builder.add_text(self.special_command_prompts['append'].format(file_name=process_file_name(special_command['append'])))
+            self.prompt_builder.add_text(self.special_command_prompts['append'].format(file_name=file_utils.process_file_name(special_command['append'])))
         elif 'update' in special_command:
-            self.prompt_builder.add_text(self.special_command_prompts['update'].format(file_name=process_file_name(special_command['update'])))
+            self.prompt_builder.add_text(self.special_command_prompts['update'].format(file_name=file_utils.process_file_name(special_command['update'])))
         else:
             return False
         return True
 
     def apply_special_command(self, special_command: Dict[str, str], content: str):
         if 'append' in special_command:
-            write_file(special_command['append'], "\n" + content, mode='a')
+            file_utils.write_file(special_command['append'], "\n" + content, mode='a')
             self.ui.display_status(f"Content appended to {special_command['append']}")
         elif 'update' in special_command:
-            write_file(special_command['update'], content, mode='w')
+            file_utils.write_file(special_command['update'], content, mode='w')
             self.ui.display_status(f"File {special_command['update']} updated")
 
     def send_message_and_print_output(self, user_input: str):
