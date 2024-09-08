@@ -4,7 +4,7 @@ from .base import ChatModel
 import boto3
 from ..decorators import register_model
 
-@register_model("bedrock")
+@register_model("bedrock", "default", "bedrock")
 class BedrockModel(ChatModel):
     def __init__(self, config: configparser.ConfigParser, model_tag: str):
         super().__init__(config)

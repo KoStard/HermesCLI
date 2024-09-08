@@ -1,17 +1,17 @@
-from typing import Dict, Type
+from typing import Dict, Type, Tuple
 from .chat_models.base import ChatModel
 from .file_processors.base import FileProcessor
 from .prompt_builders.base import PromptBuilder
 
 class ModelRegistry:
-    models: Dict[str, Type[ChatModel]] = {}
+    models: Dict[str, Tuple[Type[ChatModel], str, str]] = {}
     file_processors: Dict[str, Type[FileProcessor]] = {}
     prompt_builders: Dict[str, Type[PromptBuilder]] = {}
 
     @classmethod
-    def register_model(cls, name: str):
+    def register_model(cls, name: str, file_processor: str, prompt_builder: str):
         def decorator(model_class: Type[ChatModel]):
-            cls.models[name] = model_class
+            cls.models[name] = (model_class, file_processor, prompt_builder)
             return model_class
         return decorator
 
@@ -30,7 +30,7 @@ class ModelRegistry:
         return decorator
 
     @classmethod
-    def get_model(cls, name: str) -> Type[ChatModel]:
+    def get_model(cls, name: str) -> Tuple[Type[ChatModel], str, str]:
         return cls.models[name]
 
     @classmethod
@@ -40,3 +40,10 @@ class ModelRegistry:
     @classmethod
     def get_prompt_builder(cls, name: str) -> Type[PromptBuilder]:
         return cls.prompt_builders[name]
+
+    @classmethod
+    def create_model(cls, name: str, config: dict) -> ChatModel:
+        model_class, file_processor_name, prompt_builder_name = cls.get_model(name)
+        file_processor = cls.get_file_processor(file_processor_name)()
+        prompt_builder = cls.get_prompt_builder(prompt_builder_name)(file_processor)
+        return model_class(config, prompt_builder)

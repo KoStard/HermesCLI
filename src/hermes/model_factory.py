@@ -24,17 +24,8 @@ def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str,
         if model_name is None:
             raise Exception("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
-    model_class = ModelRegistry.get_model(model_name)
-    file_processor_class = ModelRegistry.get_file_processor("default")
-    prompt_builder_class = ModelRegistry.get_prompt_builder(model_name)
-
-    file_processor = file_processor_class()
-    prompt_builder = prompt_builder_class(file_processor)
-    
-    if model_name.startswith("bedrock-"):
-        model_tag = '-'.join(model_name.split("-")[1:])
-        model = model_class(config, model_tag)
-    else:
-        model = model_class(config)
+    model = ModelRegistry.create_model(model_name, config)
+    _, file_processor_name, prompt_builder_name = ModelRegistry.get_model(model_name)
+    prompt_builder = ModelRegistry.get_prompt_builder(prompt_builder_name)(ModelRegistry.get_file_processor(file_processor_name)())
 
     return model, model_name, prompt_builder
