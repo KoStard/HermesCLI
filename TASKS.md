@@ -4,3 +4,4 @@
 - move config to ~/.config/hermes/
 - error handling for the LLM requests, if it fails the message should just be discarded and go back
 - special commands as context providers, for now with a hardcoded action in the chat application
+- when loading extensions, they might fail, it should not crash the app, instead it should log the error and move on

@@ -6,24 +6,22 @@ Hermes is a powerful command-line tool that enables you to interact with various
 
 - Chat with a variety of AI models:
   - Claude (Anthropic)
-  - Bedrock Claude
   - Bedrock Claude 3.5
-  - Bedrock Opus
-  - Bedrock Mistral
   - Gemini (Google)
   - GPT-4 (OpenAI)
   - Ollama (Local models)
   - DeepSeek (DeepSeek AI)
+  - And many more...
 - File input support for context-aware conversations
 - Image inputs for supported models
+- URL input to read and pass to the LLM
 - Support for local models through Ollama integration
 - Ability to append or update files based on AI responses
 - Markdown rendering for formatted output
-- Raw output option for unformatted responses
-- Confirmation prompt to prevent unnecessary API calls
-- Autocomplete support for model selection
-- **NEW: Execute complex workflows defined in YAML files**
-- **NEW: Context extension feature for dynamic file inclusion in workflows**
+- Execute complex workflows defined in YAML files
+- Extension model to support custom context providers (e.g. custom parsers for different file formats, web pages, etc.)
+- Pipe the input into the LLM
+- Pipe the output from the LLM
 
 ## Installation
 
@@ -61,7 +59,7 @@ After installation, set up your configuration file:
    [DEEPSEEK]
    api_key = your_deepseek_api_key
    model = deepseek-coder
-   ```
+```
    
    You can set any supported model as the default in the `[BASE]` section.
 
@@ -69,6 +67,7 @@ After installation, set up your configuration file:
 
 
 ## Usage
+### Basic usage
 
 Basic usage:
 ```
@@ -97,28 +96,77 @@ After running the command, you will be prompted to enter your initial message or
 - `--update` or `-u`: Update a specified file with the AI's response
 - `--pretty`: Print the output by rendering markdown
 - `--workflow`: Specify a workflow YAML file to execute
+- `--image`: Pass an image to the LLM (can be used multiple times)
 - `--text`: Additional text to be included with prompts (can be used multiple times)
+- `--url`: Pass a URL, that will be opened, parsed and passed to the LLM  (can be used multiple times)
 
-Examples:
+If you pipe into the input of hermes, or pipe the output of hermes, it will call the LLM only once, print the output and exit.
 
-Using --prompt:
+You can also implement your own custom context providers, which will be accessible from CLI with your own custom arguments.
+#### Configuring custom context providers
+Create a sub-folder in `~/.config/hermes/extra_context_providers/`, you can name it something about the group of extensions you are adding, or just call it `extensions`.
+Then inside `~/.config/hermes/extra_context_providers/<your_extensions_folder>/` create a python file (use snake_case for the name of the file).
+There create a class, that implements `hermes.context_providers.base.ContextProvider`.
+
+Example:
+```python
+# /home/kostard/.config/hermes/extra_context_providers/my_test/test.py
+
+from argparse import ArgumentParser
+from hermes.context_providers.base import ContextProvider
+from hermes.config import HermesConfig
+from hermes.prompt_builders.base import PromptBuilder
+
+class TestContextProvider(ContextProvider):
+    def add_argument(self, parser: ArgumentParser):
+        parser.add_argument('--test', help="My test context provider")
+
+    def load_context(self, config: HermesConfig):
+	    # HermesConfig contains all the arguments parsed from CLI, so the --test is present here
+        # This is my opportunity to load and store some context. If I need to make network requests, I can do it here.
+        self.test = config.get('test', 'default_test')
+
+    def add_to_prompt(self, prompt_builder: PromptBuilder):
+        # This is my opportunity to add something to the prompt
+        prompt_builder.add_text(self.test, name="test")
+
 ```
-hermes --model claude document1.txt document2.txt --prompt "Summarize these documents."
+Now we'll see:
+```sh
+hermes --help
+# ...
+#   --test TEST           My test context provider
+
+hermes --test "My secret is 1234" --prompt "what is my secret?"
+# Your secret is "1234".
+```
+#### Examples:
+
+Summarise a document, and continue chatting about it:
+```sh
+hermes --model claude README.md --prompt "Summarise this document into 1 paragraph"
+# Hermes is a versatile command-line tool that enables users to interact with various AI models, process files, and execute complex workflows. It supports a wide range of AI models, including Claude, GPT-4, Gemini, and local models through Ollama integration. Hermes offers features such as file and image input support, URL parsing, the ability to append or update files based on AI responses, markdown rendering, and the execution of workflows defined in YAML files. Users can easily install Hermes, configure API keys, and use it with various command-line options to chat with AI models, process documents, and run complex tasks. The tool also supports piping input and output, making it a powerful and flexible solution for AI-assisted tasks and automation.
+# ----
+# You:
 ```
 
-Using --prompt-file:
+Piping the output:
+```sh
+hermes --prompt "Tell me a fact about space for my curiosity" | cat
+# Sure! Here's a fascinating fact about space:
+# 
+# The Sun, which is the center of our solar system, is made up of about 98% hydrogen and helium. It has a diameter of approximately 1.39 million kilometers (864,000 miles), which is about 109 times the diameter of Earth. Despite its immense size, the Sun is considered an average-sized star in the vastness of the universe.
 ```
-hermes --model claude document1.txt document2.txt --prompt-file my_prompt.txt
+
+Piping input:
+```sh
+echo "Hello, how are you?" | hermes
+# Hello! I'm here to help. How can I assist you today?
 ```
 
 Using --workflow:
 ```
 hermes --workflow my_workflow.yaml --model claude
-```
-
-Using --text:
-```
-hermes --model claude document1.txt --text "Consider this context" --text "And this additional information"
 ```
 
 ### Supported Models
@@ -132,6 +180,7 @@ hermes --model claude document1.txt --text "Consider this context" --text "And t
 - `openai`: OpenAI's GPT-4 model
 - `ollama`: Local models through Ollama
 - `deepseek`: DeepSeek AI's models
+- `groq`: You specify which groq model in the config file
 
 ## Configuration
 
@@ -155,7 +204,7 @@ To use Ollama models:
    ```ini
    [OLLAMA]
    model = llama2
-   ```
+```
    Replace `llama2` with your preferred model.
 
 ### DeepSeek Setup
@@ -170,7 +219,7 @@ To use DeepSeek models:
    api_key = your_deepseek_api_key
    base_url = https://api.deepseek.com
    model = deepseek-coder
-   ```
+```
    You can replace `deepseek-coder` with other available DeepSeek models if desired.
 
 ## Contributing
@@ -243,35 +292,3 @@ tasks:
 
 This structure allows for more complex and organized workflows, with the ability to group related tasks together using nested sequential tasks.
 
-## NEW: Context Extension Feature
-
-Hermes now supports dynamic file inclusion in workflows using the context extension feature. This allows you to add files to the context during workflow execution, making your workflows more flexible and powerful.
-
-To use the context extension feature, you can include a `context_extension` task in your workflow YAML file. Here's an example:
-
-```yaml
-my_workflow:
-  type: sequential
-  tasks:
-    task1:
-      type: context_extension
-      files:
-        - additional_file1.txt
-        - additional_file2.txt
-
-    task2:
-      type: llm
-      prompt: "Analyze the content of all files in the context."
-      pass_input_files: true
-```
-
-In this example:
-
-1. The `context_extension` task adds `additional_file1.txt` and `additional_file2.txt` to the context.
-2. The subsequent `llm` task can now access these additional files along with any files initially provided when running the Hermes command.
-
-The `pass_input_files: true` option in the LLM task ensures that all files in the context (including the newly added ones) are passed to the AI model for analysis.
-
-This feature is particularly useful when you need to include different sets of files for different parts of your workflow, or when you want to dynamically add files based on the results of previous tasks.
-
-Remember to ensure that the files specified in the `context_extension` task exist in the directory where you're running the Hermes command, or provide the full path to these files.

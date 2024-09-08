@@ -70,7 +70,10 @@ def run_workflow(hermes_config: HermesConfig):
     model, model_id, prompt_builder = create_model_and_processors(hermes_config.get('model'))
 
     input_files = hermes_config.get('files', [])
-    initial_prompt = hermes_config.get('prompt') or (open(hermes_config.get('prompt_file'), 'r').read().strip() if hermes_config.get('prompt_file') else "")
+    initial_prompt = hermes_config.get('prompt')
+    if not initial_prompt and hermes_config.get('prompt_file'):
+        with open(hermes_config.get('prompt_file')) as f:
+            initial_prompt = f.read().strip()
 
     executor = WorkflowExecutor(hermes_config.get('workflow'), model, model_id, prompt_builder, input_files, initial_prompt, custom_print)
     result = executor.execute()
