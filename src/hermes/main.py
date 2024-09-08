@@ -9,11 +9,7 @@ import configparser
 from typing import Dict
 import os
 
-from hermes.prompt_builders.bedrock_prompt_builder import BedrockPromptBuilder
-from hermes.prompt_builders.markdown_prompt_builder import MarkdownPromptBuilder
-from hermes.prompt_builders.xml_prompt_builder import XMLPromptBuilder
-from hermes.prompt_builders.claude_prompt_builder import ClaudePromptBuilder
-from hermes.prompt_builders.openai_prompt_builder import OpenAIPromptBuilder
+from hermes.model_factory import create_model_and_processors
 
 if os.name == 'posix':
     import readline
@@ -25,16 +21,6 @@ elif os.name == 'nt':
         readline = None
 
 from .utils.file_utils import process_file_name
-from .file_processors.default import DefaultFileProcessor
-from .file_processors.bedrock import BedrockFileProcessor
-from .chat_models.claude import ClaudeModel
-from .chat_models.bedrock import BedrockModel
-from .chat_models.gemini import GeminiModel
-from .chat_models.openai import OpenAIModel
-from .chat_models.ollama import OllamaModel
-from .chat_models.deepseek import DeepSeekModel
-from .chat_models.reflection import ReflectionModel
-from .chat_models.groq import GroqModel
 from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
