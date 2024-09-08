@@ -6,8 +6,9 @@ from hermes.file_processors.base import FileProcessor
 from hermes.utils.file_utils import is_binary
 
 from .base import PromptBuilder
+from ..decorators import register_prompt_builder
 
-
+@register_prompt_builder("bedrock")
 class BedrockPromptBuilder(PromptBuilder):
     def __init__(self, file_processor: FileProcessor):
         self.contents: List[Dict[str, Union[str, Dict[str, Any]]]] = []

@@ -1,6 +1,8 @@
 from typing import Generator
 from .openai import OpenAIModel
+from ..decorators import register_model
 
+@register_model("deepseek")
 class DeepSeekModel(OpenAIModel):
     def initialize(self):
         self.config = dict(self.config)

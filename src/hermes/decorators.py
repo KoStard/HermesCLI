@@ -1,0 +1,5 @@
+from .registry import ModelRegistry
+
+register_model = ModelRegistry.register_model
+register_file_processor = ModelRegistry.register_file_processor
+register_prompt_builder = ModelRegistry.register_prompt_builder

@@ -1,7 +1,9 @@
 from typing import Generator
 from .base import ChatModel
 from groq import Groq
+from ..decorators import register_model
 
+@register_model("groq")
 class GroqModel(ChatModel):
     def initialize(self):
         api_key = self.config["GROQ"]["api_key"]

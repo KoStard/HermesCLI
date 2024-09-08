@@ -3,7 +3,9 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 from .base import PromptBuilder
 from hermes.file_processors.base import FileProcessor
+from ..decorators import register_prompt_builder
 
+@register_prompt_builder("claude")
 class ClaudePromptBuilder(PromptBuilder):
     def __init__(self, file_processor: FileProcessor):
         self.contents: List[Dict[str, Any]] = []

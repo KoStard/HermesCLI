@@ -10,6 +10,10 @@ from typing import Dict
 import os
 
 from hermes.model_factory import create_model_and_processors
+from hermes.registry import ModelRegistry
+from hermes.chat_models import bedrock, claude, gemini, openai, ollama, deepseek, reflection, groq
+from hermes.file_processors import default
+from hermes.prompt_builders import bedrock_prompt_builder, claude_prompt_builder, markdown_prompt_builder, xml_prompt_builder, openai_prompt_builder
 
 if os.name == 'posix':
     import readline

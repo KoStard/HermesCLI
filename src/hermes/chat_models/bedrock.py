@@ -2,7 +2,9 @@ import configparser
 from typing import Generator
 from .base import ChatModel
 import boto3
+from ..decorators import register_model
 
+@register_model("bedrock")
 class BedrockModel(ChatModel):
     def __init__(self, config: configparser.ConfigParser, model_tag: str):
         super().__init__(config)

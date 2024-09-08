@@ -2,7 +2,9 @@ import xml.etree.ElementTree as ET
 from typing import Optional
 from .base import PromptBuilder
 from hermes.file_processors.base import FileProcessor
+from ..decorators import register_prompt_builder
 
+@register_prompt_builder("xml")
 class XMLPromptBuilder(PromptBuilder):
     def __init__(self, file_processor: FileProcessor):
         self.file_processor = file_processor
