@@ -113,8 +113,6 @@ def run_workflow(hermes_config: HermesConfig, config):
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
 def run_chat_application(hermes_config: HermesConfig, config, special_command_prompts, context_orchestrator):
-    if hermes_config.get('model') is None:
-        hermes_config.set('model', get_default_model(config))
     special_command: Dict[str, str] = {}
     if hermes_config.get('append'):
         special_command['append'] = hermes_config.get('append')
