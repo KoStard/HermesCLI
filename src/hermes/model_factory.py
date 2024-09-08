@@ -72,4 +72,4 @@ def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, Prom
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 
-    return model, prompt_builder
+    return model, model_name, prompt_builder

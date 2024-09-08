@@ -7,10 +7,11 @@ from .tasks.base import Task
 from ..chat_models.base import ChatModel
 
 class WorkflowExecutor:
-    def __init__(self, workflow_file: str, model: ChatModel, prompt_builder: PromptBuilder, input_files: List[str], initial_prompt: str, printer: Callable[[str], None]):
+    def __init__(self, workflow_file: str, model: ChatModel, model_id: str, prompt_builder: PromptBuilder, input_files: List[str], initial_prompt: str, printer: Callable[[str], None]):
         self.model = model
+        self.model_id = model_id
         self.printer = printer
-        self.parser = parser.WorkflowParser(self.model, self.printer)
+        self.parser = parser.WorkflowParser(self.model, self.model_id, self.printer)
         self.root_task: Task = self.parser.parse(workflow_file)
         self.context = WorkflowContext()
         self.prompt_builder = prompt_builder
