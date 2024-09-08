@@ -19,9 +19,12 @@ class ChatApplication:
             special_command = {}
         self.model.initialize()
 
-        # Check if input is coming from a pipe
-        if not sys.stdin.isatty():
-            self.handle_piped_input(initial_prompt, special_command)
+        # Check if input or output is coming from a pipe
+        is_input_piped = not sys.stdin.isatty()
+        is_output_piped = not sys.stdout.isatty()
+        
+        if is_input_piped or is_output_piped:
+            self.handle_non_interactive_input_output(initial_prompt, special_command, is_input_piped, is_output_piped)
             return
 
         # Interactive mode
@@ -75,18 +78,23 @@ class ChatApplication:
             return False
         return True
     
-    def handle_piped_input(self, initial_prompt, special_command):
+    def handle_non_interactive_input_output(self, initial_prompt, special_command, is_input_piped, is_output_piped):
         self.context_orchestrator.add_to_prompt(self.prompt_builder)
 
         if initial_prompt:
             self.prompt_builder.add_text(initial_prompt)
-        self.prompt_builder.add_text(sys.stdin.read().strip())
+        if is_input_piped:
+            self.prompt_builder.add_text(sys.stdin.read().strip())
+        elif not initial_prompt:
+            self.prompt_builder.add_text(self.ui.get_user_input())
         self.add_special_command_to_prompt(special_command)
         
         message = self.prompt_builder.build_prompt()
         response = self.send_message_and_print_output(message)
         
         if special_command:
+            if is_output_piped:
+                raise Exception("Special command not supported for non-interactive output")
             self.apply_special_command(special_command, response)
     
     def add_special_command_to_prompt(self, special_command: Dict[str, str]):
