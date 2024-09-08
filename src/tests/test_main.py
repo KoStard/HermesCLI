@@ -1,4 +1,5 @@
 import unittest
+import configparser
 from unittest.mock import patch, MagicMock
 from hermes.config import HermesConfig
 from hermes.main import run_chat_application
