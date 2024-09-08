@@ -20,26 +20,18 @@ def test_add_text_with_name(bedrock_prompt_builder):
     assert bedrock_prompt_builder.contents == [{'text': 'greeting:\nHello, world!\n'}]
 
 def test_add_file_binary(bedrock_prompt_builder, mock_file_processor):
-    with patch('hermes.prompt_builders.bedrock_prompt_builder.is_binary', return_value=True):
-        mock_file_processor.read_file.return_value = b'binary_content'
-        bedrock_prompt_builder.add_file('test.pdf', 'test_doc')
-        assert bedrock_prompt_builder.contents == [{
-            'document': {
-                'format': 'pdf',
-                'name': 'test_doc',
-                'source': {
-                    'bytes': b'binary_content'
-                }
-            }
-        }]
+    mock_file_processor.read_file.return_value = b'binary_content'
+    bedrock_prompt_builder.add_file('test.pdf', 'test_doc')
+    assert bedrock_prompt_builder.contents == [{
+        'text': '<document name="test_doc">binary_content</document>'
+    }]
 
 def test_add_file_text(bedrock_prompt_builder, mock_file_processor):
-    with patch('hermes.prompt_builders.bedrock_prompt_builder.is_binary', return_value=False):
-        mock_file_processor.read_file.return_value = b'text_content'
-        bedrock_prompt_builder.add_file('test.txt', 'test_doc')
-        assert bedrock_prompt_builder.contents == [{
-            'text': '<document name="test_doc">text_content</document>'
-        }]
+    mock_file_processor.read_file.return_value = 'text_content'
+    bedrock_prompt_builder.add_file('test.txt', 'test_doc')
+    assert bedrock_prompt_builder.contents == [{
+        'text': '<document name="test_doc">text_content</document>'
+    }]
 
 def test_add_image(bedrock_prompt_builder, mock_file_processor):
     mock_file_processor.read_file.return_value = b'image_content'

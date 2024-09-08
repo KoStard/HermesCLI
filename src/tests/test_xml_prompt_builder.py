@@ -30,25 +30,19 @@ class TestXMLPromptBuilder(unittest.TestCase):
         self.mock_file_processor.read_file.assert_called_once_with("/path/to/file.txt")
 
     def test_add_image(self):
-        self.xml_prompt_builder.add_image("/path/to/image.jpg", "test_image")
-        prompt = self.xml_prompt_builder.build_prompt()
-        root = ET.fromstring(prompt)
-        image_elem = root.find('image[@name="test_image"]')
-        self.assertIsNotNone(image_elem)
-        self.assertEqual(image_elem.get('path'), "/path/to/image.jpg")
+        with self.assertRaises(NotImplementedError):
+            self.xml_prompt_builder.add_image("/path/to/image.jpg", "test_image")
 
     def test_build_prompt(self):
         self.xml_prompt_builder.add_text("Hello")
         self.mock_file_processor.read_file.return_value = "File content"
         self.xml_prompt_builder.add_file("/path/to/file.txt", "test_file")
-        self.xml_prompt_builder.add_image("/path/to/image.jpg", "test_image")
         prompt = self.xml_prompt_builder.build_prompt()
         root = ET.fromstring(prompt)
         self.assertEqual(root.tag, "input")
-        self.assertEqual(len(root.findall('*')), 3)  # text, document, image
+        self.assertEqual(len(root.findall('*')), 2)  # text, document
         self.assertEqual(root.find('text').text, "Hello")
         self.assertEqual(root.find('document[@name="test_file"]').text, "File content")
-        self.assertEqual(root.find('image[@name="test_image"]').get('path'), "/path/to/image.jpg")
 
 if __name__ == '__main__':
     unittest.main()
