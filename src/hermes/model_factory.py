@@ -2,10 +2,26 @@ import os
 import configparser
 from typing import Tuple
 
+from hermes.chat_models.base import ChatModel
+from hermes.prompt_builders.base import PromptBuilder
+
+# Import all the models, file processors and prompt builders, one by one, to register them
+from .chat_models.bedrock import BedrockModel
+from .chat_models.claude import ClaudeModel
+from .chat_models.gemini import GeminiModel
+from .chat_models.openai import OpenAIModel
+from .chat_models.ollama import OllamaModel
+from .chat_models.deepseek import DeepSeekModel
+from .chat_models.reflection import ReflectionModel
+from .file_processors.bedrock import BedrockFileProcessor
+from .file_processors.default import DefaultFileProcessor
+from .prompt_builders.xml_prompt_builder import XMLPromptBuilder
+from .prompt_builders.bedrock_prompt_builder import BedrockPromptBuilder
+from .prompt_builders.claude_prompt_builder import ClaudePromptBuilder
+from .prompt_builders.markdown_prompt_builder import MarkdownPromptBuilder
+from .prompt_builders.openai_prompt_builder import OpenAIPromptBuilder
+
 from .registry import ModelRegistry
-from .chat_models.base import ChatModel
-from .prompt_builders.base import PromptBuilder
-from .file_processors.base import FileProcessor
 
 def get_default_model(config):
     if 'BASE' in config and 'model' in config['BASE']:
@@ -24,8 +40,6 @@ def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str,
         if model_name is None:
             raise Exception("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
-    model = ModelRegistry.create_model(model_name, config)
-    _, file_processor_name, prompt_builder_name = ModelRegistry.get_model(model_name)
-    prompt_builder = ModelRegistry.get_prompt_builder(prompt_builder_name)(ModelRegistry.get_file_processor(file_processor_name)())
+    model, file_processor, prompt_builder = ModelRegistry.create_model(model_name, config)
 
     return model, model_name, prompt_builder

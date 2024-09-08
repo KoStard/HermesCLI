@@ -4,19 +4,15 @@ from .base import ChatModel
 import boto3
 from ..decorators import register_model
 
-@register_model("bedrock", "default", "bedrock")
+@register_model(["bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral"], "default", "bedrock")
 class BedrockModel(ChatModel):
-    def __init__(self, config: configparser.ConfigParser, model_tag: str):
-        super().__init__(config)
-        self.model_tag = model_tag
-    
     def initialize(self):
         self.client = boto3.client('bedrock-runtime')
-        if self.model_tag == 'claude':
+        if self.model_tag == 'bedrock-claude':
             self.model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
-        elif self.model_tag == 'claude-3.5':
+        elif self.model_tag == 'bedrock-claude-3.5':
             self.model_id = 'anthropic.claude-3-5-sonnet-20240620-v1:0'
-        elif self.model_tag == 'opus':
+        elif self.model_tag == 'bedrock-opus':
             self.model_id = 'anthropic.claude-3-opus-20240229-v1:0'
         else:
             self.model_id = 'mistral.mistral-large-2407-v1:0'

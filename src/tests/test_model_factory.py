@@ -28,7 +28,7 @@ class TestModelFactory(unittest.TestCase):
         for model_name in bedrock_models:
             model, model_name, prompt_builder = create_model_and_processors(model_name)
             self.assertIsInstance(model, BedrockModel)
-            self.assertEqual(model.model_tag, model_name.split("-", 1)[1])
+            self.assertEqual(model.model_tag, model_name)
             self.assertIsInstance(prompt_builder, BedrockPromptBuilder)
 
     @patch('hermes.model_factory.configparser.ConfigParser')
@@ -46,7 +46,7 @@ class TestModelFactory(unittest.TestCase):
     @patch('hermes.model_factory.configparser.ConfigParser')
     def test_unsupported_model(self, mock_config_parser):
         mock_config_parser.return_value = self.mock_config
-        with self.assertRaises(ValueError):
+        with self.assertRaises(KeyError):
             create_model_and_processors("unsupported-model")
 
 if __name__ == '__main__':

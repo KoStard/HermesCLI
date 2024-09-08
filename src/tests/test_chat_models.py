@@ -10,7 +10,7 @@ class TestClaudeModel(unittest.TestCase):
     def setUp(self):
         self.config = MagicMock()
         self.config.__getitem__.return_value = {'api_key': 'test_key'}
-        self.model = ClaudeModel(self.config)
+        self.model = ClaudeModel(self.config, 'claude')
 
     @patch('anthropic.Anthropic')
     def test_initialize(self, mock_anthropic):
@@ -30,7 +30,7 @@ class TestClaudeModel(unittest.TestCase):
 class TestBedrockModel(unittest.TestCase):
     def setUp(self):
         self.config = MagicMock()
-        self.model = BedrockModel(self.config, 'claude')
+        self.model = BedrockModel(self.config, 'bedrock-claude')
 
     @patch('boto3.client')
     def test_initialize(self, mock_boto3_client):
@@ -56,7 +56,7 @@ class TestGeminiModel(unittest.TestCase):
     def setUp(self):
         self.config = MagicMock()
         self.config.__getitem__.return_value = {'api_key': 'test_key'}
-        self.model = GeminiModel(self.config)
+        self.model = GeminiModel(self.config, 'gemini')
 
     @patch('google.generativeai.configure')
     @patch('google.generativeai.GenerativeModel')
@@ -81,7 +81,7 @@ class TestOpenAIModel(unittest.TestCase):
     def setUp(self):
         self.config = MagicMock()
         self.config.__getitem__.return_value = {'api_key': 'test_key'}
-        self.model = OpenAIModel(self.config)
+        self.model = OpenAIModel(self.config, 'openai')
 
     @patch('openai.Client')
     def test_initialize(self, mock_client):
@@ -104,7 +104,7 @@ class TestOllamaModel(unittest.TestCase):
     def setUp(self):
         self.config = MagicMock()
         self.config.__getitem__.return_value = {'model': 'llama2'}
-        self.model = OllamaModel(self.config)
+        self.model = OllamaModel(self.config, 'ollama')
 
     def test_initialize(self):
         self.model.initialize()

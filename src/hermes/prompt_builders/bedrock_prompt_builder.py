@@ -3,7 +3,6 @@ import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional, Union
 
 from hermes.file_processors.base import FileProcessor
-from hermes.utils.file_utils import is_binary
 
 from .base import PromptBuilder
 from ..decorators import register_prompt_builder

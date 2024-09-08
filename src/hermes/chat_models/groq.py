@@ -3,7 +3,7 @@ from .base import ChatModel
 from groq import Groq
 from ..decorators import register_model
 
-@register_model("groq")
+@register_model("groq", "default", "markdown")
 class GroqModel(ChatModel):
     def initialize(self):
         api_key = self.config["GROQ"]["api_key"]

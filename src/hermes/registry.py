@@ -9,9 +9,13 @@ class ModelRegistry:
     prompt_builders: Dict[str, Type[PromptBuilder]] = {}
 
     @classmethod
-    def register_model(cls, name: str, file_processor: str, prompt_builder: str):
+    def register_model(cls, name: str | list[str], file_processor: str, prompt_builder: str):
         def decorator(model_class: Type[ChatModel]):
-            cls.models[name] = (model_class, file_processor, prompt_builder)
+            if isinstance(name, list):
+                for n in name:
+                    cls.models[n] = (model_class, file_processor, prompt_builder)
+            else:
+                cls.models[name] = (model_class, file_processor, prompt_builder)
             return model_class
         return decorator
 
@@ -30,7 +34,7 @@ class ModelRegistry:
         return decorator
 
     @classmethod
-    def get_model(cls, name: str) -> Tuple[Type[ChatModel], str, str]:
+    def get_model_info(cls, name: str) -> Tuple[Type[ChatModel], str, str]:
         return cls.models[name]
 
     @classmethod
@@ -42,8 +46,8 @@ class ModelRegistry:
         return cls.prompt_builders[name]
 
     @classmethod
-    def create_model(cls, name: str, config: dict) -> ChatModel:
-        model_class, file_processor_name, prompt_builder_name = cls.get_model(name)
+    def create_model(cls, model_name: str, config: dict) -> ChatModel:
+        model_class, file_processor_name, prompt_builder_name = cls.get_model_info(model_name)
         file_processor = cls.get_file_processor(file_processor_name)()
         prompt_builder = cls.get_prompt_builder(prompt_builder_name)(file_processor)
-        return model_class(config, prompt_builder)
+        return model_class(config, model_name), file_processor, prompt_builder

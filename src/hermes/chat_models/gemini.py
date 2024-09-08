@@ -4,7 +4,7 @@ import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from ..decorators import register_model
 
-@register_model("gemini")
+@register_model("gemini", "default", "xml")
 class GeminiModel(ChatModel):
     def initialize(self):
         api_key = self.config["GEMINI"]["api_key"]
