@@ -18,23 +18,6 @@ class BedrockPromptBuilder(PromptBuilder):
         self.contents.append({'text': content + '\n'})
 
     def add_file(self, file_path: str, name: str):
-        # if is_binary(file_path):
-        #     _, ext = os.path.splitext(file_path)
-        #     ext = ext.lower()
-        #     [Carry out a conversation - Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html)
-        #     Currently sonnet-3.5 does not support file inputs, so using DefaultFileProcessor
-            
-        #     content_bytes = self.file_processor.read_file(file_path)
-        #     self.contents.append({
-        #         'document': {
-        #             'format': ext[1:],
-        #             'name': name,
-        #             'source': {
-        #                 'bytes': content_bytes
-        #             }
-        #         }
-        #     })
-            
         file_content = self.file_processor.read_file(file_path)
         if not file_content:
             print(f"{file_path} could not be processed")

@@ -5,8 +5,9 @@ from hermes.file_processors.base import FileProcessor
 
 class XMLPromptBuilder(PromptBuilder):
     def __init__(self, file_processor: FileProcessor):
-        self.root = ET.Element("input")
         self.file_processor = file_processor
+        self.root = None
+        self.erase()
 
     def add_text(self, text: str, name: Optional[str] = None):
         if name:
@@ -28,3 +29,5 @@ class XMLPromptBuilder(PromptBuilder):
 
     def erase(self):
         self.root = ET.Element("input")
+        help_content = ET.SubElement(self.root, "text", name="help")
+        help_content.text = "This is the user input, it's formatted as XML, and that the assistant will reply to it."

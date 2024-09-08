@@ -13,7 +13,7 @@ class TestXMLPromptBuilder(unittest.TestCase):
         self.xml_prompt_builder.add_text("Hello, world!")
         prompt = self.xml_prompt_builder.build_prompt()
         root = ET.fromstring(prompt)
-        self.assertEqual(root.find('text').text, "Hello, world!")
+        self.assertIn('Hello, world!', [text.text for text in root.findall('text')])
 
     def test_add_text_with_name(self):
         self.xml_prompt_builder.add_text("Hello, world!", name="greeting")
@@ -40,8 +40,8 @@ class TestXMLPromptBuilder(unittest.TestCase):
         prompt = self.xml_prompt_builder.build_prompt()
         root = ET.fromstring(prompt)
         self.assertEqual(root.tag, "input")
-        self.assertEqual(len(root.findall('*')), 2)  # text, document
-        self.assertEqual(root.find('text').text, "Hello")
+        self.assertEqual(len(root.findall('*')), 3)  # help, text, document
+        self.assertIn('Hello', [text.text for text in root.findall('text')])
         self.assertEqual(root.find('document[@name="test_file"]').text, "File content")
 
 if __name__ == '__main__':
