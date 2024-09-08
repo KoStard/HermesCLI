@@ -26,7 +26,3 @@ class DefaultFileProcessor(FileProcessor):
     def extract_text_from_docx(self, file_path: str) -> str:
         doc = Document(file_path)
         return ' '.join(paragraph.text for paragraph in doc.paragraphs)
-
-    def write_file(self, file_path: str, content: str, mode: str = 'w') -> None:
-        with open(file_path, mode, encoding='utf-8') as file:
-            file.write(content)

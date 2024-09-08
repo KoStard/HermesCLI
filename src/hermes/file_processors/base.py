@@ -9,7 +9,3 @@ class FileProcessor(ABC):
     
     def exists(self, file_path: str) -> bool:
         return os.path.exists(file_path)
-
-    @abstractmethod
-    def write_file(self, file_path: str, content: str, mode: str = 'w') -> None:
-        pass

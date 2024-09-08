@@ -146,7 +146,7 @@ def create_model_and_processors(model_name: str, config: configparser.ConfigPars
     elif model_name.startswith("bedrock-"):
         model_tag = '-'.join(model_name.split("-")[1:])
         model = BedrockModel(config, model_tag)
-        file_processor = BedrockFileProcessor()
+        file_processor = DefaultFileProcessor()
         prompt_builder = BedrockPromptBuilder(file_processor)
     elif model_name == "gemini":
         model = GeminiModel(config)

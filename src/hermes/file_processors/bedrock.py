@@ -2,12 +2,10 @@ from .base import FileProcessor
 
 class BedrockFileProcessor(FileProcessor):
     def read_file(self, file_path: str) -> bytes:
+        # Currently unreliable: [Carry out a conversation - Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html)
+        # Sonnet-3.5 in Bedrock doesn't support file chat.
         if not self.exists(file_path):
             return b"empty"
 
         with open(file_path, 'rb') as file:
             return file.read()
-
-    def write_file(self, file_path: str, content: str, mode: str = 'w') -> None:
-        with open(file_path, mode, encoding='utf-8') as file:
-            file.write(content)
