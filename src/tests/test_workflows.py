@@ -52,7 +52,7 @@ class TestWorkflowParser(unittest.TestCase):
     def setUp(self):
         self.model_mock = Mock(spec=ChatModel)
         self.printer_mock = Mock()
-        self.parser = WorkflowParser(self.model_mock, self.printer_mock)
+        self.parser = WorkflowParser(self.model_mock, "model_id", self.printer_mock)
 
     @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="task1:\n  type: llm\n  prompt: test")
     def test_parse_valid_workflow(self, mock_open):
@@ -95,6 +95,7 @@ class TestWorkflowExecutor(unittest.TestCase):
             self.executor = WorkflowExecutor(
                 'dummy_workflow.yaml',
                 self.model_mock,
+                "model_id",
                 self.prompt_builder_mock,
                 ['input1.txt', 'input2.txt'],
                 'initial prompt',

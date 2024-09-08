@@ -17,7 +17,7 @@ class TestChatApplication(unittest.TestCase):
         self.ui.get_user_input.side_effect = ["exit"]
         self.app.run(initial_prompt)
         self.model.initialize.assert_called_once()
-        self.context_orchestrator.build_prompt.assert_called_once_with(self.prompt_builder)
+        self.context_orchestrator.add_to_prompt.assert_called_once_with(self.prompt_builder)
         self.prompt_builder.add_text.assert_called_once_with(initial_prompt)
         self.prompt_builder.build_prompt.assert_called_once()
         self.model.send_message.assert_called_once()
@@ -96,7 +96,7 @@ class TestChatApplication(unittest.TestCase):
         mock_stdin_read.return_value = "Piped input"
         self.app.run()
         self.model.initialize.assert_called_once()
-        self.context_orchestrator.build_prompt.assert_called_once_with(self.prompt_builder)
+        self.context_orchestrator.add_to_prompt.assert_called_once_with(self.prompt_builder)
         self.prompt_builder.add_text.assert_called_once_with("Piped input")
         self.prompt_builder.build_prompt.assert_called_once()
         self.model.send_message.assert_called_once()
@@ -108,7 +108,7 @@ class TestChatApplication(unittest.TestCase):
         mock_stdin_read.return_value = "Piped input"
         self.app.run(initial_prompt="Initial prompt")
         self.model.initialize.assert_called_once()
-        self.context_orchestrator.build_prompt.assert_called_once_with(self.prompt_builder)
+        self.context_orchestrator.add_to_prompt.assert_called_once_with(self.prompt_builder)
         self.prompt_builder.add_text.assert_has_calls([call('Initial prompt'), call('Piped input')])
         self.prompt_builder.build_prompt.assert_called_once()
         self.model.send_message.assert_called_once()

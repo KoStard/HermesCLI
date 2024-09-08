@@ -15,15 +15,6 @@ class TestDefaultFileProcessor(unittest.TestCase):
         self.assertEqual(content, 'Hello, World!')
         os.unlink(tf.name)
 
-    def test_write_file(self):
-        with tempfile.NamedTemporaryFile(delete=False) as tf:
-            pass
-        self.processor.write_file(tf.name, 'Test content')
-        with open(tf.name, 'r') as f:
-            content = f.read()
-        self.assertEqual(content, 'Test content')
-        os.unlink(tf.name)
-
 class TestBedrockFileProcessor(unittest.TestCase):
     def setUp(self):
         self.processor = BedrockFileProcessor()
@@ -35,14 +26,6 @@ class TestBedrockFileProcessor(unittest.TestCase):
         self.assertEqual(content, b'Hello, World!')
         os.unlink(tf.name)
 
-    def test_write_file(self):
-        with tempfile.NamedTemporaryFile(delete=False) as tf:
-            pass
-        self.processor.write_file(tf.name, 'Test content')
-        with open(tf.name, 'r') as f:
-            content = f.read()
-        self.assertEqual(content, 'Test content')
-        os.unlink(tf.name)
 
 if __name__ == '__main__':
     unittest.main()

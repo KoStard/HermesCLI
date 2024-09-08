@@ -20,7 +20,7 @@ def test_add_text_with_name(bedrock_prompt_builder):
     assert bedrock_prompt_builder.contents == [{'text': 'greeting:\nHello, world!\n'}]
 
 def test_add_file_binary(bedrock_prompt_builder, mock_file_processor):
-    mock_file_processor.read_file.return_value = b'binary_content'
+    mock_file_processor.read_file.return_value = 'binary_content'
     bedrock_prompt_builder.add_file('test.pdf', 'test_doc')
     assert bedrock_prompt_builder.contents == [{
         'text': '<document name="test_doc">binary_content</document>'

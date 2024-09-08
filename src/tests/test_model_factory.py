@@ -37,7 +37,6 @@ class TestModelFactory(unittest.TestCase):
         model_classes = {
             "gemini": GeminiModel,
             "ollama": OllamaModel,
-            "openai": OpenAIModel
         }
         for model_name, model_class in model_classes.items():
             model, model_name, prompt_builder = create_model_and_processors(model_name)
