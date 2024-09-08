@@ -67,32 +67,21 @@ def main():
     args = parser.parse_args()
     hermes_config = create_config_from_args(args)
 
-    config = configparser.ConfigParser()
-    config_dir = os.path.join(os.path.expanduser("~"), ".config", "multillmchat")
-    config_path = os.path.join(config_dir, "config.ini")
-    os.makedirs(config_dir, exist_ok=True)
-    config.read(config_path)
-
-    if hermes_config.get('model') is None:
-        hermes_config.set('model', get_default_model(config))
-        if hermes_config.get('model') is None:
-            parser.error("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
-
     # Load special command prompts
     special_command_prompts_path = os.path.join(os.path.dirname(__file__), "config", "special_command_prompts.yaml")
     with open(special_command_prompts_path, 'r') as f:
         special_command_prompts = yaml.safe_load(f)
 
     if hermes_config.get('workflow'):
-        run_workflow(hermes_config, config)
+        run_workflow(hermes_config)
     else:
-        run_chat_application(hermes_config, config, special_command_prompts, context_orchestrator)
+        run_chat_application(hermes_config, special_command_prompts, context_orchestrator)
 
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)
 
-def run_workflow(hermes_config: HermesConfig, config):
-    model, prompt_builder = create_model_and_processors(hermes_config.get('model'), config)
+def run_workflow(hermes_config: HermesConfig):
+    model, prompt_builder = create_model_and_processors(hermes_config.get('model'))
 
     input_files = hermes_config.get('files', [])
     initial_prompt = hermes_config.get('prompt') or (open(hermes_config.get('prompt_file'), 'r').read().strip() if hermes_config.get('prompt_file') else "")
@@ -112,7 +101,7 @@ def run_workflow(hermes_config: HermesConfig, config):
 
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
-def run_chat_application(hermes_config: HermesConfig, config, special_command_prompts, context_orchestrator):
+def run_chat_application(hermes_config: HermesConfig, special_command_prompts, context_orchestrator):
     special_command: Dict[str, str] = {}
     if hermes_config.get('append'):
         special_command['append'] = hermes_config.get('append')
@@ -126,7 +115,7 @@ def run_chat_application(hermes_config: HermesConfig, config, special_command_pr
         with open(hermes_config.get('prompt_file'), 'r') as f:
             initial_prompt = f.read().strip()
 
-    model, prompt_builder = create_model_and_processors(hermes_config.get('model'), config)
+    model, prompt_builder = create_model_and_processors(hermes_config.get('model'))
 
     # Load contexts from hermes_config
     context_orchestrator.load_contexts(hermes_config)
@@ -136,7 +125,18 @@ def run_chat_application(hermes_config: HermesConfig, config, special_command_pr
 
     app.run(initial_prompt, special_command)
 
-def create_model_and_processors(model_name: str, config: configparser.ConfigParser):
+def create_model_and_processors(model_name: str | None):
+    config = configparser.ConfigParser()
+    config_dir = os.path.join(os.path.expanduser("~"), ".config", "multillmchat")
+    config_path = os.path.join(config_dir, "config.ini")
+    os.makedirs(config_dir, exist_ok=True)
+    config.read(config_path)
+
+    if model_name is None:
+        model_name = get_default_model(config)
+        if model_name is None:
+            raise Exception("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
+
     if model_name == "claude":
         model = ClaudeModel(config)
         file_processor = DefaultFileProcessor()
