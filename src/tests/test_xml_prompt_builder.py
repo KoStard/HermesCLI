@@ -13,20 +13,20 @@ class TestXMLPromptBuilder(unittest.TestCase):
         self.xml_prompt_builder.add_text("Hello, world!")
         prompt = self.xml_prompt_builder.build_prompt()
         root = ET.fromstring(prompt)
-        self.assertIn('Hello, world!', [text.text for text in root.findall('text')])
+        self.assertIn('Hello, world!', [text.text for text in root.findall('input/text')])
 
     def test_add_text_with_name(self):
         self.xml_prompt_builder.add_text("Hello, world!", name="greeting")
         prompt = self.xml_prompt_builder.build_prompt()
         root = ET.fromstring(prompt)
-        self.assertEqual(root.find('text[@name="greeting"]').text, "Hello, world!")
+        self.assertEqual(root.find('input/text[@name="greeting"]').text, "Hello, world!")
 
     def test_add_file(self):
         self.mock_file_processor.read_file.return_value = "File content"
         self.xml_prompt_builder.add_file("/path/to/file.txt", "test_file")
         prompt = self.xml_prompt_builder.build_prompt()
         root = ET.fromstring(prompt)
-        self.assertEqual(root.find('document[@name="test_file"]').text, "File content")
+        self.assertEqual(root.find('input/document[@name="test_file"]').text, "File content")
         self.mock_file_processor.read_file.assert_called_once_with("/path/to/file.txt")
 
     def test_add_image(self):
@@ -39,10 +39,10 @@ class TestXMLPromptBuilder(unittest.TestCase):
         self.xml_prompt_builder.add_file("/path/to/file.txt", "test_file")
         prompt = self.xml_prompt_builder.build_prompt()
         root = ET.fromstring(prompt)
-        self.assertEqual(root.tag, "input")
-        self.assertEqual(len(root.findall('*')), 3)  # help, text, document
-        self.assertIn('Hello', [text.text for text in root.findall('text')])
-        self.assertEqual(root.find('document[@name="test_file"]').text, "File content")
+        self.assertEqual(root.tag, "root")
+        self.assertEqual(len(root.findall('input/*')), 2)  # text, document
+        self.assertIn('Hello', [text.text for text in root.findall('input/text')])
+        self.assertEqual(root.find('input/document[@name="test_file"]').text, "File content")
 
 if __name__ == '__main__':
     unittest.main()
