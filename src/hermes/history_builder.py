@@ -4,11 +4,11 @@ from hermes.prompt_builders.base import PromptBuilder
 from hermes.context_providers.base import ContextProvider
 
 class HistoryBuilder:
-    def __init__(self, context_prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor, context_providers: List[ContextProvider]):
+    def __init__(self, context_prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor):
         self.context_prompt_builder_class = context_prompt_builder_class
         self.file_processor = file_processor
         self.messages: List[Dict[str, Any]] = []
-        self.context_providers = context_providers
+        self.context_providers: List[ContextProvider] = []
 
     def add_message(self, role: str, content: str):
         self.messages.append({

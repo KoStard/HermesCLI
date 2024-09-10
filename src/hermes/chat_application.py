@@ -9,11 +9,13 @@ from hermes.history_builder import HistoryBuilder
 from hermes.context_providers.base import ContextProvider
 
 class ChatApplication:
-    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, context_prompt_builder_class: Type[PromptBuilder], special_command_prompts: Dict[str, str], context_providers: List[ContextProvider]):
+    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, context_prompt_builder_class: Type[PromptBuilder], special_command_prompts: Dict[str, str], context_providers: List[ContextProvider], hermes_config: HermesConfig):
         self.model = model
         self.ui = ui
         self.special_command_prompts = special_command_prompts
-        self.history_builder = HistoryBuilder(context_prompt_builder_class, file_processor, context_providers)
+        self.history_builder = HistoryBuilder(context_prompt_builder_class, file_processor)
+        for provider in context_providers:
+            self.history_builder.add_context(provider)
 
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         if not special_command:

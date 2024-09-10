@@ -41,11 +41,11 @@ def main():
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
 
     # Load context providers dynamically (including extensions)
-    context_providers = load_context_providers()
+    context_provider_classes = load_context_providers()
 
     # Add arguments from context providers (including extensions)
-    for provider in context_providers:
-        provider.add_argument(parser)
+    for provider_class in context_provider_classes:
+        provider_class().add_argument(parser)
 
     args = parser.parse_args()
     hermes_config = create_config_from_args(args)
@@ -87,7 +87,7 @@ def run_workflow(hermes_config: HermesConfig):
 
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
-def run_chat_application(hermes_config: HermesConfig, special_command_prompts, context_providers):
+def run_chat_application(hermes_config: HermesConfig, special_command_prompts, context_provider_classes):
     special_command: Dict[str, str] = {}
     if hermes_config.get('append'):
         special_command['append'] = hermes_config.get('append')
@@ -103,12 +103,13 @@ def run_chat_application(hermes_config: HermesConfig, special_command_prompts, c
 
     model, model_id, file_processor, prompt_builder_class = create_model_and_processors(hermes_config.get('model'))
 
-    # Load contexts from hermes_config
+    # Instantiate and initialize context providers
+    context_providers = [provider_class() for provider_class in context_provider_classes]
     for provider in context_providers:
-        provider.load_context(hermes_config)
+        provider.load_context_from_cli(hermes_config)
 
     ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
-    app = ChatApplication(model, ui, file_processor, prompt_builder_class, special_command_prompts, context_providers)
+    app = ChatApplication(model, ui, file_processor, prompt_builder_class, special_command_prompts, context_providers, hermes_config)
 
     app.run(initial_prompt, special_command)
 
