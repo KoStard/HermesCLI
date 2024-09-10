@@ -23,6 +23,13 @@ class URLContextProvider(ContextProvider):
             content = self.fetch_url_content(url)
             self.contents.append(content)
 
+    def load_context_interactive(self, args: str):
+        urls = args.split()
+        for url in urls:
+            content = self.fetch_url_content(url)
+            self.urls.append(url)
+            self.contents.append(content)
+
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for url, content in zip(self.urls, self.contents):
             prompt_builder.add_text(content, name=f"URL: {url}")

@@ -16,6 +16,9 @@ class FileContextProvider(ContextProvider):
     def load_context_from_cli(self, config: HermesConfig):
         self.files = config.get('files', [])
 
+    def load_context_interactive(self, args: str):
+        self.files.extend(args.split())
+
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for file_path in self.files:
             prompt_builder.add_file(file_path, process_file_name(file_path))

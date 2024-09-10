@@ -16,6 +16,9 @@ class ImageContextProvider(ContextProvider):
     def load_context_from_cli(self, config: HermesConfig):
         self.image_paths = config.get('image', [])
 
+    def load_context_interactive(self, args: str):
+        self.image_paths.extend(args.split())
+
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for image_path in self.image_paths:
             prompt_builder.add_image(image_path, name=f"Image: {image_path}")

@@ -17,12 +17,12 @@ class ChatApplication:
         self.history_builder = HistoryBuilder(context_prompt_builder_class, file_processor)
         
         # Instantiate and initialize context providers
-        context_providers = [provider_class() for provider_class in context_provider_classes]
+        self.context_providers = [provider_class() for provider_class in context_provider_classes]
         self.command_keys_map = {
-            provider_class.get_command_key().strip(): provider_class for provider_class in context_provider_classes
+            provider_class.get_command_key().strip(): provider_class() for provider_class in context_provider_classes
         }
         
-        for provider in context_providers:
+        for provider in self.context_providers:
             provider.load_context_from_cli(hermes_config)
             self.history_builder.add_context(provider)
 
@@ -50,17 +50,35 @@ class ChatApplication:
             return
         
         while True:
+            user_input = self.get_user_input()
+            if user_input is None:
+                return
+            self.send_message_and_print_output(user_input)
+
+    def get_user_input(self):
+        while True:
             user_input = self.ui.get_user_input()
             user_input_lower = user_input.lower()
 
             if user_input_lower in ['exit', 'quit', 'q']:
-                return
+                return None
             elif user_input_lower == '/clear':
                 self.clear_chat()
-                self.make_first_request(initial_prompt, special_command)
                 continue
+            elif user_input.startswith('/'):
+                command, *args = user_input[1:].split(maxsplit=1)
+                if command in self.command_keys_map:
+                    provider = self.command_keys_map[command]
+                    args_str = args[0] if args else ""
+                    provider.load_context_interactive(args_str)
+                    self.history_builder.add_context(provider)
+                    self.ui.display_status(f"Context added for /{command}")
+                    continue
+                else:
+                    self.ui.display_status(f"Unknown command: /{command}")
+                    continue
 
-            self.send_message_and_print_output(user_input)
+            return user_input
     
     def make_first_request(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.history_builder.clear_regular_history()

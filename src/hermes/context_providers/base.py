@@ -28,6 +28,15 @@ class ContextProvider(ABC):
         pass
 
     @abstractmethod
+    def load_context_interactive(self, args: str):
+        """
+        Load and process the context from interactive input.
+        
+        :param args: The arguments provided by the user in the interactive mode
+        """
+        pass
+
+    @abstractmethod
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         """
         Add the loaded context to the prompt builder.
