@@ -34,3 +34,12 @@ class ContextProvider(ABC):
         :param prompt_builder: The PromptBuilder instance to add context to
         """
         pass
+
+    @abstractmethod
+    def get_command_key(self) -> str:
+        """
+        Return a key suitable for the context provider without the leading slash.
+        
+        :return: A string representing the command key for this context provider
+        """
+        pass
