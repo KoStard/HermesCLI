@@ -29,7 +29,8 @@ class BedrockPromptBuilder(PromptBuilder):
     def add_image(self, image_path: str, name: str):
         _, ext = os.path.splitext(image_path)
         ext = ext.lower()
-        content_bytes = self.file_processor.read_file(image_path)
+        with open(image_path, 'rb') as f:
+            content_bytes = f.read()
         self.contents.append({
             'image': {
                 'format': ext[1:],
