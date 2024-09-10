@@ -68,6 +68,7 @@ class ChatApplication:
             elif user_input.startswith('/'):
                 commands = user_input.split('/')
                 for cmd in commands[1:]:  # Skip the first empty string
+                    cmd = cmd.replace('\n', ' ')  # Replace newlines with spaces
                     command, *args = cmd.strip().split(maxsplit=1)
                     if command in self.command_keys_map:
                         provider = self.command_keys_map[command]
