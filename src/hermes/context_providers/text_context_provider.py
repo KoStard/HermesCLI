@@ -17,3 +17,6 @@ class TextContextProvider(ContextProvider):
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for i, text in enumerate(self.texts, 1):
             prompt_builder.add_text(text, name=f"CLI Text Input {i}")
+
+    def get_command_key(self) -> str:
+        return "text"

@@ -34,3 +34,6 @@ class URLContextProvider(ContextProvider):
 
     def html_to_markdown(self, html: str) -> str:
         return md(html, heading_style='atx')
+
+    def get_command_key(self) -> str:
+        return "url"
