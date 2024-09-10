@@ -16,6 +16,7 @@ class ChatApplication:
         self.special_command_prompts = special_command_prompts
         self.history_builder = HistoryBuilder(context_prompt_builder_class, file_processor)
         for provider in context_providers:
+            provider.load_context_from_cli(hermes_config)
             self.history_builder.add_context(provider)
 
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):

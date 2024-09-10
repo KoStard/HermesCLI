@@ -8,7 +8,8 @@ class TextContextProvider(ContextProvider):
     def __init__(self):
         self.texts: List[str] = []
 
-    def add_argument(self, parser: ArgumentParser):
+    @staticmethod
+    def add_argument(parser: ArgumentParser):
         parser.add_argument('--text', type=str, action='append', help='Text to be included in the context (can be used multiple times)')
 
     def load_context_from_cli(self, config: HermesConfig):

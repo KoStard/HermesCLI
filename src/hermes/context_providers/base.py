@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser
-from typing import TypeVar, Any
+from typing import List, TypeVar, Any
 
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.config import HermesConfig
@@ -8,8 +8,9 @@ from hermes.config import HermesConfig
 T = TypeVar('T')  # Define a type variable
 
 class ContextProvider(ABC):
+    @staticmethod
     @abstractmethod
-    def add_argument(self, parser: ArgumentParser):
+    def add_argument(parser: ArgumentParser):
         """
         Add the necessary arguments to the ArgumentParser.
         
@@ -36,7 +37,7 @@ class ContextProvider(ABC):
         pass
 
     @abstractmethod
-    def get_command_key(self) -> str:
+    def get_command_key(self) -> str | List[str]:
         """
         Return a key suitable for the context provider without the leading slash.
         

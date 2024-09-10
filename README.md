@@ -118,7 +118,8 @@ from hermes.config import HermesConfig
 from hermes.prompt_builders.base import PromptBuilder
 
 class TestContextProvider(ContextProvider):
-    def add_argument(self, parser: ArgumentParser):
+    @staticmethod
+    def add_argument(parser: ArgumentParser):
         parser.add_argument('--test', help="My test context provider")
 
     def load_context(self, config: HermesConfig):

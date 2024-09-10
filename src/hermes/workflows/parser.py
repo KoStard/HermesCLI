@@ -3,7 +3,6 @@ import os
 from typing import Dict, Any, Callable
 
 from hermes.chat_models.base import ChatModel
-from hermes.context_orchestrator import ContextOrchestrator
 from hermes.model_factory import create_model_and_processors
 from hermes.prompt_builders.xml_prompt_builder import XMLPromptBuilder
 from .tasks.base import Task

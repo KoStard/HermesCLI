@@ -9,7 +9,8 @@ class ImageContextProvider(ContextProvider):
     def __init__(self):
         self.image_paths: List[str] = []
 
-    def add_argument(self, parser: ArgumentParser):
+    @staticmethod
+    def add_argument(parser: ArgumentParser):
         parser.add_argument("--image", action="append", help="Path to image file to include in the context")
 
     def load_context_from_cli(self, config: HermesConfig):

@@ -9,7 +9,8 @@ class FileContextProvider(ContextProvider):
     def __init__(self):
         self.files: List[str] = []
 
-    def add_argument(self, parser: ArgumentParser):
+    @staticmethod
+    def add_argument(parser: ArgumentParser):
         parser.add_argument('files', nargs='*', help='Files to be included in the context')
 
     def load_context_from_cli(self, config: HermesConfig):

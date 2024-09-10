@@ -45,7 +45,7 @@ def main():
 
     # Add arguments from context providers (including extensions)
     for provider_class in context_provider_classes:
-        provider_class().add_argument(parser)
+        provider_class.add_argument(parser)
 
     args = parser.parse_args()
     hermes_config = create_config_from_args(args)
