@@ -66,17 +66,18 @@ class ChatApplication:
                 self.clear_chat()
                 continue
             elif user_input.startswith('/'):
-                command, *args = user_input[1:].split(maxsplit=1)
-                if command in self.command_keys_map:
-                    provider = self.command_keys_map[command]
-                    args_str = args[0] if args else ""
-                    provider.load_context_interactive(args_str)
-                    self.history_builder.add_context(provider)
-                    self.ui.display_status(f"Context added for /{command}")
-                    continue
-                else:
-                    self.ui.display_status(f"Unknown command: /{command}")
-                    continue
+                commands = user_input.split('/')
+                for cmd in commands[1:]:  # Skip the first empty string
+                    command, *args = cmd.strip().split(maxsplit=1)
+                    if command in self.command_keys_map:
+                        provider = self.command_keys_map[command]
+                        args_str = args[0] if args else ""
+                        provider.load_context_interactive(args_str)
+                        self.history_builder.add_context(provider)
+                        self.ui.display_status(f"Context added for /{command}")
+                    else:
+                        self.ui.display_status(f"Unknown command: /{command}")
+                continue
 
             return user_input
     
