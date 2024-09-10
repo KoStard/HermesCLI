@@ -11,6 +11,7 @@ from .chat_models.claude import ClaudeModel
 from .chat_models.gemini import GeminiModel
 from .chat_models.openai import OpenAIModel
 from .chat_models.ollama import OllamaModel
+from .chat_models.sambanova import SambanovaModel
 from .chat_models.deepseek import DeepSeekModel
 from .chat_models.reflection import ReflectionModel
 from .file_processors.bedrock import BedrockFileProcessor

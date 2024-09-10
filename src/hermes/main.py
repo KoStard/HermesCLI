@@ -3,17 +3,11 @@
 import os
 import yaml
 from datetime import datetime
-import sys
 import argparse
-import configparser
 from typing import Dict
 import os
 
 from hermes.model_factory import create_model_and_processors
-from hermes.registry import ModelRegistry
-from hermes.chat_models import bedrock, claude, gemini, openai, ollama, deepseek, reflection, groq
-from hermes.file_processors import default
-from hermes.prompt_builders import bedrock_prompt_builder, claude_prompt_builder, markdown_prompt_builder, xml_prompt_builder, openai_prompt_builder
 
 if os.name == 'posix':
     import readline
@@ -39,7 +33,7 @@ def get_default_model(config):
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
-    parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama", "deepseek", "reflection", "groq"], help="Choose the model to use")
+    parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama", "deepseek", "reflection", "groq", "sambanova"], help="Choose the model to use")
     parser.add_argument("--prompt", help="Prompt text to send immediately")
     parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
     parser.add_argument("--append", "-a", help="Append to the specified file")
