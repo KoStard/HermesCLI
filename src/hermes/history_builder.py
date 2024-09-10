@@ -57,10 +57,6 @@ class HistoryBuilder:
             else:
                 compiled_messages.append(message)
 
-        # If there's any remaining context and no user messages, add it as a system message
-        if context_buffer and not compiled_messages:
-            compiled_messages.insert(0, {"role": "system", "content": context_buffer.strip()})
-
         return compiled_messages
 
     def clear_history(self):
