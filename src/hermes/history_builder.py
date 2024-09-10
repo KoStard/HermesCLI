@@ -4,47 +4,50 @@ from hermes.prompt_builders.base import PromptBuilder
 class HistoryBuilder:
     def __init__(self, prompt_builder: PromptBuilder):
         self.prompt_builder = prompt_builder
-        self.context: List[Dict[str, Any]] = []
-        self.timeline: List[Dict[str, str]] = []
+        self.messages: List[Dict[str, Any]] = []
 
     def add_context(self, content_type: str, content: str, name: str = None):
-        self.context.append({
+        self.messages.append({
+            "role": "context",
             "type": content_type,
             "content": content,
             "name": name
         })
 
     def add_message(self, role: str, content: str):
-        self.timeline.append({
+        self.messages.append({
             "role": role,
             "content": content
         })
 
     def build_messages(self) -> List[Dict[str, str]]:
-        messages = []
+        compiled_messages = []
+        context_buffer = ""
 
-        # Use prompt_builder to build context content
-        self.prompt_builder.erase()
-        for item in self.context:
-            if item["type"] == "text":
-                self.prompt_builder.add_text(item["content"], name=item["name"] or "Context")
-            elif item["type"] == "file":
-                self.prompt_builder.add_file(item["content"], name=item["name"])
-            elif item["type"] == "image":
-                self.prompt_builder.add_image(item["content"], name=item["name"])
+        for message in self.messages:
+            if message["role"] == "context":
+                if message["type"] == "text":
+                    context_buffer += f"{message['name'] or 'Context'}: {message['content']}\n\n"
+                elif message["type"] == "file":
+                    context_buffer += f"File {message['name']}: {message['content']}\n\n"
+                elif message["type"] == "image":
+                    context_buffer += f"Image {message['name']} is attached.\n\n"
+            elif message["role"] == "user":
+                if context_buffer:
+                    message["content"] = context_buffer + message["content"]
+                    context_buffer = ""
+                compiled_messages.append(message)
+            else:
+                compiled_messages.append(message)
 
-        context_content = self.prompt_builder.build_prompt()
+        # If there's any remaining context, add it as a system message
+        if context_buffer:
+            compiled_messages.insert(0, {"role": "system", "content": context_buffer.strip()})
 
-        if context_content:
-            messages.append({"role": "system", "content": context_content.strip()})
+        return compiled_messages
 
-        # Add timeline messages
-        messages.extend(self.timeline)
-
-        return messages
-
-    def clear_timeline(self):
-        self.timeline.clear()
+    def clear_history(self):
+        self.messages.clear()
 
     def get_last_messages(self, n: int) -> List[Dict[str, str]]:
-        return self.timeline[-n:]
+        return [msg for msg in self.messages[-n:] if msg["role"] != "context"]
