@@ -18,9 +18,9 @@ class ContextProvider(ABC):
         pass
 
     @abstractmethod
-    def load_context(self, config: HermesConfig):
+    def load_context_from_cli(self, config: HermesConfig):
         """
-        Load and process the context from the config.
+        Load and process the context from the CLI config.
         
         :param config: The HermesConfig object
         """
