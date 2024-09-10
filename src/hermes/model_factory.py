@@ -11,6 +11,7 @@ from .chat_models.claude import ClaudeModel
 from .chat_models.gemini import GeminiModel
 from .chat_models.openai import OpenAIModel
 from .chat_models.ollama import OllamaModel
+from .chat_models.groq import GroqModel
 from .chat_models.sambanova import SambanovaModel
 from .chat_models.deepseek import DeepSeekModel
 from .chat_models.reflection import ReflectionModel
@@ -41,6 +42,6 @@ def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str,
         if model_name is None:
             raise Exception("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
-    model, file_processor, prompt_builder = ModelRegistry.create_model(model_name, config)
+    model, file_processor, prompt_builder_class = ModelRegistry.create_model(model_name, config)
 
-    return model, model_name, prompt_builder
+    return model, model_name, file_processor, prompt_builder_class

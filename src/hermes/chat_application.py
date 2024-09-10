@@ -1,20 +1,19 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type
 import sys
 from hermes.chat_models.base import ChatModel
 from hermes.context_orchestrator import ContextOrchestrator
+from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.ui.chat_ui import ChatUI
 from hermes.utils import file_utils
 from hermes.history_builder import HistoryBuilder
 
 class ChatApplication:
-    def __init__(self, model: ChatModel, ui: ChatUI, prompt_builder: PromptBuilder, special_command_prompts: Dict[str, str], context_orchestrator: ContextOrchestrator):
+    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, context_prompt_builder_class: Type[PromptBuilder], special_command_prompts: Dict[str, str], context_orchestrator: ContextOrchestrator):
         self.model = model
         self.ui = ui
-        self.prompt_builder = prompt_builder
         self.special_command_prompts = special_command_prompts
-        self.context_orchestrator = context_orchestrator
-        self.history_builder = HistoryBuilder(type(prompt_builder))
+        self.history_builder = HistoryBuilder(context_prompt_builder_class, file_processor, context_orchestrator)
 
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         if not special_command:
@@ -54,12 +53,9 @@ class ChatApplication:
     
     def make_first_request(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         self.history_builder.clear_regular_history()
-        self.context_orchestrator.add_to_prompt(self.prompt_builder)
-        context = self.prompt_builder.build_prompt()
-        self.history_builder.add_context("text", context, "Initial Context")
 
         if initial_prompt:
-            self.history_builder.add_message("user", initial_prompt)
+            message = initial_prompt
         elif not self.add_special_command_to_prompt(special_command):
             print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation. Type '/clear' to clear the chat history.")
             while True:
@@ -72,11 +68,10 @@ class ChatApplication:
                     self.clear_chat()
                     continue
                 else:
-                    self.history_builder.add_message("user", text)
+                    message = text
                     break
 
-        messages = self.history_builder.build_messages()
-        response = self.send_message_and_print_output(messages[-1]["content"])
+        response = self.send_message_and_print_output(message)
         
         if special_command:
             self.apply_special_command(special_command, response)
@@ -84,20 +79,15 @@ class ChatApplication:
         return True
     
     def handle_non_interactive_input_output(self, initial_prompt, special_command, is_input_piped, is_output_piped):
-        self.context_orchestrator.add_to_prompt(self.prompt_builder)
-        context = self.prompt_builder.build_prompt()
-        self.history_builder.add_context("text", context, "Initial Context")
-
         if initial_prompt:
-            self.history_builder.add_message("user", initial_prompt)
+            message = initial_prompt
         if is_input_piped:
-            self.history_builder.add_message("user", sys.stdin.read().strip())
+            self.history_builder.add_context("text", sys.stdin.read().strip(), "piped_in_data")
         elif not initial_prompt:
-            self.history_builder.add_message("user", self.ui.get_user_input())
+            message = self.ui.get_user_input()
         self.add_special_command_to_prompt(special_command)
         
-        messages = self.history_builder.build_messages()
-        response = self.send_message_and_print_output(messages[-1]["content"])
+        response = self.send_message_and_print_output(message)
         
         if special_command:
             if is_output_piped:
@@ -131,6 +121,7 @@ class ChatApplication:
         except KeyboardInterrupt:
             print()
             self.ui.display_status("Interrupted...")
+            self.history_builder.pop_message()
 
     def clear_chat(self):
         self.model.initialize()

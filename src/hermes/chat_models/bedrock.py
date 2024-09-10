@@ -47,3 +47,18 @@ class BedrockModel(ChatModel):
             'role': role,
             'content': content
         }
+    
+    def send_history(self, messages) -> Generator[str, None, None]:
+        response = self.client.converse_stream(
+            modelId=self.model_id,
+            messages=messages
+        )
+
+        full_response = ""
+        for event in response['stream']:
+            if 'contentBlockDelta' in event:
+                content = event['contentBlockDelta']['delta'].get('text', '')
+                full_response += content
+                yield content
+            elif 'messageStop' in event:
+                break

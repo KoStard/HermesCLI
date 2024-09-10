@@ -41,7 +41,8 @@ class BedrockPromptBuilder(PromptBuilder):
         })
 
     def build_prompt(self) -> List[Dict[str, Union[str, Dict[str, Any]]]]:
-        return self.contents
+        # Sorting to put the texts in the end, fails with strange error otherwise
+        return sorted(self.contents, key=lambda x: 'text' in x)
 
     def erase(self):
         self.contents = []
