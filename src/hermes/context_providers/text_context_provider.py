@@ -19,5 +19,6 @@ class TextContextProvider(ContextProvider):
         for i, text in enumerate(self.texts, 1):
             prompt_builder.add_text(text, name=f"CLI Text Input {i}")
 
-    def get_command_key(self) -> str:
+    @staticmethod
+    def get_command_key() -> str:
         return "text"

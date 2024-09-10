@@ -20,5 +20,6 @@ class ImageContextProvider(ContextProvider):
         for image_path in self.image_paths:
             prompt_builder.add_image(image_path, name=f"Image: {image_path}")
 
-    def get_command_key(self) -> str:
+    @staticmethod
+    def get_command_key() -> str:
         return "image"

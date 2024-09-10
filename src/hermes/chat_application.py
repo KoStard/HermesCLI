@@ -10,11 +10,18 @@ from hermes.context_providers.base import ContextProvider
 from hermes.config import HermesConfig
 
 class ChatApplication:
-    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, context_prompt_builder_class: Type[PromptBuilder], special_command_prompts: Dict[str, str], context_providers: List[ContextProvider], hermes_config: HermesConfig):
+    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, context_prompt_builder_class: Type[PromptBuilder], special_command_prompts: Dict[str, str], context_provider_classes: List[Type[ContextProvider]], hermes_config: HermesConfig):
         self.model = model
         self.ui = ui
         self.special_command_prompts = special_command_prompts
         self.history_builder = HistoryBuilder(context_prompt_builder_class, file_processor)
+        
+        # Instantiate and initialize context providers
+        context_providers = [provider_class() for provider_class in context_provider_classes]
+        self.command_keys_map = {
+            provider_class.get_command_key().strip(): provider_class for provider_class in context_provider_classes
+        }
+        
         for provider in context_providers:
             provider.load_context_from_cli(hermes_config)
             self.history_builder.add_context(provider)

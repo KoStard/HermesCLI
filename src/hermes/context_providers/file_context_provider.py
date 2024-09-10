@@ -20,5 +20,6 @@ class FileContextProvider(ContextProvider):
         for file_path in self.files:
             prompt_builder.add_file(file_path, process_file_name(file_path))
 
-    def get_command_key(self) -> str:
+    @staticmethod
+    def get_command_key() -> str:
         return "file"

@@ -36,8 +36,9 @@ class ContextProvider(ABC):
         """
         pass
 
+    @staticmethod
     @abstractmethod
-    def get_command_key(self) -> str | List[str]:
+    def get_command_key() -> str | List[str]:
         """
         Return a key suitable for the context provider without the leading slash.
         
