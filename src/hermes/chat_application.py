@@ -5,6 +5,7 @@ from hermes.context_orchestrator import ContextOrchestrator
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.ui.chat_ui import ChatUI
 from hermes.utils import file_utils
+from hermes.history_builder import HistoryBuilder
 
 class ChatApplication:
     def __init__(self, model: ChatModel, ui: ChatUI, prompt_builder: PromptBuilder, special_command_prompts: Dict[str, str], context_orchestrator: ContextOrchestrator):
@@ -13,6 +14,7 @@ class ChatApplication:
         self.prompt_builder = prompt_builder
         self.special_command_prompts = special_command_prompts
         self.context_orchestrator = context_orchestrator
+        self.history_builder = HistoryBuilder(type(prompt_builder))
 
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         if not special_command:
@@ -51,11 +53,14 @@ class ChatApplication:
             self.send_message_and_print_output(user_input)
     
     def make_first_request(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
-        self.prompt_builder.erase()
+        self.history_builder.clear_regular_history()
         self.context_orchestrator.add_to_prompt(self.prompt_builder)
+        context = self.prompt_builder.build_prompt()
+        self.history_builder.add_context("text", context, "Initial Context")
+
         if initial_prompt:
-            self.prompt_builder.add_text(initial_prompt)
-        if not self.add_special_command_to_prompt(special_command) and not initial_prompt:
+            self.history_builder.add_message("user", initial_prompt)
+        elif not self.add_special_command_to_prompt(special_command):
             print("Chat started. Type 'exit', 'quit', or 'q' to end the conversation. Type '/clear' to clear the chat history.")
             while True:
                 text = self.ui.get_user_input()
@@ -67,11 +72,11 @@ class ChatApplication:
                     self.clear_chat()
                     continue
                 else:
-                    self.prompt_builder.add_text(text)
+                    self.history_builder.add_message("user", text)
                     break
 
-        message = self.prompt_builder.build_prompt()
-        response = self.send_message_and_print_output(message)
+        messages = self.history_builder.build_messages()
+        response = self.send_message_and_print_output(messages[-1]["content"])
         
         if special_command:
             self.apply_special_command(special_command, response)
@@ -80,17 +85,19 @@ class ChatApplication:
     
     def handle_non_interactive_input_output(self, initial_prompt, special_command, is_input_piped, is_output_piped):
         self.context_orchestrator.add_to_prompt(self.prompt_builder)
+        context = self.prompt_builder.build_prompt()
+        self.history_builder.add_context("text", context, "Initial Context")
 
         if initial_prompt:
-            self.prompt_builder.add_text(initial_prompt)
+            self.history_builder.add_message("user", initial_prompt)
         if is_input_piped:
-            self.prompt_builder.add_text(sys.stdin.read().strip())
+            self.history_builder.add_message("user", sys.stdin.read().strip())
         elif not initial_prompt:
-            self.prompt_builder.add_text(self.ui.get_user_input())
+            self.history_builder.add_message("user", self.ui.get_user_input())
         self.add_special_command_to_prompt(special_command)
         
-        message = self.prompt_builder.build_prompt()
-        response = self.send_message_and_print_output(message)
+        messages = self.history_builder.build_messages()
+        response = self.send_message_and_print_output(messages[-1]["content"])
         
         if special_command:
             if is_output_piped:
@@ -116,13 +123,17 @@ class ChatApplication:
 
     def send_message_and_print_output(self, user_input):
         try:
-            response = self.ui.display_response(self.model.send_message(user_input))
+            self.history_builder.add_message("user", user_input)
+            messages = self.history_builder.build_messages()
+            response = self.ui.display_response(self.model.send_history(messages))
+            self.history_builder.add_message("assistant", response)
             return response
         except KeyboardInterrupt:
             print()
-            self.ui.display_status(f"Interrupted...")
+            self.ui.display_status("Interrupted...")
 
     def clear_chat(self):
         self.model.initialize()
+        self.history_builder.clear_regular_history()
         self.ui.display_status("Chat history cleared.")
 
