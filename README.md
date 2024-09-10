@@ -292,3 +292,6 @@ tasks:
 
 This structure allows for more complex and organized workflows, with the ability to group related tasks together using nested sequential tasks.
 
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
