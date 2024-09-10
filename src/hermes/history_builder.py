@@ -23,8 +23,15 @@ class HistoryBuilder:
     def build_messages(self) -> List[Dict[str, str]]:
         compiled_messages = []
         context_buffer = ""
+        last_user_message_index = -1
 
-        for message in self.messages:
+        # Find the index of the last user message
+        for i in range(len(self.messages) - 1, -1, -1):
+            if self.messages[i]["role"] == "user":
+                last_user_message_index = i
+                break
+
+        for i, message in enumerate(self.messages):
             if message["role"] == "context":
                 if message["type"] == "text":
                     context_buffer += f"{message['name'] or 'Context'}: {message['content']}\n\n"
@@ -37,16 +44,22 @@ class HistoryBuilder:
                     message["content"] = context_buffer + message["content"]
                     context_buffer = ""
                 compiled_messages.append(message)
+                if i == last_user_message_index:
+                    # Include all subsequent context with this user message
+                    for j in range(i + 1, len(self.messages)):
+                        if self.messages[j]["role"] == "context":
+                            if self.messages[j]["type"] == "text":
+                                compiled_messages[-1]["content"] += f"\n\n{self.messages[j]['name'] or 'Context'}: {self.messages[j]['content']}"
+                            elif self.messages[j]["type"] == "file":
+                                compiled_messages[-1]["content"] += f"\n\nFile {self.messages[j]['name']}: {self.messages[j]['content']}"
+                            elif self.messages[j]["type"] == "image":
+                                compiled_messages[-1]["content"] += f"\n\nImage {self.messages[j]['name']} is attached."
             else:
                 compiled_messages.append(message)
 
-        # If there's any remaining context, add it to the last user message
-        if context_buffer:
-            if compiled_messages and compiled_messages[-1]["role"] == "user":
-                compiled_messages[-1]["content"] += "\n\n" + context_buffer.strip()
-            else:
-                # If there's no user message, add it as a system message
-                compiled_messages.insert(0, {"role": "system", "content": context_buffer.strip()})
+        # If there's any remaining context and no user messages, add it as a system message
+        if context_buffer and not compiled_messages:
+            compiled_messages.insert(0, {"role": "system", "content": context_buffer.strip()})
 
         return compiled_messages
 
