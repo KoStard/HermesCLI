@@ -20,23 +20,26 @@ class HistoryBuilder:
             "content": content
         })
 
-    def build_prompt(self) -> str:
-        self.prompt_builder.erase()
+    def build_messages(self) -> List[Dict[str, str]]:
+        messages = []
 
-        # Add context
+        # Add context as a system message
+        context_content = ""
         for item in self.context:
             if item["type"] == "text":
-                self.prompt_builder.add_text(item["content"], item["name"])
+                context_content += f"{item['name'] or 'Context'}: {item['content']}\n\n"
             elif item["type"] == "file":
-                self.prompt_builder.add_file(item["content"], item["name"])
+                context_content += f"File {item['name']}: {item['content']}\n\n"
             elif item["type"] == "image":
-                self.prompt_builder.add_image(item["content"], item["name"])
+                context_content += f"Image {item['name']} is attached.\n\n"
 
-        # Add timeline
-        for message in self.timeline:
-            self.prompt_builder.add_text(f"{message['role']}: {message['content']}")
+        if context_content:
+            messages.append({"role": "system", "content": context_content.strip()})
 
-        return self.prompt_builder.build_prompt()
+        # Add timeline messages
+        messages.extend(self.timeline)
+
+        return messages
 
     def clear_timeline(self):
         self.timeline.clear()
