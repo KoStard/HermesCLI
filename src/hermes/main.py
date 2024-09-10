@@ -22,7 +22,6 @@ from .utils.file_utils import process_file_name
 from .ui.chat_ui import ChatUI
 from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
-from .context_orchestrator import ContextOrchestrator
 from .context_provider_loader import load_context_providers
 from .config import create_config_from_args, HermesConfig
 
@@ -43,10 +42,10 @@ def main():
 
     # Load context providers dynamically (including extensions)
     context_providers = load_context_providers()
-    context_orchestrator = ContextOrchestrator(context_providers)
 
     # Add arguments from context providers (including extensions)
-    context_orchestrator.add_arguments(parser)
+    for provider in context_providers:
+        provider.add_argument(parser)
 
     args = parser.parse_args()
     hermes_config = create_config_from_args(args)
@@ -59,7 +58,7 @@ def main():
     if hermes_config.get('workflow'):
         run_workflow(hermes_config)
     else:
-        run_chat_application(hermes_config, special_command_prompts, context_orchestrator)
+        run_chat_application(hermes_config, special_command_prompts, context_providers)
 
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)
@@ -88,7 +87,7 @@ def run_workflow(hermes_config: HermesConfig):
 
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
-def run_chat_application(hermes_config: HermesConfig, special_command_prompts, context_orchestrator):
+def run_chat_application(hermes_config: HermesConfig, special_command_prompts, context_providers):
     special_command: Dict[str, str] = {}
     if hermes_config.get('append'):
         special_command['append'] = hermes_config.get('append')
@@ -105,10 +104,11 @@ def run_chat_application(hermes_config: HermesConfig, special_command_prompts, c
     model, model_id, file_processor, prompt_builder_class = create_model_and_processors(hermes_config.get('model'))
 
     # Load contexts from hermes_config
-    context_orchestrator.load_contexts(hermes_config)
+    for provider in context_providers:
+        provider.load_context(hermes_config)
 
     ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
-    app = ChatApplication(model, ui, file_processor, prompt_builder_class, special_command_prompts, context_orchestrator)
+    app = ChatApplication(model, ui, file_processor, prompt_builder_class, special_command_prompts, context_providers)
 
     app.run(initial_prompt, special_command)
 
