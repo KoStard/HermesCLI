@@ -24,3 +24,12 @@ class ClaudeModel(ChatModel):
                 yield text
         self.messages.append({"role": "user", "content": message})
         self.messages.append({"role": "assistant", "content": full_response})
+
+    def send_history(self, messages) -> Generator[str, None, None]:
+        with self.client.messages.stream(
+            model="claude-3-5-sonnet-20240620",
+            messages=messages,
+            max_tokens=1024
+        ) as stream:
+            for text in stream.text_stream:
+                yield text

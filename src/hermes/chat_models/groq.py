@@ -31,3 +31,17 @@ class GroqModel(ChatModel):
                 yield content
         self.messages.append({"role": "user", "content": message})
         self.messages.append({"role": "assistant", "content": full_response})
+
+    def send_history(self, messages) -> Generator[str, None, None]:
+        try:
+            response = self.client.chat.completions.create(
+                messages=messages,
+                model=self.model,
+                stream=True
+            )
+        except Exception as e:
+            raise Exception(f"Error communicating with Groq API:", e)
+
+        for chunk in response:
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content

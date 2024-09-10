@@ -35,3 +35,16 @@ class OpenAIModel(ChatModel):
                 yield content
         self.messages.append({"role": "user", "content": message})
         self.messages.append({"role": "assistant", "content": full_response})
+
+    def send_history(self, messages) -> Generator[str, None, None]:
+        try:
+            stream = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                stream=True
+            )
+        except openai.AuthenticationError:
+            raise Exception("Authentication failed. Please check your API key.")
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content

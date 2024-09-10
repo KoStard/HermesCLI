@@ -26,3 +26,12 @@ class OllamaModel(ChatModel):
 
         self.messages.append({"role": "user", "content": message})
         self.messages.append({"role": "assistant", "content": full_response})
+
+    def send_history(self, messages) -> Generator[str, None, None]:
+        response = ollama.chat(
+            model=self.model,
+            messages=messages,
+            stream=True,
+        )
+        for chunk in response:
+            yield chunk['message']['content']

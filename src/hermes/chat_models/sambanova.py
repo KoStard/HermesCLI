@@ -15,3 +15,6 @@ class SambanovaModel(OpenAIModel):
 
     def send_message(self, message: str) -> Generator[str, None, None]:
         return super().send_message(message)
+
+    def send_history(self, messages) -> Generator[str, None, None]:
+        return super().send_history(messages)
