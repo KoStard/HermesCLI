@@ -40,9 +40,13 @@ class HistoryBuilder:
             else:
                 compiled_messages.append(message)
 
-        # If there's any remaining context, add it as a system message
+        # If there's any remaining context, add it to the last user message
         if context_buffer:
-            compiled_messages.insert(0, {"role": "system", "content": context_buffer.strip()})
+            if compiled_messages and compiled_messages[-1]["role"] == "user":
+                compiled_messages[-1]["content"] += "\n\n" + context_buffer.strip()
+            else:
+                # If there's no user message, add it as a system message
+                compiled_messages.insert(0, {"role": "system", "content": context_buffer.strip()})
 
         return compiled_messages
 
