@@ -58,7 +58,7 @@ def main():
     if hermes_config.get('workflow'):
         run_workflow(hermes_config)
     else:
-        run_chat_application(hermes_config, special_command_prompts, context_providers)
+        run_chat_application(hermes_config, special_command_prompts, context_provider_classes)
 
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)

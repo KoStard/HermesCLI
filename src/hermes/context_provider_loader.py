@@ -1,7 +1,7 @@
 import os
 import importlib
 import inspect
-from typing import List
+from typing import List, Type
 from hermes.context_providers.base import ContextProvider
 from hermes.extension_loader import load_extensions
 

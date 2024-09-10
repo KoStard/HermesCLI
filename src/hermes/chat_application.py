@@ -7,6 +7,7 @@ from hermes.ui.chat_ui import ChatUI
 from hermes.utils import file_utils
 from hermes.history_builder import HistoryBuilder
 from hermes.context_providers.base import ContextProvider
+from hermes.config import HermesConfig
 
 class ChatApplication:
     def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, context_prompt_builder_class: Type[PromptBuilder], special_command_prompts: Dict[str, str], context_providers: List[ContextProvider], hermes_config: HermesConfig):
