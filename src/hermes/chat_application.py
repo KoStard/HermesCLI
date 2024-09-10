@@ -1,19 +1,19 @@
 from typing import Dict, List, Optional, Type
 import sys
 from hermes.chat_models.base import ChatModel
-from hermes.context_orchestrator import ContextOrchestrator
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.ui.chat_ui import ChatUI
 from hermes.utils import file_utils
 from hermes.history_builder import HistoryBuilder
+from hermes.context_providers.base import ContextProvider
 
 class ChatApplication:
-    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, context_prompt_builder_class: Type[PromptBuilder], special_command_prompts: Dict[str, str], context_orchestrator: ContextOrchestrator):
+    def __init__(self, model: ChatModel, ui: ChatUI, file_processor: FileProcessor, context_prompt_builder_class: Type[PromptBuilder], special_command_prompts: Dict[str, str], context_providers: List[ContextProvider]):
         self.model = model
         self.ui = ui
         self.special_command_prompts = special_command_prompts
-        self.history_builder = HistoryBuilder(context_prompt_builder_class, file_processor, context_orchestrator)
+        self.history_builder = HistoryBuilder(context_prompt_builder_class, file_processor, context_providers)
 
     def run(self, initial_prompt: Optional[str] = None, special_command: Optional[Dict[str, str]] = None):
         if not special_command:

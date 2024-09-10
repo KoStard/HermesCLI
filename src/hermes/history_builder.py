@@ -1,22 +1,14 @@
 from typing import List, Dict, Any, Type
-from hermes.context_orchestrator import ContextOrchestrator
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
+from hermes.context_providers.base import ContextProvider
 
 class HistoryBuilder:
-    def __init__(self, context_prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor, context_orchestrator: ContextOrchestrator):
+    def __init__(self, context_prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor, context_providers: List[ContextProvider]):
         self.context_prompt_builder_class = context_prompt_builder_class
         self.file_processor = file_processor
         self.messages: List[Dict[str, Any]] = []
-        self.context_orchestrator = context_orchestrator
-
-    def add_context(self, content_type: str, content: str, name: str = None):
-        self.messages.append({
-            "role": "context",
-            "type": content_type,
-            "content": content,
-            "name": name
-        })
+        self.context_providers = context_providers
 
     def add_message(self, role: str, content: str):
         self.messages.append({
@@ -38,17 +30,12 @@ class HistoryBuilder:
             self.messages = self.messages[:last_user_message_index+1]
             print(f"Truncated messages: {self.messages} because it contains non-user messages after the last user message.")
 
-        self.context_orchestrator.add_to_prompt(context_prompt_builder)
+        # Add context from providers
+        for provider in self.context_providers:
+            provider.add_to_prompt(context_prompt_builder)
 
         for i, message in enumerate(self.messages):
-            if message["role"] == "context":
-                if message["type"] == "text":
-                    context_prompt_builder.add_text(message["content"], name=message["name"] or "Context")
-                elif message["type"] == "file":
-                    context_prompt_builder.add_file(message["content"], name=message["name"])
-                elif message["type"] == "image":
-                    context_prompt_builder.add_image(message["content"], name=message["name"])
-            elif message["role"] == "user":
+            if message["role"] == "user":
                 context_prompt_builder.add_text(message["content"])
                 message_content = context_prompt_builder.build_prompt()
                 context_prompt_builder = self.context_prompt_builder_class(self.file_processor)  # Reset context for next user message
@@ -62,7 +49,7 @@ class HistoryBuilder:
         return compiled_messages
 
     def clear_regular_history(self):
-        self.messages = [msg for msg in self.messages if msg["role"] == "context"]
+        self.messages = []
     
     def pop_message(self):
         return self.messages.pop()
