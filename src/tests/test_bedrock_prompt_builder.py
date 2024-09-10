@@ -31,16 +31,16 @@ class TestBedrockPromptBuilder(unittest.TestCase):
         }])
 
     def test_add_image(self):
-        self.mock_file_processor.read_file.return_value = b'image_content'
-        self.bedrock_prompt_builder.add_image('test.jpg', 'test_image')
-        self.assertEqual(self.bedrock_prompt_builder.contents, [{
-            'image': {
-                'format': 'jpg',
-                'source': {
-                    'bytes': b'image_content'
+        with patch('builtins.open', unittest.mock.mock_open(read_data=b'image_content')):
+            self.bedrock_prompt_builder.add_image('test.jpg', 'test_image')
+            self.assertEqual(self.bedrock_prompt_builder.contents, [{
+                'image': {
+                    'format': 'jpg',
+                    'source': {
+                        'bytes': b'image_content'
+                    }
                 }
-            }
-        }])
+            }])
 
     def test_build_prompt(self):
         self.bedrock_prompt_builder.add_text("Hello")
