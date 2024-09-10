@@ -23,15 +23,17 @@ class HistoryBuilder:
     def build_messages(self) -> List[Dict[str, str]]:
         messages = []
 
-        # Add context as a system message
-        context_content = ""
+        # Use prompt_builder to build context content
+        self.prompt_builder.erase()
         for item in self.context:
             if item["type"] == "text":
-                context_content += f"{item['name'] or 'Context'}: {item['content']}\n\n"
+                self.prompt_builder.add_text(item["content"], name=item["name"] or "Context")
             elif item["type"] == "file":
-                context_content += f"File {item['name']}: {item['content']}\n\n"
+                self.prompt_builder.add_file(item["content"], name=item["name"])
             elif item["type"] == "image":
-                context_content += f"Image {item['name']} is attached.\n\n"
+                self.prompt_builder.add_image(item["content"], name=item["name"])
+
+        context_content = self.prompt_builder.build_prompt()
 
         if context_content:
             messages.append({"role": "system", "content": context_content.strip()})
