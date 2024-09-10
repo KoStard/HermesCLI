@@ -11,7 +11,7 @@ class TextContextProvider(ContextProvider):
     def add_argument(self, parser: ArgumentParser):
         parser.add_argument('--text', type=str, action='append', help='Text to be included in the context (can be used multiple times)')
 
-    def load_context(self, config: HermesConfig):
+    def load_context_from_cli(self, config: HermesConfig):
         self.texts = config.get('text', [])
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):

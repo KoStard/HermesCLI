@@ -16,7 +16,7 @@ class URLContextProvider(ContextProvider):
     def add_argument(self, parser: ArgumentParser):
         parser.add_argument("--url", action="append", help="URL to fetch content from")
 
-    def load_context(self, config: HermesConfig):
+    def load_context_from_cli(self, config: HermesConfig):
         self.urls = config.get('url', [])
         for url in self.urls:
             content = self.fetch_url_content(url)
