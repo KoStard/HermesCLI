@@ -1,10 +1,10 @@
 import os
 import importlib
 import inspect
-from typing import List
+from typing import List, Type
 from hermes.context_providers.base import ContextProvider
 
-def load_extensions() -> List[ContextProvider]:
+def load_extensions() -> List[Type[ContextProvider]]:
     providers = []
     extension_dir = os.path.expanduser("~/.config/hermes/extra_context_providers")
     
@@ -25,6 +25,6 @@ def load_extensions() -> List[ContextProvider]:
 
                 for name, obj in inspect.getmembers(module):
                     if inspect.isclass(obj) and issubclass(obj, ContextProvider) and obj != ContextProvider:
-                        providers.append(obj())
+                        providers.append(obj)
 
     return providers
