@@ -16,6 +16,9 @@ class HistoryBuilder:
             "content": content
         })
 
+    def add_context(self, context_provider: ContextProvider):
+        self.context_providers.append(context_provider)
+
     def build_messages(self) -> List[Dict[str, str]]:
         compiled_messages = []
         context_prompt_builder = self.context_prompt_builder_class(self.file_processor)
