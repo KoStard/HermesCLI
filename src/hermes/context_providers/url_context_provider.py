@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 from markdownify import markdownify as md
+import logging
 
 from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
@@ -12,6 +13,7 @@ class URLContextProvider(ContextProvider):
     def __init__(self):
         self.urls: List[str] = []
         self.contents: List[str] = []
+        self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
@@ -22,6 +24,7 @@ class URLContextProvider(ContextProvider):
         for url in self.urls:
             content = self.fetch_url_content(url)
             self.contents.append(content)
+        self.logger.info(f"Loaded and fetched content for {len(self.urls)} URLs from CLI config")
 
     def load_context_interactive(self, args: str):
         urls = args.split()
@@ -29,6 +32,7 @@ class URLContextProvider(ContextProvider):
             content = self.fetch_url_content(url)
             self.urls.append(url)
             self.contents.append(content)
+        self.logger.info(f"Added and fetched content for {len(urls)} URLs interactively")
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for url, content in zip(self.urls, self.contents):

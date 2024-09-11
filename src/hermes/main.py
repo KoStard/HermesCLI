@@ -5,7 +5,7 @@ import yaml
 from datetime import datetime
 import argparse
 from typing import Dict
-import os
+import logging
 
 from hermes.model_factory import create_model_and_processors
 
@@ -31,6 +31,9 @@ def get_default_model(config):
     return None
 
 def main():
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
     parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama", "deepseek", "reflection", "groq", "sambanova"], help="Choose the model to use")
     parser.add_argument("--prompt", help="Prompt text to send immediately")

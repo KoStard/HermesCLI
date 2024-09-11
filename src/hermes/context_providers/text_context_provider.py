@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from typing import List
+import logging
 from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
@@ -7,6 +8,7 @@ from hermes.prompt_builders.base import PromptBuilder
 class TextContextProvider(ContextProvider):
     def __init__(self):
         self.texts: List[str] = []
+        self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
@@ -14,9 +16,11 @@ class TextContextProvider(ContextProvider):
 
     def load_context_from_cli(self, config: HermesConfig):
         self.texts = config.get('text', [])
+        self.logger.info(f"Loaded {len(self.texts)} text inputs from CLI config")
 
     def load_context_interactive(self, args: str):
         self.texts.append(args)
+        self.logger.info(f"Added 1 text input interactively")
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for i, text in enumerate(self.texts, 1):
