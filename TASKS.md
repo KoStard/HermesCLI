@@ -6,3 +6,4 @@
 - special commands as context providers, for now with a hardcoded action in the chat application
 - when loading extensions, they might fail, it should not crash the app, instead it should log the error and move on
 - allow changing the model midway
+- allow saving and loading chat

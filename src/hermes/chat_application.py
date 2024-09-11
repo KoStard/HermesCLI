@@ -25,9 +25,7 @@ class ChatApplication:
         self.model = model
         self.ui = ui
         self.special_command_prompts = special_command_prompts
-        self.history_builder = HistoryBuilder(
-            prompt_builder_class, file_processor
-        )
+        self.history_builder = HistoryBuilder(prompt_builder_class, file_processor)
 
         # Instantiate and initialize context providers
         self.context_providers = [
@@ -91,10 +89,21 @@ class ChatApplication:
             elif user_input_lower == "/clear":
                 self.clear_chat()
                 continue
-            elif user_input.startswith('/'):
-                commands = re.split(r'(?:^|\s)\/', user_input)[1:]
-                
-                for cmd in commands:
+            elif user_input.startswith("/"):
+                commands = re.finditer(r"(?:^|\s)(\/)(?:\w+\s)", user_input)
+                command_start_indexes = [command.span(1)[1] for command in commands]
+                full_commands = [
+                    user_input[
+                        start : (
+                            command_start_indexes[index + 1]
+                            if index < len(command_start_indexes) - 1
+                            else len(user_input)
+                        )
+                    ]
+                    for (index, start) in enumerate(command_start_indexes)
+                ]
+
+                for cmd in full_commands:
                     command, *args = cmd.strip().split(maxsplit=1)
                     if command in self.command_keys_map:
                         provider = self.command_keys_map[command]()
