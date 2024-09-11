@@ -8,6 +8,7 @@ from hermes.utils import file_utils
 from hermes.history_builder import HistoryBuilder
 from hermes.context_providers.base import ContextProvider
 from hermes.config import HermesConfig
+import re
 
 
 class ChatApplication:
@@ -91,8 +92,8 @@ class ChatApplication:
                 self.clear_chat()
                 continue
             elif user_input.startswith('/'):
-                import re
-                commands = re.findall(r'(?:^|\s|\\n)/(\S+(?:\s+(?:[^/\n]+(?=/|$)|\S+))*)', user_input)
+                commands = re.split(r'(?:^|\s)\/', user_input)[1:]
+                
                 for cmd in commands:
                     command, *args = cmd.strip().split(maxsplit=1)
                     if command in self.command_keys_map:

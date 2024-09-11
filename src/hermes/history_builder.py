@@ -1,27 +1,28 @@
-from typing import List, Dict, Any, Type
+from typing import Any, Dict, List, Type
+
+from hermes.context_providers.base import ContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
-from hermes.context_providers.base import ContextProvider
+
 
 class HistoryBuilder:
-    def __init__(self, context_prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor):
-        self.context_prompt_builder_class = context_prompt_builder_class
+    def __init__(
+        self, prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor
+    ):
+        self.prompt_builder_class = prompt_builder_class
         self.file_processor = file_processor
         self.messages: List[Dict[str, Any]] = []
         self.context_providers: List[ContextProvider] = []
 
     def add_message(self, role: str, content: str):
-        self.messages.append({
-            "role": role,
-            "content": content
-        })
+        self.messages.append({"role": role, "content": content})
 
     def add_context(self, context_provider: ContextProvider):
         self.context_providers.append(context_provider)
 
     def build_messages(self) -> List[Dict[str, str]]:
         compiled_messages = []
-        context_prompt_builder = self.context_prompt_builder_class(self.file_processor)
+        context_prompt_builder = self.prompt_builder_class(self.file_processor)
         last_user_message_index = -1
 
         # Find the index of the last user message
@@ -30,8 +31,10 @@ class HistoryBuilder:
                 last_user_message_index = i
                 break
         if last_user_message_index < len(self.messages) - 1:
-            self.messages = self.messages[:last_user_message_index+1]
-            print(f"Truncated messages: {self.messages} because it contains non-user messages after the last user message.")
+            self.messages = self.messages[: last_user_message_index + 1]
+            print(
+                f"Truncated messages: {self.messages} because it contains non-user messages after the last user message."
+            )
 
         # Add context from providers
         for provider in self.context_providers:
@@ -41,18 +44,23 @@ class HistoryBuilder:
             if message["role"] == "user":
                 context_prompt_builder.add_text(message["content"])
                 message_content = context_prompt_builder.build_prompt()
-                context_prompt_builder = self.context_prompt_builder_class(self.file_processor)  # Reset context for next user message
-                compiled_messages.append({
-                    **message,
-                    'content': message_content
-                })
+                context_prompt_builder = self.prompt_builder_class(
+                    self.file_processor
+                )  # Reset context for next user message
+                compiled_messages.append({**message, "content": message_content})
             else:
-                compiled_messages.append(message)
+                assistant_prompt_builder = self.prompt_builder_class(
+                    self.file_processor
+                )
+                assistant_prompt_builder.add_text(message["content"])
+                compiled_messages.append(
+                    {**message, "content": assistant_prompt_builder.build_prompt()}
+                )
 
         return compiled_messages
 
     def clear_regular_history(self):
         self.messages = []
-    
+
     def pop_message(self):
         return self.messages.pop()

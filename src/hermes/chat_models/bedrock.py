@@ -1,8 +1,10 @@
-import configparser
 from typing import Generator
-from .base import ChatModel
+
 import boto3
+
 from ..decorators import register_model
+from .base import ChatModel
+
 
 @register_model(["bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral"], "default", "bedrock")
 class BedrockModel(ChatModel):

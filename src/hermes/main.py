@@ -103,13 +103,8 @@ def run_chat_application(hermes_config: HermesConfig, special_command_prompts, c
 
     model, model_id, file_processor, prompt_builder_class = create_model_and_processors(hermes_config.get('model'))
 
-    # Instantiate and initialize context providers
-    context_providers = [provider_class() for provider_class in context_provider_classes]
-    for provider in context_providers:
-        provider.load_context_from_cli(hermes_config)
-
     ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
-    app = ChatApplication(model, ui, file_processor, prompt_builder_class, special_command_prompts, context_providers, hermes_config)
+    app = ChatApplication(model, ui, file_processor, prompt_builder_class, special_command_prompts, context_provider_classes, hermes_config)
 
     app.run(initial_prompt, special_command)
 
