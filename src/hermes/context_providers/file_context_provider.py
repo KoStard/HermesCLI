@@ -5,7 +5,7 @@ import os
 from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
-from hermes.utils.file_utils import process_file_name, read_file_content
+from hermes.utils import file_utils
 
 class FileContextProvider(ContextProvider):
     def __init__(self):
@@ -35,8 +35,8 @@ class FileContextProvider(ContextProvider):
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for file_path in self.file_paths:
-            file_content = read_file_content(file_path)
-            prompt_builder.add_file(file_path, process_file_name(file_path), file_content)
+            file_content = file_utils.read_file_content(file_path)
+            prompt_builder.add_file(file_path, file_utils.process_file_name(file_path), file_content)
 
     @staticmethod
     def get_command_key() -> str:

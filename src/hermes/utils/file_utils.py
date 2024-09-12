@@ -43,3 +43,7 @@ def process_file_name(file_path: str) -> str:
 def write_file(file_path: str, content: str, mode: str = 'w') -> None:
     with open(file_path, mode, encoding='utf-8') as file:
         file.write(content)
+
+def read_file_content(file_path: str) -> str:
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return file.read()
