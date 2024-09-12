@@ -23,7 +23,7 @@ class OpenAIPromptBuilder(PromptBuilder):
             self.add_image(file_path, name)
             return
         file_content = self.file_processor.read_file(file_path)
-        self.add_text(f"{name}:\n{file_content.decode('utf-8')}")
+        self.add_text(file_content, name)
 
     def add_image(self, image_path: str, name: str=None):
         with open(image_path, 'rb') as f:

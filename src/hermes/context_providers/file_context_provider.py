@@ -20,7 +20,7 @@ class FileContextProvider(ContextProvider):
         self.logger.info(f"Loaded {len(self.files)} files from CLI config")
 
     def load_context_interactive(self, args: str):
-        new_files = args.split()
+        new_files = [args]
         self.files.extend(new_files)
         self.logger.info(f"Added {len(new_files)} files interactively")
 
