@@ -35,8 +35,8 @@ class FileContextProvider(ContextProvider):
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for file_path in self.file_paths:
-            file_content = file_utils.read_file_content(file_path)
-            prompt_builder.add_file(file_path, file_utils.process_file_name(file_path), file_content)
+            prompt_builder.add_file(file_path, file_utils.process_file_name(file_path))
+
 
     @staticmethod
     def get_command_key() -> str:

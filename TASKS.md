@@ -7,3 +7,7 @@
 - when loading extensions, they might fail, it should not crash the app, instead it should log the error and move on
 - allow changing the model midway
 - allow saving and loading chat
+- add a /reload command to reload the context
+- Allow dropping context pieces. Likely they will need to have some IDs that we'll use.
+- Add a /ls command that will list what are the included context pieces.
+- Allow LLM to request additional context by writing commands
