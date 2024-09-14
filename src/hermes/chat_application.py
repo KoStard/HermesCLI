@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Type
 import sys
+import re
 from hermes.chat_models.base import ChatModel
 from hermes.context_providers.text_context_provider import TextContextProvider
 from hermes.context_providers.append_context_provider import AppendContextProvider
@@ -175,13 +176,19 @@ class ChatApplication:
     def _fill_gaps(self, original_content: str, new_content: str) -> str:
         # Split the original content into lines
         original_lines = original_content.split('\n')
-        new_lines = new_content.split('\n')
 
-        # Find the gaps (lines starting with '???') and replace them
-        for i, line in enumerate(original_lines):
-            if line.strip().startswith('???'):
-                if i < len(new_lines):
-                    original_lines[i] = new_lines[i]
+        # Find all gap markers
+        gap_markers = [i for i, line in enumerate(original_lines) if line.strip().startswith('<GapToFill')]
+
+        # Extract new content for each gap
+        new_content_blocks = re.findall(r'<NewGapContent index=(\d+)>(.*?)</NewGapContent>', new_content, re.DOTALL)
+
+        # Replace gaps with new content
+        for index, content in new_content_blocks:
+            index = int(index)
+            if index <= len(gap_markers):
+                gap_line = gap_markers[index - 1]
+                original_lines[gap_line] = content.strip()
 
         # Join the lines back together
         return '\n'.join(original_lines)
