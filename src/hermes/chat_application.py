@@ -4,6 +4,7 @@ from hermes.chat_models.base import ChatModel
 from hermes.context_providers.text_context_provider import TextContextProvider
 from hermes.context_providers.append_context_provider import AppendContextProvider
 from hermes.context_providers.update_context_provider import UpdateContextProvider
+from hermes.context_providers.fill_gaps_context_provider import FillGapsContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.ui.chat_ui import ChatUI
@@ -157,7 +158,7 @@ class ChatApplication:
 
     def apply_special_commands(self, content: str):
         for provider in self.context_providers:
-            if isinstance(provider, (AppendContextProvider, UpdateContextProvider)):
+            if isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)):
                 if provider.file_path:
                     if isinstance(provider, AppendContextProvider):
                         file_utils.write_file(provider.file_path, "\n" + content, mode="a")
@@ -165,6 +166,25 @@ class ChatApplication:
                     elif isinstance(provider, UpdateContextProvider):
                         file_utils.write_file(provider.file_path, content, mode="w")
                         self.ui.display_status(f"File {provider.file_path} updated")
+                    elif isinstance(provider, FillGapsContextProvider):
+                        original_content = file_utils.read_file(provider.file_path)
+                        filled_content = self._fill_gaps(original_content, content)
+                        file_utils.write_file(provider.file_path, filled_content, mode="w")
+                        self.ui.display_status(f"Gaps filled in {provider.file_path}")
+
+    def _fill_gaps(self, original_content: str, new_content: str) -> str:
+        # Split the original content into lines
+        original_lines = original_content.split('\n')
+        new_lines = new_content.split('\n')
+
+        # Find the gaps (lines starting with '???') and replace them
+        for i, line in enumerate(original_lines):
+            if line.strip().startswith('???'):
+                if i < len(new_lines):
+                    original_lines[i] = new_lines[i]
+
+        # Join the lines back together
+        return '\n'.join(original_lines)
 
     def clear_chat(self):
         self.model.initialize()
