@@ -38,8 +38,6 @@ def main():
     parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama", "deepseek", "reflection", "groq", "sambanova", "openrouter"], help="Choose the model to use")
     parser.add_argument("--prompt", help="Prompt text to send immediately")
     parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
-    parser.add_argument("--append", "-a", help="Append to the specified file")
-    parser.add_argument("--update", "-u", help="Update the specified file")
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
 
@@ -90,13 +88,7 @@ def run_workflow(hermes_config: HermesConfig):
 
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
-def run_chat_application(hermes_config: HermesConfig, special_command_prompts, context_provider_classes):
-    special_command: Dict[str, str] = {}
-    if hermes_config.get('append'):
-        special_command['append'] = hermes_config.get('append')
-    elif hermes_config.get('update'):
-        special_command['update'] = hermes_config.get('update')
-
+def run_chat_application(hermes_config: HermesConfig, context_provider_classes):
     initial_prompt = None
     if hermes_config.get('prompt'):
         initial_prompt = hermes_config.get('prompt')
@@ -107,9 +99,9 @@ def run_chat_application(hermes_config: HermesConfig, special_command_prompts, c
     model, model_id, file_processor, prompt_builder_class = create_model_and_processors(hermes_config.get('model'))
 
     ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
-    app = ChatApplication(model, ui, file_processor, prompt_builder_class, special_command_prompts, context_provider_classes, hermes_config)
+    app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, hermes_config)
 
-    app.run(initial_prompt, special_command)
+    app.run(initial_prompt)
 
 
 if __name__ == "__main__":

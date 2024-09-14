@@ -19,13 +19,11 @@ class ChatApplication:
         ui: ChatUI,
         file_processor: FileProcessor,
         prompt_builder_class: Type[PromptBuilder],
-        special_command_prompts: Dict[str, str],
         context_provider_classes: List[Type[ContextProvider]],
         hermes_config: HermesConfig,
     ):
         self.model = model
         self.ui = ui
-        self.special_command_prompts = special_command_prompts
         self.history_builder = HistoryBuilder(prompt_builder_class, file_processor)
 
         # Instantiate and initialize context providers
@@ -48,10 +46,7 @@ class ChatApplication:
     def run(
         self,
         initial_prompt: Optional[str] = None,
-        special_command: Optional[Dict[str, str]] = None,
     ):
-        if not special_command:
-            special_command = {}
         self.model.initialize()
 
         # Check if input or output is coming from a pipe
@@ -60,18 +55,18 @@ class ChatApplication:
 
         if is_input_piped or is_output_piped:
             self.handle_non_interactive_input_output(
-                initial_prompt, special_command, is_input_piped, is_output_piped
+                initial_prompt, is_input_piped, is_output_piped
             )
             return
 
         # Interactive mode
         try:
-            self.handle_interactive_mode(initial_prompt, special_command)
+            self.handle_interactive_mode(initial_prompt)
         except KeyboardInterrupt:
             print("\nChat interrupted. Exiting gracefully...")
 
-    def handle_interactive_mode(self, initial_prompt, special_command):
-        if not self.make_first_request(initial_prompt, special_command):
+    def handle_interactive_mode(self, initial_prompt):
+        if not self.make_first_request(initial_prompt):
             return
 
         while True:
@@ -121,27 +116,17 @@ class ChatApplication:
     def make_first_request(
         self,
         initial_prompt: Optional[str] = None,
-        special_command: Optional[Dict[str, str]] = None,
     ):
         self.history_builder.clear_regular_history()
-        message = ""
-        if initial_prompt:
-            message = initial_prompt
-        elif not self.add_special_command_to_prompt(special_command):
-            print(
-                "Chat started. Type 'exit', 'quit', or 'q' to end the conversation. Type '/clear' to clear the chat history."
-            )
-            message = self.get_user_input()
-
-        response = self.send_message_and_print_output(message)
-
-        if special_command:
-            self.apply_special_command(special_command, response)
+        message = initial_prompt if initial_prompt else self.get_user_input()
+        if message is None:
             return False
+
+        self.send_message_and_print_output(message)
         return True
 
     def handle_non_interactive_input_output(
-        self, initial_prompt, special_command, is_input_piped, is_output_piped
+        self, initial_prompt, is_input_piped, is_output_piped
     ):
         message = ""
         if initial_prompt:
@@ -152,39 +137,8 @@ class ChatApplication:
             )
         elif not initial_prompt:
             message = self.ui.get_user_input()
-        self.add_special_command_to_prompt(special_command)
 
         response = self.send_message_and_print_output(message)
-
-        if special_command:
-            if is_output_piped:
-                raise Exception(
-                    "Special command not supported for non-interactive output"
-                )
-            self.apply_special_command(special_command, response)
-
-    def add_special_command_to_prompt(self, special_command: Dict[str, str]):
-        text_context_provider = TextContextProvider()
-        special_command_prompt = ""
-        if len(special_command) > 1:
-            raise Exception("Only one special command is supported")
-        if not special_command:
-            return False
-        key = special_command.keys()[0]
-        special_command_prompt = self.special_command_prompts[key].format(
-            file_name=file_utils.process_file_name(special_command[key])
-        )
-        text_context_provider.load_context_interactive(special_command_prompt)
-        self.history_builder.add_context(text_context_provider)
-        return True
-
-    def apply_special_command(self, special_command: Dict[str, str], content: str):
-        if "append" in special_command:
-            file_utils.write_file(special_command["append"], "\n" + content, mode="a")
-            self.ui.display_status(f"Content appended to {special_command['append']}")
-        elif "update" in special_command:
-            file_utils.write_file(special_command["update"], content, mode="w")
-            self.ui.display_status(f"File {special_command['update']} updated")
 
     def send_message_and_print_output(self, user_input):
         try:
@@ -192,11 +146,23 @@ class ChatApplication:
             messages = self.history_builder.build_messages()
             response = self.ui.display_response(self.model.send_history(messages))
             self.history_builder.add_message("assistant", response)
+            self.apply_special_commands(response)
             return response
         except KeyboardInterrupt:
             print()
             self.ui.display_status("Interrupted...")
             self.history_builder.pop_message()
+
+    def apply_special_commands(self, content: str):
+        for provider in self.context_providers:
+            if isinstance(provider, (AppendContextProvider, UpdateContextProvider)):
+                if provider.file_path:
+                    if isinstance(provider, AppendContextProvider):
+                        file_utils.write_file(provider.file_path, "\n" + content, mode="a")
+                        self.ui.display_status(f"Content appended to {provider.file_path}")
+                    elif isinstance(provider, UpdateContextProvider):
+                        file_utils.write_file(provider.file_path, content, mode="w")
+                        self.ui.display_status(f"File {provider.file_path} updated")
 
     def clear_chat(self):
         self.model.initialize()
