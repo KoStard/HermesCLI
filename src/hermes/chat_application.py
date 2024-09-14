@@ -2,6 +2,8 @@ from typing import Dict, List, Optional, Type
 import sys
 from hermes.chat_models.base import ChatModel
 from hermes.context_providers.text_context_provider import TextContextProvider
+from hermes.context_providers.append_context_provider import AppendContextProvider
+from hermes.context_providers.update_context_provider import UpdateContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.ui.chat_ui import ChatUI
