@@ -70,6 +70,11 @@ class ChatApplication:
             print("\nChat interrupted. Exiting gracefully...")
 
     def handle_interactive_mode(self, initial_prompt):
+        if any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) for provider in self.context_providers):
+            # For special context providers, just make the first request and return
+            self.make_first_request(initial_prompt)
+            return
+
         if not self.make_first_request(initial_prompt):
             return
 
@@ -122,7 +127,13 @@ class ChatApplication:
         initial_prompt: Optional[str] = None,
     ):
         self.history_builder.clear_regular_history()
-        message = initial_prompt if initial_prompt else self.get_user_input()
+        if initial_prompt is not None:
+            message = initial_prompt
+        elif any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) for provider in self.context_providers):
+            message = "Please process the provided context."
+        else:
+            message = self.get_user_input()
+        
         if message is None:
             return False
 
