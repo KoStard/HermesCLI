@@ -9,7 +9,7 @@ class OpenRouterModel(OpenAIModel):
         self.config["OPENAI"] = {
             "api_key": self.config["OPENROUTER"]["api_key"],
             "base_url": "https://openrouter.ai/api/v1",
-            "model": self.config["OPENROUTER"].get("model", "openai/gpt-3.5-turbo")
+            "model": self.config["OPENROUTER"].get("model", "openai/o1-mini-2024-09-12")
         }
         super().initialize()
 
