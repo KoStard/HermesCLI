@@ -34,7 +34,7 @@ class ContextProvider(ABC):
         pass
 
     @abstractmethod
-    def load_context_interactive(self, args: str):
+    def load_context_from_string(self, args: str):
         """
         Load and process the context from interactive input.
         

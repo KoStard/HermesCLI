@@ -26,7 +26,7 @@ class URLContextProvider(ContextProvider):
             self.contents.append(content)
         self.logger.info(f"Loaded and fetched content for {len(self.urls)} URLs from CLI config")
 
-    def load_context_interactive(self, args: str):
+    def load_context_from_string(self, args: str):
         urls = args.split()
         for url in urls:
             content = self.fetch_url_content(url)

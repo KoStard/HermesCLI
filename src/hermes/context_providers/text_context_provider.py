@@ -18,7 +18,7 @@ class TextContextProvider(ContextProvider):
         self.texts = config.get('text', [])
         self.logger.info(f"Loaded {len(self.texts)} text inputs from CLI config")
 
-    def load_context_interactive(self, args: str):
+    def load_context_from_string(self, args: str):
         if not args:
             return
         self.texts.append(args)

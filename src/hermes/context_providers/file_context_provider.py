@@ -21,7 +21,7 @@ class FileContextProvider(ContextProvider):
         self._validate_and_add_files(file_paths)
         self.logger.info(f"Loaded {len(self.file_paths)} file paths from CLI config")
 
-    def load_context_interactive(self, args: str):
+    def load_context_from_string(self, args: str):
         new_file_paths = [args]
         self._validate_and_add_files(new_file_paths)
         self.logger.info(f"Added {len(new_file_paths)} file paths interactively")

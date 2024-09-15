@@ -23,7 +23,7 @@ class FillGapsContextProvider(ContextProvider):
             self._load_special_command_prompt()
             self.logger.info(f"Loaded fill-gaps context for file: {self.file_path}")
 
-    def load_context_interactive(self, args: str):
+    def load_context_from_string(self, args: str):
         self.file_path = args
         self._load_special_command_prompt()
         self.logger.info(f"Added fill-gaps context for file: {self.file_path}")

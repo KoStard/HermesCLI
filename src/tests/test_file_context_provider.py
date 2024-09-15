@@ -24,9 +24,9 @@ class TestFileContextProvider(unittest.TestCase):
         self.assertEqual(self.provider.file_paths, ['file1.txt', 'file2.txt'])
 
     @patch('os.path.exists')
-    def test_load_context_interactive(self, mock_exists):
+    def test_load_context_from_string(self, mock_exists):
         mock_exists.return_value = True
-        self.provider.load_context_interactive('file3.txt')
+        self.provider.load_context_from_string('file3.txt')
         self.assertEqual(self.provider.file_paths, ['file3.txt'])
 
     @patch('hermes.utils.file_utils.process_file_name')

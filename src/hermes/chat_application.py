@@ -113,7 +113,7 @@ class ChatApplication:
                     if command in self.command_keys_map:
                         provider = self.command_keys_map[command]()
                         args_str = args[0] if args else ""
-                        provider.load_context_interactive(args_str)
+                        provider.load_context_from_string(args_str)
                         self.history_builder.add_context(provider)
                         self.ui.display_status(f"Context added for /{command}")
                     else:
@@ -148,7 +148,7 @@ class ChatApplication:
             message = initial_prompt
         if is_input_piped:
             text_context_provider = TextContextProvider()
-            text_context_provider.load_context_interactive(sys.stdin.read().strip())
+            text_context_provider.load_context_from_string(sys.stdin.read().strip())
             self.history_builder.add_context(text_context_provider)
         elif not initial_prompt:
             message = self.ui.get_user_input()
