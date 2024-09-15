@@ -2,8 +2,6 @@ from typing import Dict, List, Optional, Type
 import sys
 import re
 import logging
-import os
-from logging.handlers import RotatingFileHandler
 from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
 
 from hermes.chat_models.base import ChatModel
@@ -21,28 +19,6 @@ from hermes.config import HermesConfig
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-# Create /tmp/hermes_logs/ directory if it doesn't exist
-os.makedirs('/tmp/hermes_logs/', exist_ok=True)
-
-# Create handlers
-console_handler = logging.StreamHandler()
-file_handler = RotatingFileHandler('/tmp/hermes_logs/hermes_debug.log', maxBytes=10*1024*1024, backupCount=5)
-
-# Set levels
-console_handler.setLevel(logging.INFO)
-file_handler.setLevel(logging.DEBUG)
-
-# Create formatters and set them to handlers
-console_format = logging.Formatter('%(message)s')
-file_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(console_format)
-file_handler.setFormatter(file_format)
-
-# Add handlers to the logger
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
 
 
 class ChatApplication:

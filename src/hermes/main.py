@@ -6,8 +6,34 @@ from datetime import datetime
 import argparse
 from typing import Dict
 import logging
+from logging.handlers import RotatingFileHandler
 
 from hermes.model_factory import create_model_and_processors
+
+def setup_logger():
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    # Create /tmp/hermes_logs/ directory if it doesn't exist
+    os.makedirs('/tmp/hermes_logs/', exist_ok=True)
+
+    # Create handlers
+    console_handler = logging.StreamHandler()
+    file_handler = RotatingFileHandler('/tmp/hermes_logs/hermes_debug.log', maxBytes=10*1024*1024, backupCount=5)
+
+    # Set levels
+    console_handler.setLevel(logging.INFO)
+    file_handler.setLevel(logging.DEBUG)
+
+    # Create formatters and set them to handlers
+    console_format = logging.Formatter('%(message)s')
+    file_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console_handler.setFormatter(console_format)
+    file_handler.setFormatter(file_format)
+
+    # Add handlers to the logger
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
 
 if os.name == 'posix':
     import readline
@@ -31,7 +57,7 @@ def get_default_model(config):
     return None
 
 def main():
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    setup_logger()
     logger = logging.getLogger(__name__)
 
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
