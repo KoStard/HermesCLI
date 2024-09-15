@@ -29,14 +29,14 @@ class TestURLContextProvider(unittest.TestCase):
         self.assertIn('Test', content)
         mock_get.assert_called_once_with('http://example.com')
 
-    def test_load_context(self):
+    def test_load_context_from_cli(self):
         args = HermesConfig({
             'url': ['http://example.com', 'http://test.com']
         })
         
         with patch.object(self.url_provider, 'fetch_url_content') as mock_fetch:
             mock_fetch.side_effect = ['Content 1', 'Content 2']
-            self.url_provider.load_context(args)
+            self.url_provider.load_context_from_cli(args)
 
         self.assertEqual(self.url_provider.urls, ['http://example.com', 'http://test.com'])
         self.assertEqual(self.url_provider.contents, ['Content 1', 'Content 2'])

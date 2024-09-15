@@ -12,3 +12,4 @@
 - Add a /ls command that will list what are the included context pieces.
 - Allow LLM to request additional context by writing commands
 - Move away from using Config objects when initialising the models. In case we allow changing models, this will create issues, as the actual config object is getting modified. In general, this is not great. 
+- Allow showing the costs of the API calls

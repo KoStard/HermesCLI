@@ -16,16 +16,16 @@ class TestImageContextProvider:
         args = parser.parse_args(['--image', 'image1.jpg', '--image', 'image2.png'])
         assert args.image == ['image1.jpg', 'image2.png']
 
-    def test_load_context(self, image_provider):
+    def load_context_from_cli(self, image_provider):
         args = Mock()
         args.get.return_value = ['image1.jpg', 'image2.png']
-        image_provider.load_context(args)
+        image_provider.load_context_from_cli(args)
         assert image_provider.image_paths == ['image1.jpg', 'image2.png']
 
-    def test_load_context_no_images(self, image_provider):
+    def load_context_from_cli_no_images(self, image_provider):
         args = Mock()
         args.get.return_value = []
-        image_provider.load_context(args)
+        image_provider.load_context_from_cli(args)
         assert image_provider.image_paths == []
 
     def test_add_to_prompt(self, image_provider):

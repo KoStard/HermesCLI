@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 import os
 import tempfile
 
-from hermes.context_orchestrator import ContextOrchestrator
 from hermes.workflows.context import WorkflowContext
 from hermes.workflows.tasks.base import Task
 from hermes.workflows.tasks.markdown_extraction_task import MarkdownExtractionTask

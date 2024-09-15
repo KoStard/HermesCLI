@@ -51,15 +51,10 @@ def main():
     args = parser.parse_args()
     hermes_config = create_config_from_args(args)
 
-    # Load special command prompts
-    special_command_prompts_path = os.path.join(os.path.dirname(__file__), "config", "special_command_prompts.yaml")
-    with open(special_command_prompts_path, 'r') as f:
-        special_command_prompts = yaml.safe_load(f)
-
     if hermes_config.get('workflow'):
         run_workflow(hermes_config)
     else:
-        run_chat_application(hermes_config, special_command_prompts, context_provider_classes)
+        run_chat_application(hermes_config, context_provider_classes)
 
 def custom_print(text, *args, **kwargs):
     print(text, flush=True, *args, **kwargs)

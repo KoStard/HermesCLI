@@ -15,16 +15,16 @@ class TestTextContextProvider(unittest.TestCase):
         args = parser.parse_args(['--text', 'Sample text 1', '--text', 'Sample text 2'])
         self.assertEqual(args.text, ['Sample text 1', 'Sample text 2'])
 
-    def test_load_context(self):
+    def test_load_context_from_cli(self):
         args = HermesConfig({
             'text': ['Sample text 1', 'Sample text 2']
         })
-        self.provider.load_context(args)
+        self.provider.load_context_from_cli(args)
         self.assertEqual(self.provider.texts, ['Sample text 1', 'Sample text 2'])
 
-    def test_load_context_empty(self):
+    def test_load_context_from_cli_empty(self):
         args = HermesConfig({})
-        self.provider.load_context(args)
+        self.provider.load_context_from_cli(args)
         self.assertEqual(self.provider.texts, [])
 
     def test_add_to_prompt(self):

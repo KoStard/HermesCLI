@@ -147,9 +147,9 @@ class ChatApplication:
         if initial_prompt:
             message = initial_prompt
         if is_input_piped:
-            self.history_builder.add_context(
-                "text", sys.stdin.read().strip(), "piped_in_data"
-            )
+            text_context_provider = TextContextProvider()
+            text_context_provider.load_context_interactive(sys.stdin.read().strip())
+            self.history_builder.add_context(text_context_provider)
         elif not initial_prompt:
             message = self.ui.get_user_input()
 
@@ -208,8 +208,7 @@ class ChatApplication:
             index = int(index)
             if index <= len(gap_markers):
                 gap_line = gap_markers[index - 1]
-                original_lines[gap_line] = content.strip()
-
+                original_lines[gap_line] = original_lines[gap_line].split('<GapToFill')[0] + content.strip()
         # Join the lines back together
         return '\n'.join(original_lines)
 
