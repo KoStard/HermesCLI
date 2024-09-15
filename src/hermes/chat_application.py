@@ -70,7 +70,7 @@ class ChatApplication:
             print("\nChat interrupted. Exiting gracefully...")
 
     def handle_interactive_mode(self, initial_prompt):
-        if any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) for provider in self.context_providers):
+        if any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) and provider.file_path for provider in self.context_providers):
             # For special context providers, just make the first request and return
             self.make_first_request(initial_prompt)
             return
@@ -129,7 +129,7 @@ class ChatApplication:
         self.history_builder.clear_regular_history()
         if initial_prompt is not None:
             message = initial_prompt
-        elif any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) for provider in self.context_providers):
+        elif any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) and provider.file_path for provider in self.context_providers):
             message = "Please process the provided context."
         else:
             message = self.get_user_input()
@@ -179,7 +179,7 @@ class ChatApplication:
                         file_utils.write_file(provider.file_path, content, mode="w")
                         self.ui.display_status(f"File {provider.file_path} updated")
                     elif isinstance(provider, FillGapsContextProvider):
-                        original_content = file_utils.read_file(provider.file_path)
+                        original_content = file_utils.read_file_content(provider.file_path)
                         filled_content = self._fill_gaps(original_content, content)
                         file_utils.write_file(provider.file_path, filled_content, mode="w")
                         self.ui.display_status(f"Gaps filled in {provider.file_path}")
