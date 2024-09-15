@@ -1,15 +1,24 @@
 import unittest
 from unittest.mock import MagicMock, patch, call
 from hermes.chat_application import ChatApplication
+from tenacity import RetryError
 
 class TestChatApplication(unittest.TestCase):
     def setUp(self):
         self.model = MagicMock()
         self.ui = MagicMock()
-        self.prompt_builder = MagicMock()
-        self.special_command_prompts = MagicMock()
-        self.context_orchestrator = MagicMock()
-        self.app = ChatApplication(self.model, self.ui, self.prompt_builder, self.special_command_prompts, self.context_orchestrator)
+        self.file_processor = MagicMock()
+        self.prompt_builder_class = MagicMock()
+        self.context_provider_classes = []
+        self.hermes_config = MagicMock()
+        self.app = ChatApplication(
+            self.model,
+            self.ui,
+            self.file_processor,
+            self.prompt_builder_class,
+            self.context_provider_classes,
+            self.hermes_config
+        )
 
     @patch('sys.stdin.isatty', return_value=True)
     @patch('sys.stdout.isatty', return_value=True)
@@ -131,11 +140,37 @@ class TestChatApplication(unittest.TestCase):
         mock_stdin_read.return_value = "Piped input"
         self.app.run(initial_prompt="Initial prompt")
         self.model.initialize.assert_called_once()
-        self.context_orchestrator.add_to_prompt.assert_called_once_with(self.prompt_builder)
-        self.prompt_builder.add_text.assert_has_calls([call('Initial prompt'), call('Piped input')])
-        self.prompt_builder.build_prompt.assert_called_once()
-        self.model.send_message.assert_called_once()
+        self.model.send_history.assert_called_once()
         self.ui.display_response.assert_called_once()
+
+    @patch('hermes.chat_application.retry')
+    def test_send_model_request_with_retry(self, mock_retry):
+        mock_retry.return_value = lambda f: f
+        self.model.send_history.side_effect = [Exception("API Error"), "Success"]
+        
+        with self.assertLogs(level='ERROR') as log:
+            result = self.app.send_message_and_print_output("Test input")
+        
+        self.assertIsNone(result)
+        self.assertEqual(len(log.output), 1)
+        self.assertIn("Error during model request: API Error", log.output[0])
+        self.model.send_history.assert_called()
+        self.ui.display_status.assert_called_with("An error occurred: API Error")
+
+    @patch('hermes.chat_application.retry')
+    def test_send_model_request_success_after_retry(self, mock_retry):
+        mock_retry.return_value = lambda f: f
+        self.model.send_history.side_effect = [Exception("API Error"), "Success"]
+        
+        result = self.app.send_message_and_print_output("Test input")
+        
+        self.assertEqual(result, "Success")
+        self.model.send_history.assert_called()
+        self.ui.display_response.assert_called_with("Success")
+        self.app.history_builder.add_message.assert_has_calls([
+            call("user", "Test input"),
+            call("assistant", "Success")
+        ])
 
 if __name__ == '__main__':
     unittest.main()

@@ -169,9 +169,9 @@ class ChatApplication:
         return self.model.send_history(messages)
 
     def send_message_and_print_output(self, user_input):
-        self.history_builder.add_message("user", user_input)
-        messages = self.history_builder.build_messages()
         try:
+            self.history_builder.add_message("user", user_input)
+            messages = self.history_builder.build_messages()
             response = self.ui.display_response(self._send_model_request(messages))
             self.history_builder.add_message("assistant", response)
             self.apply_special_commands(response)
