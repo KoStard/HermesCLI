@@ -169,21 +169,16 @@ class ChatApplication:
         return self.model.send_history(messages)
 
     def send_message_and_print_output(self, user_input):
+        self.history_builder.add_message("user", user_input)
+        messages = self.history_builder.build_messages()
         try:
-            self.history_builder.add_message("user", user_input)
-            messages = self.history_builder.build_messages()
-            try:
-                response = self.ui.display_response(self._send_model_request(messages))
-                self.history_builder.add_message("assistant", response)
-                self.apply_special_commands(response)
-                return response
-            except Exception as e:
-                logger.error(f"Error during model request: {str(e)}")
-                self.ui.display_status(f"An error occurred: {str(e)}")
-                self.history_builder.pop_message()
-        except KeyboardInterrupt:
-            print()
-            self.ui.display_status("Interrupted...")
+            response = self.ui.display_response(self._send_model_request(messages))
+            self.history_builder.add_message("assistant", response)
+            self.apply_special_commands(response)
+            return response
+        except Exception as e:
+            logger.error(f"Error during model request: {str(e)}")
+            self.ui.display_status(f"An error occurred: {str(e)}")
             self.history_builder.pop_message()
 
     def apply_special_commands(self, content: str):
