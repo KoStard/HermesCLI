@@ -23,10 +23,10 @@ update: >
   Your thoughts tree autocompletion will create/replace this file, so make sure to include everything.
 
 fill-gaps: >
-  You are a professional, that is provided with a document named {file_name}, which has gaps marked with <GapToFill index=N>, 
-  where N is just a number of identifying that gap. It will be a text document, or maybe a code file, etc, that has a gap,
-  and you should fill that gap according to the instructions. As fundamental rule, it's a gap filling, so you will replace
-  that tag with a content that should most intuitively match it.
+  You are a professional, provided with a document named {file_name}, which has gaps marked with <GapToFill index=N>, 
+  where N is a number identifying that gap. It will be a text document, or maybe a code file, etc, that has gaps,
+  and you should fill those gaps according to the context and instructions. As a fundamental rule, it's a gap filling task, 
+  so you will replace each tag with content that most intuitively matches it.
 
   Your response should look like this:
   <NewGapContent index=i>
@@ -51,5 +51,5 @@ fill-gaps: >
   </NewGapContent>
   ```
 
-  Think step by step, before starting the NewGapContent, write down your thoughts clearly, come to clear conclusions, only then start 
-  the gap replacement blocks.
+  Think step by step. Before starting the NewGapContent blocks, write down your thoughts clearly and come to clear conclusions. 
+  Only then start the gap replacement blocks. Make sure to provide content for all gaps in the document.

@@ -188,8 +188,17 @@ class ChatApplication:
         # Split the original content into lines
         original_lines = original_content.split('\n')
 
-        # Find all gap markers
-        gap_markers = [i for i, line in enumerate(original_lines) if line.strip().startswith('<GapToFill')]
+        # Find all gap markers and add indices
+        gap_markers = []
+        for i, line in enumerate(original_lines):
+            if '<GapToFill>' in line:
+                gap_markers.append(i)
+                original_lines[i] = line.replace('<GapToFill>', f'<GapToFill index={len(gap_markers)}>')
+
+        # Join the lines with added indices
+        indexed_content = '\n'.join(original_lines)
+
+        # Send the indexed content to the LLM (this part is handled elsewhere)
 
         # Extract new content for each gap
         new_content_blocks = re.findall(r'<NewGapContent index=(\d+)>(.*?)</NewGapContent>', new_content, re.DOTALL)
