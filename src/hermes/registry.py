@@ -56,3 +56,7 @@ class ModelRegistry:
         file_processor = cls.get_file_processor(file_processor_name)()
         prompt_builder_class = cls.get_prompt_builder(prompt_builder_name)
         return model_class(model_config, model_name), file_processor, prompt_builder_class
+
+    @classmethod
+    def get_available_models(cls) -> List[str]:
+        return list(cls.models.keys())
