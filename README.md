@@ -173,10 +173,10 @@ hermes --workflow my_workflow.yaml --model claude
 ### Supported Models
 
 - `claude`: Anthropic's Claude model
-- `bedrock-claude`: AWS Bedrock Claude model
-- `bedrock-claude-3.5`: AWS Bedrock Claude 3.5 model
-- `bedrock-opus`: AWS Bedrock Claude 3 Opus model
-- `bedrock-mistral`: AWS Bedrock Mistral model
+- `bedrock/sonnet-3`: AWS Bedrock Claude Sonnet 3 model
+- `bedrock/sonnet-3.5`: AWS Bedrock Claude Sonnet 3.5 model
+- `bedrock/opus-3`: AWS Bedrock Claude 3 Opus model
+- `bedrock/mistral`: AWS Bedrock Mistral model
 - `gemini`: Google's Gemini model
 - `openai`: OpenAI's GPT-4 model
 - `ollama`: Local models through Ollama

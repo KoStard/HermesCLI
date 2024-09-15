@@ -30,7 +30,7 @@ class TestClaudeModel(unittest.TestCase):
 class TestBedrockModel(unittest.TestCase):
     def setUp(self):
         self.config = MagicMock()
-        self.model = BedrockModel(self.config, 'bedrock-claude')
+        self.model = BedrockModel(self.config, 'bedrock/sonnet-3')
 
     @patch('boto3.client')
     def test_initialize(self, mock_boto3_client):

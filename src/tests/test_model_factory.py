@@ -24,7 +24,7 @@ class TestModelFactory(unittest.TestCase):
     @patch('hermes.model_factory.configparser.ConfigParser')
     def test_bedrock_models(self, mock_config_parser):
         mock_config_parser.return_value = self.mock_config
-        bedrock_models = ["bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral"]
+        bedrock_models = ["bedrock/sonnet-3", "bedrock/sonnet-3.5", "bedrock/opus-3", "bedrock/mistral"]
         for model_name in bedrock_models:
             model, model_name, prompt_builder = create_model_and_processors(model_name)
             self.assertIsInstance(model, BedrockModel)

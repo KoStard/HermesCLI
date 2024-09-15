@@ -35,7 +35,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
-    parser.add_argument("--model", choices=["claude", "bedrock-claude", "bedrock-claude-3.5", "bedrock-opus", "bedrock-mistral", "gemini", "openai", "ollama", "deepseek", "reflection", "groq", "sambanova", "openrouter"], help="Choose the model to use")
+    parser.add_argument("--model", choices=["claude", "bedrock/sonnet-3", "bedrock/sonnet-3.5", "bedrock/opus-3", "bedrock/mistral", "gemini", "openai", "ollama", "deepseek", "reflection", "groq", "sambanova", "openrouter"], help="Choose the model to use")
     parser.add_argument("--prompt", help="Prompt text to send immediately")
     parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
