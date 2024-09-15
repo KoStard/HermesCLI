@@ -8,6 +8,12 @@ from hermes.config import HermesConfig
 T = TypeVar('T')  # Define a type variable
 
 class ContextProvider(ABC):
+    @abstractmethod
+    def is_used(self) -> bool:
+        """
+        Return True if the context provider has non-empty values that will add meaningful prompt.
+        """
+        pass
     @staticmethod
     @abstractmethod
     def add_argument(parser: ArgumentParser):

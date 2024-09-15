@@ -57,5 +57,12 @@ class TestURLContextProvider(unittest.TestCase):
         self.assertIn('# Test', markdown)
         self.assertIn('This is a test.', markdown)
 
+    def test_is_used(self):
+        self.url_provider.urls = []
+        self.assertFalse(self.url_provider.is_used())
+        
+        self.url_provider.urls = ['http://example.com']
+        self.assertTrue(self.url_provider.is_used())
+
 if __name__ == '__main__':
     unittest.main()

@@ -45,3 +45,6 @@ class AppendContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> str:
         return "append"
+
+    def is_used(self) -> bool:
+        return bool(self.file_path)

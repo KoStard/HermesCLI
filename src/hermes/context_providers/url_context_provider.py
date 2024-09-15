@@ -50,3 +50,6 @@ class URLContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> str:
         return "url"
+
+    def is_used(self) -> bool:
+        return len(self.urls) > 0

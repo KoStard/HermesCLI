@@ -45,3 +45,6 @@ class UpdateContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> str:
         return "update"
+
+    def is_used(self) -> bool:
+        return bool(self.file_path)

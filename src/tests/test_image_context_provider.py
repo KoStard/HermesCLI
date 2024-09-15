@@ -35,3 +35,10 @@ class TestImageContextProvider:
         mock_prompt_builder.add_image.assert_any_call('image1.jpg', name='Image: image1.jpg')
         mock_prompt_builder.add_image.assert_any_call('image2.png', name='Image: image2.png')
         assert mock_prompt_builder.add_image.call_count == 2
+
+    def test_is_used(self, image_provider):
+        image_provider.image_paths = []
+        assert not image_provider.is_used()
+        
+        image_provider.image_paths = ['image1.jpg']
+        assert image_provider.is_used()

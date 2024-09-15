@@ -39,5 +39,12 @@ class TestFileContextProvider(unittest.TestCase):
         prompt_builder.add_file.assert_any_call('file2.txt', 'file2')
         self.assertEqual(prompt_builder.add_file.call_count, 2)
 
+    def test_is_used(self):
+        self.provider.file_paths = []
+        self.assertFalse(self.provider.is_used())
+        
+        self.provider.file_paths = ['file1.txt']
+        self.assertTrue(self.provider.is_used())
+
 if __name__ == '__main__':
     unittest.main()

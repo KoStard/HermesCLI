@@ -41,5 +41,12 @@ class TestTextContextProvider(unittest.TestCase):
         self.provider.add_to_prompt(prompt_builder)
         prompt_builder.add_text.assert_not_called()
 
+    def test_is_used(self):
+        self.provider.texts = []
+        self.assertFalse(self.provider.is_used())
+        
+        self.provider.texts = ['Sample text']
+        self.assertTrue(self.provider.is_used())
+
 if __name__ == '__main__':
     unittest.main()

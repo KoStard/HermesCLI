@@ -45,3 +45,6 @@ class FillGapsContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> str:
         return "fill-gaps"
+
+    def is_used(self) -> bool:
+        return bool(self.file_path)
