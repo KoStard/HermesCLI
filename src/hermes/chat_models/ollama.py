@@ -3,7 +3,7 @@ from .base import ChatModel
 import ollama
 from ..decorators import register_model
 
-@register_model("ollama", "default", "xml")
+@register_model(name="ollama", file_processor="default", prompt_builder="xml", config_key='OLLAMA')
 class OllamaModel(ChatModel):
     def initialize(self):
         self.model = self.config.get("model", "llama2")

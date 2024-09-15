@@ -1,7 +1,7 @@
 from .openai import OpenAIModel
 from ..decorators import register_model
 
-@register_model("deepseek", "default", "xml")
+@register_model(name="deepseek", file_processor="default", prompt_builder="xml", config_key='DEEPSEEK')
 class DeepSeekModel(OpenAIModel):
     def initialize(self):
         self.config = {

@@ -3,7 +3,7 @@ from .base import ChatModel
 import openai
 from ..decorators import register_model
 
-@register_model("openai", "default", "openai")
+@register_model(name="openai", file_processor="default", prompt_builder="openai", config_key='OPENAI')
 class OpenAIModel(ChatModel):
     def initialize(self):
         api_key = self.config.get("api_key")

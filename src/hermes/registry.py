@@ -4,18 +4,18 @@ from .file_processors.base import FileProcessor
 from .prompt_builders.base import PromptBuilder
 
 class ModelRegistry:
-    models: Dict[str, Tuple[Type[ChatModel], str, str]] = {}
+    models: Dict[str, Tuple[Type[ChatModel], str, str, str]] = {}
     file_processors: Dict[str, Type[FileProcessor]] = {}
     prompt_builders: Dict[str, Type[PromptBuilder]] = {}
 
     @classmethod
-    def register_model(cls, name: str | list[str], file_processor: str, prompt_builder: str):
+    def register_model(cls, name: str | list[str], file_processor: str, prompt_builder: str, config_key: str):
         def decorator(model_class: Type[ChatModel]):
             if isinstance(name, list):
                 for n in name:
-                    cls.models[n] = (model_class, file_processor, prompt_builder)
+                    cls.models[n] = (model_class, file_processor, prompt_builder, config_key)
             else:
-                cls.models[name] = (model_class, file_processor, prompt_builder)
+                cls.models[name] = (model_class, file_processor, prompt_builder, config_key)
             return model_class
         return decorator
 
@@ -34,7 +34,7 @@ class ModelRegistry:
         return decorator
 
     @classmethod
-    def get_model_info(cls, name: str) -> Tuple[Type[ChatModel], str, str]:
+    def get_model_info(cls, name: str) -> Tuple[Type[ChatModel], str, str, str]:
         return cls.models[name]
 
     @classmethod
@@ -46,8 +46,12 @@ class ModelRegistry:
         return cls.prompt_builders[name]
 
     @classmethod
+    def get_config_key(cls, name: str) -> str:
+        return cls.models[name][3]
+
+    @classmethod
     def create_model(cls, model_name: str, model_config: dict) -> Tuple[ChatModel, FileProcessor, Type[PromptBuilder]]:
-        model_class, file_processor_name, prompt_builder_name = cls.get_model_info(model_name)
+        model_class, file_processor_name, prompt_builder_name, config_key = cls.get_model_info(model_name)
         file_processor = cls.get_file_processor(file_processor_name)()
         prompt_builder_class = cls.get_prompt_builder(prompt_builder_name)
         return model_class(model_config, model_name), file_processor, prompt_builder_class

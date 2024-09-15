@@ -1,7 +1,7 @@
 from .openai import OpenAIModel
 from ..decorators import register_model
 
-@register_model("reflection", "default", "markdown")
+@register_model(name="reflection", file_processor="default", prompt_builder="markdown", config_key='REFLECTION')
 class ReflectionModel(OpenAIModel):
     def initialize(self):
         self.config = {

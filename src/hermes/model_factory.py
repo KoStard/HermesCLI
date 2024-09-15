@@ -43,7 +43,8 @@ def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str,
         if model_name is None:
             raise Exception("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
-    model_config = dict(config[model_name.upper()]) if model_name.upper() in config else {}
+    config_key = ModelRegistry.get_config_key(model_name)
+    model_config = dict(config[config_key]) if config_key in config else {}
     model, file_processor, prompt_builder_class = ModelRegistry.create_model(model_name, model_config)
 
     return model, model_name, file_processor, prompt_builder_class

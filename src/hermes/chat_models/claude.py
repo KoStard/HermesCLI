@@ -3,7 +3,7 @@ from .base import ChatModel
 import anthropic
 from ..decorators import register_model
 
-@register_model("claude", "default", "claude")
+@register_model(name="claude", file_processor="default", prompt_builder="claude", config_key='ANTHROPIC')
 class ClaudeModel(ChatModel):
     def initialize(self):
         api_key = self.config.get("api_key")
