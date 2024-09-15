@@ -1,8 +1,4 @@
 - history recovery feature
-- improve the model configuration, instead of if/else, convert it to separate entries
-- move config to ~/.config/hermes/
-- error handling for the LLM requests, if it fails the message should just be discarded and go back
-- special commands as context providers, for now with a hardcoded action in the chat application
 - when loading extensions, they might fail, it should not crash the app, instead it should log the error and move on
 - allow changing the model midway
 - allow saving and loading chat
@@ -10,6 +6,6 @@
 - Allow dropping context pieces. Likely they will need to have some IDs that we'll use.
 - Add a /ls command that will list what are the included context pieces.
 - Allow LLM to request additional context by writing commands
-- Move away from using Config objects when initialising the models. In case we allow changing models, this will create issues, as the actual config object is getting modified. In general, this is not great. 
 - Allow showing the costs of the API calls
 - Allow configuring models with platform/provider/model?
+- Add proper error message when in config you have an invalid model name
