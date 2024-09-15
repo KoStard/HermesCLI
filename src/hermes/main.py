@@ -4,11 +4,25 @@ import os
 import yaml
 from datetime import datetime
 import argparse
-from typing import Dict
 import logging
 from logging.handlers import RotatingFileHandler
 
 from hermes.model_factory import create_model_and_processors
+
+if os.name == 'posix':
+    import readline
+elif os.name == 'nt':
+    try:
+        import pyreadline3 as readline
+    except ImportError:
+        print("Warning: pyreadline3 is not installed. Autocomplete functionality may be limited on Windows.")
+        readline = None
+
+from .chat_ui import ChatUI
+from .chat_application import ChatApplication
+from .workflows.executor import WorkflowExecutor
+from .context_provider_loader import load_context_providers
+from .config import create_config_from_args, HermesConfig
 
 def setup_logger():
     logger = logging.getLogger()
@@ -35,30 +49,7 @@ def setup_logger():
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-if os.name == 'posix':
-    import readline
-elif os.name == 'nt':
-    try:
-        import pyreadline3 as readline
-    except ImportError:
-        print("Warning: pyreadline3 is not installed. Autocomplete functionality may be limited on Windows.")
-        readline = None
-
-from .utils.file_utils import process_file_name
-from .chat_ui import ChatUI
-from .chat_application import ChatApplication
-from .workflows.executor import WorkflowExecutor
-from .context_provider_loader import load_context_providers
-from .config import create_config_from_args, HermesConfig
-
-def get_default_model(config):
-    if 'BASE' in config and 'model' in config['BASE']:
-        return config['BASE']['model']
-    return None
-
 def main():
-    setup_logger()
-    logger = logging.getLogger(__name__)
 
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
     parser.add_argument("--model", choices=["claude", "bedrock/sonnet-3", "bedrock/sonnet-3.5", "bedrock/opus-3", "bedrock/mistral", "gemini", "openai", "ollama", "deepseek", "reflection", "groq", "sambanova", "openrouter"], help="Choose the model to use")
@@ -75,6 +66,9 @@ def main():
         provider_class.add_argument(parser)
 
     args = parser.parse_args()
+    
+    setup_logger()
+    
     hermes_config = create_config_from_args(args)
 
     if hermes_config.get('workflow'):
