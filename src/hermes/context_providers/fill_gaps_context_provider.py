@@ -33,7 +33,7 @@ class FillGapsContextProvider(ContextProvider):
         with open(special_command_prompts_path, 'r') as f:
             import yaml
             special_command_prompts = yaml.safe_load(f)
-        self.special_command_prompt = special_command_prompts['fill_gaps'].format(
+        self.special_command_prompt = special_command_prompts['fill-gaps'].format(
             file_name=file_utils.process_file_name(self.file_path)
         )
 

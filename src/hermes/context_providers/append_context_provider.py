@@ -29,7 +29,7 @@ class AppendContextProvider(ContextProvider):
         self.logger.info(f"Added append context for file: {self.file_path}")
 
     def _load_special_command_prompt(self):
-        special_command_prompts_path = os.path.join(os.path.dirname(__file__), "..", "config", "special_command_prompts.yaml")
+        special_command_prompts_path = os.path.join(os.path.dirname(__file__), "special_command_prompts.yaml")
         with open(special_command_prompts_path, 'r') as f:
             import yaml
             special_command_prompts = yaml.safe_load(f)
@@ -40,6 +40,7 @@ class AppendContextProvider(ContextProvider):
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         if self.file_path:
             prompt_builder.add_text(self.special_command_prompt, "append_command")
+            prompt_builder.add_file(self.file_path, self.file_path)
 
     @staticmethod
     def get_command_key() -> str:
