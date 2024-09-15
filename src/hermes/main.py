@@ -19,7 +19,7 @@ elif os.name == 'nt':
         readline = None
 
 from .utils.file_utils import process_file_name
-from .ui.chat_ui import ChatUI
+from .chat_ui import ChatUI
 from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
 from .context_provider_loader import load_context_providers

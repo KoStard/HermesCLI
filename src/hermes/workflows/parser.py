@@ -15,7 +15,7 @@ from .tasks.sequential_task import SequentialTask
 from .tasks.context_extension_task import ContextExtensionTask
 from .tasks.chat_application_task import ChatApplicationTask
 from hermes.chat_application import ChatApplication
-from hermes.ui.chat_ui import ChatUI
+from hermes.chat_ui import ChatUI
 from hermes.file_processors.default import DefaultFileProcessor
 
 class WorkflowParser:

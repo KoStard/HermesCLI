@@ -8,7 +8,7 @@ from hermes.context_providers.update_context_provider import UpdateContextProvid
 from hermes.context_providers.fill_gaps_context_provider import FillGapsContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
-from hermes.ui.chat_ui import ChatUI
+from hermes.chat_ui import ChatUI
 from hermes.utils import file_utils
 from hermes.history_builder import HistoryBuilder
 from hermes.context_providers.base import ContextProvider

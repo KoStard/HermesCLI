@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 from io import StringIO
 from rich.panel import Panel
-from hermes.ui.chat_ui import ChatUI
+from hermes.chat_ui import ChatUI
 
 class TestChatUI(unittest.TestCase):
     def setUp(self):
