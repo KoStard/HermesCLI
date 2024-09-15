@@ -8,6 +8,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 from hermes.model_factory import create_model_and_processors
+from hermes.registry import ModelRegistry
 
 if os.name == 'posix':
     import readline

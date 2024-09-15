@@ -1,4 +1,4 @@
-from typing import Dict, Type, Tuple
+from typing import Dict, Type, Tuple, List
 from .chat_models.base import ChatModel
 from .file_processors.base import FileProcessor
 from .prompt_builders.base import PromptBuilder
