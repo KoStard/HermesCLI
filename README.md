@@ -214,13 +214,13 @@ To use DeepSeek models:
 
 1. Sign up for an account at [DeepSeek AI](https://platform.deepseek.com/)
 2. Obtain your API key from the DeepSeek platform
-3. In your `~/.config/multillmchat/config.ini`, add:
+3. For DeepSeek models, add the following to your `~/.config/hermes/config.ini`:
    ```ini
    [DEEPSEEK]
    api_key = your_deepseek_api_key
    base_url = https://api.deepseek.com
    model = deepseek-coder
-```
+   ```
    You can replace `deepseek-coder` with other available DeepSeek models if desired.
 
 ## Contributing
