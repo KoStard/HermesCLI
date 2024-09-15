@@ -1,6 +1,8 @@
 from typing import Dict, List, Optional, Type
 import sys
 import re
+import logging
+from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
 from hermes.chat_models.base import ChatModel
 from hermes.context_providers.text_context_provider import TextContextProvider
 from hermes.context_providers.append_context_provider import AppendContextProvider
@@ -13,7 +15,10 @@ from hermes.utils import file_utils
 from hermes.history_builder import HistoryBuilder
 from hermes.context_providers.base import ContextProvider
 from hermes.config import HermesConfig
-import re
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class ChatApplication:
@@ -155,14 +160,27 @@ class ChatApplication:
 
         response = self.send_message_and_print_output(message)
 
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=1, min=1, max=20),
+        before_sleep=before_sleep_log(logger, logging.INFO)
+    )
+    def _send_model_request(self, messages):
+        return self.model.send_history(messages)
+
     def send_message_and_print_output(self, user_input):
         try:
             self.history_builder.add_message("user", user_input)
             messages = self.history_builder.build_messages()
-            response = self.ui.display_response(self.model.send_history(messages))
-            self.history_builder.add_message("assistant", response)
-            self.apply_special_commands(response)
-            return response
+            try:
+                response = self.ui.display_response(self._send_model_request(messages))
+                self.history_builder.add_message("assistant", response)
+                self.apply_special_commands(response)
+                return response
+            except Exception as e:
+                logger.error(f"Error during model request: {str(e)}")
+                self.ui.display_status(f"An error occurred: {str(e)}")
+                self.history_builder.pop_message()
         except KeyboardInterrupt:
             print()
             self.ui.display_status("Interrupted...")
