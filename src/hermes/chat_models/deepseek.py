@@ -1,4 +1,3 @@
-from typing import Generator
 from .openai import OpenAIModel
 from ..decorators import register_model
 
@@ -12,6 +11,3 @@ class DeepSeekModel(OpenAIModel):
             "model": self.config["DEEPSEEK"].get("model", "deepseek-coder")
         }
         super().initialize()
-
-    def send_message(self, message: str) -> Generator[str, None, None]:
-        return super().send_message(message)

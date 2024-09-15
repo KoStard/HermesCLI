@@ -1,4 +1,3 @@
-from typing import Generator
 from .openai import OpenAIModel
 from ..decorators import register_model
 
@@ -12,9 +11,3 @@ class SambanovaModel(OpenAIModel):
             "model": self.config["SAMBANOVA"].get("model", "Meta-Llama-3.1-405B-Instruct")
         }
         super().initialize()
-
-    def send_message(self, message: str) -> Generator[str, None, None]:
-        return super().send_message(message)
-
-    def send_history(self, messages) -> Generator[str, None, None]:
-        return super().send_history(messages)

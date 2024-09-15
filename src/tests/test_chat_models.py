@@ -18,13 +18,13 @@ class TestClaudeModel(unittest.TestCase):
         mock_anthropic.assert_called_once_with(api_key='test_key')
 
     @patch('anthropic.Anthropic')
-    def test_send_message(self, mock_anthropic):
+    def test_send_history(self, mock_anthropic):
         self.model.initialize()
         mock_stream = MagicMock()
         mock_stream.text_stream = ['Hello', ' World']
         mock_anthropic.return_value.messages.stream.return_value.__enter__.return_value = mock_stream
 
-        result = list(self.model.send_message('Test message'))
+        result = list(self.model.send_history([{'role': 'user', 'content': 'Test message'}]))
         self.assertEqual(result, ['Hello', ' World'])
 
 class TestBedrockModel(unittest.TestCase):
@@ -38,7 +38,7 @@ class TestBedrockModel(unittest.TestCase):
         mock_boto3_client.assert_called_once_with('bedrock-runtime')
 
     @patch('boto3.client')
-    def test_send_message(self, mock_boto3_client):
+    def test_send_history(self, mock_boto3_client):
         self.model.initialize()
         mock_response = {
             'stream': [
@@ -49,7 +49,7 @@ class TestBedrockModel(unittest.TestCase):
         }
         mock_boto3_client.return_value.converse_stream.return_value = mock_response
 
-        result = list(self.model.send_message('Test message'))
+        result = list(self.model.send_history([{'role': 'user', 'content': 'Test message'}]))
         self.assertEqual(result, ['Hello', ' World'])
 
 class TestGeminiModel(unittest.TestCase):
@@ -67,14 +67,14 @@ class TestGeminiModel(unittest.TestCase):
 
     @patch('google.generativeai.configure')
     @patch('google.generativeai.GenerativeModel')
-    def test_send_message(self, mock_generative_model, mock_configure):
+    def test_send_history(self, mock_generative_model, mock_configure):
         self.model.initialize()
         mock_generative_model.return_value.start_chat.return_value.send_message.return_value = [
             MagicMock(text='Hello'),
             MagicMock(text=' World')
         ]
 
-        result = list(self.model.send_message('Test message'))
+        result = list(self.model.send_history([{'role': 'user', 'content': 'Test message'}]))
         self.assertEqual(result, ['Hello', ' World'])
 
 class TestOpenAIModel(unittest.TestCase):
@@ -89,7 +89,7 @@ class TestOpenAIModel(unittest.TestCase):
         mock_client.assert_called_once_with(api_key='test_key', base_url='https://api.openai.com/v1')
 
     @patch('openai.Client')
-    def test_send_message(self, mock_client):
+    def test_send_history(self, mock_client):
         self.model.initialize()
         mock_stream = [
             MagicMock(choices=[MagicMock(delta=MagicMock(content='Hello'))]),
@@ -97,7 +97,7 @@ class TestOpenAIModel(unittest.TestCase):
         ]
         mock_client.return_value.chat.completions.create.return_value = iter(mock_stream)
 
-        result = list(self.model.send_message('Test message'))
+        result = list(self.model.send_history([{'role': 'user', 'content': 'Test message'}]))
         self.assertEqual(result, ['Hello', ' World'])
 
 class TestOllamaModel(unittest.TestCase):
@@ -109,35 +109,17 @@ class TestOllamaModel(unittest.TestCase):
     def test_initialize(self):
         self.model.initialize()
         self.assertEqual(self.model.model, 'llama2')
-        self.assertEqual(self.model.messages, [])
 
     @patch('ollama.chat')
-    def test_send_message(self, mock_chat):
+    def test_send_history(self, mock_chat):
         self.model.initialize()
         mock_chat.return_value = [
             {'message': {'content': 'Hello'}},
             {'message': {'content': ' World'}},
         ]
 
-        result = list(self.model.send_message('Test message'))
+        result = list(self.model.send_history([{'role': 'user', 'content': 'Test message'}]))
         self.assertEqual(result, ['Hello', ' World'])
-
-    @patch('ollama.chat')
-    def test_send_message_assert(self, mock_ollama_chat):
-        self.model.initialize()
-        mock_ollama_chat.return_value = iter([{'message': {'content': 'Hello World'}}])
-        list(self.model.send_message('Test message'))
-        mock_ollama_chat.assert_called_once_with(
-            model='llama2',
-            messages=[{'role': 'user', 'content': 'Test message'}].copy(),
-            stream=True
-        )
-
-
-        self.assertEqual(self.model.messages, [
-            {'role': 'user', 'content': 'Test message'},
-            {'role': 'assistant', 'content': 'Hello World'}
-        ])
 
 if __name__ == '__main__':
     unittest.main()
