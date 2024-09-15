@@ -33,7 +33,7 @@ def get_default_model(config):
 
 def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str, PromptBuilder]:
     config = configparser.ConfigParser()
-    config_dir = os.path.join(os.path.expanduser("~"), ".config", "multillmchat")
+    config_dir = os.path.join(os.path.expanduser("~"), ".config", "hermes")
     config_path = os.path.join(config_dir, "config.ini")
     os.makedirs(config_dir, exist_ok=True)
     config.read(config_path)

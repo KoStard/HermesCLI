@@ -39,8 +39,8 @@ Hermes is a powerful command-line tool that enables you to interact with various
 After installation, set up your configuration file:
 
 1. Create a file named `config.ini` in the following location:
-   - On Unix-like systems (Linux, macOS): `~/.config/multillmchat/config.ini`
-   - On Windows: `C:\Users\YourUsername\.config\multillmchat\config.ini`
+   - On Unix-like systems (Linux, macOS): `~/.config/hermes/config.ini`
+   - On Windows: `C:\Users\YourUsername\.config\hermes\config.ini`
 
 2. Add your API keys and default model to the config file:
    ```ini
@@ -201,7 +201,7 @@ To use Ollama models:
 
 1. Install Ollama from [ollama.ai](https://ollama.ai)
 2. Run Ollama locally
-3. In your `~/.config/multillmchat/config.ini`, add:
+3. In your `~/.config/hermes/config.ini`, add:
    ```ini
    [OLLAMA]
    model = llama2
