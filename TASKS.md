@@ -1,4 +1,3 @@
-- allow adding context mid-way while running the app
 - history recovery feature
 - improve the model configuration, instead of if/else, convert it to separate entries
 - move config to ~/.config/hermes/
@@ -13,3 +12,4 @@
 - Allow LLM to request additional context by writing commands
 - Move away from using Config objects when initialising the models. In case we allow changing models, this will create issues, as the actual config object is getting modified. In general, this is not great. 
 - Allow showing the costs of the API calls
+- Allow configuring models with platform/provider/model?

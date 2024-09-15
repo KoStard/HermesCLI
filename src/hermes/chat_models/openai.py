@@ -19,8 +19,8 @@ class OpenAIModel(ChatModel):
                 messages=messages,
                 stream=True
             )
-        except openai.AuthenticationError:
-            raise Exception("Authentication failed. Please check your API key.")
+        except openai.AuthenticationError as e:
+            raise Exception("Authentication failed. Please check your API key.", e)
         for chunk in stream:
             if chunk.choices[0].delta.content is not None:
                 yield chunk.choices[0].delta.content
