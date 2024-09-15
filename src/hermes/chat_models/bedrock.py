@@ -11,14 +11,16 @@ class BedrockModel(ChatModel):
         self.model_id = self.get_model_id(model_identifier)
     
     def get_model_id(self, model_identifier):
-        if model_identifier == 'bedrock-claude':
+        if model_identifier == 'bedrock/sonnet-3':
             return 'anthropic.claude-3-sonnet-20240229-v1:0'
-        elif model_identifier == 'bedrock-claude-3.5':
+        elif model_identifier == 'bedrock/sonnet-3.5':
             return 'anthropic.claude-3-5-sonnet-20240620-v1:0'
-        elif model_identifier == 'bedrock-opus':
+        elif model_identifier == 'bedrock/opus':
             return 'anthropic.claude-3-opus-20240229-v1:0'
-        elif model_identifier == 'bedrock-mistral':
+        elif model_identifier == 'bedrock/mistral':
             return 'mistral.mistral-large-2407-v1:0'
+        else:
+            raise ValueError(f"Unsupported Bedrock model identifier: {model_identifier}")
 
     def send_history(self, messages) -> Generator[str, None, None]:
         response = self.client.converse_stream(
