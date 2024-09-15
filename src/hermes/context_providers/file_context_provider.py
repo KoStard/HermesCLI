@@ -19,12 +19,12 @@ class FileContextProvider(ContextProvider):
     def load_context_from_cli(self, config: HermesConfig):
         file_paths = config.get('files', [])
         self._validate_and_add_files(file_paths)
-        self.logger.info(f"Loaded {len(self.file_paths)} file paths from CLI config")
+        self.logger.debug(f"Loaded {len(self.file_paths)} file paths from CLI config")
 
     def load_context_from_string(self, args: str):
         new_file_paths = [args]
         self._validate_and_add_files(new_file_paths)
-        self.logger.info(f"Added {len(new_file_paths)} file paths interactively")
+        self.logger.debug(f"Added {len(new_file_paths)} file paths interactively")
 
     def _validate_and_add_files(self, file_paths: List[str]):
         for file_path in file_paths:

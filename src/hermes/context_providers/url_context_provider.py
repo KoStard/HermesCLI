@@ -24,7 +24,7 @@ class URLContextProvider(ContextProvider):
         for url in self.urls:
             content = self.fetch_url_content(url)
             self.contents.append(content)
-        self.logger.info(f"Loaded and fetched content for {len(self.urls)} URLs from CLI config")
+        self.logger.debug(f"Loaded and fetched content for {len(self.urls)} URLs from CLI config")
 
     def load_context_from_string(self, args: str):
         urls = args.split()
@@ -32,7 +32,7 @@ class URLContextProvider(ContextProvider):
             content = self.fetch_url_content(url)
             self.urls.append(url)
             self.contents.append(content)
-        self.logger.info(f"Added and fetched content for {len(urls)} URLs interactively")
+        self.logger.debug(f"Added and fetched content for {len(urls)} URLs interactively")
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for url, content in zip(self.urls, self.contents):

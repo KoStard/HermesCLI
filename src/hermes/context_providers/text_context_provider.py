@@ -16,13 +16,13 @@ class TextContextProvider(ContextProvider):
 
     def load_context_from_cli(self, config: HermesConfig):
         self.texts = config.get('text', [])
-        self.logger.info(f"Loaded {len(self.texts)} text inputs from CLI config")
+        self.logger.debug(f"Loaded {len(self.texts)} text inputs from CLI config")
 
     def load_context_from_string(self, args: str):
         if not args:
             return
         self.texts.append(args)
-        self.logger.info(f"Added 1 text input interactively")
+        self.logger.debug(f"Added 1 text input interactively")
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for i, text in enumerate(self.texts, 1):

@@ -21,12 +21,12 @@ class AppendContextProvider(ContextProvider):
         self.file_path = config.get('append', '')
         if self.file_path:
             self._load_special_command_prompt()
-            self.logger.info(f"Loaded append context for file: {self.file_path}")
+            self.logger.debug(f"Loaded append context for file: {self.file_path}")
 
     def load_context_from_string(self, args: str):
         self.file_path = args
         self._load_special_command_prompt()
-        self.logger.info(f"Added append context for file: {self.file_path}")
+        self.logger.debug(f"Added append context for file: {self.file_path}")
 
     def _load_special_command_prompt(self):
         special_command_prompts_path = os.path.join(os.path.dirname(__file__), "special_command_prompts.yaml")

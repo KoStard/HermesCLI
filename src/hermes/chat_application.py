@@ -35,7 +35,7 @@ class ChatApplication:
         self.ui = ui
         self.history_builder = HistoryBuilder(prompt_builder_class, file_processor)
 
-        logger.info(f"Initializing ChatApplication with model: {type(model).__name__}")
+        logger.info(f"Initializing with model: {type(model).__name__}")
         logger.info(f"Using file processor: {type(file_processor).__name__}")
         logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
 
@@ -52,40 +52,39 @@ class ChatApplication:
                 key = key.strip()
                 self.command_keys_map[key] = provider_class
 
-        logger.info(f"Initialized {len(self.context_providers)} context providers")
+        logger.debug(f"Initialized {len(self.context_providers)} context providers")
 
         for provider in self.context_providers:
             provider.load_context_from_cli(hermes_config)
             self.history_builder.add_context(provider)
 
-        logger.info("ChatApplication initialization complete")
+        logger.debug("ChatApplication initialization complete")
 
     def run(
         self,
         initial_prompt: Optional[str] = None,
     ):
-        logger.info("Initializing model")
+        logger.debug("Initializing model")
         self.model.initialize()
-        logger.info("Model initialized successfully")
+        logger.debug("Model initialized successfully")
 
         # Check if input or output is coming from a pipe
         is_input_piped = not sys.stdin.isatty()
         is_output_piped = not sys.stdout.isatty()
 
         if is_input_piped or is_output_piped:
-            logger.info("Detected non-interactive mode")
+            logger.debug("Detected non-interactive mode")
             self.handle_non_interactive_input_output(
                 initial_prompt, is_input_piped, is_output_piped
             )
             return
 
         # Interactive mode
-        logger.info("Starting interactive mode")
+        logger.debug("Starting interactive mode")
         try:
             self.handle_interactive_mode(initial_prompt)
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Exiting gracefully.")
-            print("\nChat interrupted. Exiting gracefully...")
 
     def handle_interactive_mode(self, initial_prompt):
         if any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) and provider.file_path for provider in self.context_providers):
