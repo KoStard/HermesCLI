@@ -46,8 +46,8 @@ class ModelRegistry:
         return cls.prompt_builders[name]
 
     @classmethod
-    def create_model(cls, model_name: str, config: dict) -> ChatModel:
+    def create_model(cls, model_name: str, model_config: dict) -> Tuple[ChatModel, FileProcessor, Type[PromptBuilder]]:
         model_class, file_processor_name, prompt_builder_name = cls.get_model_info(model_name)
         file_processor = cls.get_file_processor(file_processor_name)()
         prompt_builder_class = cls.get_prompt_builder(prompt_builder_name)
-        return model_class(config, model_name), file_processor, prompt_builder_class
+        return model_class(model_config, model_name), file_processor, prompt_builder_class

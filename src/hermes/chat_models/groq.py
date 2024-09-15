@@ -6,8 +6,10 @@ from ..decorators import register_model
 @register_model("groq", "default", "markdown")
 class GroqModel(ChatModel):
     def initialize(self):
-        api_key = self.config["GROQ"]["api_key"]
-        self.model = self.config["GROQ"].get("model", "llama3-8b-8192")
+        api_key = self.config.get("api_key")
+        if not api_key:
+            raise ValueError("API key is required for Groq model")
+        self.model = self.config.get("model", "llama3-8b-8192")
         self.client = Groq(api_key=api_key)
 
     def send_history(self, messages) -> Generator[str, None, None]:

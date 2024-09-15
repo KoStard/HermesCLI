@@ -7,9 +7,12 @@ from ..decorators import register_model
 @register_model("gemini", "default", "xml")
 class GeminiModel(ChatModel):
     def initialize(self):
-        api_key = self.config["GEMINI"]["api_key"]
+        api_key = self.config.get("api_key")
+        if not api_key:
+            raise ValueError("API key is required for Gemini model")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-pro-exp-0801')
+        model_name = self.config.get("model", "gemini-1.5-pro-exp-0801")
+        self.model = genai.GenerativeModel(model_name)
 
     def send_history(self, messages) -> Generator[str, None, None]:
         history = [genai.types.ContentDict(role=msg['role'], parts=[msg['content']]) for msg in messages[:-1]]

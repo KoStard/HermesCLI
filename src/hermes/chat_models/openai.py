@@ -6,11 +6,12 @@ from ..decorators import register_model
 @register_model("openai", "default", "openai")
 class OpenAIModel(ChatModel):
     def initialize(self):
-        api_key = self.config["OPENAI"]["api_key"]
-        base_url = self.config["OPENAI"].get("base_url", "https://api.openai.com/v1")
-        model = self.config["OPENAI"].get("model", "gpt-4o")
+        api_key = self.config.get("api_key")
+        if not api_key:
+            raise ValueError("API key is required for OpenAI model")
+        base_url = self.config.get("base_url", "https://api.openai.com/v1")
+        self.model = self.config.get("model", "gpt-4")
         self.client = openai.Client(api_key=api_key, base_url=base_url)
-        self.model = model
 
     def send_history(self, messages) -> Generator[str, None, None]:
         try:

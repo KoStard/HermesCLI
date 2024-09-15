@@ -8,8 +8,7 @@ from hermes.chat_models.ollama import OllamaModel
 
 class TestClaudeModel(unittest.TestCase):
     def setUp(self):
-        self.config = MagicMock()
-        self.config.__getitem__.return_value = {'api_key': 'test_key'}
+        self.config = {'api_key': 'test_key'}
         self.model = ClaudeModel(self.config, 'claude')
 
     @patch('anthropic.Anthropic')

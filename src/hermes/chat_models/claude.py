@@ -6,7 +6,9 @@ from ..decorators import register_model
 @register_model("claude", "default", "claude")
 class ClaudeModel(ChatModel):
     def initialize(self):
-        api_key = self.config["ANTHROPIC"]["api_key"]
+        api_key = self.config.get("api_key")
+        if not api_key:
+            raise ValueError("API key is required for Claude model")
         self.client = anthropic.Anthropic(api_key=api_key)
 
     def send_history(self, messages) -> Generator[str, None, None]:
