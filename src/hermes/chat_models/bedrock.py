@@ -7,7 +7,18 @@ from .base import ChatModel
 class BedrockModel(ChatModel):
     def initialize(self):
         self.client = boto3.client('bedrock-runtime')
-        self.model_id = self.config.get("model_id", "anthropic.claude-3-sonnet-20240229-v1:0")
+        model_identifier = self.config["model_identifier"]
+        self.model_id = self.get_model_id(model_identifier)
+    
+    def get_model_id(self, model_identifier):
+        if model_identifier == 'bedrock-claude':
+            return 'anthropic.claude-3-sonnet-20240229-v1:0'
+        elif model_identifier == 'bedrock-claude-3.5':
+            return 'anthropic.claude-3-5-sonnet-20240620-v1:0'
+        elif model_identifier == 'bedrock-opus':
+            return 'anthropic.claude-3-opus-20240229-v1:0'
+        elif model_identifier == 'bedrock-mistral':
+            return 'mistral.mistral-large-2407-v1:0'
 
     def send_history(self, messages) -> Generator[str, None, None]:
         response = self.client.converse_stream(
