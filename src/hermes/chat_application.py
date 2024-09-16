@@ -62,12 +62,14 @@ class ChatApplication:
         for provider_name in self.context_providers:
             self._initialize_provider(provider_name, hermes_config, initialized_providers)
 
+    # TODO: What about when adding midway
     def _initialize_provider(self, provider_name: str, hermes_config: HermesConfig, initialized_providers: Set[str]):
         if provider_name in initialized_providers:
             return
 
         provider = self.context_providers[provider_name]
         required_providers = provider.get_required_providers()
+        logger.debug(f"Initializing provider {provider_name} with required providers {required_providers}")
 
         for required_provider, args in required_providers.items():
             if required_provider not in self.context_providers:
