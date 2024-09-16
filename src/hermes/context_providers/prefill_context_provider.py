@@ -26,15 +26,19 @@ class PrefillContextProvider(ContextProvider):
         self._load_prefill()
 
     def _load_prefill(self):
-        prefill_path = os.path.expanduser(f"~/.config/hermes/prefills/{self.prefill_name}.md")
-        custom_prefill_path = os.path.expanduser(f"~/.config/hermes/custom_prefills/{self.prefill_name}.md")
+        prefill_dirs = [
+            os.path.join(os.path.dirname(__file__), "..", "prefills"),  # Repository prefills
+            os.path.expanduser("~/.config/hermes/prefills"),
+            os.path.expanduser("~/.config/hermes/custom_prefills")
+        ]
 
-        if os.path.exists(prefill_path):
-            self._parse_prefill_file(prefill_path)
-        elif os.path.exists(custom_prefill_path):
-            self._parse_prefill_file(custom_prefill_path)
-        else:
-            raise ValueError(f"Prefill '{self.prefill_name}' not found")
+        for prefill_dir in prefill_dirs:
+            prefill_path = os.path.join(prefill_dir, f"{self.prefill_name}.md")
+            if os.path.exists(prefill_path):
+                self._parse_prefill_file(prefill_path)
+                return
+
+        raise ValueError(f"Prefill '{self.prefill_name}' not found")
 
     def _parse_prefill_file(self, file_path: str):
         with open(file_path, 'r') as f:

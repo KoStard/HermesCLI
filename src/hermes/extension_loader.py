@@ -32,6 +32,7 @@ def load_extensions() -> List[Type[ContextProvider]]:
 def load_prefills() -> Dict[str, str]:
     prefills = {}
     prefill_dirs = [
+        os.path.join(os.path.dirname(__file__), "prefills"),  # Repository prefills
         os.path.expanduser("~/.config/hermes/prefills"),
         os.path.expanduser("~/.config/hermes/custom_prefills")
     ]
