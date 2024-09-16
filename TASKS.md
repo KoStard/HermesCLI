@@ -9,3 +9,5 @@
 - Allow showing the costs of the API calls
 - Allow configuring models with platform/provider/model?
 - Add proper error message when in config you have an invalid model name
+- Dedupe context providers
+- Add alias --create for --update
