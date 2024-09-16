@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch, call
 from hermes.chat_application import ChatApplication
+from hermes.context_providers.base import ContextProvider
 from tenacity import RetryError
 
 
@@ -12,7 +13,9 @@ class TestChatApplication(unittest.TestCase):
         self.prompt_builder_class = MagicMock()
         self.context_provider_classes = []
         self.hermes_config = MagicMock()
-        self.app = ChatApplication(
+
+    def create_app(self):
+        return ChatApplication(
             self.model,
             self.ui,
             self.file_processor,
@@ -20,7 +23,65 @@ class TestChatApplication(unittest.TestCase):
             self.context_provider_classes,
             self.hermes_config
         )
-        self.app.history_builder = MagicMock()
+
+    def test_initialize_context_providers(self):
+        class ProviderA(ContextProvider):
+            @staticmethod
+            def get_command_key():
+                return "a"
+            def get_required_providers(self):
+                return {}
+
+        class ProviderB(ContextProvider):
+            @staticmethod
+            def get_command_key():
+                return "b"
+            def get_required_providers(self):
+                return {"ProviderA": "arg_for_a"}
+
+        self.context_provider_classes = [ProviderA, ProviderB]
+        app = self.create_app()
+
+        self.assertEqual(len(app.context_providers), 2)
+        self.assertIn("ProviderA", app.context_providers)
+        self.assertIn("ProviderB", app.context_providers)
+        
+        app.context_providers["ProviderA"].load_context_from_string.assert_called_once_with("arg_for_a")
+        app.context_providers["ProviderA"].load_context_from_cli.assert_called_once_with(self.hermes_config)
+        app.context_providers["ProviderB"].load_context_from_cli.assert_called_once_with(self.hermes_config)
+
+    def test_initialize_context_providers_with_cycle(self):
+        class ProviderA(ContextProvider):
+            @staticmethod
+            def get_command_key():
+                return "a"
+            def get_required_providers(self):
+                return {"ProviderB": "arg_for_b"}
+
+        class ProviderB(ContextProvider):
+            @staticmethod
+            def get_command_key():
+                return "b"
+            def get_required_providers(self):
+                return {"ProviderA": "arg_for_a"}
+
+        self.context_provider_classes = [ProviderA, ProviderB]
+        
+        with self.assertRaises(RecursionError):
+            self.create_app()
+
+    def test_initialize_context_providers_missing_dependency(self):
+        class ProviderA(ContextProvider):
+            @staticmethod
+            def get_command_key():
+                return "a"
+            def get_required_providers(self):
+                return {"NonExistentProvider": "arg"}
+
+        self.context_provider_classes = [ProviderA]
+        
+        with self.assertRaises(ValueError):
+            self.create_app()
 
     @patch('sys.stdin.isatty', return_value=True)
     @patch('sys.stdout.isatty', return_value=True)

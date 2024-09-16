@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional, Type, Set
 import sys
 import re
 import logging
@@ -39,26 +39,49 @@ class ChatApplication:
         logger.info(f"Using file processor: {type(file_processor).__name__}")
         logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
 
-        # Instantiate and initialize context providers
-        self.context_providers = [
-            provider_class() for provider_class in context_provider_classes
-        ]
+        self.context_providers = {}
         self.command_keys_map = {}
         for provider_class in context_provider_classes:
+            provider = provider_class()
+            self.context_providers[provider_class.__name__] = provider
             command_keys = provider_class.get_command_key()
             if isinstance(command_keys, str):
                 command_keys = [command_keys]
             for key in command_keys:
                 key = key.strip()
-                self.command_keys_map[key] = provider_class
+                self.command_keys_map[key] = provider_class.__name__
 
         logger.debug(f"Initialized {len(self.context_providers)} context providers")
 
-        for provider in self.context_providers:
-            provider.load_context_from_cli(hermes_config)
-            self.history_builder.add_context(provider)
+        self._initialize_context_providers(hermes_config)
 
         logger.debug("ChatApplication initialization complete")
+
+    def _initialize_context_providers(self, hermes_config: HermesConfig):
+        initialized_providers = set()
+        for provider_name in self.context_providers:
+            self._initialize_provider(provider_name, hermes_config, initialized_providers)
+
+    def _initialize_provider(self, provider_name: str, hermes_config: HermesConfig, initialized_providers: Set[str]):
+        if provider_name in initialized_providers:
+            return
+
+        provider = self.context_providers[provider_name]
+        required_providers = provider.get_required_providers()
+
+        for required_provider, args in required_providers.items():
+            if required_provider not in self.context_providers:
+                raise ValueError(f"Required provider {required_provider} not found for {provider_name}")
+            
+            if required_provider not in initialized_providers:
+                self._initialize_provider(required_provider, hermes_config, initialized_providers)
+
+            required_instance = self.context_providers[required_provider]
+            required_instance.load_context_from_string(args)
+
+        provider.load_context_from_cli(hermes_config)
+        self.history_builder.add_context(provider)
+        initialized_providers.add(provider_name)
 
     def run(
         self,
