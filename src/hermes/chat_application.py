@@ -15,6 +15,7 @@ from hermes.chat_ui import ChatUI
 from hermes.utils import file_utils
 from hermes.history_builder import HistoryBuilder
 from hermes.context_providers.base import ContextProvider
+from hermes.context_providers.prefill_context_provider import PrefillContextProvider
 from hermes.config import HermesConfig
 
 # Set up logging
@@ -157,7 +158,11 @@ class ChatApplication:
             for provider_name, provider_args in required_providers.items():
                 if provider_name in self.command_keys_map:
                     provider = self.command_keys_map[provider_name]()
-                    provider.load_context_from_string(str(provider_args))
+                    if isinstance(provider_args, list):
+                        for arg in provider_args:
+                            provider.load_context_from_string(str(arg))
+                    else:
+                        provider.load_context_from_string(str(provider_args))
                     self.history_builder.add_context(provider)
                     self.ui.display_status(f"Required context '{provider_name}' loaded for prefill")
         else:

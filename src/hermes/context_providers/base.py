@@ -60,3 +60,11 @@ class ContextProvider(ABC):
         :return: A string representing the command key for this context provider
         """
         pass
+
+    def get_required_providers(self) -> Dict[str, Any]:
+        """
+        Return a dictionary of required context providers and their arguments.
+        
+        :return: A dictionary where keys are provider names and values are their arguments
+        """
+        return {}

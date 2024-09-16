@@ -1,6 +1,6 @@
 import os
 import yaml
-from typing import Dict, Any
+from typing import Dict, Any, List
 from argparse import ArgumentParser
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
@@ -29,6 +29,7 @@ class PrefillContextProvider(ContextProvider):
         prefill_dirs = [
             os.path.join(os.path.dirname(__file__), "..", "prefills"),  # Repository prefills
             os.path.expanduser("~/.config/hermes/prefills"),
+            os.path.expanduser("~/.config/hermes/custom_prefills"),
         ]
 
         for prefill_dir in prefill_dirs:
@@ -56,5 +57,5 @@ class PrefillContextProvider(ContextProvider):
     def is_used(self) -> bool:
         return bool(self.prefill_name)
 
-    def get_required_providers(self) -> Dict[str, Any]:
+    def get_required_providers(self) -> Dict[str, List[str]]:
         return self.required_providers
