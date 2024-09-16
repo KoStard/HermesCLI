@@ -34,6 +34,7 @@ class ChatApplication:
         self.model = model
         self.ui = ui
         self.history_builder = HistoryBuilder(prompt_builder_class, file_processor)
+        self.has_input = False
 
         logger.info(f"Initializing with model: {type(model).__name__}")
         logger.info(f"Using file processor: {type(file_processor).__name__}")
@@ -84,12 +85,11 @@ class ChatApplication:
             self.history_builder.add_context(required_instance)
 
         self.history_builder.add_context(provider)
+        if provider.counts_as_input():
+            self.has_input = True
         return provider
 
-    def run(
-        self,
-        initial_prompt: Optional[str] = None,
-    ):
+    def run(self):
         logger.debug("Initializing model")
         self.model.initialize()
         logger.debug("Model initialized successfully")
@@ -100,19 +100,17 @@ class ChatApplication:
 
         if is_input_piped or is_output_piped:
             logger.debug("Detected non-interactive mode")
-            self.handle_non_interactive_input_output(
-                initial_prompt, is_input_piped, is_output_piped
-            )
+            self.handle_non_interactive_input_output(is_input_piped, is_output_piped)
             return
 
         # Interactive mode
         logger.debug("Starting interactive mode")
         try:
-            self.handle_interactive_mode(initial_prompt)
+            self.handle_interactive_mode()
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Exiting gracefully.")
 
-    def handle_interactive_mode(self, initial_prompt):
+    def handle_interactive_mode(self):
         if any(
             isinstance(
                 provider,
@@ -120,12 +118,9 @@ class ChatApplication:
             )
             and provider.file_path
             for provider in self.history_builder.context_providers
-        ):
-            # For special context providers, just make the first request and return
-            self.make_first_request(initial_prompt)
-            return
-
-        if not self.make_first_request(initial_prompt):
+        ) or self.has_input:
+            # For special context providers or when we have input, just make the first request and return
+            self.make_first_request()
             return
 
         while True:
@@ -172,22 +167,11 @@ class ChatApplication:
 
             return user_input
 
-    def make_first_request(
-        self,
-        initial_prompt: Optional[str] = None,
-    ):
+    def make_first_request(self):
         self.history_builder.clear_regular_history()
-        if initial_prompt is not None:
-            message = initial_prompt
-        elif any(
-            isinstance(
-                provider,
-                (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider),
-            )
-            and provider.file_path
-            for provider in self.history_builder.context_providers
-        ):
+        if self.has_input:
             message = "Please process the provided context."
+            self.has_input = False
         else:
             message = self.get_user_input()
 
