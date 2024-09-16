@@ -54,8 +54,6 @@ def main():
 
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
     parser.add_argument("--model", choices=ModelRegistry.get_available_models(), help="Choose the model to use")
-    parser.add_argument("--prompt", help="Prompt text to send immediately")
-    parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
 
@@ -84,10 +82,7 @@ def run_workflow(hermes_config: HermesConfig):
     model, model_id, prompt_builder = create_model_and_processors(hermes_config.get('model'))
 
     input_files = hermes_config.get('files', [])
-    initial_prompt = hermes_config.get('prompt')
-    if not initial_prompt and hermes_config.get('prompt_file'):
-        with open(hermes_config.get('prompt_file')) as f:
-            initial_prompt = f.read().strip()
+    initial_prompt = ""
 
     executor = WorkflowExecutor(hermes_config.get('workflow'), model, model_id, prompt_builder, input_files, initial_prompt, custom_print)
     result = executor.execute()
@@ -105,19 +100,12 @@ def run_workflow(hermes_config: HermesConfig):
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
 def run_chat_application(hermes_config: HermesConfig, context_provider_classes):
-    initial_prompt = None
-    if hermes_config.get('prompt'):
-        initial_prompt = hermes_config.get('prompt')
-    elif hermes_config.get('prompt_file'):
-        with open(hermes_config.get('prompt_file'), 'r') as f:
-            initial_prompt = f.read().strip()
-
     model, model_id, file_processor, prompt_builder_class = create_model_and_processors(hermes_config.get('model'))
 
     ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
     app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, hermes_config)
 
-    app.run(initial_prompt)
+    app.run()
 
 
 if __name__ == "__main__":
