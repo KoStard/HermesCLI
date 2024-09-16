@@ -139,17 +139,76 @@ Hermes supports various command-line options:
 
 ## Supported Models
 
-Hermes supports a variety of AI models:
+Hermes supports a wide variety of AI models:
 
-- Claude (Anthropic)
+- Claude (Anthropic): claude-sonnet-3.5
 - Gemini (Google)
-- GPT-4 (OpenAI)
-- Bedrock models (AWS)
+- GPT-4 and other models (OpenAI)
+- Bedrock models (AWS):
+  - bedrock/sonnet-3
+  - bedrock/sonnet-3.5
+  - bedrock/opus-3
+  - bedrock/mistral
 - Ollama (for local models)
+- Groq
+- SambaNova
 - DeepSeek
-- And more...
+- OpenRouter:
+  - openrouter (default model)
+  - openrouter/perplexity
+  - openrouter/o1-mini
 
 Each model may have specific setup requirements. Refer to the documentation of each AI provider for detailed instructions on how to use their models.
+
+## Configuration File (config.ini)
+
+The `config.ini` file is used to store your API keys and default settings. Here's a more detailed explanation of the possible sections and attributes:
+
+```ini
+[BASE]
+model = claude-sonnet-3.5  # Default model to use
+
+[ANTHROPIC]
+api_key = your_anthropic_api_key
+
+[GEMINI]
+api_key = your_gemini_api_key
+
+[OPENAI]
+api_key = your_openai_api_key
+model = gpt-4  # Optional: specify a default OpenAI model
+
+[DEEPSEEK]
+api_key = your_deepseek_api_key
+model = deepseek-coder  # Optional: specify a DeepSeek model
+base_url = https://api.deepseek.com  # Optional: custom base URL
+
+[BEDROCK]
+# AWS credentials are typically set up in ~/.aws/credentials
+# You can optionally specify a profile here:
+# profile = your_aws_profile
+
+[OLLAMA]
+model = llama2  # Optional: specify a default Ollama model
+
+[GROQ]
+api_key = your_groq_api_key
+model = llama3-8b-8192  # Optional: specify a Groq model
+
+[SAMBANOVA]
+api_key = your_sambanova_api_key
+model = Meta-Llama-3.1-405B-Instruct  # Optional: specify a SambaNova model
+
+[OPENROUTER]
+api_key = your_openrouter_api_key
+model = openai/o1-mini-2024-09-12  # Optional: specify a default OpenRouter model
+```
+
+Each section corresponds to a different AI provider or model type. You only need to include the sections for the models you plan to use. The `BASE` section is used to set the default model for Hermes.
+
+Replace `your_*_api_key` with your actual API keys for each service. For some services, you can optionally specify a default model or other settings like base URLs.
+
+For AWS Bedrock, Hermes uses the default AWS credentials setup. If you need to use a specific AWS profile, you can uncomment and set the `profile` option in the `[BEDROCK]` section.
 
 ## Contributing
 
