@@ -14,6 +14,11 @@ We need to implement a prefill system in Hermes that allows users to:
 ## 3. Solution: Implement Prefills as a New Context Provider
 
 We will implement prefills as a new context provider, which fits well with the existing architecture of Hermes and allows us to leverage the current context provider loading mechanisms.
+Implement get_dependent_context_providers, which should return a list[(str, str)], with first value being the key and second value being the initialisation string, same as it's when the user adds context from CLI.
+The front matter in the markdown should be like this as well, without any additional complexities.
+The base class should be modified of context providers with default implemented of get_dependent_context_providers returning empty list.
+During the load phase of the context provider, the prefills context provider should load the markdown files with the prefills with all the details.
+
 
 ### Pros:
 - Seamless integration with the existing context provider system
@@ -30,7 +35,6 @@ We will implement prefills as a new context provider, which fits well with the e
 - Prefills will be stored as markdown files in designated directories:
   - Repository prefills: `src/hermes/prefills/`
   - User prefills: `~/.config/hermes/prefills/`
-  - Custom prefills: `~/.config/hermes/custom_prefills/`
 - Each prefill file will use Front Matter for metadata, including required context providers and their attributes
 - The main content of the markdown file will be the prefill prompt
 
@@ -38,51 +42,5 @@ We will implement prefills as a new context provider, which fits well with the e
 - Create a new `PrefillContextProvider` class that inherits from `ContextProvider`
 - This provider will handle loading and processing of prefill files
 - It will parse the Front Matter to determine required context providers and their attributes
+- Should handle loading from the custom folder as well.
 
-### 4.3 Prefill Loading Mechanism
-- Modify the `extension_loader.py` to include a `load_prefills()` function
-- This function will scan all prefill directories and load available prefills
-- Prefills will be stored in a dictionary with their names as keys
-
-### 4.4 CLI Integration
-- Add a `--prefill` argument to the CLI parser in `main.py`
-- When a prefill is specified, load it and its required context providers before starting the chat application
-
-### 4.5 Chat Integration
-- Implement a `/prefill` command in the `ChatApplication` class
-- When invoked, load the specified prefill and its required context providers
-- Apply the prefill prompt to the current chat session
-
-## 5. Implementation Steps
-1. Update `PrefillContextProvider` class to handle loading and processing of prefill files
-2. Modify `extension_loader.py` to include prefill loading from all directories
-3. Update `main.py` to integrate prefills into the CLI and chat application initialization
-4. Modify `ChatApplication` to handle the `/prefill` command and prefill processing
-5. Update documentation and user guide
-
-## 6. Think Big
-- Implement a prefill management system within Hermes (create, edit, delete prefills)
-- Allow sharing and importing of prefills between users
-- Create a web interface for managing and using prefills
-- Implement prefill versioning and syncing across devices
-
-## 7. Appendix
-
-### 7.1 Sample Prefill File Structure
-```yaml
----
-name: code_review
-required_context_providers:
-  file:
-    - path: "*.py"
-  url:
-    - "https://www.python.org/dev/peps/pep-0008/"
----
-Please review the provided Python code for adherence to PEP 8 style guide and best practices. 
-Provide suggestions for improvements and explain any potential issues you find.
-```
-
-### 7.2 Questions and Considerations
-- How should we handle conflicts between prefill-required context providers and user-specified providers?
-- Should we implement a priority system for prefills (e.g., CLI prefills take precedence over in-chat prefills)?
-- How can we ensure backward compatibility with existing workflows when introducing prefills?
