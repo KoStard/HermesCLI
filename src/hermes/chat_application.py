@@ -39,51 +39,52 @@ class ChatApplication:
         logger.info(f"Using file processor: {type(file_processor).__name__}")
         logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
 
-        self.context_providers = {}
         self.command_keys_map = {}
         for provider_class in context_provider_classes:
-            provider = provider_class()
-            self.context_providers[provider_class.__name__] = provider
             command_keys = provider_class.get_command_key()
             if isinstance(command_keys, str):
                 command_keys = [command_keys]
             for key in command_keys:
                 key = key.strip()
-                self.command_keys_map[key] = provider_class.__name__
-
-        logger.debug(f"Initialized {len(self.context_providers)} context providers")
+                self.command_keys_map[key] = provider_class
 
         self._initialize_context_providers(hermes_config)
 
+        logger.debug(
+            f"Initialized {len(self.history_builder.context_providers)} context providers"
+        )
         logger.debug("ChatApplication initialization complete")
 
     def _initialize_context_providers(self, hermes_config: HermesConfig):
-        initialized_providers = set()
-        for provider_name in self.context_providers:
-            self._initialize_provider(provider_name, hermes_config, initialized_providers)
+        for key in hermes_config:
+            if key in self.command_keys_map:
+                self._initialize_provider(key, hermes_config, None)
 
-    # TODO: What about when adding midway
-    def _initialize_provider(self, provider_name: str, hermes_config: HermesConfig, initialized_providers: Set[str]):
-        if provider_name in initialized_providers:
-            return
+    def _initialize_provider(
+        self,
+        provider_key: str,
+        hermes_config: HermesConfig | None,
+        args: List[str] | None,
+    ):
+        provider = self.command_keys_map[provider_key]()
+        logger.debug(f"Initializing provider {provider_key}")
 
-        provider = self.context_providers[provider_name]
+        if hermes_config is not None:
+            provider.load_context_from_cli(hermes_config)
+        else:
+            provider.load_context_from_string(args)
+
         required_providers = provider.get_required_providers()
-        logger.debug(f"Initializing provider {provider_name} with required providers {required_providers}")
+        logger.debug(
+            f"Provider {provider_key} requires providers: {required_providers}"
+        )
 
         for required_provider, args in required_providers.items():
-            if required_provider not in self.context_providers:
-                raise ValueError(f"Required provider {required_provider} not found for {provider_name}")
-            
-            if required_provider not in initialized_providers:
-                self._initialize_provider(required_provider, hermes_config, initialized_providers)
+            required_instance = self._initialize_provider(required_provider, None, args)
+            self.history_builder.add_context(required_instance)
 
-            required_instance = self.context_providers[required_provider]
-            required_instance.load_context_from_string(args)
-
-        provider.load_context_from_cli(hermes_config)
         self.history_builder.add_context(provider)
-        initialized_providers.add(provider_name)
+        return provider
 
     def run(
         self,
@@ -112,7 +113,14 @@ class ChatApplication:
             logger.info("Chat interrupted by user. Exiting gracefully.")
 
     def handle_interactive_mode(self, initial_prompt):
-        if any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) and provider.file_path for provider in self.context_providers):
+        if any(
+            isinstance(
+                provider,
+                (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider),
+            )
+            and provider.file_path
+            for provider in self.history_builder.context_providers
+        ):
             # For special context providers, just make the first request and return
             self.make_first_request(initial_prompt)
             return
@@ -171,11 +179,18 @@ class ChatApplication:
         self.history_builder.clear_regular_history()
         if initial_prompt is not None:
             message = initial_prompt
-        elif any(isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)) and provider.file_path for provider in self.context_providers):
+        elif any(
+            isinstance(
+                provider,
+                (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider),
+            )
+            and provider.file_path
+            for provider in self.history_builder.context_providers
+        ):
             message = "Please process the provided context."
         else:
             message = self.get_user_input()
-        
+
         if message is None:
             return False
 
@@ -200,7 +215,7 @@ class ChatApplication:
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=1, min=1, max=20),
-        before_sleep=before_sleep_log(logger, logging.INFO)
+        before_sleep=before_sleep_log(logger, logging.INFO),
     )
     def _send_model_request(self, messages):
         logger.debug("Sending request to model (with retry)")
@@ -225,48 +240,65 @@ class ChatApplication:
             self.history_builder.pop_message()
 
     def apply_special_commands(self, content: str):
-        for provider in self.context_providers:
-            if isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider)):
+        for provider in self.history_builder.context_providers:
+            if isinstance(
+                provider,
+                (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider),
+            ):
                 if provider.file_path:
                     if isinstance(provider, AppendContextProvider):
-                        file_utils.write_file(provider.file_path, "\n" + content, mode="a")
-                        self.ui.display_status(f"Content appended to {provider.file_path}")
+                        file_utils.write_file(
+                            provider.file_path, "\n" + content, mode="a"
+                        )
+                        self.ui.display_status(
+                            f"Content appended to {provider.file_path}"
+                        )
                     elif isinstance(provider, UpdateContextProvider):
                         file_utils.write_file(provider.file_path, content, mode="w")
                         self.ui.display_status(f"File {provider.file_path} updated")
                     elif isinstance(provider, FillGapsContextProvider):
-                        original_content = file_utils.read_file_content(provider.file_path)
+                        original_content = file_utils.read_file_content(
+                            provider.file_path
+                        )
                         filled_content = self._fill_gaps(original_content, content)
-                        file_utils.write_file(provider.file_path, filled_content, mode="w")
+                        file_utils.write_file(
+                            provider.file_path, filled_content, mode="w"
+                        )
                         self.ui.display_status(f"Gaps filled in {provider.file_path}")
 
     def _fill_gaps(self, original_content: str, new_content: str) -> str:
         # Split the original content into lines
-        original_lines = original_content.split('\n')
+        original_lines = original_content.split("\n")
 
         # Find all gap markers and add indices
         gap_markers = []
         for i, line in enumerate(original_lines):
-            if '<GapToFill>' in line:
+            if "<GapToFill>" in line:
                 gap_markers.append(i)
-                original_lines[i] = line.replace('<GapToFill>', f'<GapToFill index={len(gap_markers)}>')
+                original_lines[i] = line.replace(
+                    "<GapToFill>", f"<GapToFill index={len(gap_markers)}>"
+                )
 
         # Join the lines with added indices
-        indexed_content = '\n'.join(original_lines)
+        indexed_content = "\n".join(original_lines)
 
         # Send the indexed content to the LLM (this part is handled elsewhere)
 
         # Extract new content for each gap
-        new_content_blocks = re.findall(r'<NewGapContent index=(\d+)>(.*?)</NewGapContent>', new_content, re.DOTALL)
+        new_content_blocks = re.findall(
+            r"<NewGapContent index=(\d+)>(.*?)</NewGapContent>", new_content, re.DOTALL
+        )
 
         # Replace gaps with new content
         for index, content in new_content_blocks:
             index = int(index)
             if index <= len(gap_markers):
                 gap_line = gap_markers[index - 1]
-                original_lines[gap_line] = original_lines[gap_line].split('<GapToFill')[0] + content.strip()
+                original_lines[gap_line] = (
+                    original_lines[gap_line].split("<GapToFill")[0] + content.strip()
+                )
         # Join the lines back together
-        return '\n'.join(original_lines)
+        return "\n".join(original_lines)
 
     def clear_chat(self):
         self.model.initialize()

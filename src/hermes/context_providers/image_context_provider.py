@@ -19,8 +19,7 @@ class ImageContextProvider(ContextProvider):
         self.image_paths = config.get('image', [])
         self.logger.debug(f"Loaded {len(self.image_paths)} image paths from CLI config")
 
-    def load_context_from_string(self, args: str):
-        new_paths = [args]
+    def load_context_from_string(self, new_paths: List[str]):
         self.image_paths.extend(new_paths)
         self.logger.debug(f"Added {len(new_paths)} image paths interactively")
 

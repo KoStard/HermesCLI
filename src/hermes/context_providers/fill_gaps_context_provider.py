@@ -18,13 +18,16 @@ class FillGapsContextProvider(ContextProvider):
         parser.add_argument("--fill-gaps", help="Fill gaps in the specified file")
 
     def load_context_from_cli(self, config: HermesConfig):
-        self.file_path = config.get('fill_gaps', '')
+        file_paths = config.get('fill_gaps', [])
+        if len(file_paths) > 1:
+            raise ValueError("Only one file can be filled at a time")
+        self.file_path = file_paths[0] if file_paths else ""
         if self.file_path:
             self._load_special_command_prompt()
             self.logger.debug(f"Loaded fill-gaps context for file: {self.file_path}")
 
-    def load_context_from_string(self, args: str):
-        self.file_path = args
+    def load_context_from_string(self, args: List[str]):
+        self.file_path = args[0]
         self._load_special_command_prompt()
         self.logger.debug(f"Added fill-gaps context for file: {self.file_path}")
 

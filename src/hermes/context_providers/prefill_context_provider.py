@@ -17,17 +17,17 @@ class PrefillContextProvider(ContextProvider):
         parser.add_argument('--prefill', help='Name of the prefill to use')
 
     def load_context_from_cli(self, config: HermesConfig):
-        self.prefill_name = config.get('prefill')
+        self.prefill_name = config.get('prefill', [])[0]
         if self.prefill_name:
             self._load_prefill()
 
-    def load_context_from_string(self, args: str):
-        self.prefill_name = args.strip()
+    def load_context_from_string(self, args: List[str]):
+        self.prefill_name = args[0].strip()
         self._load_prefill()
 
     def _load_prefill(self):
         prefill_dirs = [
-            os.path.join(os.path.dirname(__file__), "..", "prefills"),  # Repository prefills
+            os.path.join(os.path.dirname(__file__), "prefills"),  # Repository prefills
             os.path.expanduser("~/.config/hermes/prefills"),
         ]
 
