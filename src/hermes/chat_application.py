@@ -60,6 +60,8 @@ class ChatApplication:
         for key in hermes_config:
             if key in self.command_keys_map:
                 self._initialize_provider(key, hermes_config, None)
+            else:
+                logger.warning(f"Unknown provider key: {key}")
 
     def _initialize_provider(
         self,
