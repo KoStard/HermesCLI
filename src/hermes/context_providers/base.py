@@ -68,3 +68,11 @@ class ContextProvider(ABC):
         :return: A dictionary where keys are provider names and values are their arguments
         """
         return {}
+
+    def counts_as_input(self) -> bool:
+        """
+        Return True if this context provider should be considered as user input.
+        
+        :return: A boolean indicating whether this provider counts as input
+        """
+        return False

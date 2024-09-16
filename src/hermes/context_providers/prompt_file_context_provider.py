@@ -36,3 +36,6 @@ class PromptFileContextProvider(ContextProvider):
 
     def get_required_providers(self) -> dict:
         return {}
+
+    def counts_as_input(self) -> bool:
+        return True
