@@ -34,6 +34,7 @@ class ChatApplication:
         self.model = model
         self.ui = ui
         self.history_builder = HistoryBuilder(prompt_builder_class, file_processor)
+        self.prefills = {}
 
         logger.info(f"Initializing with model: {type(model).__name__}")
         logger.info(f"Using file processor: {type(file_processor).__name__}")
@@ -59,6 +60,9 @@ class ChatApplication:
             self.history_builder.add_context(provider)
 
         logger.debug("ChatApplication initialization complete")
+
+    def set_prefills(self, prefills: Dict[str, str]):
+        self.prefills = prefills
 
     def run(
         self,
@@ -127,7 +131,9 @@ class ChatApplication:
 
                 for cmd in full_commands:
                     command, *args = cmd.strip().split(maxsplit=1)
-                    if command in self.command_keys_map:
+                    if command == "prefill":
+                        self.handle_prefill_command(args[0] if args else "")
+                    elif command in self.command_keys_map:
                         provider = self.command_keys_map[command]()
                         args_str = args[0] if args else ""
                         provider.load_context_from_string(args_str)
@@ -138,6 +144,24 @@ class ChatApplication:
                 continue
 
             return user_input
+
+    def handle_prefill_command(self, prefill_name: str):
+        if prefill_name in self.prefills:
+            prefill_provider = PrefillContextProvider()
+            prefill_provider.load_context_from_string(prefill_name)
+            self.history_builder.add_context(prefill_provider)
+            self.ui.display_status(f"Prefill '{prefill_name}' loaded")
+
+            # Load required context providers
+            required_providers = prefill_provider.get_required_providers()
+            for provider_name, provider_args in required_providers.items():
+                if provider_name in self.command_keys_map:
+                    provider = self.command_keys_map[provider_name]()
+                    provider.load_context_from_string(str(provider_args))
+                    self.history_builder.add_context(provider)
+                    self.ui.display_status(f"Required context '{provider_name}' loaded for prefill")
+        else:
+            self.ui.display_status(f"Prefill '{prefill_name}' not found")
 
     def make_first_request(
         self,
