@@ -22,7 +22,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --model {bedrock/sonnet-3,bedrock/sonnet-3.5,bedrock/opus-3,bedrock/mistral,claude-sonnet-3.5,gemini,openai,ollama,groq,sambanova,deepseek,openrouter,openrouter/perplexity,openrouter/o1-mini}
-                        Choose the model to use
+                        Choose the model to use (optional if configured in config.ini)
   --pretty              Print the output by rendering markdown
   --workflow WORKFLOW   Specify a workflow YAML file to execute
   --prompt-file PROMPT_FILE
@@ -47,8 +47,14 @@ You will be given certain problems or context, and as an outcome you should do o
 If you need to create/update a file, use --create or --update.
 If you need to append to a file, use --append.
 To pass a file to hermes (include in the context of the LLM), just pass the path (it will resolve the path) as a positional argument. If you can just pass a path to a file, just do that, don't create intermediary files that contain the replica of it.
+Assume that the user has a default model configured unless explicitely asked to include a model.
 
 Keep your answers concise, focused and persuasive to reach to the bottom and find the answer the user is looking for.
+
+Example output:
+```sh
+hermes --create Company2.md --prompt "Develop a comprehensive profile for Company2. Include its history, service offerings, financial performance, market position, key executives, corporate culture, and recent developments. Provide a SWOT analysis." "../../Learning about a business entity.md" Company1ForExample.md "List of Companies.md" ../../Methodology.md
+```
 
 
 # Hermes: Your AI-Powered Command-Line Assistant

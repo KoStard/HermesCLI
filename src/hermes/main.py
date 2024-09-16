@@ -53,7 +53,7 @@ def setup_logger():
 def main():
 
     parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
-    parser.add_argument("--model", choices=ModelRegistry.get_available_models(), help="Choose the model to use")
+    parser.add_argument("--model", choices=ModelRegistry.get_available_models(), help="Choose the model to use (optional if configured in config.ini)")
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
 
@@ -100,7 +100,8 @@ def run_workflow(hermes_config: HermesConfig):
     print(f"Workflow execution completed. Detailed report saved to {filename}")
 
 def run_chat_application(hermes_config: HermesConfig, context_provider_classes):
-    model, model_id, file_processor, prompt_builder_class = create_model_and_processors(hermes_config.get('model'))
+    model_name = hermes_config.get('model')[0] if hermes_config.get('model') else None
+    model, model_id, file_processor, prompt_builder_class = create_model_and_processors(model_name)
 
     ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
     app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, hermes_config)
