@@ -61,7 +61,7 @@ After installation, you need to set up your configuration file. This file will s
 
    ```ini
    [BASE]
-   model = claude
+   model = claude-sonnet-3.5
 
    [ANTHROPIC]
    api_key = your_anthropic_api_key
@@ -83,30 +83,6 @@ After installation, you need to set up your configuration file. This file will s
 
 API keys are unique identifiers that authenticate your requests to AI services. They are like passwords that allow you to access and use these services. Each AI provider (like Anthropic, Google, OpenAI) has its own method for generating and managing API keys.
 
-### How to Get API Keys
-
-1. **Anthropic (Claude)**:
-   - Visit [Anthropic's website](https://www.anthropic.com)
-   - Sign up for an account
-   - Navigate to the API section to generate your key
-
-2. **Google (Gemini)**:
-   - Go to the [Google AI Studio](https://makersuite.google.com/app/apikey)
-   - Create or sign in to your Google account
-   - Follow the prompts to create an API key
-
-3. **OpenAI**:
-   - Visit [OpenAI's website](https://openai.com)
-   - Create an account or log in
-   - Go to the API section and generate a new API key
-
-4. **DeepSeek**:
-   - Sign up at [DeepSeek AI](https://platform.deepseek.com/)
-   - Navigate to your account settings or API section
-   - Generate a new API key
-
-Remember to keep your API keys secure and never share them publicly.
-
 ## Basic Usage
 
 Here's how to use Hermes:
@@ -120,7 +96,7 @@ Here's how to use Hermes:
 
 3. To use a specific model and include files for context:
    ```
-   hermes --model claude document1.txt document2.txt
+   hermes --model claude-sonnet-3.5 document1.txt document2.txt
    ```
 
 4. After running the command, you'll be prompted to enter your message or question.
@@ -129,7 +105,7 @@ Here's how to use Hermes:
 
 Hermes supports various command-line options:
 
-- `--model`: Specify the AI model to use (e.g., claude, gemini, openai)
+- `--model`: Specify the AI model to use (e.g., claude-sonnet-3.5, gemini, openai)
 - `--prompt`: Provide an initial prompt directly
 - `--prompt-file`: Use a file containing the initial prompt
 - `--append` or `-a`: Append the AI's response to a specified file
@@ -143,7 +119,7 @@ Hermes supports various command-line options:
 
 1. Summarize a document:
    ```
-   hermes --model claude README.md --prompt "Summarize this document in one paragraph"
+   hermes --model claude-sonnet-3.5 README.md --prompt "Summarize this document in one paragraph"
    ```
 
 2. Ask a question and save the response:
