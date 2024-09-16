@@ -118,20 +118,27 @@ class ChatApplication:
             )
             and provider.file_path
             for provider in self.history_builder.context_providers
-        ) or self.has_input:
-            # For special context providers or when we have input, just make the first request and return
+        ):
             self.make_first_request()
             return
 
         while True:
-            user_input = self.get_user_input()
-            if user_input is None:
-                return
+            if self.has_input:
+                user_input = "Please process the provided context."
+                self.has_input = False
+            else:
+                user_input = self.get_user_input()
+                if user_input is None:
+                    return
             self.send_message_and_print_output(user_input)
 
     def get_user_input(self):
         while True:
-            user_input = self.ui.get_user_input()
+            if self.has_input:
+                user_input = "Please process the provided context."
+                self.has_input = False
+            else:
+                user_input = self.ui.get_user_input()
             user_input_lower = user_input.lower()
 
             if user_input_lower in ["exit", "quit", "q"]:
@@ -157,9 +164,10 @@ class ChatApplication:
                     command, *args = cmd.strip().split(maxsplit=1)
                     if command in self.command_keys_map:
                         provider = self.command_keys_map[command]()
-                        args_str = args[0] if args else ""
-                        provider.load_context_from_string(args_str)
+                        provider.load_context_from_string(args)
                         self.history_builder.add_context(provider)
+                        if provider.counts_as_input():
+                            self.has_input = True                            
                         self.ui.display_status(f"Context added for /{command}")
                     else:
                         self.ui.display_status(f"Unknown command: /{command}")
@@ -182,19 +190,20 @@ class ChatApplication:
         return True
 
     def handle_non_interactive_input_output(
-        self, initial_prompt, is_input_piped, is_output_piped
+        self, is_input_piped, is_output_piped
     ):
         message = ""
-        if initial_prompt:
-            message = initial_prompt
         if is_input_piped:
             text_context_provider = TextContextProvider()
             text_context_provider.load_context_from_string(sys.stdin.read().strip())
             self.history_builder.add_context(text_context_provider)
-        elif not initial_prompt:
+        elif self.has_input:
+            message = "Please process the provided context."
+            self.has_input = False
+        else:
             message = self.ui.get_user_input()
 
-        response = self.send_message_and_print_output(message)
+        self.send_message_and_print_output(message)
 
     @retry(
         stop=stop_after_attempt(5),
