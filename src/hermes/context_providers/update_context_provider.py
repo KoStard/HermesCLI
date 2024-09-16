@@ -15,7 +15,7 @@ class UpdateContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--update", "-u", help="Update the specified file")
+        parser.add_argument("--update", "--create", "-u", help="Update or create the specified file", dest="update")
 
     def load_context_from_cli(self, config: HermesConfig):
         file_paths = config.get('update', [])
@@ -46,8 +46,8 @@ class UpdateContextProvider(ContextProvider):
             prompt_builder.add_file(self.file_path, self.file_path)
 
     @staticmethod
-    def get_command_key() -> str:
-        return "update"
+    def get_command_key() -> List[str]:
+        return ["update", "create"]
 
     def is_used(self) -> bool:
         return bool(self.file_path)
