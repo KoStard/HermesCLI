@@ -24,8 +24,6 @@ from .chat_application import ChatApplication
 from .workflows.executor import WorkflowExecutor
 from .context_provider_loader import load_context_providers
 from .config import create_config_from_args, HermesConfig
-from .extension_loader import load_prefills
-from .context_providers.prefill_context_provider import PrefillContextProvider
 
 def setup_logger():
     logger = logging.getLogger()
@@ -63,7 +61,6 @@ def main():
 
     # Load context providers dynamically (including extensions)
     context_provider_classes = load_context_providers()
-    context_provider_classes.append(PrefillContextProvider)
 
     # Add arguments from context providers (including extensions)
     for provider_class in context_provider_classes:
@@ -119,10 +116,6 @@ def run_chat_application(hermes_config: HermesConfig, context_provider_classes):
 
     ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
     app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, hermes_config)
-
-    # Load prefills
-    prefills = load_prefills()
-    app.set_prefills(prefills)
 
     app.run(initial_prompt)
 

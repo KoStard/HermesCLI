@@ -28,23 +28,3 @@ def load_extensions() -> List[Type[ContextProvider]]:
                         providers.append(obj)
 
     return providers
-
-def load_prefills() -> Dict[str, str]:
-    prefills = {}
-    prefill_dirs = [
-        os.path.join(os.path.dirname(__file__), "prefills"),  # Repository prefills
-        os.path.expanduser("~/.config/hermes/prefills"),
-        os.path.expanduser("~/.config/hermes/custom_prefills")
-    ]
-
-    for prefill_dir in prefill_dirs:
-        if not os.path.exists(prefill_dir):
-            continue
-
-        for filename in os.listdir(prefill_dir):
-            if filename.endswith('.md'):
-                prefill_name = filename[:-3]
-                prefill_path = os.path.join(prefill_dir, filename)
-                prefills[prefill_name] = prefill_path
-
-    return prefills
