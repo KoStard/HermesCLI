@@ -18,7 +18,8 @@
     - [Code Examples](#code-examples)
     - [ASCII Diagram: Proposed Configuration Flow](#ascii-diagram-proposed-configuration-flow)
 8. [User Experience Considerations](#user-experience-considerations)
-9. [Conclusion](#conclusion)
+9. [Mistakes in Previous Design](#mistakes-in-previous-design)
+10. [Conclusion](#conclusion)
 
 ## Introduction
 
@@ -35,9 +36,9 @@ The existing implementation of `HermesConfig` suffers from the following issues:
 - **Mixed Concerns**: Global CLI arguments (e.g., `--model`, `--pretty`) are handled alongside context provider-specific arguments (e.g., `--text`, `--image`) within the same configuration object.
   
 - **Inadequate Data Structures**: The `get` method of `HermesConfig` returns lists for all arguments, which is inappropriate for singular arguments like `--model` and `--pretty`.
-
+  
 - **Scalability Challenges**: As more context providers are added, managing configurations becomes increasingly complex and error-prone.
-
+  
 - **User Confusion**: Users may find it difficult to discern which arguments are global and which pertain to specific context providers, leading to misuse or misconfiguration.
 
 ## Current Architecture Analysis
@@ -53,9 +54,9 @@ The existing implementation of `HermesConfig` suffers from the following issues:
 ### Issues Identified
 
 - **Conflated Configurations**: Global and provider-specific arguments are intermixed within `HermesConfig`, lacking clear boundaries.
-
+  
 - **List-Based Retrieval**: The use of lists for all configuration values is unsuitable for arguments that are inherently singular, causing unnecessary complexity.
-
+  
 - **Maintenance Overhead**: Adding new context providers requires careful management to avoid configuration conflicts or ambiguities.
 
 ### Codebase Overview
@@ -63,11 +64,11 @@ The existing implementation of `HermesConfig` suffers from the following issues:
 Key components involved in configuration handling:
 
 - **`src/hermes/main.py`**: Parses CLI arguments and initializes the application based on the configurations.
-
+  
 - **`src/hermes/config.py`**: Defines the `HermesConfig` class, which wraps parsed arguments.
-
+  
 - **Context Providers (`src/hermes/context_providers/`*)**: Each context provider defines its own arguments and interacts with `HermesConfig` to load configurations.
-
+  
 - **`src/hermes/context_provider_loader.py`**: Dynamically loads all context providers.
 
 ### Existing Configuration Example
@@ -85,6 +86,9 @@ class HermesConfig:
         if type(value) is str:
             value = [value]
         self._config[key] = value
+
+    def __iter__(self):
+        return iter(self._config.keys())
 ```
 
 ```python
@@ -184,11 +188,11 @@ def main():
 2. **Update `HermesConfig`**:
     - Modify `HermesConfig` to handle separate namespaces for global and provider-specific configurations.
     - Implement getters that retrieve configurations from the appropriate namespace.
-
+  
 3. **Modify Context Providers**:
     - Adjust each context provider to register its arguments under its subparser.
     - Ensure that context providers retrieve their configurations from their dedicated sections within `HermesConfig`.
-
+  
 4. **Testing & Validation**:
     - Develop comprehensive tests to ensure configurations are correctly parsed and segregated.
     - Validate that global and provider-specific arguments do not interfere with each other.
@@ -262,16 +266,16 @@ def create_config_from_args(args) -> HermesConfig:
         provider_config = {}
         provider_class = next((cls for cls in load_context_providers() if cls.__name__ == provider), None)
         if provider_class:
-            for action in provider_class.add_argument.__func__.__code__.co_varnames:
-                value = getattr(args, action, None)
-                if value is not None:
-                    provider_config[action] = value
+            # Assuming each provider defines its own arguments correctly
+            for key in vars(args):
+                if key.startswith(provider.lower()):
+                    provider_config[key] = getattr(args, key)
             provider_configs[provider] = provider_config
     
     return HermesConfig(global_config, provider_configs)
 ```
 
-**Context Provider Argument Registration**:
+**Context Provider Argument Registration Example**:
 
 ```python
 # Example: src/hermes/context_providers/text_context_provider.py
@@ -324,10 +328,32 @@ class TextContextProvider(ContextProvider):
 - **Ease of Use**: Providing subcommands for context providers allows users to interact with specific providers without worrying about argument collisions.
   
 - **Scalability**: Adding new context providers becomes straightforward, as each can define its own arguments within its namespace.
-
+  
 - **Error Handling**: Enhanced separation allows for more precise error messages related to configuration issues.
+
+## Mistakes in Previous Design
+
+1. **Inadequate Segregation of Configurations**: The initial design did not sufficiently separate global and context provider-specific configurations, leading to mixed concerns within the `HermesConfig` class.
+
+2. **Complex Argument Retrieval**: Using a single `get` method that returned lists for all arguments was unsuitable for singular global arguments like `--model` and `--pretty`, adding unnecessary complexity.
+
+3. **Lack of Modular Parsing**: The absence of a modular argument parsing approach made it difficult to manage arguments for multiple context providers, increasing the risk of argument name collisions and configuration ambiguities.
+
+4. **Insufficient Documentation of Implementation**: While the design document outlined potential solutions, it did not fully align with the implemented approach using subparsers, leading to gaps between design and implementation.
+
+5. **Overlooking Validation Needs**: The initial design did not address the need for robust validation and type enforcement, which are essential for maintaining configuration integrity as the codebase scales.
+
+**Addressing Mistakes:**
+
+- **Adoption of Subparsers**: The updated design incorporates `argparse` subparsers to modularize argument parsing, effectively segregating global and provider-specific configurations.
+
+- **Refinement of `HermesConfig`**: By introducing separate namespaces within `HermesConfig` for global and provider configurations, the design now avoids the pitfalls of mixed concerns and complex argument retrieval.
+
+- **Enhanced Validation**: Incorporating aspects of configuration management libraries ensures that configurations are validated and type-safe, mitigating previous shortcomings.
+
+- **Alignment with Implementation**: The revised design document now accurately reflects the implemented architecture, providing clear guidance and documentation for future developments.
 
 ## Conclusion
 
-The current configuration handling in Hermes merges global and context provider-specific arguments within a single `HermesConfig` class, leading to confusion and maintainability challenges. By adopting a modular argument parsing approach using `argparse` subparsers, we can achieve a clear separation of concerns, enhance scalability, and improve user experience. This restructuring, complemented by structured configuration management practices, will position Hermes for robust growth and ease of maintenance.
+The current configuration handling in Hermes merges global and context provider-specific arguments within a single `HermesConfig` class, leading to confusion and maintainability challenges. By adopting a modular argument parsing approach using `argparse` subparsers, we achieve a clear separation of concerns, enhance scalability, and improve user experience. This restructuring, complemented by structured configuration management practices, positions Hermes for robust growth and ease of maintenance. Addressing the previous design mistakes ensures that the configuration architecture is both robust and adaptable to future requirements.
 
