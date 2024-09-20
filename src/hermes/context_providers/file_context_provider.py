@@ -34,7 +34,12 @@ class FileContextProvider(ContextProvider):
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for file_path in self.file_paths:
-            prompt_builder.add_file(file_path, file_utils.process_file_name(file_path))
+            if os.path.isdir(file_path):
+                for root, _, files in os.walk(file_path):
+                    for file in files:
+                        prompt_builder.add_file(os.path.join(root, file), file_utils.process_file_name(file))
+            else:
+                prompt_builder.add_file(file_path, file_utils.process_file_name(file_path))
 
 
     @staticmethod
