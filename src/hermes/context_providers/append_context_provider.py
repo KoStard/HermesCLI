@@ -43,7 +43,7 @@ class AppendContextProvider(ContextProvider):
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         if self.file_path:
             prompt_builder.add_text(self.special_command_prompt, "append_command")
-            prompt_builder.add_file(self.file_path, self.file_path)
+            prompt_builder.add_file(self.file_path, file_utils.process_file_name(self.file_path))
 
     @staticmethod
     def get_command_key() -> str:

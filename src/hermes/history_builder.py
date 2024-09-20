@@ -1,8 +1,12 @@
+import logging
 from typing import Any, Dict, List, Type
 
 from hermes.context_providers.base import ContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class HistoryBuilder:
@@ -42,7 +46,8 @@ class HistoryBuilder:
 
         for i, message in enumerate(self.messages):
             if message["role"] == "user":
-                context_prompt_builder.add_text(message["content"])
+                if message["content"]:
+                    context_prompt_builder.add_text(message["content"])
                 message_content = context_prompt_builder.build_prompt()
                 context_prompt_builder = self.prompt_builder_class(
                     self.file_processor
@@ -52,11 +57,13 @@ class HistoryBuilder:
                 assistant_prompt_builder = self.prompt_builder_class(
                     self.file_processor
                 )
-                assistant_prompt_builder.add_text(message["content"])
+                if message["content"]:
+                    assistant_prompt_builder.add_text(message["content"])
                 compiled_messages.append(
                     {**message, "content": assistant_prompt_builder.build_prompt()}
                 )
-
+        for message in compiled_messages:
+            logger.debug(f"{message['role']}:\t{message['content']}")
         return compiled_messages
 
     def clear_regular_history(self):

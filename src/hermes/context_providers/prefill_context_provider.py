@@ -57,4 +57,5 @@ class PrefillContextProvider(ContextProvider):
         return bool(self.prefill_name)
 
     def get_required_providers(self) -> Dict[str, List[str]]:
+        print(self.required_providers)
         return self.required_providers

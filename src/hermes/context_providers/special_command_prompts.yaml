@@ -9,7 +9,7 @@ append: >
 
   Follow the styling of the document. If it's markdown, use rich markdown in your output as well.
   
-  You are given certain context of the user's thoughts, and a main file {file_name}. 
+  You are given certain context of the user's thoughts, and a main file with name=**"{file_name}"**. 
 
   Your thoughts tree autocompletion will be appended to the end of this file.
 

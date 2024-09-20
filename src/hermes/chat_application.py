@@ -84,7 +84,6 @@ class ChatApplication:
 
         for required_provider, args in required_providers.items():
             required_instance = self._initialize_provider(required_provider, None, args)
-            self.history_builder.add_context(required_instance)
 
         self.history_builder.add_context(provider)
         if provider.counts_as_input():
@@ -126,7 +125,7 @@ class ChatApplication:
 
         while True:
             if self.has_input:
-                user_input = "Please process the provided context."
+                user_input = ""
                 self.has_input = False
             else:
                 user_input = self.get_user_input()
@@ -137,7 +136,7 @@ class ChatApplication:
     def get_user_input(self):
         while True:
             if self.has_input:
-                user_input = "Please process the provided context."
+                user_input = ""
                 self.has_input = False
             else:
                 user_input = self.ui.get_user_input()
@@ -180,7 +179,7 @@ class ChatApplication:
     def make_first_request(self):
         self.history_builder.clear_regular_history()
         if self.has_input:
-            message = "Please process the provided context."
+            message = ""
             self.has_input = False
         else:
             message = self.get_user_input()
@@ -200,7 +199,7 @@ class ChatApplication:
             text_context_provider.load_context_from_string(sys.stdin.read().strip())
             self.history_builder.add_context(text_context_provider)
         elif self.has_input:
-            message = "Please process the provided context."
+            message = ""
             self.has_input = False
         else:
             message = self.ui.get_user_input()
