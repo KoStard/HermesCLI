@@ -2,6 +2,8 @@ from argparse import ArgumentParser
 from typing import List
 import logging
 import os
+import glob
+import logging
 from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
@@ -27,10 +29,19 @@ class FileContextProvider(ContextProvider):
 
     def _validate_and_add_files(self, file_paths: List[str]):
         for file_path in file_paths:
-            if os.path.exists(file_path):
-                self.file_paths.append(file_path)
+            if '*' in file_path:
+                for matched_file in glob.glob(file_path, recursive=True):
+                    if os.path.exists(matched_file):
+                        self.file_paths.append(matched_file)
+                        self.logger.debug(f"File captured: {matched_file}")
+                    else:
+                        self.logger.warning(f"File not found: {matched_file}")
             else:
-                self.logger.warning(f"File not found: {file_path}")
+                if os.path.exists(file_path):
+                    self.file_paths.append(file_path)
+                    self.logger.debug(f"File captured: {file_path}")
+                else:
+                    self.logger.warning(f"File not found: {file_path}")
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         for file_path in self.file_paths:
