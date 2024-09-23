@@ -15,3 +15,4 @@
 - Implemenet cache for context providers
 - Allow users configure context they want to include with all prompts - in their config folder
 - It is actually quite cool that the notebook writes concerns itself. Maybe make that a feature.
+- How to make the results formatted like markdown code, without actually rendering it - syntax highlighting

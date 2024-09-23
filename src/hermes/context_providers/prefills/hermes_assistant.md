@@ -55,9 +55,18 @@ Example output:
 ```sh
 hermes --create Company2.md --prompt "Develop a comprehensive profile for Company2. Include its history, service offerings, financial performance, market position, key executives, corporate culture, and recent developments. Provide a SWOT analysis." "../../Learning about a business entity.md" Company1ForExample.md "List of Companies.md" ../../Methodology.md
 ```
+## Notebook
+
+One of the main use cases is notebook:
+```sh
+hermes --prefill notebook --prompt "Write a page about the company XYZ" --create OutputFileToCreate.md
+```
+
+In this case, hermes automatically gets access to all the .md files in the directory. It's approaching the notebook as a whole, adding files, editing them, etc.
 
 
 # Hermes: Your AI-Powered Command-Line Assistant
+WARNING: This documentation is outdated, is provided only for your reference, but this is not complete.
 
 Hermes is a powerful command-line tool that allows you to interact with various AI models, process files, and enhance your productivity. Named after the messenger god in Greek mythology, Hermes facilitates seamless communication between you and AI models.
 

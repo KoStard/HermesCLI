@@ -111,6 +111,35 @@ class ChatApplication:
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Exiting gracefully.")
 
+    def run_once(self):
+        logger.debug("Initializing model for single run")
+        self.model.initialize()
+        logger.debug("Model initialized successfully")
+
+        # Check if input or output is coming from a pipe
+        is_input_piped = not sys.stdin.isatty()
+        is_output_piped = not sys.stdout.isatty()
+
+        if is_input_piped or is_output_piped:
+            logger.debug("Detected non-interactive mode for single run")
+            self.handle_non_interactive_input_output(is_input_piped, is_output_piped)
+        else:
+            logger.debug("Starting single interactive run")
+            try:
+                self.handle_single_interaction()
+            except KeyboardInterrupt:
+                logger.info("Chat interrupted by user. Exiting gracefully.")
+
+    def handle_single_interaction(self):
+        if self.has_input:
+            user_input = ""
+            self.has_input = False
+        else:
+            user_input = self.get_user_input()
+            if user_input is None:
+                return
+        self.send_message_and_print_output(user_input)
+
     def handle_interactive_mode(self):
         if any(
             isinstance(
@@ -231,6 +260,9 @@ class ChatApplication:
         except Exception as e:
             logger.error(f"Error during model request: {str(e)}", exc_info=True)
             self.ui.display_status(f"An error occurred: {str(e)}")
+            self.history_builder.pop_message()
+        except KeyboardInterrupt:
+            logger.info("Chat interrupted by user. Continuing")
             self.history_builder.pop_message()
 
     def apply_special_commands(self, content: str):
