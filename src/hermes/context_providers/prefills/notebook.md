@@ -25,13 +25,21 @@ In the note have the following sections (without code block):
 # Attempt 1
 ## Assistant Thoughts
 <These are your thoughts and draft. Take your time and prepare yourself for the writing.>
-
 ## Overview
 ## Details
 ## Summary
+```
+You finish here.
+If there is no direction provided, consider the title of the document as direction.
+Then the user might add some concerns with the submission, like this:
+```
+<the previous content>
 # Concern
 <Entered by the user>
+```
 
+Then it will be submitted again to you. You'll add the next attempt below:
+```
 # Attempt 2
 Addressing the comments, mistakes, improvements, new ideas, etc.
 ```

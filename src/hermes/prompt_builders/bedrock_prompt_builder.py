@@ -14,6 +14,8 @@ class BedrockPromptBuilder(PromptBuilder):
         self.file_processor = file_processor
 
     def add_text(self, text: str, name: Optional[str] = None):
+        if not text:
+            return
         content = text if not name else f"{name}:\n{text}"
         self.contents.append({'text': content + '\n'})
 

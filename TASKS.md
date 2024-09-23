@@ -11,3 +11,7 @@
 - Add proper error message when in config you have an invalid model name
 - Dedupe context providers
 - Add alias --create for --update
+- Consider using ELL: [MadcowD/ell: A language model programming library.](https://github.com/MadcowD/ell)
+- Implemenet cache for context providers
+- Allow users configure context they want to include with all prompts - in their config folder
+- It is actually quite cool that the notebook writes concerns itself. Maybe make that a feature.
