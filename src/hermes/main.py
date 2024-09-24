@@ -105,7 +105,7 @@ def run_chat_application(hermes_config: HermesConfig, context_provider_classes):
     model_name = hermes_config.get('model')[0] if hermes_config.get('model') else None
     model, model_id, file_processor, prompt_builder_class = create_model_and_processors(model_name)
 
-    ui = ChatUI(prints_raw=not hermes_config.get('pretty'), use_highlighting=not hermes_config.get('no_highlighting'))
+    ui = ChatUI(print_pretty=hermes_config.get('pretty'), use_highlighting=not hermes_config.get('no_highlighting'))
     app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, hermes_config)
 
     if hermes_config.get('once'):

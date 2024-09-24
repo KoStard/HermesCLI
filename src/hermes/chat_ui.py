@@ -32,12 +32,8 @@ class ChatUI:
         return ''.join(buffer)
 
     def _display_highlighted_response(self, response_generator: Generator[str, None, None]):
-        buffer = []
-        for text in response_generator:
-            buffer.append(text)
-        full_response = ''.join(buffer)
-        self.markdown_highlighter.process_markdown(full_response)
-        return full_response
+        self.markdown_highlighter.process_markdown(response_generator)
+        return ''.join(response_generator)
 
     def _display_pretty_response(self, response_generator: Generator[str, None, None]):
         with Live.Live(console=self.console, auto_refresh=False) as live:

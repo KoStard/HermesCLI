@@ -3,6 +3,7 @@ from mistune.renderers.markdown import MarkdownRenderer
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, MarkdownLexer
 from pygments.formatters import Terminal256Formatter
+from typing import Generator
 
 
 class MarkdownHighlighter:
@@ -25,9 +26,32 @@ class MarkdownHighlighter:
         highlighted = highlight(text, lexer, Terminal256Formatter())
         print(highlighted, end="")
 
-    def process_markdown(self, markdown_text):
+    def line_aggregator(self, generator: Generator[str, None, None]) -> Generator[str, None, None]:
+        buffer = ""
+        for chunk in generator:
+            buffer += chunk
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                yield line + "\n"
+        if buffer:
+            yield buffer
+
+    def process_markdown(self, markdown_generator: Generator[str, None, None]):
         ast = mistune.create_markdown(renderer="ast")
-        parsed = ast(markdown_text)
-        
-        for element in parsed:
-            self.print_markdown(self.render_to_markdown(element), self.get_lexer(element))
+        buffer = ""
+        old_parsed = []
+
+        for line in self.line_aggregator(markdown_generator):
+            buffer += line
+            parsed = ast(buffer)
+            if len(parsed) == len(old_parsed):
+                continue
+            old_parsed = parsed
+            buffer = line
+            while len(parsed) > 1:
+                element = parsed.pop(0)
+                self.print_markdown(self.render_to_markdown(element), self.get_lexer(element))
+        if buffer:
+            parsed = ast(buffer)
+            for element in parsed:
+                self.print_markdown(self.render_to_markdown(element), self.get_lexer(element))
