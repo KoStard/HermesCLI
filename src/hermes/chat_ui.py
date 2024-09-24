@@ -6,21 +6,40 @@ from rich.panel import Panel
 from typing import Generator
 import os
 import sys
+from .utils.markdown_highlighter import MarkdownHighlighter
 
 class ChatUI:
-    def __init__(self, prints_raw: bool):
+    def __init__(self, prints_raw: bool, use_highlighting: bool):
         self.console = Console()
         self.prints_raw = prints_raw
+        self.use_highlighting = use_highlighting
+        self.markdown_highlighter = MarkdownHighlighter()
 
     def display_response(self, response_generator: Generator[str, None, None]):
         if self.prints_raw:
-            buffer = []
-            for text in response_generator:
-                buffer.append(text)
-                print(text, end="", flush=True)
-            print()
-            return ''.join(buffer)
+            return self._display_raw_response(response_generator)
+        elif self.use_highlighting:
+            return self._display_highlighted_response(response_generator)
+        else:
+            return self._display_pretty_response(response_generator)
 
+    def _display_raw_response(self, response_generator: Generator[str, None, None]):
+        buffer = []
+        for text in response_generator:
+            buffer.append(text)
+            print(text, end="", flush=True)
+        print()
+        return ''.join(buffer)
+
+    def _display_highlighted_response(self, response_generator: Generator[str, None, None]):
+        buffer = []
+        for text in response_generator:
+            buffer.append(text)
+        full_response = ''.join(buffer)
+        self.markdown_highlighter.process_markdown(full_response)
+        return full_response
+
+    def _display_pretty_response(self, response_generator: Generator[str, None, None]):
         with Live.Live(console=self.console, auto_refresh=False) as live:
             live.update(Spinner("dots", text="Assistant is thinking..."))
 

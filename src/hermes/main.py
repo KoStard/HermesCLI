@@ -57,6 +57,7 @@ def main():
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
     parser.add_argument("--once", help="Run Hermes only once without entering the loop", action="store_true")
+    parser.add_argument("--no-highlighting", help="Disable syntax highlighting for markdown output", action="store_true")
 
     # Load context providers dynamically (including extensions)
     context_provider_classes = load_context_providers()
@@ -104,7 +105,7 @@ def run_chat_application(hermes_config: HermesConfig, context_provider_classes):
     model_name = hermes_config.get('model')[0] if hermes_config.get('model') else None
     model, model_id, file_processor, prompt_builder_class = create_model_and_processors(model_name)
 
-    ui = ChatUI(prints_raw=not hermes_config.get('pretty'))
+    ui = ChatUI(prints_raw=not hermes_config.get('pretty'), use_highlighting=not hermes_config.get('no_highlighting'))
     app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, hermes_config)
 
     if hermes_config.get('once'):
