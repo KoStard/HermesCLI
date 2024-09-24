@@ -40,7 +40,8 @@ class MarkdownHighlighter:
         ast = mistune.create_markdown(renderer="ast")
         buffer = ""
         old_parsed = []
-
+        output_text = ""
+    
         for line in self.line_aggregator(markdown_generator):
             buffer += line
             parsed = ast(buffer)
@@ -50,8 +51,14 @@ class MarkdownHighlighter:
             buffer = line
             while len(parsed) > 1:
                 element = parsed.pop(0)
-                self.print_markdown(self.render_to_markdown(element), self.get_lexer(element))
+                rendered = self.render_to_markdown(element)
+                self.print_markdown(rendered, self.get_lexer(element))
+                output_text += rendered
         if buffer:
             parsed = ast(buffer)
             for element in parsed:
-                self.print_markdown(self.render_to_markdown(element), self.get_lexer(element))
+                rendered = self.render_to_markdown(element)
+                self.print_markdown(rendered, self.get_lexer(element))
+                output_text += rendered
+    
+        return output_text

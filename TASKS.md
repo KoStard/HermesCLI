@@ -16,3 +16,6 @@
 - Allow users configure context they want to include with all prompts - in their config folder
 - It is actually quite cool that the notebook writes concerns itself. Maybe make that a feature.
 - How to make the results formatted like markdown code, without actually rendering it - syntax highlighting
+- Add <Gap> only as well
+- Graceful handling of model output limit exceptions
+- Infinite output support
