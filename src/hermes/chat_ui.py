@@ -9,19 +9,19 @@ import sys
 from .utils.markdown_highlighter import MarkdownHighlighter
 
 class ChatUI:
-    def __init__(self, prints_raw: bool, use_highlighting: bool):
+    def __init__(self, print_pretty: bool, use_highlighting: bool):
         self.console = Console()
-        self.prints_raw = prints_raw
+        self.print_pretty = print_pretty
         self.use_highlighting = use_highlighting
         self.markdown_highlighter = MarkdownHighlighter()
 
     def display_response(self, response_generator: Generator[str, None, None]):
-        if self.prints_raw:
-            return self._display_raw_response(response_generator)
+        if self.print_pretty:
+            return self._display_pretty_response(response_generator)
         elif self.use_highlighting:
             return self._display_highlighted_response(response_generator)
         else:
-            return self._display_pretty_response(response_generator)
+            return self._display_raw_response(response_generator)
 
     def _display_raw_response(self, response_generator: Generator[str, None, None]):
         buffer = []
