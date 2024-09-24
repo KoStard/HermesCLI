@@ -15,3 +15,5 @@ wheel
 groq
 python-docx
 pytest
+mistune
+pygments

@@ -22,6 +22,8 @@ setup(
         "tenacity",
         "groq",
         "python-docx",
+        "mistune",
+        "pygments",
     ],
     setup_requires=[
         "wheel",
