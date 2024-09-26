@@ -8,54 +8,58 @@ from hermes.config import HermesConfig
 
 class PrefillContextProvider(ContextProvider):
     def __init__(self):
-        self.prefill_name: str = ""
-        self.prefill_content: str = ""
+        self.prefill_names: List[str] = []
+        self.prefill_contents: List[str] = []
         self.required_providers: Dict[str, Any] = {}
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument('--prefill', help='Name of the prefill to use')
+        parser.add_argument('--prefill', nargs='+', help='Names of the prefills to use')
 
     def load_context_from_cli(self, config: HermesConfig):
-        self.prefill_name = config.get('prefill', [])[0]
-        if self.prefill_name:
-            self._load_prefill()
+        self.prefill_names = config.get('prefill', [])
+        if self.prefill_names:
+            self._load_prefills()
 
     def load_context_from_string(self, args: List[str]):
-        self.prefill_name = args[0].strip()
-        self._load_prefill()
+        self.prefill_names = [name.strip() for name in args]
+        self._load_prefills()
 
-    def _load_prefill(self):
+    def _load_prefills(self):
         prefill_dirs = [
             os.path.join(os.path.dirname(__file__), "prefills"),  # Repository prefills
             os.path.expanduser("~/.config/hermes/prefills"),
         ]
 
-        for prefill_dir in prefill_dirs:
-            prefill_path = os.path.join(prefill_dir, f"{self.prefill_name}.md")
-            if os.path.exists(prefill_path):
-                self._parse_prefill_file(prefill_path)
-                return
-
-        raise ValueError(f"Prefill '{self.prefill_name}' not found")
+        for prefill_name in self.prefill_names:
+            prefill_found = False
+            for prefill_dir in prefill_dirs:
+                prefill_path = os.path.join(prefill_dir, f"{prefill_name}.md")
+                if os.path.exists(prefill_path):
+                    self._parse_prefill_file(prefill_path)
+                    prefill_found = True
+                    break
+            if not prefill_found:
+                raise ValueError(f"Prefill '{prefill_name}' not found")
 
     def _parse_prefill_file(self, file_path: str):
         with open(file_path, 'r') as f:
             content = f.read()
-            front_matter, self.prefill_content = content.split('---', 2)[1:]
+            front_matter, prefill_content = content.split('---', 2)[1:]
             metadata = yaml.safe_load(front_matter)
-            self.required_providers = metadata.get('required_context_providers', {})
+            self.prefill_contents.append(prefill_content.strip())
+            self.required_providers.update(metadata.get('required_context_providers', {}))
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
-        prompt_builder.add_text(self.prefill_content)
+        for prefill_content in self.prefill_contents:
+            prompt_builder.add_text(prefill_content)
 
     @staticmethod
     def get_command_key() -> str:
         return "prefill"
 
     def is_used(self) -> bool:
-        return bool(self.prefill_name)
+        return bool(self.prefill_names)
 
     def get_required_providers(self) -> Dict[str, List[str]]:
-        print(self.required_providers)
         return self.required_providers
