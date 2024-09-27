@@ -46,4 +46,4 @@ def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str,
     model_config = dict(config[config_key]) if config_key in config else {}
     model, file_processor, prompt_builder_class = ModelRegistry.create_model(model_name, model_config)
 
-    return model, model_name, file_processor, prompt_builder_class
+    return model, file_processor, prompt_builder_class
