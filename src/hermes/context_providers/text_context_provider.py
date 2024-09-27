@@ -1,4 +1,5 @@
 from argparse import ArgumentParser, Namespace
+import argparse
 from typing import List
 import logging
 from hermes.context_providers.base import ContextProvider
