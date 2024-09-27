@@ -91,27 +91,70 @@ class ChatApplication:
         This version of run() method will be universal, regardless if --once is passed, it's using a special command or not,
         it's in interactive mode or not. Each step will be implemented in a separate method and there we'll take care of the details.
         """
-        # Initialise
+        self.initialise_chat()
+        
         while True:
-            # User round on history
-            # LLM round on history
-            # Decide to continue or not
-            pass
+            if not self.user_round_on_history():
+                break
+            
+            if self.close_if_requested():
+                break
+            
+            self.llm_round_on_history()
+            
+            if not self.decide_to_continue():
+                break
     
     def initialise_chat(self):
-        pass
+        logger.debug("Initializing model")
+        self.model.initialize()
+        logger.debug("Model initialized successfully")
+
+        if any(
+            isinstance(provider, (AppendContextProvider, UpdateContextProvider, FillGapsContextProvider))
+            and provider.file_path
+            for provider in self.history_builder.context_providers
+        ):
+            self.make_first_request()
     
     def user_round_on_history(self):
-        pass
+        if self.has_input:
+            user_input = ""
+            self.has_input = False
+        else:
+            user_input = self.get_user_input()
+            if user_input is None:
+                return False
+        
+        self.history_builder.add_message("user", user_input)
+        return True
 
     def close_if_requested(self):
-        pass
+        last_user_message = self.history_builder.get_last_user_message()
+        if last_user_message.lower() in ["exit", "quit", "q"]:
+            logger.info("User requested to close the chat. Exiting.")
+            return True
+        return False
 
     def llm_round_on_history(self):
-        pass
+        messages = self.history_builder.build_messages()
+        try:
+            logger.debug("Sending request to model")
+            response = self.ui.display_response(self._send_model_request(messages))
+            logger.debug(f"Received response from model: {response[:50]}...")
+            self.history_builder.add_message("assistant", response)
+            self.apply_special_commands(response)
+        except Exception as e:
+            logger.error(f"Error during model request: {str(e)}", exc_info=True)
+            self.ui.display_status(f"An error occurred: {str(e)}")
+            self.history_builder.pop_message()
+        except KeyboardInterrupt:
+            logger.info("Chat interrupted by user. Continuing")
+            self.history_builder.pop_message()
 
     def decide_to_continue(self):
-        pass
+        # For now, always continue unless explicitly stopped
+        return True
     
     ################################
     ######## The old code starts here. While not everything here should change, but we should do the quality assessment, revisit everything, 
