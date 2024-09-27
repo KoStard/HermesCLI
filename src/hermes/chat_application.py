@@ -86,6 +86,38 @@ class ChatApplication:
             self.has_input = True
         return provider
 
+    def refactored_universal_run_chat(self):
+        """
+        This version of run() method will be universal, regardless if --once is passed, it's using a special command or not,
+        it's in interactive mode or not. Each step will be implemented in a separate method and there we'll take care of the details.
+        """
+        # Initialise
+        while True:
+            # User round on history
+            # LLM round on history
+            # Decide to continue or not
+            pass
+    
+    def initialise_chat(self):
+        pass
+    
+    def user_round_on_history(self):
+        pass
+
+    def close_if_requested(self):
+        pass
+
+    def llm_round_on_history(self):
+        pass
+
+    def decide_to_continue(self):
+        pass
+    
+    ################################
+    ######## The old code starts here. While not everything here should change, but we should do the quality assessment, revisit everything, 
+    ######## only then put them above this line
+    ######## While moving, don't remove the original yet, as this logic is used in production. We'll make sure the new logic works, only then deprecate these.
+
     def run(self):
         logger.debug("Initializing model")
         self.model.initialize()
