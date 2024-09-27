@@ -3,8 +3,6 @@ from argparse import ArgumentParser
 from typing import List, TypeVar, Any, Dict
 
 from hermes.prompt_builders.base import PromptBuilder
-from hermes.config import HermesConfig
-
 T = TypeVar('T')  # Define a type variable
 
 class ContextProvider(ABC):
@@ -14,6 +12,7 @@ class ContextProvider(ABC):
         Return True if the context provider has non-empty values that will add meaningful prompt.
         """
         pass
+
     @staticmethod
     @abstractmethod
     def add_argument(parser: ArgumentParser):
@@ -25,11 +24,11 @@ class ContextProvider(ABC):
         pass
 
     @abstractmethod
-    def load_context_from_cli(self, config: HermesConfig):
+    def load_context_from_cli(self, args: argparse.Namespace):
         """
-        Load and process the context from the CLI config.
+        Load and process the context from the CLI arguments.
         
-        :param config: The HermesConfig object
+        :param args: The parsed command-line arguments
         """
         pass
 

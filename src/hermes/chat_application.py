@@ -29,7 +29,7 @@ class ChatApplication:
         file_processor: FileProcessor,
         prompt_builder_class: Type[PromptBuilder],
         context_provider_classes: List[Type[ContextProvider]],
-        hermes_config: HermesConfig,
+        args: argparse.Namespace,
     ):
         self.model = model
         self.ui = ui
@@ -49,41 +49,35 @@ class ChatApplication:
                 key = key.strip()
                 self.command_keys_map[key] = provider_class
 
-        self._initialize_context_providers(hermes_config)
+        self._initialize_context_providers(args)
 
         logger.debug(
             f"Initialized {len(self.history_builder.context_providers)} context providers"
         )
         logger.debug("ChatApplication initialization complete")
 
-    def _initialize_context_providers(self, hermes_config: HermesConfig):
-        for key in hermes_config:
-            if key in self.command_keys_map:
-                self._initialize_context_provider(key, hermes_config, None)
-            else:
-                logger.warning(f"Unknown provider key: {key}")
+    def _initialize_context_providers(self, args: argparse.Namespace):
+        for key, value in vars(args).items():
+            if key in self.command_keys_map and value is not None:
+                self._initialize_context_provider(key, args)
 
     def _initialize_context_provider(
         self,
         provider_key: str,
-        hermes_config: HermesConfig | None,
-        args: List[str] | None,
+        args: argparse.Namespace,
     ):
         provider = self.command_keys_map[provider_key]()
         logger.debug(f"Initializing provider {provider_key}")
 
-        if hermes_config is not None:
-            provider.load_context_from_cli(hermes_config)
-        else:
-            provider.load_context_from_string(args)
+        provider.load_context_from_cli(args)
 
         required_providers = provider.get_required_providers()
         logger.debug(
             f"Provider {provider_key} requires providers: {required_providers}"
         )
 
-        for required_provider, args in required_providers.items():
-            required_instance = self._initialize_context_provider(required_provider, None, args)
+        for required_provider, required_args in required_providers.items():
+            required_instance = self._initialize_context_provider(required_provider, args)
 
         self.history_builder.add_context(provider)
         if provider.counts_as_input():

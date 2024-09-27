@@ -4,7 +4,6 @@ import logging
 import os
 import glob
 import logging
-from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.utils import file_utils
@@ -18,10 +17,10 @@ class FileContextProvider(ContextProvider):
     def add_argument(parser: ArgumentParser):
         parser.add_argument('files', nargs='*', help='Files to be included in the context')
 
-    def load_context_from_cli(self, config: HermesConfig):
-        file_paths = config.get('files', [])
-        self._validate_and_add_files(file_paths)
-        self.logger.debug(f"Loaded {len(self.file_paths)} file paths from CLI config")
+    def load_context_from_cli(self, args: argparse.Namespace):
+        if args.files:
+            self._validate_and_add_files(args.files)
+        self.logger.debug(f"Loaded {len(self.file_paths)} file paths from CLI arguments")
 
     def load_context_from_string(self, new_file_paths: List[str]):
         self._validate_and_add_files(new_file_paths)

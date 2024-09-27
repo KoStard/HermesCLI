@@ -4,7 +4,6 @@ from typing import Dict, Any, List
 from argparse import ArgumentParser
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
-from hermes.config import HermesConfig
 
 class PrefillContextProvider(ContextProvider):
     def __init__(self):
@@ -16,9 +15,9 @@ class PrefillContextProvider(ContextProvider):
     def add_argument(parser: ArgumentParser):
         parser.add_argument('--prefill', action="append", help='Names of the prefills to use')
 
-    def load_context_from_cli(self, config: HermesConfig):
-        self.prefill_names = config.get('prefill', [])
-        if self.prefill_names:
+    def load_context_from_cli(self, args: argparse.Namespace):
+        if args.prefill:
+            self.prefill_names = args.prefill if isinstance(args.prefill, list) else [args.prefill]
             self._load_prefills()
 
     def load_context_from_string(self, args: List[str]):

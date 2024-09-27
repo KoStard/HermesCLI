@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 from typing import List
 import logging
 import os
-from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.utils import file_utils
@@ -17,12 +16,9 @@ class FillGapsContextProvider(ContextProvider):
     def add_argument(parser: ArgumentParser):
         parser.add_argument("--fill-gaps", help="Fill gaps in the specified file")
 
-    def load_context_from_cli(self, config: HermesConfig):
-        file_paths = config.get('fill_gaps', [])
-        if len(file_paths) > 1:
-            raise ValueError("Only one file can be filled at a time")
-        self.file_path = file_paths[0] if file_paths else ""
-        if self.file_path:
+    def load_context_from_cli(self, args: argparse.Namespace):
+        if args.fill_gaps:
+            self.file_path = args.fill_gaps
             self._load_special_command_prompt()
             self.logger.debug(f"Loaded fill-gaps context for file: {self.file_path}")
 

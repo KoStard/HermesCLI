@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 from typing import List
 import logging
 import os
-from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.utils import file_utils
@@ -17,12 +16,9 @@ class AppendContextProvider(ContextProvider):
     def add_argument(parser: ArgumentParser):
         parser.add_argument("--append", "-a", help="Append to the specified file")
 
-    def load_context_from_cli(self, config: HermesConfig):
-        file_paths = config.get('append', [])
-        if len(file_paths) > 1:
-            raise ValueError("Only one file can be appended at a time")
-        self.file_path = file_paths[0] if file_paths else ""
-        if self.file_path:
+    def load_context_from_cli(self, args: argparse.Namespace):
+        if args.append:
+            self.file_path = args.append
             self._load_special_command_prompt()
             self.logger.debug(f"Loaded append context for file: {self.file_path}")
 

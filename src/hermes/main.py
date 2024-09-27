@@ -17,7 +17,6 @@ elif os.name == 'nt':
 
 from .chat_application import ChatApplication
 from .chat_ui import ChatUI
-from .config import HermesConfig, create_config_from_args
 from .context_provider_loader import load_context_providers
 
 
@@ -63,19 +62,17 @@ def main():
     args = parser.parse_args()
     
     setup_logger()
-    
-    hermes_config = create_config_from_args(args)
 
-    run_chat_application(hermes_config, context_provider_classes)
+    run_chat_application(args, context_provider_classes)
 
-def run_chat_application(hermes_config: HermesConfig, context_provider_classes):
-    model_name = hermes_config.get('model')[0] if hermes_config.get('model') else None
+def run_chat_application(args: argparse.Namespace, context_provider_classes):
+    model_name = args.model
     model, file_processor, prompt_builder_class = create_model_and_processors(model_name)
 
-    ui = ChatUI(print_pretty=hermes_config.get('pretty'), use_highlighting=not hermes_config.get('no_highlighting'))
-    app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, hermes_config)
+    ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting)
+    app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, args)
 
-    if hermes_config.get('once'):
+    if args.once:
         app.run_once()
     else:
         app.run()

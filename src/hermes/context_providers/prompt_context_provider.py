@@ -2,7 +2,6 @@ from typing import List
 from argparse import ArgumentParser
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
-from hermes.config import HermesConfig
 
 class PromptContextProvider(ContextProvider):
     def __init__(self):
@@ -12,8 +11,8 @@ class PromptContextProvider(ContextProvider):
     def add_argument(parser: ArgumentParser):
         parser.add_argument("--prompt", help="Prompt text to send immediately")
 
-    def load_context_from_cli(self, config: HermesConfig):
-        self.prompt = config.get('prompt', [''])[0]
+    def load_context_from_cli(self, args: argparse.Namespace):
+        self.prompt = args.prompt if args.prompt else ""
 
     def load_context_from_string(self, args: List[str]):
         self.prompt = args[0] if args else ""

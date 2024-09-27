@@ -2,7 +2,6 @@ from typing import List
 from argparse import ArgumentParser
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
-from hermes.config import HermesConfig
 
 class PromptFileContextProvider(ContextProvider):
     def __init__(self):
@@ -12,10 +11,9 @@ class PromptFileContextProvider(ContextProvider):
     def add_argument(parser: ArgumentParser):
         parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
 
-    def load_context_from_cli(self, config: HermesConfig):
-        prompt_file = config.get('prompt_file', [''])[0]
-        if prompt_file:
-            with open(prompt_file, 'r') as f:
+    def load_context_from_cli(self, args: argparse.Namespace):
+        if args.prompt_file:
+            with open(args.prompt_file, 'r') as f:
                 self.prompt = f.read().strip()
 
     def load_context_from_string(self, args: List[str]):

@@ -5,7 +5,6 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from markdownify import markdownify as md
 import logging
 
-from hermes.config import HermesConfig
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 
@@ -19,12 +18,13 @@ class URLContextProvider(ContextProvider):
     def add_argument(parser: ArgumentParser):
         parser.add_argument("--url", action="append", help="URL to fetch content from")
 
-    def load_context_from_cli(self, config: HermesConfig):
-        self.urls = config.get('url', [])
-        for url in self.urls:
-            content = self.fetch_url_content(url)
-            self.contents.append(content)
-        self.logger.debug(f"Loaded and fetched content for {len(self.urls)} URLs from CLI config")
+    def load_context_from_cli(self, args: argparse.Namespace):
+        if args.url:
+            self.urls = args.url if isinstance(args.url, list) else [args.url]
+            for url in self.urls:
+                content = self.fetch_url_content(url)
+                self.contents.append(content)
+        self.logger.debug(f"Loaded and fetched content for {len(self.urls)} URLs from CLI arguments")
 
     def load_context_from_string(self, urls: List[str]):
         for url in urls:
