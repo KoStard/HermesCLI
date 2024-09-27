@@ -43,7 +43,7 @@ setup(
     python_requires='>=3.7',
     author="Your Name",
     author_email="your.email@example.com",
-    description="A powerful command-line tool for interacting with AI models, processing files, and executing workflows",
+    description="A powerful command-line tool for interacting with AI models and processing files",
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
     url="https://github.com/KoStard/HermesCLI",

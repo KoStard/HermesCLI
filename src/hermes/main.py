@@ -21,7 +21,6 @@ elif os.name == 'nt':
 
 from .chat_ui import ChatUI
 from .chat_application import ChatApplication
-from .workflows.executor import WorkflowExecutor
 from .context_provider_loader import load_context_providers
 from .config import create_config_from_args, HermesConfig
 
@@ -52,10 +51,9 @@ def setup_logger():
 
 def main():
 
-    parser = argparse.ArgumentParser(description="Multi-model chat application with workflow support")
+    parser = argparse.ArgumentParser(description="Multi-model chat application")
     parser.add_argument("--model", choices=ModelRegistry.get_available_models(), help="Choose the model to use (optional if configured in config.ini)")
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
-    parser.add_argument("--workflow", help="Specify a workflow YAML file to execute")
     parser.add_argument("--once", help="Run Hermes only once without entering the loop", action="store_true")
     parser.add_argument("--no-highlighting", help="Disable syntax highlighting for markdown output", action="store_true")
 
@@ -72,34 +70,7 @@ def main():
     
     hermes_config = create_config_from_args(args)
 
-    if hermes_config.get('workflow'):
-        run_workflow(hermes_config)
-    else:
-        run_chat_application(hermes_config, context_provider_classes)
-
-def custom_print(text, *args, **kwargs):
-    print(text, flush=True, *args, **kwargs)
-
-def run_workflow(hermes_config: HermesConfig):
-    model, model_id, prompt_builder = create_model_and_processors(hermes_config.get('model'))
-
-    input_files = hermes_config.get('files', [])
-    initial_prompt = ""
-
-    executor = WorkflowExecutor(hermes_config.get('workflow'), model, model_id, prompt_builder, input_files, initial_prompt, custom_print)
-    result = executor.execute()
-
-    # Create /tmp/hermes/ directory if it doesn't exist
-    os.makedirs('/tmp/hermes/', exist_ok=True)
-
-    # Generate filename with matching name and date-time suffix
-    filename = f"/tmp/hermes/{os.path.basename(hermes_config.get('workflow'))}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
-
-    # Save the report as a YAML file
-    with open(filename, 'w') as f:
-        yaml.dump(result, f)
-
-    print(f"Workflow execution completed. Detailed report saved to {filename}")
+    run_chat_application(hermes_config, context_provider_classes)
 
 def run_chat_application(hermes_config: HermesConfig, context_provider_classes):
     model_name = hermes_config.get('model')[0] if hermes_config.get('model') else None

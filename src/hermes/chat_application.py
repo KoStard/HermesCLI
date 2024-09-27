@@ -59,11 +59,11 @@ class ChatApplication:
     def _initialize_context_providers(self, hermes_config: HermesConfig):
         for key in hermes_config:
             if key in self.command_keys_map:
-                self._initialize_provider(key, hermes_config, None)
+                self._initialize_context_provider(key, hermes_config, None)
             else:
                 logger.warning(f"Unknown provider key: {key}")
 
-    def _initialize_provider(
+    def _initialize_context_provider(
         self,
         provider_key: str,
         hermes_config: HermesConfig | None,
@@ -83,7 +83,7 @@ class ChatApplication:
         )
 
         for required_provider, args in required_providers.items():
-            required_instance = self._initialize_provider(required_provider, None, args)
+            required_instance = self._initialize_context_provider(required_provider, None, args)
 
         self.history_builder.add_context(provider)
         if provider.counts_as_input():
@@ -225,7 +225,7 @@ class ChatApplication:
         message = ""
         if is_input_piped:
             text_context_provider = TextContextProvider()
-            text_context_provider.load_context_from_string(sys.stdin.read().strip())
+            text_context_provider.load_context_from_string([sys.stdin.read().strip()])
             self.history_builder.add_context(text_context_provider)
         elif self.has_input:
             message = ""

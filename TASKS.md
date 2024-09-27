@@ -19,3 +19,4 @@
 - Add <Gap> only as well
 - Graceful handling of model output limit exceptions
 - Infinite output support
+- Live edit mode - the LLM sees what you edited, understands the diffs history, suggests next steps, understands direction.
