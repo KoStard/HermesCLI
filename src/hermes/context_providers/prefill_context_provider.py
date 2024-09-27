@@ -14,7 +14,7 @@ class PrefillContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument('--prefill', nargs='+', help='Names of the prefills to use')
+        parser.add_argument('--prefill', action="append", help='Names of the prefills to use')
 
     def load_context_from_cli(self, config: HermesConfig):
         self.prefill_names = config.get('prefill', [])
