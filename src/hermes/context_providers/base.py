@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from typing import List, TypeVar, Any, Dict
 
 from hermes.prompt_builders.base import PromptBuilder

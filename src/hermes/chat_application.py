@@ -2,6 +2,7 @@ from typing import Dict, List, Optional, Type, Set
 import sys
 import re
 import logging
+from argparse import Namespace
 from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
 
 from hermes.chat_models.base import ChatModel

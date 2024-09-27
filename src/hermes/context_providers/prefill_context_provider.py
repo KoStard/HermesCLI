@@ -1,7 +1,7 @@
 import os
 import yaml
 from typing import Dict, Any, List
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 

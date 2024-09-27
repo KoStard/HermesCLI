@@ -1,5 +1,5 @@
 from typing import List
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 
