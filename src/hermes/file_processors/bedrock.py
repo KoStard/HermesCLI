@@ -1,5 +1,5 @@
 from .base import FileProcessor
-from ..decorators import register_file_processor
+from ..registry import register_file_processor
 
 @register_file_processor("bedrock")
 class BedrockFileProcessor(FileProcessor):

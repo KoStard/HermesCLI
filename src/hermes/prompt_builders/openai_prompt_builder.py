@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 from .base import PromptBuilder
 from hermes.file_processors.base import FileProcessor
-from ..decorators import register_prompt_builder
+from ..registry import register_prompt_builder
 
 @register_prompt_builder("openai")
 class OpenAIPromptBuilder(PromptBuilder):

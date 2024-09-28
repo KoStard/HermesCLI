@@ -1,7 +1,7 @@
 from typing import Generator
 from .base import ChatModel
 import openai
-from ..decorators import register_model
+from ..registry import register_model
 
 @register_model(name="openai", file_processor="default", prompt_builder="openai", config_key='OPENAI')
 class OpenAIModel(ChatModel):

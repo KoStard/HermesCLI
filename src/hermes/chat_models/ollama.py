@@ -1,7 +1,7 @@
 from typing import Generator
 from .base import ChatModel
 import ollama
-from ..decorators import register_model
+from ..registry import register_model
 
 @register_model(name="ollama", file_processor="default", prompt_builder="xml", config_key='OLLAMA')
 class OllamaModel(ChatModel):

@@ -1,7 +1,7 @@
 from typing import Generator
 from .base import ChatModel
 import anthropic
-from ..decorators import register_model
+from ..registry import register_model
 
 @register_model(name="claude-sonnet-3.5", file_processor="default", prompt_builder="claude", config_key='ANTHROPIC')
 class ClaudeModel(ChatModel):

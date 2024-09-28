@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 from hermes.file_processors.base import FileProcessor
 
 from .base import PromptBuilder
-from ..decorators import register_prompt_builder
+from ..registry import register_prompt_builder
 
 @register_prompt_builder("bedrock")
 class BedrockPromptBuilder(PromptBuilder):

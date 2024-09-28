@@ -1,5 +1,5 @@
 from .openai import OpenAIModel
-from ..decorators import register_model
+from ..registry import register_model
 
 @register_model(name=["openrouter", "openrouter/perplexity", "openrouter/o1-mini"], file_processor="default", prompt_builder="openai", config_key='OPENROUTER')
 class OpenRouterModel(OpenAIModel):

@@ -60,3 +60,8 @@ class ModelRegistry:
     @classmethod
     def get_available_models(cls) -> List[str]:
         return list(cls.models.keys())
+
+# Decorators
+register_model = ModelRegistry.register_model
+register_file_processor = ModelRegistry.register_file_processor
+register_prompt_builder = ModelRegistry.register_prompt_builder

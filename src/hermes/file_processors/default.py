@@ -2,7 +2,7 @@ from .base import FileProcessor
 import PyPDF2
 from docx import Document
 import os
-from ..decorators import register_file_processor
+from ..registry import register_file_processor
 
 @register_file_processor("default")
 class DefaultFileProcessor(FileProcessor):

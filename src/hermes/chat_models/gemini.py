@@ -2,7 +2,7 @@ from typing import Generator
 from .base import ChatModel
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
-from ..decorators import register_model
+from ..registry import register_model
 
 @register_model(name="gemini", file_processor="default", prompt_builder="xml", config_key='GEMINI')
 class GeminiModel(ChatModel):
