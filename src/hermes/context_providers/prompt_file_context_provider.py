@@ -10,7 +10,11 @@ class PromptFileContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--prompt-file", help="File containing prompt to send immediately")
+        parser.add_argument("--prompt-file", help=PromptFileContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return "File containing prompt to send immediately"
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.prompt_file:

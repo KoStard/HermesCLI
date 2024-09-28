@@ -14,7 +14,11 @@ class PrefillContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument('--prefill', action="append", help='Names of the prefills to use')
+        parser.add_argument('--prefill', action="append", help=PrefillContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return 'Names of the prefills to use'
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.prefill:

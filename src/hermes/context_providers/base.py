@@ -17,6 +17,16 @@ class ContextProvider(ABC):
         """
         pass
 
+    @staticmethod
+    @abstractmethod
+    def get_help() -> str:
+        """
+        Return the help text for this context provider.
+        
+        :return: A string containing the help text
+        """
+        pass
+
     @abstractmethod
     def load_context_from_cli(self, args: argparse.Namespace):
         """

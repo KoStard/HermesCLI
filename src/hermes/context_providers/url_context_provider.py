@@ -17,7 +17,11 @@ class URLContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--url", action="append", help="URL to fetch content from")
+        parser.add_argument("--url", action="append", help=URLContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return "URL to fetch content from"
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.url:

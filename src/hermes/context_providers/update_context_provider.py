@@ -15,7 +15,11 @@ class UpdateContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--update", "--create", "--write", "-u", "-c", "-w", help="Update or create the specified file", dest="update")
+        parser.add_argument("--update", "--create", "--write", "-u", "-c", "-w", help=UpdateContextProvider.get_help(), dest="update")
+
+    @staticmethod
+    def get_help() -> str:
+        return "Update or create the specified file"
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.update:

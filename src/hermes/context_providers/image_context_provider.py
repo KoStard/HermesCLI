@@ -13,7 +13,11 @@ class ImageContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--image", action="append", help="Path to image file to include in the context")
+        parser.add_argument("--image", action="append", help=ImageContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return "Path to image file to include in the context"
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.image:

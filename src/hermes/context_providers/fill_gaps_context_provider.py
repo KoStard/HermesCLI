@@ -16,7 +16,11 @@ class FillGapsContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--fill-gaps", help="Fill gaps in the specified file")
+        parser.add_argument("--fill-gaps", help=FillGapsContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return "Fill gaps in the specified file"
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.fill_gaps:

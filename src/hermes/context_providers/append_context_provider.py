@@ -16,7 +16,11 @@ class AppendContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--append", "-a", help="Append to the specified file")
+        parser.add_argument("--append", "-a", help=AppendContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return "Append to the specified file"
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.append:

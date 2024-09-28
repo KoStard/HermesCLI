@@ -10,7 +10,11 @@ class PromptContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--prompt", help="Prompt text to send immediately")
+        parser.add_argument("--prompt", help=PromptContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return "Prompt text to send immediately"
 
     def load_context_from_cli(self, args: argparse.Namespace):
         self.prompt = args.prompt if args.prompt else ""

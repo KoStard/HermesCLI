@@ -12,7 +12,11 @@ class TextContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument('--text', type=str, action='append', help='Text to be included in the context (can be used multiple times)')
+        parser.add_argument('--text', type=str, action='append', help=TextContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return 'Text to be included in the context (can be used multiple times)'
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.text:

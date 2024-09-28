@@ -16,7 +16,11 @@ class FileContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument('files', nargs='*', help='Files to be included in the context')
+        parser.add_argument('files', nargs='*', help=FileContextProvider.get_help())
+
+    @staticmethod
+    def get_help() -> str:
+        return 'Files to be included in the context'
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.files:
