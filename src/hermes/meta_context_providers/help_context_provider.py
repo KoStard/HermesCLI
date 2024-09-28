@@ -63,8 +63,8 @@ class HelpContextProvider(ContextProvider):
             keys = provider.get_command_key()
             if isinstance(keys, str):
                 keys = [keys]
-            for key in keys:
-                help_content += f"/{key}: {provider.get_help()}\n"
+            key_str = "/" + ", /".join(keys)
+            help_content += f"{key_str}: {provider.get_help()}\n"
         return help_content
     
     def get_help(self):
