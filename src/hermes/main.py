@@ -2,7 +2,10 @@ import argparse
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+from typing import List, Type
 
+from hermes.context_providers import ContextProvider, get_all_context_providers
+from hermes.extension_loader import load_extensions
 from hermes.model_factory import create_model_and_processors
 from hermes.registry import ModelRegistry
 
@@ -17,7 +20,6 @@ elif os.name == 'nt':
 
 from .chat_application import ChatApplication
 from .chat_ui import ChatUI
-from .context_provider_loader import load_context_providers
 
 
 def setup_logger():
@@ -73,6 +75,14 @@ def run_chat_application(args: argparse.Namespace, context_provider_classes):
     app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, args)
     app.refactored_universal_run_chat(args.once)
 
+
+def load_context_providers() -> List[Type[ContextProvider]]:
+    providers = get_all_context_providers()
+    
+    # Load extension providers
+    providers.extend(load_extensions())
+    
+    return providers
 
 if __name__ == "__main__":
     main()
