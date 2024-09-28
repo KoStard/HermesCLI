@@ -104,7 +104,11 @@ class ChatApplication:
     
     def user_round(self):
         while self.history_builder.requires_user_input():
-            if self.get_user_input() == 'exit':
+            try:
+                if self.get_user_input() == 'exit':
+                    return 'exit'
+            except KeyboardInterrupt:
+                logger.info("\nChat interrupted by user. Continuing")
                 return 'exit'
 
     def llm_round(self):
