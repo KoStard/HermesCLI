@@ -26,9 +26,6 @@ class PromptContextProvider(ContextProvider):
     def get_command_key() -> str:
         return "prompt"
 
-    def is_used(self) -> bool:
-        return bool(self.prompt)
-
     def get_required_providers(self) -> dict:
         return {}
 

@@ -32,6 +32,3 @@ class TextContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> str:
         return "text"
-
-    def is_used(self) -> bool:
-        return len(self.texts) > 0

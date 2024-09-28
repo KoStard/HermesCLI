@@ -30,9 +30,6 @@ class PromptFileContextProvider(ContextProvider):
     def get_command_key() -> str:
         return "prompt_file"
 
-    def is_used(self) -> bool:
-        return bool(self.prompt)
-
     def get_required_providers(self) -> dict:
         return {}
 

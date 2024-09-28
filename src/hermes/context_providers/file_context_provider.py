@@ -49,6 +49,3 @@ class FileContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> List:
         return ["file", "files"]
-
-    def is_used(self) -> bool:
-        return len(self.file_paths) > 0

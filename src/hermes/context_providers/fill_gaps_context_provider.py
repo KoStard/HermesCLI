@@ -47,9 +47,6 @@ class FillGapsContextProvider(ContextProvider):
     def get_command_key() -> str:
         return ["fill-gaps", "fill_gaps"]
 
-    def is_used(self) -> bool:
-        return bool(self.file_path)
-
     def counts_as_input(self) -> bool:
         return True
 

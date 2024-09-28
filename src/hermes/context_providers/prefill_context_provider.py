@@ -58,8 +58,5 @@ class PrefillContextProvider(ContextProvider):
     def get_command_key() -> str:
         return "prefill"
 
-    def is_used(self) -> bool:
-        return bool(self.prefill_names)
-
     def get_required_providers(self) -> Dict[str, List[str]]:
         return self.required_providers
