@@ -38,6 +38,25 @@ class MarkdownHighlighter:
 
     def process_markdown(self, markdown_generator: Generator[str, None, None]):
         ast = mistune.create_markdown(renderer="ast")
+        
+        def _iter_render(tokens, state):
+            """
+            Fix to a bug where some characters get serialised:
+            Test:
+                ⋊  python -c 'from hermes.utils.markdown_highlighter import MarkdownHighlighter; print(MarkdownHighlighter().process_markdown("`<>!@#$%^&*()-=`"))'
+                `<>!@#$%^&*()-=` < correct
+                `&lt;&gt;!@#$%^&amp;*()-=` < incorrect
+            """
+            for tok in tokens:
+                if 'children' in tok:
+                    children = _iter_render(tok['children'], state)
+                    tok['children'] = list(children)
+                elif 'text' in tok:
+                    text = tok.pop('text')
+                    tok['children'] = [{'type': 'text', 'raw': text.strip(' \r\n\t\f')}]
+                yield tok
+        
+        ast._iter_render = _iter_render
         buffer = ""
         old_parsed = []
         original_text = ""

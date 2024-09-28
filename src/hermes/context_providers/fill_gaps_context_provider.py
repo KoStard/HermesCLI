@@ -6,6 +6,7 @@ import os
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.utils import file_utils
+import re
 
 class FillGapsContextProvider(ContextProvider):
     def __init__(self):
