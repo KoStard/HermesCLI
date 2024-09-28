@@ -71,11 +71,7 @@ def run_chat_application(args: argparse.Namespace, context_provider_classes):
 
     ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting)
     app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, args)
-
-    if args.once:
-        app.run_once()
-    else:
-        app.run()
+    app.refactored_universal_run_chat(args.once)
 
 
 if __name__ == "__main__":

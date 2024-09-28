@@ -51,3 +51,50 @@ class FillGapsContextProvider(ContextProvider):
 
     def counts_as_input(self) -> bool:
         return True
+
+    def is_action(self):
+        return True
+    
+    def perform_action(self, recent_llm_response: str):
+        original_content = file_utils.read_file_content(
+            self.file_path
+        )
+        filled_content = self._fill_gaps(original_content, recent_llm_response)
+        file_utils.write_file(
+            self.file_path, filled_content, mode="w"
+        )
+        return f"Gaps filled in {self.file_path}"
+    
+    def _fill_gaps(self, original_content: str, new_content: str) -> str:
+        # Split the original content into lines
+        original_lines = original_content.split("\n")
+
+        # Find all gap markers and add indices
+        gap_markers = []
+        for i, line in enumerate(original_lines):
+            if "<GapToFill>" in line:
+                gap_markers.append(i)
+                original_lines[i] = line.replace(
+                    "<GapToFill>", f"<GapToFill index={len(gap_markers)}>"
+                )
+
+        # Join the lines with added indices
+        indexed_content = "\n".join(original_lines)
+
+        # Send the indexed content to the LLM (this part is handled elsewhere)
+
+        # Extract new content for each gap
+        new_content_blocks = re.findall(
+            r"<NewGapContent index=(\d+)>(.*?)</NewGapContent>", new_content, re.DOTALL
+        )
+
+        # Replace gaps with new content
+        for index, content in new_content_blocks:
+            index = int(index)
+            if index <= len(gap_markers):
+                gap_line = gap_markers[index - 1]
+                original_lines[gap_line] = (
+                    original_lines[gap_line].split("<GapToFill")[0] + content.strip()
+                )
+        # Join the lines back together
+        return "\n".join(original_lines)

@@ -20,3 +20,6 @@
 - Graceful handling of model output limit exceptions
 - Infinite output support
 - Live edit mode - the LLM sees what you edited, understands the diffs history, suggests next steps, understands direction.
+- Implement integration tests to run before push
+- Context providers import should be hardcoded list, instead of file detection. Likely slows down a lot. Same for extensions, have a specific place with a specific variable to import.
+- Improve how the filename is sent to the LLM, send original name

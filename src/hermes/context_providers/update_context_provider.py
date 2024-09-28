@@ -15,7 +15,7 @@ class UpdateContextProvider(ContextProvider):
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        parser.add_argument("--update", "--create", "-u", help="Update or create the specified file", dest="update")
+        parser.add_argument("--update", "--create", "--write", "-u", "-c", "-w", help="Update or create the specified file", dest="update")
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.update:
@@ -51,3 +51,10 @@ class UpdateContextProvider(ContextProvider):
 
     def counts_as_input(self) -> bool:
         return True
+
+    def is_action(self):
+        return True
+    
+    def perform_action(self, recent_llm_response: str):
+        file_utils.write_file(self.file_path, recent_llm_response, mode="w")
+        return f"File {self.file_path} updated"

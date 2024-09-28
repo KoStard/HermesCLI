@@ -1,9 +1,11 @@
 import logging
 from typing import Any, Dict, List, Type
 
+from hermes.chat_ui import ChatUI
 from hermes.context_providers.base import ContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
+from itertools import groupby
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -15,59 +17,88 @@ class HistoryBuilder:
     ):
         self.prompt_builder_class = prompt_builder_class
         self.file_processor = file_processor
-        self.messages: List[Dict[str, Any]] = []
-        self.context_providers: List[ContextProvider] = []
 
-    def add_message(self, role: str, content: str):
-        self.messages.append({"role": role, "content": content})
+        # New format
+        # {'author': 'assistant', 'text': text}
+        # {'author': 'user', 'context_provider': ContextProviderInstance, 'active': bool}
+        # {'author': 'user', 'text': text, 'active': bool}
+        # active represents if it was an active input from the user that counts as their consent to send the message
+        # or just some passive collected chunks that still requires user input
+        self.chunks = []
 
-    def add_context(self, context_provider: ContextProvider):
-        self.context_providers.append(context_provider)
+    def requires_user_input(self) -> bool:
+        for chunk in reversed(self.chunks):
+            if chunk["author"] == "user" and chunk.get("active", False):
+                return False  # We already have a user input
+            if chunk["author"] == "assistant":
+                return True
+        return True
+
+    def add_assistant_reply(self, content: str):
+        self.chunks.append({"author": "assistant", "text": content})
+
+    def add_user_input(self, content: str, active=False):
+        self.chunks.append({"author": "user", "text": content, "active": active})
+
+    def add_context(self, context_provider: ContextProvider, active=False):
+        self.chunks.append(
+            {"author": "user", 
+             "context_provider": context_provider, 
+             "active": active,
+             # Saving if the context provider is an action or not
+             "is_action":  context_provider.is_action()}
+        )
+
+    def _get_prompt_builder(self):
+        return self.prompt_builder_class(self.file_processor)
 
     def build_messages(self) -> List[Dict[str, str]]:
         compiled_messages = []
-        context_prompt_builder = self.prompt_builder_class(self.file_processor)
-        last_user_message_index = -1
 
-        # Find the index of the last user message
-        for i in range(len(self.messages) - 1, -1, -1):
-            if self.messages[i]["role"] == "user":
-                last_user_message_index = i
-                break
-        if last_user_message_index < len(self.messages) - 1:
-            self.messages = self.messages[: last_user_message_index + 1]
-            print(
-                f"Truncated messages: {self.messages} because it contains non-user messages after the last user message."
+        chunk_groups = groupby(self.chunks, lambda x: x["author"])
+        for author, group in chunk_groups:
+            prompt_builder = self._get_prompt_builder()
+            for chunk in group:
+                if "context_provider" in chunk:
+                    chunk["context_provider"].add_to_prompt(prompt_builder)
+                else:
+                    prompt_builder.add_text(chunk["text"])
+            compiled_messages.append(
+                {
+                    "role": author,
+                    "content": prompt_builder.build_prompt(),
+                }
             )
-
-        # Add context from providers
-        for provider in self.context_providers:
-            provider.add_to_prompt(context_prompt_builder)
-
-        for i, message in enumerate(self.messages):
-            if message["role"] == "user":
-                if message["content"]:
-                    context_prompt_builder.add_text(message["content"])
-                message_content = context_prompt_builder.build_prompt()
-                context_prompt_builder = self.prompt_builder_class(
-                    self.file_processor
-                )  # Reset context for next user message
-                compiled_messages.append({**message, "content": message_content})
-            else:
-                assistant_prompt_builder = self.prompt_builder_class(
-                    self.file_processor
-                )
-                if message["content"]:
-                    assistant_prompt_builder.add_text(message["content"])
-                compiled_messages.append(
-                    {**message, "content": assistant_prompt_builder.build_prompt()}
-                )
-        for message in compiled_messages:
-            logger.debug(f"{message['role']}:\t{message['content']}")
         return compiled_messages
 
     def clear_regular_history(self):
-        self.messages = []
+        self.chunks = [chunk for chunk in self.chunks if "text" not in chunk]
 
-    def pop_message(self):
-        return self.messages.pop()
+    def run_pending_actions(self, executor, ui: ChatUI):
+        chunks = self._get_recent_action_chunks_to_run()
+        for chunk in chunks:
+            status = executor(chunk["context_provider"])
+            if status != None:
+                ui.display_status(status)
+
+    def _get_recent_action_chunks_to_run(self):
+        reversed_chunk_groups = groupby(self.chunks[::-1], lambda x: x["author"])
+        found_assistant = False
+        for author, group in reversed_chunk_groups:
+            if found_assistant and author == "user":
+                return [
+                    chunk
+                    for chunk in group
+                    if "context_provider" in chunk
+                    and chunk.get('is_action', False)
+                ]
+            if author == "assistant":
+                found_assistant = True
+        return []
+
+    def get_recent_llm_response(self):
+        reversed_chunk_groups = groupby(self.chunks[::-1], lambda x: x["author"])
+        for author, group in reversed_chunk_groups:
+            if author == "assistant":
+                return next((chunk["text"] for chunk in group if "text" in chunk), None)
+        return None

@@ -76,3 +76,16 @@ class ContextProvider(ABC):
         :return: A boolean indicating whether this provider counts as input
         """
         return False
+    
+    def is_action(self) -> bool:
+        """
+        Return True if this context provider represents an action to be performed.
+
+        :return: A boolean indicating whether this provider represents an action
+        """
+        return False
+    
+    def perform_action(self, recent_llm_response: str):
+        if not self.is_action():
+            raise ValueError("This context provider does not represent an action.")
+        pass
