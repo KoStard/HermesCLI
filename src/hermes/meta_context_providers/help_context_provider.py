@@ -57,6 +57,12 @@ class HelpContextProvider(ContextProvider):
         return not self.help_request
         
     def _generate_simple_help_content(self) -> str:
-        # programmatically generate help for all available commands
-        pass
+        help_content = "Available commands:\n\n"
+        for provider in get_all_context_providers():
+            keys = provider.get_command_key()
+            if isinstance(keys, str):
+                keys = [keys]
+            for key in keys:
+                help_content += f"/{key}: {provider.get_help()}\n"
+        return help_content
     
