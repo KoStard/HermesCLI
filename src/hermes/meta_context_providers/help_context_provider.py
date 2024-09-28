@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from typing import Any, Dict, List
 
 from hermes.context_providers import ContextProvider, get_all_context_providers
+from hermes.extension_loader import load_extensions
 from hermes.prompt_builders.base import PromptBuilder
 
 
@@ -59,7 +60,9 @@ class HelpContextProvider(ContextProvider):
         
     def _generate_simple_help_content(self) -> str:
         help_content = "Available commands:\n\n"
-        for provider in get_all_context_providers():
+        context_provider_classes = get_all_context_providers()
+        context_provider_classes.extend(load_extensions())
+        for provider in context_provider_classes:
             keys = provider.get_command_key()
             if isinstance(keys, str):
                 keys = [keys]
