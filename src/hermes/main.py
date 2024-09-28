@@ -6,6 +6,7 @@ from typing import List, Type
 
 from hermes.context_providers import ContextProvider, get_all_context_providers
 from hermes.extension_loader import load_extensions
+from hermes.meta_context_providers import load_meta_context_providers
 from hermes.model_factory import create_model_and_processors
 from hermes.registry import ModelRegistry
 
@@ -60,14 +61,14 @@ def main():
     # Add arguments from context providers (including extensions)
     for provider_class in context_provider_classes:
         provider_class.add_argument(parser)
+        
+    meta_context_providers = load_meta_context_providers()
+    context_provider_classes.extend(meta_context_providers)
 
     args = parser.parse_args()
     
     setup_logger()
 
-    run_chat_application(args, context_provider_classes)
-
-def run_chat_application(args: argparse.Namespace, context_provider_classes):
     model_name = args.model
     model, file_processor, prompt_builder_class = create_model_and_processors(model_name)
 

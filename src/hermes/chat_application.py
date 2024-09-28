@@ -53,13 +53,14 @@ class ChatApplication:
     def _setup_initial_context_providers(self, args: argparse.Namespace):
         for key, value in vars(args).items():
             if key in self.command_keys_map and value is not None:
-                self._setup_initial_context_provider(key, args, None)
+                self._setup_initial_context_provider(key, args, None, permanent=True)
 
     def _setup_initial_context_provider(
         self,
         provider_key: str,
         cli_args: argparse.Namespace | None,
         regular_args: List[str] | None,
+        permanent: bool
     ):
         provider = self.command_keys_map[provider_key]()
         logger.debug(f"Initializing provider {provider_key}")
@@ -75,9 +76,9 @@ class ChatApplication:
         )
 
         for required_provider, required_args in required_providers.items():
-            self._setup_initial_context_provider(required_provider, None, required_args)
+            self._setup_initial_context_provider(required_provider, None, required_args, permanent=permanent)
 
-        self.history_builder.add_context(provider, provider.counts_as_input(), permanent=True)
+        self.history_builder.add_context(provider, provider.counts_as_input(), permanent=permanent)
         return provider
 
     def refactored_universal_run_chat(self, run_once=False):
@@ -155,14 +156,15 @@ class ChatApplication:
                 for cmd in full_commands:
                     command, *args = cmd
                     command = command[1:]
-                    provider = self.command_keys_map[command]()
-                    provider.load_context_from_string(args)
-                    self.history_builder.add_context(provider, active=provider.counts_as_input())
-                    self.ui.display_status(f"Context added for /{command}")
+                    self._run_command(command, args)
                 return
             else:
                 self.history_builder.add_user_input(user_input, active=True)
                 return
+    
+    def _run_command(self, command, args):
+        self._setup_initial_context_provider(command, None, args, permanent=False)
+        self.ui.display_status(f"Context added for /{command}")
             
     def _split_list(self, lst, checker):
         result = []

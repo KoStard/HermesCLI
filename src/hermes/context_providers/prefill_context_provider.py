@@ -11,43 +11,33 @@ class PrefillContextProvider(ContextProvider):
         self.prefill_names: List[str] = []
         self.prefill_contents: List[str] = []
         self.required_providers: Dict[str, Any] = {}
-        self.prefill_map: Dict[str, str] = {}
-        self._load_prefill_map()
+        self.prefill_map: Dict[str, str] = PrefillContextProvider._load_prefill_map()
 
     @staticmethod
     def add_argument(parser: ArgumentParser):
-        prefills = PrefillContextProvider.get_available_prefills()
-        help_text = f"Names of the prefills to use. Available options: {', '.join(prefills)}"
-        parser.add_argument('--prefill', action="append", help=help_text)
+        parser.add_argument('--prefill', action="append", help=PrefillContextProvider.get_help())
 
     @staticmethod
     def get_help() -> str:
-        prefills = PrefillContextProvider.get_available_prefills()
+        prefills = PrefillContextProvider._load_prefill_map()
         return f"Names of the prefills to use. Available options: {', '.join(prefills)}"
 
     @staticmethod
-    def get_available_prefills() -> List[str]:
+    def _load_prefill_map():
         prefill_dirs = [
             os.path.join(os.path.dirname(__file__), "prefills"),  # Repository prefills
             os.path.expanduser("~/.config/hermes/prefills"),
         ]
-        prefills = []
-        for prefill_dir in prefill_dirs:
-            if os.path.exists(prefill_dir):
-                prefills.extend([f.split('.')[0] for f in os.listdir(prefill_dir) if f.endswith('.md')])
-        return list(set(prefills))
-
-    def _load_prefill_map(self):
-        prefill_dirs = [
-            os.path.join(os.path.dirname(__file__), "prefills"),  # Repository prefills
-            os.path.expanduser("~/.config/hermes/prefills"),
-        ]
+        prefill_map = {}
         for prefill_dir in prefill_dirs:
             if os.path.exists(prefill_dir):
                 for filename in os.listdir(prefill_dir):
                     if filename.endswith('.md'):
                         prefill_name = filename.split('.')[0]
-                        self.prefill_map[prefill_name] = os.path.join(prefill_dir, filename)
+                        if not prefill_name:
+                            continue
+                        prefill_map[prefill_name] = os.path.join(prefill_dir, filename)
+        return prefill_map
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.prefill:

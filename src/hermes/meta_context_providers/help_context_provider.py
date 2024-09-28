@@ -21,12 +21,13 @@ class HelpContextProvider(ContextProvider):
     def load_context_from_string(self, args: List[str]):
         self.loaded = True
         self.help_request = ' '.join(args)
+        help_content = self._generate_simple_help_content()
+        if self._is_simple_mode():
+            print(help_content)
     
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         self._validate_loaded()
         help_content = self._generate_simple_help_content()
-        if self._is_simple_mode():
-            print(help_content)
         prompt_builder.add_text(help_content)
         if not self._is_simple_mode():
             prompt_builder.add_text(self.help_request)
@@ -66,3 +67,5 @@ class HelpContextProvider(ContextProvider):
                 help_content += f"/{key}: {provider.get_help()}\n"
         return help_content
     
+    def get_help(self):
+        return "Show help from chat"
