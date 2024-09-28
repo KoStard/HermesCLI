@@ -37,16 +37,18 @@ class HistoryBuilder:
     def add_assistant_reply(self, content: str):
         self.chunks.append({"author": "assistant", "text": content})
 
-    def add_user_input(self, content: str, active=False):
-        self.chunks.append({"author": "user", "text": content, "active": active})
+    def add_user_input(self, content: str, active=False, permanent=False):
+        self.chunks.append({"author": "user", "text": content, "active": active, "permanent": permanent})
 
-    def add_context(self, context_provider: ContextProvider, active=False):
+    def add_context(self, context_provider: ContextProvider, active=False, permanent=False):
         self.chunks.append(
             {"author": "user", 
              "context_provider": context_provider, 
              "active": active,
              # Saving if the context provider is an action or not
-             "is_action":  context_provider.is_action()}
+             "is_action":  context_provider.is_action(),
+             "has_acted": False,
+             "permanent": permanent}
         )
 
     def _get_prompt_builder(self):
@@ -72,12 +74,13 @@ class HistoryBuilder:
         return compiled_messages
 
     def clear_regular_history(self):
-        self.chunks = [chunk for chunk in self.chunks if "text" not in chunk]
+        self.chunks = [chunk for chunk in self.chunks if chunk.get('permanent', False)]
 
     def run_pending_actions(self, executor, ui: ChatUI):
         chunks = self._get_recent_action_chunks_to_run()
         for chunk in chunks:
             status = executor(chunk["context_provider"])
+            chunk['has_acted'] = True
             if status != None:
                 ui.display_status(status)
 
@@ -91,6 +94,7 @@ class HistoryBuilder:
                     for chunk in group
                     if "context_provider" in chunk
                     and chunk.get('is_action', False)
+                    and not chunk.get('has_acted', False)
                 ]
             if author == "assistant":
                 found_assistant = True

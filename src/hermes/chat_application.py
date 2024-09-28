@@ -44,16 +44,16 @@ class ChatApplication:
                 key = key.strip()
                 self.command_keys_map[key] = provider_class
 
-        self._initialize_context_providers(args)
+        self._setup_initial_context_providers(args)
 
         logger.debug("ChatApplication initialization complete")
 
-    def _initialize_context_providers(self, args: argparse.Namespace):
+    def _setup_initial_context_providers(self, args: argparse.Namespace):
         for key, value in vars(args).items():
             if key in self.command_keys_map and value is not None:
-                self._initialize_context_provider(key, args, None)
+                self._setup_initial_context_provider(key, args, None)
 
-    def _initialize_context_provider(
+    def _setup_initial_context_provider(
         self,
         provider_key: str,
         cli_args: argparse.Namespace | None,
@@ -73,9 +73,9 @@ class ChatApplication:
         )
 
         for required_provider, required_args in required_providers.items():
-            self._initialize_context_provider(required_provider, None, required_args)
+            self._setup_initial_context_provider(required_provider, None, required_args)
 
-        self.history_builder.add_context(provider, provider.counts_as_input())
+        self.history_builder.add_context(provider, provider.counts_as_input(), permanent=True)
         return provider
 
     def refactored_universal_run_chat(self, run_once=False):
