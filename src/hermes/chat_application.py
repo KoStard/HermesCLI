@@ -1,16 +1,19 @@
 import argparse
-from typing import List, Type
-import sys
-import re
 import logging
-from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
+import re
+import shlex
+import sys
+from typing import List, Type
+
+from tenacity import (before_sleep_log, retry, stop_after_attempt,
+                      wait_exponential)
 
 from hermes.chat_models.base import ChatModel
-from hermes.file_processors.base import FileProcessor
-from hermes.prompt_builders.base import PromptBuilder
 from hermes.chat_ui import ChatUI
-from hermes.history_builder import HistoryBuilder
 from hermes.context_providers.base import ContextProvider
+from hermes.file_processors.base import FileProcessor
+from hermes.history_builder import HistoryBuilder
+from hermes.prompt_builders.base import PromptBuilder
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -29,7 +32,6 @@ class ChatApplication:
         self.model = model
         self.ui = ui
         self.history_builder = HistoryBuilder(prompt_builder_class, file_processor)
-        self.request_failed = False
 
         logger.info(f"Initializing with model: {type(model).__name__}")
         logger.info(f"Using file processor: {type(file_processor).__name__}")
@@ -100,7 +102,7 @@ class ChatApplication:
         logger.debug("Model initialized successfully")
     
     def user_round(self):
-        while self.history_builder.requires_user_input() or self.request_failed:
+        while self.history_builder.requires_user_input():
             if self.get_user_input() == 'exit':
                 return 'exit'
 
@@ -109,7 +111,6 @@ class ChatApplication:
         self._llm_act()
     
     def _llm_interact(self):
-        self.request_failed = False
         messages = self.history_builder.build_messages()
         try:
             logger.debug("Sending request to model")
@@ -119,11 +120,10 @@ class ChatApplication:
         except Exception as e:
             logger.error(f"Error during model request: {str(e)}", exc_info=True)
             self.ui.display_status(f"An error occurred: {str(e)}")
-            self.request_failed = True
             raise e
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Continuing")
-            self.request_failed = True
+            self.history_builder.add_assistant_reply("<RESPONSE_FAILED_TO_COMMUNICATE>")
         
     def _llm_act(self):
         recent_llm_response = self.history_builder.get_recent_llm_response()
@@ -143,38 +143,43 @@ class ChatApplication:
             user_input = self.ui.get_user_input()
             user_input_lower = user_input.lower()
 
-            if user_input_lower in ["exit", "quit", "q"]:
+            if user_input_lower in ["/exit", "/quit", "/q"]:
                 return 'exit'
             elif user_input_lower == "/clear":
                 self.clear_chat()
                 continue
             elif user_input.startswith("/"):
-                commands = re.finditer(r"(?:^|\s)(\/)(?:\w+\s)", user_input)
-                command_start_indexes = [command.span(1)[1] for command in commands]
-                full_commands = [
-                    user_input[
-                        start : (
-                            command_start_indexes[index + 1]
-                            if index < len(command_start_indexes) - 1
-                            else len(user_input)
-                        )
-                    ]
-                    for (index, start) in enumerate(command_start_indexes)
-                ]
+                words = shlex.split(user_input)
+                full_commands = self._split_list(words, lambda x: x.startswith("/") and x[1:] in self.command_keys_map)
 
                 for cmd in full_commands:
-                    command, *args = cmd.strip().split(maxsplit=1)
-                    if command in self.command_keys_map:
-                        provider = self.command_keys_map[command]()
-                        provider.load_context_from_string(args)
-                        self.history_builder.add_context(provider, provider.counts_as_input())
-                        self.ui.display_status(f"Context added for /{command}")
-                    else:
-                        self.ui.display_status(f"Unknown command: /{command}")
+                    command, *args = cmd
+                    command = command[1:]
+                    provider = self.command_keys_map[command]()
+                    provider.load_context_from_string(args)
+                    self.history_builder.add_context(provider, active=provider.counts_as_input())
+                    self.ui.display_status(f"Context added for /{command}")
                 return
             else:
                 self.history_builder.add_user_input(user_input, active=True)
                 return
+            
+    def _split_list(self, lst, checker):
+        result = []
+        current_sublist = []
+
+        for item in lst:
+            if checker(item):
+                if current_sublist:
+                    result.append(current_sublist)
+                current_sublist = [item]
+            else:
+                current_sublist.append(item)
+
+        if current_sublist:
+            result.append(current_sublist)
+
+        return result
 
     @retry(
         stop=stop_after_attempt(5),

@@ -161,6 +161,46 @@ You:
 ```
 
 Here if --once is not provided, chat loop will start.
+### Multiline text
+You can enter multiple lines in Hermes like this:
+At the first line write only `{`.
+Then write for however many lines you want.
+Then when you are done, in a new line, enter `}`.
+### Commands
+From the chat interface, the use can send a message, which is similar to the --prompt CLI argument.
+Or the user can run commands, which start with `/`.
+If the user runs `/clear`, the chat history will be cleared and go back to the state where it was when the chat application started. That means the arguments passed from the CLI won't be discarded.
+If the user enters /exit, /quit, /q, Hermes will stop.
+Then the user can add context providers like with CLI arguments, but putting `/` before the context provider name, instead of `--`.
+Example:
+`/file filepath.txt filepath2.txt`
+#### Multiple commands
+You can run multiple context providers with one input. They can be on one line or on multiple lines.
+
+A Simple Example:
+```
+You: /prompt Write a poem /create poem.md
+╭───────────────────────────╮
+│ Context added for /prompt │
+╰───────────────────────────╯
+╭───────────────────────────╮
+│ Context added for /create │
+╰───────────────────────────╯
+# A Whisper in the Wind
+
+Gentle breeze, a soft caress,
+Nature's voice, both calm and wild.
+...
+```
+
+The algorithm works by breaking down the inputted line into words (quotes and escaping works, for example if you input a file path that contains spaces, just put in quotes).
+Then it checks if the words match commands and if so, considers the arguments coming after that until the next command to be its inputs.
+
+Bad: `/prompt Write something that contains the word /file /file output.txt`
+Bad: `/prompt Write something that contains the word "/file" /file output.txt`
+Fine: `/prompt Write something that contains the word \"/file\" /file output.txt`
+Good: `/prompt "Write something that contains the word /file" /file output.txt`
+
 ## Prefills
 
 | Name             | Functionality and Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -168,4 +208,3 @@ Here if --once is not provided, chat loop will start.
 | hermes_assistant | Hermes Assistant has knowledge about Hermes itself, so you can ask it questions about it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | notebook         | This is a set of opinionated instructions for managing a "notebook".<br>1. When you use this prefill, it automatically includes all markdown files in your folder and all subfolders in the context.<br>2. This is best for collaborative writing and reading. <br><br>The protocol is like this:<br>You create the document and provide a `# Direction` section, which describes what you expect from this note.<br><br>Then you run `hermes --prefill notebook --append <YourFile>.md` and it appends its notes into it.<br><br>If you have concerns, or want Hermes to continue working on certain direction, then add a `# Concern` section and describe what is wrong or what should be added more of. Then run the command again. |
 | shell_assistant  | It's configured to provide you support on Mac and Ubuntu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-
