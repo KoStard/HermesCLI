@@ -202,9 +202,44 @@ Fine: `/prompt Write something that contains the word \"/file\" /file output.txt
 Good: `/prompt "Write something that contains the word /file" /file output.txt`
 
 ## Prefills
+Prefills are handy, predefined prompts that you load into your session. They might have additional information that you want, or have set of instructions on how to assist you.
+
+There are some prefills included with Hermes, but you can create your own as well.
 
 | Name             | Functionality and Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | hermes_assistant | Hermes Assistant has knowledge about Hermes itself, so you can ask it questions about it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | notebook         | This is a set of opinionated instructions for managing a "notebook".<br>1. When you use this prefill, it automatically includes all markdown files in your folder and all subfolders in the context.<br>2. This is best for collaborative writing and reading. <br><br>The protocol is like this:<br>You create the document and provide a `# Direction` section, which describes what you expect from this note.<br><br>Then you run `hermes --prefill notebook --append <YourFile>.md` and it appends its notes into it.<br><br>If you have concerns, or want Hermes to continue working on certain direction, then add a `# Concern` section and describe what is wrong or what should be added more of. Then run the command again. |
 | shell_assistant  | It's configured to provide you support on Mac and Ubuntu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+### Creating prefills
+You define custom prefills as markdown files in this folder: `~/.config/hermes/prefills`. There is specific format to follow:
+`prefill_name.md`
+```
+---
+name: prefill_name
+required_context_providers (optional):
+	provider_key:
+		- provider value 1
+		- provider value 2
+		- ...
+---
+Your prompt goes here
+```
+Example:
+file: `languages.md`
+```
+---
+name: luxembourgish
+required_context_providers:
+    file:
+        - /path/to/extra/prompts/or/notes/**/*.md
+        - /path/to/learning/materials.pdf
+---
+You are a professional teacher of XXX language.
+
+You are a native speaker yourself and are experienced in teaching others to learn.
+
+You have built new methods of educating this language and have many tricks ready to help your students to reach results quickly.
+...
+```
