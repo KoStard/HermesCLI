@@ -1,30 +1,16 @@
 from setuptools import setup, find_packages
 
+def read_requirements(file_path):
+    with open(file_path, 'r') as file:
+        return [line.strip() for line in file if line.strip() and not line.startswith('#')]
+
 setup(
     name="hermes-cli",
     version="0.1.0",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,
-    install_requires=[
-        "anthropic",
-        "boto3",
-        "google-generativeai",
-        "PyPDF2==3.0.1",
-        "rich",
-        "openai",
-        "argcomplete",
-        "pyyaml",
-        "pyreadline3; sys_platform == 'win32'",
-        "ollama",
-        "pdfminer.six",
-        "markdownify",
-        "tenacity",
-        "groq",
-        "python-docx",
-        "mistune",
-        "pygments",
-    ],
+    install_requires=read_requirements('requirements.txt'),  # Read dependencies from requirements.txt
     setup_requires=[
         "wheel",
     ],
