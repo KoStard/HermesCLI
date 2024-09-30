@@ -51,6 +51,7 @@ class PrefillContextProvider(ContextProvider):
     def _load_prefills(self):
         for prefill_name in self.prefill_names:
             if prefill_name in self.prefill_map:
+                print(f"Loading prefill '{prefill_name}' located at {self.prefill_map[prefill_name]}")
                 self._parse_prefill_file(self.prefill_map[prefill_name])
             else:
                 raise ValueError(f"Prefill '{prefill_name}' not found")
