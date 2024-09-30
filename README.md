@@ -157,8 +157,21 @@ Hermes supports a wide variety of AI models:
   - openrouter (default model)
   - openrouter/perplexity
   - openrouter/o1-mini
+- Vertex (Google):
+  - vertex/llama3-405b-instruct-maas
 
 Each model may have specific setup requirements. Refer to the documentation of each AI provider for detailed instructions on how to use their models.
+
+### Vertex Configuration
+
+To use the Vertex model, you need to set the `project_id` in the `[VERTEX]` section of your `config.ini` file.
+You also need to have the `gcloud` CLI installed and authenticated to access the Vertex AI service.
+
+```
+gcloud auth application-default login
+```
+
+This command is used to authenticate with your Google Cloud account and set up the default credentials.
 
 ## Configuration File (config.ini)
 
