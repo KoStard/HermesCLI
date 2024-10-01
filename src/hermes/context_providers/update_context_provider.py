@@ -1,5 +1,6 @@
 from argparse import ArgumentParser, Namespace
 import argparse
+import yaml
 from typing import List
 import logging
 import os
@@ -35,7 +36,6 @@ class UpdateContextProvider(ContextProvider):
     def _load_special_command_prompt(self):
         special_command_prompts_path = os.path.join(os.path.dirname(__file__), "special_command_prompts.yaml")
         with open(special_command_prompts_path, 'r') as f:
-            import yaml
             special_command_prompts = yaml.safe_load(f)
         self.special_command_prompt = special_command_prompts['update'].format(
             file_name=file_utils.process_file_name(self.file_path)

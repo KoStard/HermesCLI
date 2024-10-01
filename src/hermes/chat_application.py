@@ -24,18 +24,13 @@ class ChatApplication:
         self,
         model: ChatModel,
         ui: ChatUI,
-        file_processor: FileProcessor,
-        prompt_builder_class: Type[PromptBuilder],
+        history_builder: HistoryBuilder,
         context_provider_classes: List[Type[ContextProvider]],
         args: argparse.Namespace,
     ):
         self.model = model
         self.ui = ui
-        self.history_builder = HistoryBuilder(prompt_builder_class, file_processor)
-
-        logger.info(f"Initializing with model: {type(model).__name__}")
-        logger.info(f"Using file processor: {type(file_processor).__name__}")
-        logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
+        self.history_builder = history_builder
 
         self.command_keys_map = {}
         for provider_class in context_provider_classes:
@@ -103,13 +98,17 @@ class ChatApplication:
         logger.debug("Model initialized successfully")
     
     def user_round(self):
+        keyboard_interrupt = False
         while self.history_builder.requires_user_input():
             try:
                 if self.get_user_input() == 'exit':
                     return 'exit'
             except KeyboardInterrupt:
-                logger.info("\nChat interrupted by user. Continuing")
-                return 'exit'
+                if not keyboard_interrupt:
+                    logger.info("\nChat interrupted by user. Continuing")
+                    keyboard_interrupt = True
+                else:
+                    return 'exit'
 
     def llm_round(self):
         self._llm_interact()

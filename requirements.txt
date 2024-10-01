@@ -18,3 +18,4 @@ pytest
 mistune
 pygments
 google-cloud-aiplatform
+coverage

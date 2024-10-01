@@ -1,15 +1,16 @@
 from typing import Generator
 from .base import ChatModel
 from ..registry import register_model
-from google.auth import default, transport
+from google import auth
+import google.auth.transport.requests as requests
 import openai
 
 
 @register_model(name="vertex", file_processor="default", prompt_builder="xml", config_key='VERTEX')
 class VertexModel(ChatModel):
     def initialize(self):
-        credentials, _ = default()
-        auth_request = transport.requests.Request()
+        credentials, _ = auth.default()
+        auth_request = requests.Request()
         credentials.refresh(auth_request)
         project_id = self.config.get("project_id")
 

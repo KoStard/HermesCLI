@@ -21,7 +21,7 @@ class HelpContextProvider(ContextProvider):
     
     def load_context_from_string(self, args: List[str]):
         self.loaded = True
-        self.help_request = ' '.join(args)
+        self.help_request = ' '.join(args) if args else None
         help_content = self._generate_simple_help_content()
         if self._is_simple_mode():
             print(help_content)
@@ -70,5 +70,6 @@ class HelpContextProvider(ContextProvider):
             help_content += f"{key_str}: {provider.get_help()}\n"
         return help_content
     
-    def get_help(self):
+    @staticmethod
+    def get_help():
         return "Show help from chat"

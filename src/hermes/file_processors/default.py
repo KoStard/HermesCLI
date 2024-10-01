@@ -1,6 +1,6 @@
 from .base import FileProcessor
 import PyPDF2
-from docx import Document
+import docx
 import os
 from ..registry import register_file_processor
 
@@ -26,5 +26,5 @@ class DefaultFileProcessor(FileProcessor):
             return ' '.join(page.extract_text() for page in reader.pages)
 
     def extract_text_from_docx(self, file_path: str) -> str:
-        doc = Document(file_path)
+        doc = docx.Document(file_path)
         return ' '.join(paragraph.text for paragraph in doc.paragraphs)

@@ -9,11 +9,11 @@ import sys
 from .utils.markdown_highlighter import MarkdownHighlighter
 
 class ChatUI:
-    def __init__(self, print_pretty: bool, use_highlighting: bool):
+    def __init__(self, print_pretty: bool, use_highlighting: bool, markdown_highlighter: MarkdownHighlighter):
         self.console = Console()
         self.print_pretty = print_pretty
         self.use_highlighting = use_highlighting
-        self.markdown_highlighter = MarkdownHighlighter()
+        self.markdown_highlighter = markdown_highlighter
 
     def display_response(self, response_generator: Generator[str, None, None]):
         if self.print_pretty:

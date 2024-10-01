@@ -6,9 +6,11 @@ from typing import List, Type
 
 from hermes.context_providers import ContextProvider, get_all_context_providers
 from hermes.extension_loader import load_extensions
+from hermes.history_builder import HistoryBuilder
 from hermes.meta_context_providers import load_meta_context_providers
 from hermes.model_factory import create_model_and_processors
 from hermes.registry import ModelRegistry
+from hermes.utils.markdown_highlighter import MarkdownHighlighter
 
 if os.name == 'posix':
     import readline
@@ -47,6 +49,7 @@ def setup_logger():
     # Add handlers to the logger
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
+    return logger
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application")
@@ -67,13 +70,18 @@ def main():
 
     args = parser.parse_args()
     
-    setup_logger()
+    logger = setup_logger()
 
     model_name = args.model
     model, file_processor, prompt_builder_class = create_model_and_processors(model_name)
+    history_builder = HistoryBuilder(prompt_builder_class, file_processor)
 
-    ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting)
-    app = ChatApplication(model, ui, file_processor, prompt_builder_class, context_provider_classes, args)
+    logger.info(f"Using model: {model}")
+    logger.info(f"Using file processor: {type(file_processor).__name__}")
+    logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
+    
+    ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter())
+    app = ChatApplication(model, ui, history_builder, context_provider_classes, args)
     app.refactored_universal_run_chat(args.once)
 
 
