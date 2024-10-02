@@ -59,9 +59,13 @@ class EMLContextProvider(ContextProvider):
         if msg.is_multipart():
             for part in msg.walk():
                 if part.get_content_type() == "text/plain":
-                    parsed_content.append(part.get_payload(decode=True).decode())
+                    content = part.get_payload(decode=True).decode().strip()
+                    if content:
+                        parsed_content.append(content)
         else:
-            parsed_content.append(msg.get_payload(decode=True).decode())
+            content = msg.get_payload(decode=True).decode().strip()
+            if content:
+                parsed_content.append(content)
         
         return "\n".join(parsed_content)
 

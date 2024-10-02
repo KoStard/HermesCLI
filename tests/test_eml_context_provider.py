@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 import argparse
-import os
 from hermes.context_providers.eml_context_provider import EMLContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 
@@ -52,7 +51,7 @@ class TestEMLContextProvider(unittest.TestCase):
 
     @patch('email.message_from_binary_file')
     def test_parse_eml_file(self, mock_message_from_binary_file):
-        mock_msg = Mock()
+        mock_msg = MagicMock()
         mock_msg.__getitem__.side_effect = lambda x: f"Mock {x}"
         mock_msg.is_multipart.return_value = False
         mock_msg.get_payload.return_value = b"Mock body content"

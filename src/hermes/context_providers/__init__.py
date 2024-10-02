@@ -8,6 +8,7 @@ from .append_context_provider import AppendContextProvider
 from .text_context_provider import TextContextProvider
 from .fill_gaps_context_provider import FillGapsContextProvider
 from .prompt_context_provider import PromptContextProvider
+from .eml_context_provider import EMLContextProvider
 from .base import ContextProvider
 
 def get_all_context_providers():
@@ -22,4 +23,5 @@ def get_all_context_providers():
         TextContextProvider,
         FillGapsContextProvider,
         PromptContextProvider,
+        EMLContextProvider,
     ]
