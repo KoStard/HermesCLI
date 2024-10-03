@@ -114,6 +114,7 @@ Hermes supports various command-line options:
 - `--image`: Include an image file in the context (can be used multiple times)
 - `--text`: Add extra text to the context (can be used multiple times)
 - `--url`: Include content from a URL in the context (can be used multiple times)
+- `--clipboard`: Include the content of the clipboard in the context
 
 ## Examples
 
@@ -135,6 +136,11 @@ Hermes supports various command-line options:
 4. Pipe input and output:
    ```
    echo "Tell me a fun fact" | hermes > fun_fact.txt
+   ```
+
+5. Use clipboard content in your query:
+   ```
+   hermes --clipboard --prompt "Analyze the code in my clipboard"
    ```
 
 ## Supported Models
