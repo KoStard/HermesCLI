@@ -49,5 +49,15 @@ class TestTextContextProvider(unittest.TestCase):
     def test_get_command_key(self):
         self.assertEqual(TextContextProvider.get_command_key(), "text")
 
+    def test_serialize(self):
+        self.provider.texts = ["Text 1", "Text 2"]
+        serialized = self.provider.serialize()
+        self.assertEqual(serialized, {"texts": ["Text 1", "Text 2"]})
+
+    def test_deserialize(self):
+        data = {"texts": ["Text 3", "Text 4"]}
+        self.provider.deserialize(data)
+        self.assertEqual(self.provider.texts, ["Text 3", "Text 4"])
+
 if __name__ == '__main__':
     unittest.main()

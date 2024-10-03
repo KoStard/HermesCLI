@@ -73,5 +73,15 @@ class TestEMLContextProvider(unittest.TestCase):
     def test_get_command_key(self):
         self.assertEqual(EMLContextProvider.get_command_key(), ["eml"])
 
+    def test_serialize(self):
+        self.provider.eml_paths = ["path1.eml", "path2.eml"]
+        serialized = self.provider.serialize()
+        self.assertEqual(serialized, {"eml_paths": ["path1.eml", "path2.eml"]})
+
+    def test_deserialize(self):
+        data = {"eml_paths": ["path3.eml", "path4.eml"]}
+        self.provider.deserialize(data)
+        self.assertEqual(self.provider.eml_paths, ["path3.eml", "path4.eml"])
+
 if __name__ == '__main__':
     unittest.main()

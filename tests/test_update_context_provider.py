@@ -71,5 +71,23 @@ class TestUpdateContextProvider(unittest.TestCase):
         mock_write_file.assert_called_once_with("test.txt", "New content", mode="w")
         self.assertEqual(result, "File test.txt updated")
 
+    def test_serialize(self):
+        self.provider.file_path = "test.txt"
+        self.provider.special_command_prompt = "Update test.txt"
+        serialized = self.provider.serialize()
+        self.assertEqual(serialized, {
+            "file_path": "test.txt",
+            "special_command_prompt": "Update test.txt"
+        })
+
+    def test_deserialize(self):
+        data = {
+            "file_path": "new_test.txt",
+            "special_command_prompt": "Update new_test.txt"
+        }
+        self.provider.deserialize(data)
+        self.assertEqual(self.provider.file_path, "new_test.txt")
+        self.assertEqual(self.provider.special_command_prompt, "Update new_test.txt")
+
 if __name__ == '__main__':
     unittest.main()

@@ -70,5 +70,23 @@ class TestURLContextProvider(unittest.TestCase):
     def test_get_command_key(self):
         self.assertEqual(URLContextProvider.get_command_key(), "url")
 
+    def test_serialize(self):
+        self.provider.urls = ["http://example.com", "http://test.com"]
+        self.provider.contents = ["Example content", "Test content"]
+        serialized = self.provider.serialize()
+        self.assertEqual(serialized, {
+            "urls": ["http://example.com", "http://test.com"],
+            "contents": ["Example content", "Test content"]
+        })
+
+    def test_deserialize(self):
+        data = {
+            "urls": ["http://new.com", "http://sample.com"],
+            "contents": ["New content", "Sample content"]
+        }
+        self.provider.deserialize(data)
+        self.assertEqual(self.provider.urls, ["http://new.com", "http://sample.com"])
+        self.assertEqual(self.provider.contents, ["New content", "Sample content"])
+
 if __name__ == '__main__':
     unittest.main()

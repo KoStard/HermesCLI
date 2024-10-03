@@ -49,5 +49,15 @@ class TestImageContextProvider(unittest.TestCase):
     def test_get_command_key(self):
         self.assertEqual(ImageContextProvider.get_command_key(), "image")
 
+    def test_serialize(self):
+        self.provider.image_paths = ["image1.jpg", "image2.png"]
+        serialized = self.provider.serialize()
+        self.assertEqual(serialized, {"image_paths": ["image1.jpg", "image2.png"]})
+
+    def test_deserialize(self):
+        data = {"image_paths": ["image3.gif", "image4.bmp"]}
+        self.provider.deserialize(data)
+        self.assertEqual(self.provider.image_paths, ["image3.gif", "image4.bmp"])
+
 if __name__ == '__main__':
     unittest.main()
