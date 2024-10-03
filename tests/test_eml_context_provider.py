@@ -78,12 +78,10 @@ class TestEMLContextProvider(unittest.TestCase):
         serialized = self.provider.serialize()
         self.assertEqual(serialized, {"eml_paths": ["path1.eml", "path2.eml"]})
 
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data=b'From: test@example.com\nTo: recipient@example.com\nSubject: Test\n\nTest body')
-    def test_deserialize(self, mock_open):
+    def test_deserialize(self):
         data = {"eml_paths": ["path3.eml", "path4.eml"]}
         self.provider.deserialize(data)
         self.assertEqual(self.provider.eml_paths, ["path3.eml", "path4.eml"])
-        mock_open.assert_called_with("path3.eml", "rb")
 
 if __name__ == '__main__':
     unittest.main()

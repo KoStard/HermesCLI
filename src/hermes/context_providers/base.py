@@ -121,11 +121,11 @@ class ContextProvider(ABC):
         pass
 
     @abstractmethod
-    def serialize(self) -> Dict[str, Dict[str, Any]]:
+    def serialize(self) -> Dict[str, Any]:
         """
         Serialize the context provider's state to a dictionary.
 
-        :return: A dictionary with the format {providerKey: {providerContext}}
+        :return: A dictionary of the serialized context provider
         """
         pass
 

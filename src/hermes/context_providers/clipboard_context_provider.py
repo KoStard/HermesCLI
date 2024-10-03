@@ -36,6 +36,5 @@ class ClipboardContextProvider(ContextProvider):
         return {
             "clipboard_content": self.clipboard_content
         }
-
     def deserialize(self, data: Dict[str, Any]):
         self.clipboard_content = data.get("clipboard_content", "")

@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 
 class HistoryBuilder:
     def __init__(
-        self, prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor, command_keys_map: Dict[str, Type[ContextProvider]]
+        self, 
+        prompt_builder_class: Type[PromptBuilder], 
+        file_processor: FileProcessor, 
+        command_keys_map: Dict[str, Type[ContextProvider]]
     ):
         self.prompt_builder_class = prompt_builder_class
         self.file_processor = file_processor
@@ -117,9 +120,13 @@ class HistoryBuilder:
                 serialized_chunks.append(chunk)
             elif chunk['author'] == 'user':
                 if 'context_provider' in chunk:
+                    keys = chunk['context_provider'].get_command_key()
+                    if not isinstance(keys, list):
+                        keys = [keys]
                     serialized_chunk = {
                         'author': 'user',
                         'context_provider': chunk['context_provider'].serialize(),
+                        'context_provider_keys': keys,
                         'active': chunk['active'],
                         'is_action': chunk.get('is_action', False),
                         'has_acted': chunk.get('has_acted', False),
@@ -142,12 +149,12 @@ class HistoryBuilder:
                 self.chunks.append(chunk)
             elif chunk['author'] == 'user':
                 if 'context_provider' in chunk:
-                    provider_key = list(chunk['context_provider'].keys())[0]
+                    provider_key = chunk['context_provider_keys'][0]
                     provider_class = self.command_keys_map.get(provider_key)
                     if provider_class:
                         provider_instance = provider_class()
                         try:
-                            provider_instance.deserialize(chunk['context_provider'][provider_key])
+                            provider_instance.deserialize(chunk['context_provider'])
                             deserialized_chunk = {
                                 'author': 'user',
                                 'context_provider': provider_instance,

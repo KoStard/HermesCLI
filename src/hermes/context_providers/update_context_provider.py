@@ -69,7 +69,6 @@ class UpdateContextProvider(ContextProvider):
     def perform_action(self, recent_llm_response: str):
         file_utils.write_file(self.file_path, recent_llm_response, mode="w")
         return f"File {self.file_path} updated"
-
     def serialize(self) -> Dict[str, Any]:
         return {
             "file_path": self.file_path,
@@ -79,5 +78,3 @@ class UpdateContextProvider(ContextProvider):
     def deserialize(self, data: Dict[str, Any]):
         self.file_path = data.get("file_path", "")
         self.special_command_prompt = data.get("special_command_prompt", "")
-        if self.file_path:
-            self._load_special_command_prompt()

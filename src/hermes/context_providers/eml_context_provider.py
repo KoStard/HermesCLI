@@ -80,6 +80,3 @@ class EMLContextProvider(ContextProvider):
 
     def deserialize(self, data: Dict[str, Any]):
         self.eml_paths = data.get("eml_paths", [])
-        for eml_path in self.eml_paths:
-            eml_content = self._parse_eml_file(eml_path)
-            self.logger.info(f"EML file loaded: {eml_path}")
