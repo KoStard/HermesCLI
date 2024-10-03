@@ -16,7 +16,7 @@ class TestFileContextProvider(unittest.TestCase):
         mock_parser.add_argument.assert_called_once_with('files', nargs='*', help=FileContextProvider.get_help())
 
     def test_get_help(self):
-        self.assertEqual(FileContextProvider.get_help(), 'Files to be included in the context')
+        self.assertEqual(FileContextProvider.get_help(), 'Files or folders to be included in the context')
 
     @patch('glob.glob')
     @patch('os.path.exists')
@@ -67,6 +67,22 @@ class TestFileContextProvider(unittest.TestCase):
 
     def test_get_command_key(self):
         self.assertEqual(FileContextProvider.get_command_key(), ["file", "files"])
+
+    @patch('glob.glob')
+    def test_glob_not_matching_any_file(self, mock_glob):
+        mock_glob.return_value = []
+        self.provider._validate_and_add_files(['invalid_pattern.*'])
+        self.assertEqual(self.provider.file_paths, [])
+
+    @patch('glob.glob')
+    @patch('os.path.isdir')
+    def test_handling_folders(self, mock_isdir, mock_glob):
+        mock_glob.return_value = ['folder1', 'file1.txt']
+        mock_isdir.side_effect = [True, False]
+        
+        self.provider._validate_and_add_files(['*'])
+        
+        self.assertEqual(self.provider.file_paths, ['folder1', 'file1.txt'])
 
 if __name__ == '__main__':
     unittest.main()

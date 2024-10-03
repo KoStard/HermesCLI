@@ -29,5 +29,3 @@
 - Save/load chat
 - Handle LLM exceptions
 - Ctrl+c while inputting should just invalidate
-- Fix the folder addition mode
-- Handling invalid file inputs

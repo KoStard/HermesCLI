@@ -20,35 +20,38 @@ class FileContextProvider(ContextProvider):
 
     @staticmethod
     def get_help() -> str:
-        return 'Files to be included in the context'
+        return 'Files or folders to be included in the context'
 
     def load_context_from_cli(self, args: argparse.Namespace):
         if args.files:
             self._validate_and_add_files(args.files)
-        self.logger.debug(f"Loaded {len(self.file_paths)} file paths from CLI arguments")
+        self.logger.debug(f"Loaded {len(self.file_paths)} file/folder paths from CLI arguments")
 
     def load_context_from_string(self, new_file_paths: List[str]):
         self._validate_and_add_files(new_file_paths)
-        self.logger.debug(f"Added {len(new_file_paths)} file paths interactively")
+        self.logger.debug(f"Added {len(new_file_paths)} file/folder paths interactively")
 
     def _validate_and_add_files(self, file_paths: List[str]):
         for file_path in file_paths:
-            for matched_file in glob.glob(file_path, recursive=True):
-                if os.path.exists(matched_file):
-                    self.file_paths.append(matched_file)
-                    self.logger.info(f"File captured: {matched_file}")
+            matched_paths = glob.glob(file_path, recursive=True)
+            if not matched_paths:
+                self.logger.warning(f"Invalid path: {file_path}")
+            for matched_path in matched_paths:
+                self.file_paths.append(matched_path)
+                if os.path.isdir(matched_path):
+                    self.logger.info(f"Folder captured: {matched_path}")
                 else:
-                    self.logger.warning(f"File not found: {matched_file}")
+                    self.logger.info(f"File captured: {matched_path}")
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
-        for file_path in self.file_paths:
-            if os.path.isdir(file_path):
-                for root, _, files in os.walk(file_path):
+        for path in self.file_paths:
+            if os.path.isdir(path):
+                for root, _, files in os.walk(path):
                     for file in files:
-                        prompt_builder.add_file(os.path.join(root, file), file_utils.process_file_name(file))
+                        file_path = os.path.join(root, file)
+                        prompt_builder.add_file(file_path, file_utils.process_file_name(file_path))
             else:
-                prompt_builder.add_file(file_path, file_utils.process_file_name(file_path))
-
+                prompt_builder.add_file(path, file_utils.process_file_name(path))
 
     @staticmethod
     def get_command_key() -> List:
