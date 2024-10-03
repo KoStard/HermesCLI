@@ -68,3 +68,16 @@ class FileContextProvider(ContextProvider):
             self._validate_and_add_files(data["file_paths"])
         else:
             self.logger.warning("No file paths found in deserialization data")
+
+    def serialize(self) -> Dict[str, Dict[str, Any]]:
+        return {
+            self.get_command_key()[0]: {
+                "file_paths": self.file_paths
+            }
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        if "file_paths" in data:
+            self._validate_and_add_files(data["file_paths"])
+        else:
+            self.logger.warning("No file paths found in deserialization data")

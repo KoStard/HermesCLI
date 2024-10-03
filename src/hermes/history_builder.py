@@ -1,10 +1,12 @@
 import logging
+import json
 from typing import Any, Dict, List, Type
 
 from hermes.chat_ui import ChatUI
 from hermes.context_providers.base import ContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
+from hermes.registry import ModelRegistry
 from itertools import groupby
 
 # Set up logging
@@ -106,3 +108,57 @@ class HistoryBuilder:
             if author == "assistant":
                 return next((chunk["text"] for chunk in group if "text" in chunk), None)
         return None
+
+    def save_history(self, file_path: str):
+        serialized_chunks = []
+        for chunk in self.chunks:
+            if chunk['author'] == 'assistant':
+                serialized_chunks.append(chunk)
+            elif chunk['author'] == 'user':
+                if 'context_provider' in chunk:
+                    serialized_chunk = {
+                        'author': 'user',
+                        'context_provider': chunk['context_provider'].serialize(),
+                        'active': chunk['active'],
+                        'is_action': chunk.get('is_action', False),
+                        'has_acted': chunk.get('has_acted', False),
+                        'permanent': chunk.get('permanent', False)
+                    }
+                else:
+                    serialized_chunk = chunk
+                serialized_chunks.append(serialized_chunk)
+
+        with open(file_path, 'w') as f:
+            json.dump(serialized_chunks, f, indent=2)
+
+    def load_history(self, file_path: str):
+        with open(file_path, 'r') as f:
+            serialized_chunks = json.load(f)
+
+        self.chunks = []
+        for chunk in serialized_chunks:
+            if chunk['author'] == 'assistant':
+                self.chunks.append(chunk)
+            elif chunk['author'] == 'user':
+                if 'context_provider' in chunk:
+                    provider_key = list(chunk['context_provider'].keys())[0]
+                    provider_class = ModelRegistry.get_context_provider(provider_key)
+                    if provider_class:
+                        provider_instance = provider_class()
+                        try:
+                            provider_instance.deserialize(chunk['context_provider'][provider_key])
+                            deserialized_chunk = {
+                                'author': 'user',
+                                'context_provider': provider_instance,
+                                'active': chunk['active'],
+                                'is_action': chunk.get('is_action', False),
+                                'has_acted': chunk.get('has_acted', False),
+                                'permanent': chunk.get('permanent', False)
+                            }
+                            self.chunks.append(deserialized_chunk)
+                        except Exception as e:
+                            logger.warning(f"Failed to deserialize context provider {provider_key}: {str(e)}")
+                    else:
+                        logger.warning(f"Unknown context provider: {provider_key}")
+                else:
+                    self.chunks.append(chunk)

@@ -31,3 +31,13 @@ class ClipboardContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> List[str]:
         return ["clipboard"]
+
+    def serialize(self) -> Dict[str, Dict[str, Any]]:
+        return {
+            "text": {
+                "texts": [self.clipboard_content]
+            }
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        raise NotImplementedError("ClipboardContextProvider cannot be deserialized")
