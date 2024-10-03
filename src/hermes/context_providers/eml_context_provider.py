@@ -72,3 +72,14 @@ class EMLContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> List[str]:
         return ["eml"]
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "eml_paths": self.eml_paths
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.eml_paths = data.get("eml_paths", [])
+        for eml_path in self.eml_paths:
+            eml_content = self._parse_eml_file(eml_path)
+            self.logger.info(f"EML file loaded: {eml_path}")

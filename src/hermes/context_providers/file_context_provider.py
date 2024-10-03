@@ -56,11 +56,9 @@ class FileContextProvider(ContextProvider):
     def get_command_key() -> List[str]:
         return ["file", "files"]
 
-    def serialize(self) -> Dict[str, Dict[str, Any]]:
+    def serialize(self) -> Dict[str, Any]:
         return {
-            self.get_command_key()[0]: {
-                "file_paths": self.file_paths
-            }
+            "file_paths": self.file_paths
         }
 
     def deserialize(self, data: Dict[str, Any]):

@@ -66,6 +66,18 @@ class FillGapsContextProvider(ContextProvider):
             self.file_path, filled_content, mode="w"
         )
         return f"Gaps filled in {self.file_path}"
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "file_path": self.file_path,
+            "special_command_prompt": self.special_command_prompt
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.file_path = data.get("file_path", "")
+        self.special_command_prompt = data.get("special_command_prompt", "")
+        if self.file_path:
+            self._load_special_command_prompt()
     
     def _fill_gaps(self, original_content: str, new_content: str) -> str:
         # Split the original content into lines

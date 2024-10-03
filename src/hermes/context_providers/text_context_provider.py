@@ -36,3 +36,11 @@ class TextContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> str:
         return "text"
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "texts": self.texts
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.texts = data.get("texts", [])

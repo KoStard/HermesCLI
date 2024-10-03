@@ -74,3 +74,15 @@ class PrefillContextProvider(ContextProvider):
 
     def get_required_providers(self) -> Dict[str, List[str]]:
         return self.required_providers
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "prefill_names": self.prefill_names,
+            "prefill_contents": self.prefill_contents,
+            "required_providers": self.required_providers
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.prefill_names = data.get("prefill_names", [])
+        self.prefill_contents = data.get("prefill_contents", [])
+        self.required_providers = data.get("required_providers", {})

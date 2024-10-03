@@ -54,3 +54,13 @@ class URLContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> str:
         return "url"
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "urls": self.urls,
+            "contents": self.contents
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.urls = data.get("urls", [])
+        self.contents = data.get("contents", [])

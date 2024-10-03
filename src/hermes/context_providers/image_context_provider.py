@@ -35,3 +35,11 @@ class ImageContextProvider(ContextProvider):
     @staticmethod
     def get_command_key() -> str:
         return "image"
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "image_paths": self.image_paths
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.image_paths = data.get("image_paths", [])

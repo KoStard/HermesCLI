@@ -81,3 +81,13 @@ class HelpContextProvider(ContextProvider):
     @staticmethod
     def get_help():
         return "Show help from chat"
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "loaded": self.loaded,
+            "help_request": self.help_request
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.loaded = data.get("loaded", False)
+        self.help_request = data.get("help_request")

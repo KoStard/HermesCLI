@@ -35,3 +35,11 @@ class PromptContextProvider(ContextProvider):
 
     def counts_as_input(self) -> bool:
         return True
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "prompt": self.prompt
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.prompt = data.get("prompt", "")

@@ -64,3 +64,15 @@ class AppendContextProvider(ContextProvider):
     def perform_action(self, recent_llm_response: str) -> str:
         file_utils.write_file(self.file_path, "\n" + recent_llm_response, mode="a")
         return f"Content appended to {self.file_path}"
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "file_path": self.file_path,
+            "special_command_prompt": self.special_command_prompt
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.file_path = data.get("file_path", "")
+        self.special_command_prompt = data.get("special_command_prompt", "")
+        if self.file_path:
+            self._load_special_command_prompt()
