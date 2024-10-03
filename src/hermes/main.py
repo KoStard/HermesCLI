@@ -74,14 +74,15 @@ def main():
 
     model_name = args.model
     model, file_processor, prompt_builder_class = create_model_and_processors(model_name)
-    history_builder = HistoryBuilder(prompt_builder_class, file_processor)
+    command_keys_map = build_context_provider_map(context_provider_classes)
+    history_builder = HistoryBuilder(prompt_builder_class, file_processor, command_keys_map)
 
     logger.info(f"Using model: {model}")
     logger.info(f"Using file processor: {type(file_processor).__name__}")
     logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
     
     ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter())
-    app = ChatApplication(model, ui, history_builder, context_provider_classes, args)
+    app = ChatApplication(model, ui, history_builder, context_provider_classes, command_keys_map, args)
     app.refactored_universal_run_chat(args.once)
 
 

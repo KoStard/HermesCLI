@@ -15,10 +15,11 @@ logger = logging.getLogger(__name__)
 
 class HistoryBuilder:
     def __init__(
-        self, prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor
+        self, prompt_builder_class: Type[PromptBuilder], file_processor: FileProcessor, command_keys_map: Dict[str, Type[ContextProvider]]
     ):
         self.prompt_builder_class = prompt_builder_class
         self.file_processor = file_processor
+        self.command_keys_map = command_keys_map
 
         # New format
         # {'author': 'assistant', 'text': text}
@@ -142,7 +143,7 @@ class HistoryBuilder:
             elif chunk['author'] == 'user':
                 if 'context_provider' in chunk:
                     provider_key = list(chunk['context_provider'].keys())[0]
-                    provider_class = ModelRegistry.get_context_provider(provider_key)
+                    provider_class = self.command_keys_map.get(provider_key)
                     if provider_class:
                         provider_instance = provider_class()
                         try:

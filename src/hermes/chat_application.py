@@ -26,20 +26,13 @@ class ChatApplication:
         ui: ChatUI,
         history_builder: HistoryBuilder,
         context_provider_classes: List[Type[ContextProvider]],
+        command_keys_map: Dict[str, Type[ContextProvider]],
         args: argparse.Namespace,
     ):
         self.model = model
         self.ui = ui
         self.history_builder = history_builder
-
-        self.command_keys_map = {}
-        for provider_class in context_provider_classes:
-            command_keys = provider_class.get_command_key()
-            if isinstance(command_keys, str):
-                command_keys = [command_keys]
-            for key in command_keys:
-                key = key.strip()
-                self.command_keys_map[key] = provider_class
+        self.command_keys_map = command_keys_map
 
         self._setup_initial_context_providers(args)
 
