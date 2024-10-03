@@ -26,6 +26,6 @@
 - Debugging toolchain
 
 # Necessary before release
-- Save/load chat
+- Allow loading chat from CLI argument
 - Handle LLM exceptions
 - Ctrl+c while inputting should just invalidate
