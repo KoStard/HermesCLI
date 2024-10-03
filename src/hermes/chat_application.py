@@ -207,9 +207,9 @@ class ChatApplication:
     def _save_history(self, user_input):
         _, *args = shlex.split(user_input)
         if not args:
-            self.ui.display_status("Please provide a file path to save the history.")
-            return
-        file_path = args[0]
+            file_path = 'hermes_history.json'
+        else:
+            file_path = args[0]
         try:
             self.history_builder.save_history(file_path)
             self.ui.display_status(f"Chat history saved to {file_path}")
