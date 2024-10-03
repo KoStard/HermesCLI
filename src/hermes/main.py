@@ -25,6 +25,18 @@ from .chat_application import ChatApplication
 from .chat_ui import ChatUI
 
 
+def build_context_provider_map(context_provider_classes):
+    command_keys_map = {}
+    for provider_class in context_provider_classes:
+        command_keys = provider_class.get_command_key()
+        if isinstance(command_keys, str):
+            command_keys = [command_keys]
+        for key in command_keys:
+            key = key.strip()
+            command_keys_map[key] = provider_class
+    return command_keys_map
+
+
 def setup_logger():
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
