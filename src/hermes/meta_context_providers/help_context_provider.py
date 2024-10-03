@@ -68,6 +68,14 @@ class HelpContextProvider(ContextProvider):
                 keys = [keys]
             key_str = "/" + ", /".join(keys)
             help_content += f"{key_str}: {provider.get_help()}\n"
+        
+        # Add information about save and load history commands
+        help_content += "\nAdditional commands:\n"
+        help_content += "/save_history [file_path]: Save the current chat history to a file (default: hermes_history.json)\n"
+        help_content += "/load_history <file_path>: Load a previously saved chat history from a file\n"
+        help_content += "/clear: Clear the current chat history\n"
+        help_content += "/exit, /quit, /q: Exit the chat application\n"
+        
         return help_content
     
     @staticmethod
