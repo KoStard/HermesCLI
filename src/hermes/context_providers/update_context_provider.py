@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, Namespace
 import argparse
 import yaml
-from typing import List
+from typing import Any, Dict, List
 import logging
 import os
 from hermes.context_providers.base import ContextProvider
@@ -52,6 +52,16 @@ class UpdateContextProvider(ContextProvider):
 
     def counts_as_input(self) -> bool:
         return True
+
+    def serialize(self) -> Dict[str, Dict[str, Any]]:
+        return {
+            self.get_command_key(): {
+                "texts": self.texts
+            }
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        self.texts = data.get("texts", [])
 
     def is_action(self):
         return True

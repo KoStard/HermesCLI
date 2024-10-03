@@ -1,5 +1,5 @@
 import pyperclip
-from typing import List
+from typing import List, Dict, Any
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 
