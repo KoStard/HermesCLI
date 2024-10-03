@@ -1,10 +1,9 @@
 from argparse import ArgumentParser, Namespace
 import argparse
-from typing import List
+from typing import List, Dict, Any
 import logging
 import os
 import glob
-import logging
 from hermes.context_providers.base import ContextProvider
 from hermes.prompt_builders.base import PromptBuilder
 from hermes.utils import file_utils
@@ -54,5 +53,18 @@ class FileContextProvider(ContextProvider):
                 prompt_builder.add_file(path, file_utils.process_file_name(path))
 
     @staticmethod
-    def get_command_key() -> List:
+    def get_command_key() -> List[str]:
         return ["file", "files"]
+
+    def serialize(self) -> Dict[str, Dict[str, Any]]:
+        return {
+            self.get_command_key()[0]: {
+                "file_paths": self.file_paths
+            }
+        }
+
+    def deserialize(self, data: Dict[str, Any]):
+        if "file_paths" in data:
+            self._validate_and_add_files(data["file_paths"])
+        else:
+            self.logger.warning("No file paths found in deserialization data")

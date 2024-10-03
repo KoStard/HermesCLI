@@ -92,3 +92,21 @@ class ContextProvider(ABC):
         if not self.is_action():
             raise ValueError("This context provider does not represent an action.")
         pass
+
+    @abstractmethod
+    def serialize(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Serialize the context provider's state to a dictionary.
+
+        :return: A dictionary with the format {providerKey: {providerContext}}
+        """
+        pass
+
+    @abstractmethod
+    def deserialize(self, data: Dict[str, Any]):
+        """
+        Deserialize the given data and set up the context provider's inner state.
+
+        :param data: A dictionary containing the serialized state of the context provider
+        """
+        pass
