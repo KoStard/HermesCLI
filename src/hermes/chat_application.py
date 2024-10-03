@@ -145,6 +145,12 @@ class ChatApplication:
             elif user_input_lower == "/clear":
                 self.clear_chat()
                 continue
+            elif user_input_lower.startswith("/save_history"):
+                self._save_history(user_input)
+                continue
+            elif user_input_lower.startswith("/load_history"):
+                self._load_history(user_input)
+                continue
             elif user_input.startswith("/"):
                 words = shlex.split(user_input)
                 full_commands = self._split_list(words, lambda x: x.startswith("/") and x[1:] in self.command_keys_map)
@@ -197,3 +203,27 @@ class ChatApplication:
         self.model.initialize()
         self.history_builder.clear_regular_history()
         self.ui.display_status("Chat history cleared.")
+
+    def _save_history(self, user_input):
+        _, *args = shlex.split(user_input)
+        if not args:
+            self.ui.display_status("Please provide a file path to save the history.")
+            return
+        file_path = args[0]
+        try:
+            self.history_builder.save_history(file_path)
+            self.ui.display_status(f"Chat history saved to {file_path}")
+        except Exception as e:
+            self.ui.display_status(f"Error saving chat history: {str(e)}")
+
+    def _load_history(self, user_input):
+        _, *args = shlex.split(user_input)
+        if not args:
+            self.ui.display_status("Please provide a file path to load the history from.")
+            return
+        file_path = args[0]
+        try:
+            self.history_builder.load_history(file_path)
+            self.ui.display_status(f"Chat history loaded from {file_path}")
+        except Exception as e:
+            self.ui.display_status(f"Error loading chat history: {str(e)}")
