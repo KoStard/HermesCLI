@@ -3,7 +3,7 @@ import logging
 import re
 import shlex
 import sys
-from typing import List, Type
+from typing import Dict, List, Type
 
 from tenacity import (before_sleep_log, retry, stop_after_attempt,
                       wait_exponential)
