@@ -22,6 +22,7 @@ class TestChatApplication(unittest.TestCase):
         self.context_provider_classes = [
             self.mock_context_provider
         ]
+        self.command_keys_map = {"key1": self.mock_context_provider}
         self.args = Mock(spec=argparse.Namespace)
         self.args.key1 = "value1"
 
@@ -30,6 +31,7 @@ class TestChatApplication(unittest.TestCase):
             self.ui,
             self.history_builder,
             self.context_provider_classes,
+            self.command_keys_map,
             self.args
         )
 

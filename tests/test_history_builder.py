@@ -9,7 +9,8 @@ class TestHistoryBuilder(unittest.TestCase):
     def setUp(self):
         self.prompt_builder_class = Mock(spec=PromptBuilder)
         self.file_processor = Mock(spec=FileProcessor)
-        self.history_builder = HistoryBuilder(self.prompt_builder_class, self.file_processor)
+        self.command_keys_map = {"test_key": Mock()}
+        self.history_builder = HistoryBuilder(self.prompt_builder_class, self.file_processor, self.command_keys_map)
 
     def test_add_assistant_reply(self):
         self.history_builder.add_assistant_reply("Hello")

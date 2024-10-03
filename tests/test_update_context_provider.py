@@ -80,7 +80,13 @@ class TestUpdateContextProvider(unittest.TestCase):
             "special_command_prompt": "Update test.txt"
         })
 
-    def test_deserialize(self):
+    @patch('os.path.dirname')
+    @patch('builtins.open')
+    @patch('yaml.safe_load')
+    def test_deserialize(self, mock_yaml, mock_open, mock_dirname):
+        mock_dirname.return_value = '/fake/path'
+        mock_yaml.return_value = {'update': 'Update {file_name}'}
+        
         data = {
             "file_path": "new_test.txt",
             "special_command_prompt": "Update new_test.txt"
