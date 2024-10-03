@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, Namespace
 import argparse
-from typing import List
+from typing import List, Dict, Any
 import logging
 import os
 from hermes.context_providers.base import ContextProvider

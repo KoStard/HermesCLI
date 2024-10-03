@@ -1,7 +1,7 @@
 import argparse
 import requests
 from argparse import ArgumentParser, Namespace
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from tenacity import retry, stop_after_attempt, wait_exponential
 from markdownify import markdownify as md
 import logging
