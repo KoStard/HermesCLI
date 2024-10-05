@@ -168,3 +168,4 @@ tasks/
 docs/
 design_docs/
 .DS_Store
+.mise.toml

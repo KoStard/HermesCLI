@@ -20,3 +20,4 @@ pygments
 google-cloud-aiplatform
 coverage
 pyperclip
+python-dotenv

@@ -3,6 +3,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 from typing import List, Type
+from dotenv import load_dotenv
 
 from hermes.context_providers import ContextProvider, get_all_context_providers
 from hermes.extension_loader import load_extensions
@@ -63,6 +64,21 @@ def setup_logger():
     logger.addHandler(file_handler)
     return logger
 
+def load_debug_headers():
+    load_dotenv()
+    return {
+        'DISABLE_EXTENSIONS': os.getenv('HERMES_DEBUG_DISABLE_EXTENSIONS', 'false').lower() == 'true'
+    }
+
+def load_context_providers(disable_extensions=False) -> List[Type[ContextProvider]]:
+    providers = get_all_context_providers()
+    
+    # Load extension providers only if not disabled
+    if not disable_extensions:
+        providers.extend(load_extensions())
+    
+    return providers
+
 def main():
     parser = argparse.ArgumentParser(description="Multi-model chat application")
     parser.add_argument("--model", choices=ModelRegistry.get_available_models(), help="Choose the model to use (optional if configured in config.ini)")
@@ -70,8 +86,11 @@ def main():
     parser.add_argument("--once", help="Run Hermes only once without entering the loop", action="store_true")
     parser.add_argument("--no-highlighting", help="Disable syntax highlighting for markdown output", action="store_true")
 
-    # Load context providers dynamically (including extensions)
-    context_provider_classes = load_context_providers()
+    # Load debug headers
+    debug_headers = load_debug_headers()
+
+    # Load context providers dynamically (including extensions if not disabled)
+    context_provider_classes = load_context_providers(disable_extensions=debug_headers['DISABLE_EXTENSIONS'])
 
     # Add arguments from context providers (including extensions)
     for provider_class in context_provider_classes:
@@ -96,15 +115,6 @@ def main():
     ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter())
     app = ChatApplication(model, ui, history_builder, context_provider_classes, command_keys_map, args)
     app.refactored_universal_run_chat(args.once)
-
-
-def load_context_providers() -> List[Type[ContextProvider]]:
-    providers = get_all_context_providers()
-    
-    # Load extension providers
-    providers.extend(load_extensions())
-    
-    return providers
 
 if __name__ == "__main__":
     main()
