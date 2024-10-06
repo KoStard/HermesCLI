@@ -23,7 +23,7 @@ class GeminiModel(ChatModel):
 
     def send_history(self, messages) -> Generator[str, None, None]:
         history = [genai.types.ContentDict(
-            role=msg['role'], parts=[msg['content']]) for msg in messages[:-1]]
+            role=self._get_message_role(msg['role']), parts=[msg['content']]) for msg in messages[:-1]]
         chat = self.model.start_chat(history=history)
         response = chat.send_message(messages[-1]['content'], stream=True, safety_settings={
             HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
@@ -33,6 +33,11 @@ class GeminiModel(ChatModel):
         })
         for chunk in response:
             yield chunk.text
+
+    def _get_message_role(self, role):
+        if role == 'user':
+            return "user"
+        return "model"
 
     def get_model_id(self, model_identifier):
         if model_identifier == 'gemini/1.5-pro-exp-0801':

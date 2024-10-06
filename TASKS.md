@@ -27,6 +27,4 @@
 
 # Necessary before release
 
-- Ctrl+c while inputting should just invalidate
-- Fix the gemini model access - client name is incorrect
-
+- Invalid commands handling
