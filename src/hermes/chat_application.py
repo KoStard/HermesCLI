@@ -30,6 +30,10 @@ class ChatApplication:
         self.history_builder = history_builder
         self.command_keys_map = command_keys_map
 
+        # Loading history before instantiating the context providers
+        if args.load_history:
+            self._load_history_from_file(args.load_history)
+
         self._setup_initial_context_providers(args)
         self._user_commands_queue = []
 
@@ -229,3 +233,11 @@ class ChatApplication:
             self.ui.display_status(f"Chat history loaded from {file_path}")
         except Exception as e:
             self.ui.display_status(f"Error loading chat history: {str(e)}")
+
+    def _load_history_from_file(self, file_path: str):
+        try:
+            self.history_builder.load_history(file_path)
+            self.ui.display_status(f"Chat history loaded from {file_path}")
+        except Exception as e:
+            self.ui.display_status(f"Error loading chat history: {str(e)}")
+            logger.error(f"Error loading chat history from {file_path}: {str(e)}", exc_info=True)

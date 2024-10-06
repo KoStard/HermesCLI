@@ -85,6 +85,7 @@ def main():
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--once", help="Run Hermes only once without entering the loop", action="store_true")
     parser.add_argument("--no-highlighting", help="Disable syntax highlighting for markdown output", action="store_true")
+    parser.add_argument("--load-history", help="Load chat history from a file", type=str, metavar="FILEPATH")
 
     # Load debug headers
     debug_headers = load_debug_headers()
