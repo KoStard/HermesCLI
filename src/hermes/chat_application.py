@@ -2,6 +2,8 @@ import argparse
 import logging
 import shlex
 import sys
+import os
+from datetime import datetime
 from typing import Dict, List, Type, Generator
 
 from tenacity import (before_sleep_log, retry, stop_after_attempt,
@@ -82,15 +84,22 @@ class ChatApplication:
         it's in interactive mode or not. Each step will be implemented in a separate method and there we'll take care of the details.
         """
 
-        while True:
-            if self.user_round() == 'exit':
-                break
-            
-            self.llm_round()
-            
-            if not self.decide_to_continue(run_once):
-                break
-    
+        try:
+            while True:
+                if self.user_round() == 'exit':
+                    break
+                
+                self.llm_round()
+                
+                if not self.decide_to_continue(run_once):
+                    break
+        except (KeyboardInterrupt, EOFError):
+            return
+        except Exception as e:
+            file_path = self._save_history(None)
+            logger.error(f"Chat history saved to {file_path} before exiting")
+            raise e
+        
     def user_round(self):
         keyboard_interrupt = False
         while self.history_builder.requires_user_input():
@@ -215,7 +224,7 @@ class ChatApplication:
 
     @retry(
         stop=stop_after_attempt(5),
-        wait=wait_exponential(multiplier=1, min=1, max=20),
+        wait=wait_exponential(multiplier=1, min=1, max=6),
         before_sleep=before_sleep_log(logger, logging.INFO),
         retry=(
             retry_if_exception_type(Exception) |
@@ -264,14 +273,24 @@ class ChatApplication:
 
     def _save_history(self, args):
         if not args:
-            file_path = 'hermes_history.json'
+            # Create a timestamp string for the default filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"hermes_history_{timestamp}.json"
         else:
-            file_path = ' '.join(args)
+            # Use the filename provided by the user
+            filename = ' '.join(args)
+            # Ensure the filename ends with .json
+            if not filename.lower().endswith('.json'):
+                filename += '.json'
+
         try:
-            self.history_builder.save_history(file_path)
-            self.ui.display_status(f"Chat history saved to {file_path}")
+            self.history_builder.save_history(filename)
+            readable_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.ui.display_status(f"Chat history saved to '{filename}' at {readable_time}")
         except Exception as e:
             self.ui.display_status(f"Error saving chat history: {str(e)}")
+        
+        return filename
 
     def _load_history(self, args):
         if not args:
