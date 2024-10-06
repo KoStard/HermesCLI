@@ -34,11 +34,18 @@ class HistoryBuilder:
 
     def requires_user_input(self) -> bool:
         for chunk in reversed(self.chunks):
-            if chunk["author"] == "user" and chunk.get("active", False):
+            if chunk["author"] == "user" and chunk.get("active", False) and not chunk.get("override_passive", False):
                 return False  # We already have a user input
             if chunk["author"] == "assistant":
                 return True
         return True
+
+    def force_need_for_user_input(self):
+        for chunk in reversed(self.chunks):
+            if chunk["author"] == "user" and chunk.get("active", False):
+                chunk["override_passive"] = True
+            if chunk["author"] == "assistant":
+                return
 
     def add_assistant_reply(self, content: str):
         self.chunks.append({"author": "assistant", "text": content})

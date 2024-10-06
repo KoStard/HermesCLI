@@ -6,7 +6,7 @@ from ..registry import register_model
 
 
 @register_model(name=[
-    "gemini"
+    "gemini",
     "gemini/1.5-pro-exp-0801",
     "gemini/1.5-pro-exp-0827",
     "gemini/1.5-pro-002"

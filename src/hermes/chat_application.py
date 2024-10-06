@@ -2,10 +2,10 @@ import argparse
 import logging
 import shlex
 import sys
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Generator
 
 from tenacity import (before_sleep_log, retry, stop_after_attempt,
-                      wait_exponential)
+                      wait_exponential, retry_if_exception_type, retry_if_result)
 
 from hermes.chat_models.base import ChatModel
 from hermes.chat_ui import ChatUI
@@ -29,6 +29,7 @@ class ChatApplication:
         self.ui = ui
         self.history_builder = history_builder
         self.command_keys_map = command_keys_map
+        self.is_model_initialised = False
 
         # Loading history before instantiating the context providers
         if args.load_history:
@@ -75,8 +76,7 @@ class ChatApplication:
         This version of run() method will be universal, regardless if --once is passed, it's using a special command or not,
         it's in interactive mode or not. Each step will be implemented in a separate method and there we'll take care of the details.
         """
-        self.initialise_chat()
-        
+
         while True:
             if self.user_round() == 'exit':
                 break
@@ -85,11 +85,6 @@ class ChatApplication:
             
             if not self.decide_to_continue(run_once):
                 break
-    
-    def initialise_chat(self):
-        logger.debug("Initializing model")
-        self.model.initialize()
-        logger.debug("Model initialized successfully")
     
     def user_round(self):
         keyboard_interrupt = False
@@ -112,16 +107,24 @@ class ChatApplication:
         messages = self.history_builder.build_messages()
         try:
             logger.debug("Sending request to model")
-            response = self.ui.display_response(self._send_model_request(messages))
+            response = self._send_model_request(messages)
+            if response is None:
+                retry = self.ui.get_user_input("Model request failed. Retry? (Y/n): ").lower()
+                if retry in ['y', 'yes', '']:
+                    logger.info("User chose to retry the model request")
+                    return self._llm_interact()
+                else:
+                    logger.debug("User chose not to retry the model request")
+                    self.ui.display_status("Model request cancelled by user.")
+                    self.history_builder.force_need_for_user_input()
+                    return
+
+            response = self.ui.display_response(response)
             logger.debug(f"Received response from model: {response[:50]}...")
             self.history_builder.add_assistant_reply(response)
-        except Exception as e:
-            logger.error(f"Error during model request: {str(e)}", exc_info=True)
-            self.ui.display_status(f"An error occurred: {str(e)}")
-            raise e
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Continuing")
-            self.history_builder.add_assistant_reply("<RESPONSE_FAILED_TO_COMMUNICATE>")
+            self.history_builder.force_need_for_user_input()
         
     def _llm_act(self):
         recent_llm_response = self.history_builder.get_recent_llm_response()
@@ -197,18 +200,48 @@ class ChatApplication:
         stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=1, min=1, max=20),
         before_sleep=before_sleep_log(logger, logging.INFO),
+        retry=(
+            retry_if_exception_type(Exception) |
+            retry_if_result(lambda result: result is None)
+        )
     )
-    def _send_model_request(self, messages):
+    def _send_model_request(self, messages) -> Generator[str, None, None] | None:
         logger.debug("Sending request to model (with retry)")
         logger.debug("Messages to send:")
         for message in messages:
             logger.debug(message)
-        response = self.model.send_history(messages)
-        logger.debug("Received response from model")
-        return response
+        try:
+            if not self.is_model_initialised:
+                self._initialise_model()
+                self.is_model_initialised = True
+            
+            response_generator = self.model.send_history(messages)
+            
+            # Try to get the first chunk to ensure the generator is working
+            try:
+                first_chunk = next(response_generator)
+                logger.debug("Received first chunk of response from model")
+                
+                # Create a new generator that yields the first chunk and then the rest
+                def safe_generator():
+                    yield first_chunk
+                    yield from response_generator
+                
+                return safe_generator()
+            except StopIteration:
+                logger.error("Model returned an empty response")
+                return None
+            
+        except Exception as e:
+            logger.error(f"Error during model request: {str(e)}", exc_info=True)
+            return None
+    
+    def _initialise_model(self):
+        logger.debug("Initializing model")
+        self.model.initialize()
+        logger.debug("Model initialized successfully")
 
     def clear_chat(self):
-        self.model.initialize()
         self.history_builder.clear_regular_history()
         self.ui.display_status("Chat history cleared.")
 
