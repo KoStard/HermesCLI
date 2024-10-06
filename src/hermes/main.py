@@ -113,7 +113,7 @@ def main():
     logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
     
     ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter())
-    app = ChatApplication(model, ui, history_builder, context_provider_classes, command_keys_map, args)
+    app = ChatApplication(model, ui, history_builder, command_keys_map, args)
     app.refactored_universal_run_chat(args.once)
 
 if __name__ == "__main__":

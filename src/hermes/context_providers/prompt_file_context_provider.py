@@ -23,7 +23,7 @@ class PromptFileContextProvider(ContextProvider):
 
     def load_context_from_string(self, args: List[str]):
         if args:
-            with open(args[0], 'r') as f:
+            with open(' '.join(args), 'r') as f:
                 self.prompt = f.read().strip()
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):

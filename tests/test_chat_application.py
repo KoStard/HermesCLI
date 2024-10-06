@@ -19,9 +19,6 @@ class TestChatApplication(unittest.TestCase):
         self.mock_context_provider_instance.load_context_from_cli.return_value = None
         self.mock_context_provider_instance.load_context_from_string.return_value = None
         self.mock_context_provider_instance.counts_as_input.return_value = False
-        self.context_provider_classes = [
-            self.mock_context_provider
-        ]
         self.command_keys_map = {"key1": self.mock_context_provider}
         self.args = Mock(spec=argparse.Namespace)
         self.args.key1 = "value1"
@@ -30,7 +27,6 @@ class TestChatApplication(unittest.TestCase):
             self.model,
             self.ui,
             self.history_builder,
-            self.context_provider_classes,
             self.command_keys_map,
             self.args
         )

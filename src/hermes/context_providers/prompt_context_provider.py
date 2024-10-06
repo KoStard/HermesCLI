@@ -20,7 +20,7 @@ class PromptContextProvider(ContextProvider):
         self.prompt = args.prompt if args.prompt else ""
 
     def load_context_from_string(self, args: List[str]):
-        self.prompt = args[0] if args else ""
+        self.prompt = " ".join(args)
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):
         if self.prompt:

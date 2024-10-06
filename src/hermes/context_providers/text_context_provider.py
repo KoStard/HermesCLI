@@ -26,7 +26,7 @@ class TextContextProvider(ContextProvider):
     def load_context_from_string(self, args: List[str]):
         if not args:
             return
-        self.texts.extend(args)
+        self.texts.append(" ".join(args))
         self.logger.debug(f"Added {len(args)} text input interactively")
 
     def add_to_prompt(self, prompt_builder: PromptBuilder):

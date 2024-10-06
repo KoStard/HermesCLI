@@ -30,7 +30,7 @@ class AppendContextProvider(ContextProvider):
             self.logger.debug(f"Loaded append context for file: {self.file_path}")
 
     def load_context_from_string(self, args: List[str]):
-        self.file_path = args[0]
+        self.file_path = ' '.join(args)
         self._load_special_command_prompt()
         self.logger.debug(f"Added append context for file: {self.file_path}")
 

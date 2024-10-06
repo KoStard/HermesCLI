@@ -1,0 +1,12 @@
+[
+  {
+    "author": "user",
+    "text": "hello",
+    "active": true,
+    "permanent": false
+  },
+  {
+    "author": "assistant",
+    "text": "Hello! How can I assist you today?"
+  }
+]

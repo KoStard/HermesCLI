@@ -64,7 +64,11 @@ class ChatUI:
                     return user_input
                 self.console.print("Please enter a non-empty message.", style="bold red")
         else:  # Input is coming from a pipe
-            return sys.stdin.read().strip()
+            stdin_input = sys.stdin.read().strip()
+            if stdin_input:
+                return stdin_input
+            else:
+                return '/exit'
 
     def display_status(self, message: str):
         self.console.print(Panel(message, expand=False), style="bold yellow")

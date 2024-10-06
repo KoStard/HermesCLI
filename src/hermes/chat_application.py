@@ -1,6 +1,5 @@
 import argparse
 import logging
-import re
 import shlex
 import sys
 from typing import Dict, List, Type
@@ -11,9 +10,7 @@ from tenacity import (before_sleep_log, retry, stop_after_attempt,
 from hermes.chat_models.base import ChatModel
 from hermes.chat_ui import ChatUI
 from hermes.context_providers.base import ContextProvider
-from hermes.file_processors.base import FileProcessor
 from hermes.history_builder import HistoryBuilder
-from hermes.prompt_builders.base import PromptBuilder
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -25,7 +22,6 @@ class ChatApplication:
         model: ChatModel,
         ui: ChatUI,
         history_builder: HistoryBuilder,
-        context_provider_classes: List[Type[ContextProvider]],
         command_keys_map: Dict[str, Type[ContextProvider]],
         args: argparse.Namespace,
     ):
@@ -35,6 +31,7 @@ class ChatApplication:
         self.command_keys_map = command_keys_map
 
         self._setup_initial_context_providers(args)
+        self._user_commands_queue = []
 
         logger.debug("ChatApplication initialization complete")
 
@@ -131,38 +128,45 @@ class ChatApplication:
         )
     
     def decide_to_continue(self, run_once):
-        is_input_piped = not sys.stdin.isatty()
         is_output_piped = not sys.stdout.isatty()
-        return not run_once and not is_input_piped and not is_output_piped
+        return not run_once and not is_output_piped
     
     def get_user_input(self):
-        while True:
+        extra_commands = {
+            "/exit",
+            "/quit",
+            "/q",
+            "/clear",
+            "/save_history",
+            "/load_history"
+        }   
+
+        if not self._user_commands_queue:
             user_input = self.ui.get_user_input()
-            user_input_lower = user_input.lower()
 
-            if user_input_lower in ["/exit", "/quit", "/q"]:
-                return 'exit'
-            elif user_input_lower == "/clear":
-                self.clear_chat()
-                continue
-            elif user_input_lower.startswith("/save_history"):
-                self._save_history(user_input)
-                continue
-            elif user_input_lower.startswith("/load_history"):
-                self._load_history(user_input)
-                continue
-            elif user_input.startswith("/"):
-                words = shlex.split(user_input)
-                full_commands = self._split_list(words, lambda x: x.startswith("/") and x[1:] in self.command_keys_map)
+            words = shlex.split(user_input)
+            full_commands = self._split_list(words, lambda x: x.startswith("/") and (x[1:] in self.command_keys_map or x in extra_commands))
+            for command_and_args in full_commands:
+                self._user_commands_queue.append(command_and_args)
 
-                for cmd in full_commands:
-                    command, *args = cmd
-                    command = command[1:]
-                    self._run_command(command, args)
-                return
-            else:
-                self.history_builder.add_user_input(user_input, active=True)
-                return
+        command_and_args = self._user_commands_queue.pop(0)
+        command = command_and_args[0]
+        command = command.lower()
+        args = command_and_args[1:]
+
+        if command in ["/exit", "/quit", "/q"]:
+            return 'exit'
+        elif command == "/clear":
+            self.clear_chat()
+        elif command == "/save_history":
+            self._save_history(args)
+        elif command == "/load_history":
+            self._load_history(args)
+        elif command.startswith("/"):
+            self._run_command(command[1:], args)
+        else:
+            used_input_instance = " ".join(command_and_args)
+            self.history_builder.add_user_input(used_input_instance, active=True)
     
     def _run_command(self, command, args):
         self._setup_initial_context_provider(command, None, args, permanent=False)
@@ -204,24 +208,22 @@ class ChatApplication:
         self.history_builder.clear_regular_history()
         self.ui.display_status("Chat history cleared.")
 
-    def _save_history(self, user_input):
-        _, *args = shlex.split(user_input)
+    def _save_history(self, args):
         if not args:
             file_path = 'hermes_history.json'
         else:
-            file_path = args[0]
+            file_path = ' '.join(args)
         try:
             self.history_builder.save_history(file_path)
             self.ui.display_status(f"Chat history saved to {file_path}")
         except Exception as e:
             self.ui.display_status(f"Error saving chat history: {str(e)}")
 
-    def _load_history(self, user_input):
-        _, *args = shlex.split(user_input)
+    def _load_history(self, args):
         if not args:
             self.ui.display_status("Please provide a file path to load the history from.")
             return
-        file_path = args[0]
+        file_path = ' '.join(args)
         try:
             self.history_builder.load_history(file_path)
             self.ui.display_status(f"Chat history loaded from {file_path}")
