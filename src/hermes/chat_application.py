@@ -152,7 +152,7 @@ class ChatApplication:
             user_input = self.ui.get_user_input()
 
             words = shlex.split(user_input)
-            full_commands = self._split_list(words, lambda x: x.startswith("/") and (x[1:] in self.command_keys_map or x in extra_commands))
+            full_commands = self._split_list_with_fallback(words, lambda x: x.startswith("/") and (x[1:] in self.command_keys_map or x in extra_commands))
             for command_and_args in full_commands:
                 self._user_commands_queue.append(command_and_args)
 
@@ -179,9 +179,10 @@ class ChatApplication:
         self._setup_initial_context_provider(command, None, args, permanent=False)
         self.ui.display_status(f"Context added for /{command}")
             
-    def _split_list(self, lst, checker):
+    def _split_list_with_fallback(self, lst, checker):
         result = []
         current_sublist = []
+        first_item_checks_out = lst and checker(lst[0])
 
         for item in lst:
             if checker(item):
@@ -193,6 +194,12 @@ class ChatApplication:
 
         if current_sublist:
             result.append(current_sublist)
+        
+        if not first_item_checks_out:
+            result[0] = [
+                '/prompt',
+                *result[0]
+            ]
 
         return result
 

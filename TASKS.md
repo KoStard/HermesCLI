@@ -26,5 +26,3 @@
 - Debugging toolchain
 
 # Necessary before release
-
-- Invalid commands handling

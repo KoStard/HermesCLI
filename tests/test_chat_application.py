@@ -156,7 +156,7 @@ class TestChatApplication(unittest.TestCase):
 
     def test_split_list(self):
         lst = ["/command1", "arg1", "/command2", "arg2"]
-        result = self.chat_app._split_list(lst, lambda x: x.startswith("/"))
+        result = self.chat_app._split_list_with_fallback(lst, lambda x: x.startswith("/"))
         self.assertEqual(result, [["/command1", "arg1"], ["/command2", "arg2"]])
 
     def test_send_model_request(self):
