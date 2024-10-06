@@ -1,5 +1,6 @@
 import os
 import configparser
+import logging
 from typing import Tuple
 
 from hermes.chat_models.base import ChatModel
@@ -26,6 +27,8 @@ from .prompt_builders.openai_prompt_builder import OpenAIPromptBuilder
 
 from .registry import ModelRegistry
 
+logger = logging.getLogger(__name__)
+
 def get_default_model(config):
     if 'BASE' in config and 'model' in config['BASE']:
         return config['BASE']['model']
@@ -43,7 +46,13 @@ def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str,
         if model_name is None:
             raise Exception("No model specified and no default model found in config. Use --model to specify a model or set a default in the config file.")
 
-    config_key = ModelRegistry.get_config_key(model_name)
+    try:
+        config_key = ModelRegistry.get_config_key(model_name)
+    except Exception as e:
+        logger.debug(f"Error getting config key for model {model_name}: {str(e)}")
+        logger.error(f"Model {model_name} not found, available models: {ModelRegistry.get_available_models()}")
+        raise e
+
     model_config = dict(config[config_key]) if config_key in config else {}
     model, file_processor, prompt_builder_class = ModelRegistry.create_model(model_name, model_config)
 

@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import sys
 from logging.handlers import RotatingFileHandler
 from typing import List, Type
 from dotenv import load_dotenv
@@ -105,7 +106,12 @@ def main():
     logger = setup_logger()
 
     model_name = args.model
-    model, file_processor, prompt_builder_class = create_model_and_processors(model_name)
+    try:    
+        model, file_processor, prompt_builder_class = create_model_and_processors(model_name)
+    except Exception as e:
+        logger.error(f"Error creating model and processors: {str(e)}")
+        sys.exit(1)
+
     command_keys_map = build_context_provider_map(context_provider_classes)
     history_builder = HistoryBuilder(prompt_builder_class, file_processor, command_keys_map)
 
