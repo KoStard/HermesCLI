@@ -66,7 +66,7 @@ class ChatApplication:
         self.history_builder.add_context(provider, provider.counts_as_input(), permanent=permanent)
         return provider
 
-    def refactored_universal_run_chat(self, run_once=False):
+    def run_chat(self, run_once=False):
         """
         This version of run() method will be universal, regardless if --once is passed, it's using a special command or not,
         it's in interactive mode or not. Each step will be implemented in a separate method and there we'll take care of the details.

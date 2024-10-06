@@ -114,7 +114,7 @@ def main():
     
     ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter())
     app = ChatApplication(model, ui, history_builder, command_keys_map, args)
-    app.refactored_universal_run_chat(args.once)
+    app.run_chat(args.once)
 
 if __name__ == "__main__":
     main()

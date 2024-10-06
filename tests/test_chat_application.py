@@ -74,7 +74,7 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app.llm_round = Mock()
         self.chat_app.decide_to_continue = Mock(return_value=False)
 
-        self.chat_app.refactored_universal_run_chat(run_once=False)
+        self.chat_app.run_chat(run_once=False)
 
         self.chat_app.initialise_chat.assert_called_once()
         self.chat_app.user_round.assert_called_once()
@@ -87,7 +87,7 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app.llm_round = Mock()
         self.chat_app.decide_to_continue = Mock(return_value=False)
 
-        self.chat_app.refactored_universal_run_chat(run_once=False)
+        self.chat_app.run_chat(run_once=False)
 
         self.chat_app.initialise_chat.assert_called_once()
 
