@@ -26,6 +26,9 @@
 - Debugging toolchain
 
 # Necessary before release
+
 - Allow loading chat from CLI argument
 - Handle LLM exceptions
 - Ctrl+c while inputting should just invalidate
+- Fix the gemini model access - client name is incorrect
+
