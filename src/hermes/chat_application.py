@@ -43,7 +43,12 @@ class ChatApplication:
     def _setup_initial_context_providers(self, args: argparse.Namespace):
         for key, value in vars(args).items():
             if key in self.command_keys_map and value:
-                self._setup_initial_context_provider(key, args, None, permanent=True)
+                try:
+                    provider_instances = self._setup_initial_context_provider(key, args, None, permanent=True)
+                    for provider in provider_instances:
+                        self.history_builder.add_context(provider, provider.counts_as_input(), permanent=True)
+                except Exception as e:
+                    logger.error(f"Error during setup of initial context providers with {key}: {str(e)}", exc_info=True)
 
     def _setup_initial_context_provider(
         self,
@@ -51,25 +56,25 @@ class ChatApplication:
         cli_args: argparse.Namespace | None,
         regular_args: List[str] | None,
         permanent: bool
-    ):
+    ) -> List[ContextProvider]:
         provider = self.command_keys_map[provider_key]()
         logger.debug(f"Initializing provider {provider_key}")
 
-        if cli_args is not None:
-            provider.load_context_from_cli(cli_args)
-        else:
-            provider.load_context_from_string(regular_args)
+        provider.load_context(cli_args, regular_args)
 
         required_providers = provider.get_required_providers()
         logger.debug(
             f"Provider {provider_key} requires providers: {required_providers}"
         )
 
-        for required_provider, required_args in required_providers.items():
-            self._setup_initial_context_provider(required_provider, None, required_args, permanent=permanent)
+        provider_instances = []
 
-        self.history_builder.add_context(provider, provider.counts_as_input(), permanent=permanent)
-        return provider
+        for required_provider, required_args in required_providers.items():
+            provider_instances.extend(self._setup_initial_context_provider(required_provider, None, required_args, permanent=permanent))
+
+        provider_instances.append(provider)
+
+        return provider_instances
 
     def run_chat(self, run_once=False):
         """
@@ -92,12 +97,15 @@ class ChatApplication:
             try:
                 if self.get_user_input() == 'exit':
                     return 'exit'
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, EOFError):
                 if not keyboard_interrupt:
                     logger.info("\nChat interrupted by user. Continuing")
                     keyboard_interrupt = True
                 else:
                     return 'exit'
+            except Exception as e:
+                logger.error(f"Error during user round: {str(e)}", exc_info=True)
+                self.history_builder.force_need_for_user_input()
 
     def llm_round(self):
         self._llm_interact()
@@ -176,7 +184,9 @@ class ChatApplication:
             self.history_builder.add_user_input(used_input_instance, active=True)
     
     def _run_command(self, command, args):
-        self._setup_initial_context_provider(command, None, args, permanent=False)
+        provider_instances = self._setup_initial_context_provider(command, None, args, permanent=False)
+        for provider in provider_instances:
+            self.history_builder.add_context(provider, provider.counts_as_input(), permanent=False)
         self.ui.display_status(f"Context added for /{command}")
             
     def _split_list_with_fallback(self, lst, checker):

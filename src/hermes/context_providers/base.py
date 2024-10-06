@@ -27,6 +27,23 @@ class ContextProvider(ABC):
         """
         pass
 
+    def load_context(self, args: argparse.Namespace | None, string_args: List[str] | None):
+        self.check_system_health_for_loading()
+        if args is not None:
+            self.load_context_from_cli(args)
+        elif string_args is not None:
+            self.load_context_from_string(string_args)
+        else:
+            raise ValueError("No arguments provided to load context.")
+    
+    def check_system_health_for_loading(self):
+        """
+        Check the system health for loading.
+        Allows the context provider to fail in case it needs some user setup before successfully loading.
+        Make sure to include helpful error messages in the failure case.
+        """
+        pass
+
     @abstractmethod
     def load_context_from_cli(self, args: argparse.Namespace):
         """

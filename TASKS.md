@@ -9,8 +9,6 @@
 - Allow showing the costs of the API calls
 - Allow configuring models with platform/provider/model?
 - Add proper error message when in config you have an invalid model name
-- Dedupe context providers
-- Add alias --create for --update
 - Consider using ELL: [MadcowD/ell: A language model programming library.](https://github.com/MadcowD/ell)
 - Implemenet cache for context providers
 - Allow users configure context they want to include with all prompts - in their config folder
