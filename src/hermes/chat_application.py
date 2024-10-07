@@ -4,7 +4,7 @@ import shlex
 import sys
 import os
 from datetime import datetime
-from typing import Dict, List, Type, Generator
+from typing import Callable, Dict, List, Type, Generator
 
 from tenacity import (before_sleep_log, retry, stop_after_attempt,
                       wait_exponential, retry_if_exception_type, retry_if_result)
@@ -168,8 +168,7 @@ class ChatApplication:
         if not self._user_commands_queue:
             user_input = self.ui.get_user_input()
 
-            words = shlex.split(user_input)
-            full_commands = self._split_list_with_fallback(words, lambda x: x.startswith("/") and (x[1:] in self.command_keys_map or x in extra_commands))
+            full_commands = self._process_user_input(user_input)
             for command_and_args in full_commands:
                 self._user_commands_queue.append(command_and_args)
 
@@ -196,31 +195,29 @@ class ChatApplication:
         provider_instances = self._setup_initial_context_provider(command, None, args, permanent=False)
         for provider in provider_instances:
             self.history_builder.add_context(provider, provider.counts_as_input(), permanent=False)
-        self.ui.display_status(f"Context added for /{command}")
+        if command != 'prompt':
+            self.ui.display_status(f"Context added for /{command}")
             
-    def _split_list_with_fallback(self, lst, checker):
+    def _process_user_input(self, user_input: str) -> List[List[str]]:
+        lines = user_input.split('\n')
         result = []
-        current_sublist = []
-        first_item_checks_out = lst and checker(lst[0])
-
-        for item in lst:
-            if checker(item):
-                if current_sublist:
-                    result.append(current_sublist)
-                current_sublist = [item]
-            else:
-                current_sublist.append(item)
-
-        if current_sublist:
-            result.append(current_sublist)
         
-        if not first_item_checks_out and len(result) > 1:
-            result[0] = [
-                '/prompt',
-                *result[0]
-            ]
-
+        for line in lines:
+            line = line.strip()
+            if line[0] == '/':
+                words = shlex.split(line)
+            else:
+                words = [line]
+            if not words:
+                continue
+            
+            if words[0].startswith('/') and (words[0][1:] in self.command_keys_map or words[0] in self.extra_commands):
+                result.append(words)
+            else:
+                result.append(['/prompt'] + words)
+        
         return result
+
 
     @retry(
         stop=stop_after_attempt(5),
