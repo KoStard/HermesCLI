@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from hermes.chat_application import ChatApplication
 from hermes.chat_models.base import ChatModel
 from hermes.chat_ui import ChatUI
+from hermes.context_providers.prompt_context_provider import PromptContextProvider
 from hermes.history_builder import HistoryBuilder
 from hermes.context_providers.base import ContextProvider
 class TestChatApplication(unittest.TestCase):
@@ -19,6 +20,9 @@ class TestChatApplication(unittest.TestCase):
         self.mock_context_provider_instance.load_context_from_cli.return_value = None
         self.mock_context_provider_instance.load_context_from_string.return_value = None
         self.mock_context_provider_instance.counts_as_input.return_value = False
+
+        self.mock_prompt_context_provider = Mock(spec=PromptContextProvider, counts_as_input=Mock(return_value=True))
+
         self.command_keys_map = {"key1": self.mock_context_provider}
         self.args = Mock(spec=argparse.Namespace)
         self.args.key1 = "value1"
@@ -122,8 +126,11 @@ class TestChatApplication(unittest.TestCase):
 
     def test_get_user_input(self):
         self.chat_app.ui.get_user_input.return_value = "test input"
+        self.chat_app._setup_initial_context_provider = Mock(return_value=[
+            self.mock_prompt_context_provider
+        ])
         self.chat_app.get_user_input()
-        self.history_builder.add_user_input.assert_called_once_with("test input", active=True)
+        self.history_builder.add_context.assert_called_with(self.mock_prompt_context_provider, True, permanent=False)
 
     def test_get_user_input_with_exit(self):
         self.chat_app.ui.get_user_input.return_value = "/exit"
@@ -136,19 +143,12 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app.get_user_input()
         self.chat_app.clear_chat.assert_called_once()
         self.history_builder.add_user_input.assert_not_called()
+        prompt_context_provider_mock = Mock(spec=PromptContextProvider, counts_as_input=Mock(return_value=True))
+        self.chat_app._setup_initial_context_provider = Mock(return_value=[
+            prompt_context_provider_mock
+        ])
         self.chat_app.get_user_input()
-        self.history_builder.add_user_input.assert_called_once_with("test input", active=True)
-    
-    def test_get_user_input_with_command(self):
-        self.chat_app.ui.get_user_input.return_value = "/command arg1 arg2"
-        self.chat_app._setup_initial_context_provider = Mock(return_value=[])
-        self.chat_app.get_user_input()
-        self.chat_app._setup_initial_context_provider.assert_called_once_with("command", None, ["arg1", "arg2"], permanent=False)
-
-    def test_split_list(self):
-        lst = ["/command1", "arg1", "/command2", "arg2"]
-        result = self.chat_app._split_list_with_fallback(lst, lambda x: x.startswith("/"))
-        self.assertEqual(result, [["/command1", "arg1"], ["/command2", "arg2"]])
+        self.history_builder.add_context.assert_called_with(prompt_context_provider_mock, True, permanent=False)
 
     def test_send_model_request(self):
         messages = ["message1", "message2"]

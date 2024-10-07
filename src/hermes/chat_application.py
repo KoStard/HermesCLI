@@ -40,6 +40,15 @@ class ChatApplication:
         self._setup_initial_context_providers(args)
         self._user_commands_queue = []
 
+        self.extra_commands = {
+            "/exit",
+            "/quit",
+            "/q",
+            "/clear",
+            "/save_history",
+            "/load_history"
+        }
+
         logger.debug("ChatApplication initialization complete")
 
     def _setup_initial_context_providers(self, args: argparse.Namespace):
@@ -156,15 +165,6 @@ class ChatApplication:
         return not run_once and not is_output_piped
     
     def get_user_input(self):
-        extra_commands = {
-            "/exit",
-            "/quit",
-            "/q",
-            "/clear",
-            "/save_history",
-            "/load_history"
-        }   
-
         if not self._user_commands_queue:
             user_input = self.ui.get_user_input()
 
