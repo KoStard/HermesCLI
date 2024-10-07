@@ -115,7 +115,7 @@ def main():
     command_keys_map = build_context_provider_map(context_provider_classes)
     history_builder = HistoryBuilder(prompt_builder_class, file_processor, command_keys_map)
 
-    logger.info(f"Using model: {model}")
+    logger.info(f"Using model {model.model_tag} with class {model.__class__.__name__}")
     logger.info(f"Using file processor: {type(file_processor).__name__}")
     logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
     
