@@ -214,7 +214,7 @@ class ChatApplication:
         if current_sublist:
             result.append(current_sublist)
         
-        if not first_item_checks_out:
+        if not first_item_checks_out and len(result) > 1:
             result[0] = [
                 '/prompt',
                 *result[0]
