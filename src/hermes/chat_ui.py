@@ -47,11 +47,11 @@ class ChatUI:
             live.update(Markdown("Assistant: \n" + buffer))
         return buffer
 
-    def get_user_input(self) -> str:
+    def get_user_input(self, prompt="You: ") -> str:
         if os.isatty(0):  # Check if input is coming from a terminal
             while True:
                 self.console.print("─" * self.console.width, style="dim")
-                user_input = input("You: ")
+                user_input = input(prompt)
                 if user_input.strip() == "{":
                     lines = []
                     while True:

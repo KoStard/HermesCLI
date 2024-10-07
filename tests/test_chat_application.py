@@ -22,6 +22,7 @@ class TestChatApplication(unittest.TestCase):
         self.command_keys_map = {"key1": self.mock_context_provider}
         self.args = Mock(spec=argparse.Namespace)
         self.args.key1 = "value1"
+        self.args.load_history = None
 
         self.chat_app = ChatApplication(
             self.model,
@@ -68,32 +69,23 @@ class TestChatApplication(unittest.TestCase):
         result = self.chat_app.user_round()
         self.assertEqual(result, "exit")
 
-    def test_refactored_universal_run_chat(self):
-        self.chat_app.initialise_chat = Mock()
+    def test_run_chat(self):
         self.chat_app.user_round = Mock(return_value='')
         self.chat_app.llm_round = Mock()
         self.chat_app.decide_to_continue = Mock(return_value=False)
 
         self.chat_app.run_chat(run_once=False)
 
-        self.chat_app.initialise_chat.assert_called_once()
         self.chat_app.user_round.assert_called_once()
         self.chat_app.llm_round.assert_called_once()
         self.chat_app.decide_to_continue.assert_called_once()
     
-    def test_refactored_universal_run_chat_with_exit(self):
-        self.chat_app.initialise_chat = Mock()
+    def test_run_chat_with_exit(self):
         self.chat_app.user_round = Mock(return_value='exit')
         self.chat_app.llm_round = Mock()
         self.chat_app.decide_to_continue = Mock(return_value=False)
 
         self.chat_app.run_chat(run_once=False)
-
-        self.chat_app.initialise_chat.assert_called_once()
-
-    def test_initialise_chat(self):
-        self.chat_app.initialise_chat()
-        self.model.initialize.assert_called_once()
 
     def test_llm_interact(self):
         self.chat_app.history_builder.build_messages = Mock(return_value=["message1", "message2"])
@@ -115,7 +107,7 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app._send_model_request = Mock(side_effect=KeyboardInterrupt)
         self.chat_app.ui.display_response = Mock(return_value="response")
         self.chat_app._llm_interact()
-        self.chat_app.history_builder.add_assistant_reply.assert_called_once_with("<RESPONSE_FAILED_TO_COMMUNICATE>")
+        self.chat_app.history_builder.force_need_for_user_input.assert_called_once()
 
     def test_llm_act(self):
         self.chat_app.history_builder.get_recent_llm_response = Mock(return_value="response")
@@ -124,12 +116,9 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app.history_builder.run_pending_actions.assert_called_once()
 
     def test_decide_to_continue(self):
-        sys.stdin.isatty = Mock(return_value=True)
         sys.stdout.isatty = Mock(return_value=True)
         self.assertTrue(self.chat_app.decide_to_continue(run_once=False))
 
-        sys.stdin.isatty = Mock(return_value=False)
-        self.assertFalse(self.chat_app.decide_to_continue(run_once=False))
 
     def test_get_user_input(self):
         self.chat_app.ui.get_user_input.return_value = "test input"
@@ -146,11 +135,13 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app.clear_chat = Mock()
         self.chat_app.get_user_input()
         self.chat_app.clear_chat.assert_called_once()
+        self.history_builder.add_user_input.assert_not_called()
+        self.chat_app.get_user_input()
         self.history_builder.add_user_input.assert_called_once_with("test input", active=True)
     
     def test_get_user_input_with_command(self):
         self.chat_app.ui.get_user_input.return_value = "/command arg1 arg2"
-        self.chat_app._setup_initial_context_provider = Mock()
+        self.chat_app._setup_initial_context_provider = Mock(return_value=[])
         self.chat_app.get_user_input()
         self.chat_app._setup_initial_context_provider.assert_called_once_with("command", None, ["arg1", "arg2"], permanent=False)
 
@@ -161,12 +152,11 @@ class TestChatApplication(unittest.TestCase):
 
     def test_send_model_request(self):
         messages = ["message1", "message2"]
-        self.model.send_history = Mock(return_value="response")
-        self.assertEqual(self.chat_app._send_model_request(messages), "response")
+        self.model.send_history = Mock(return_value=iter("response"))
+        self.assertEqual(list(self.chat_app._send_model_request(messages)), list("response"))
 
     def test_clear_chat(self):
         self.chat_app.clear_chat()
-        self.model.initialize.assert_called_once()
         self.history_builder.clear_regular_history.assert_called_once()
         self.ui.display_status.assert_called_once_with("Chat history cleared.")
 

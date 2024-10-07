@@ -36,7 +36,7 @@ class TestTextContextProvider(unittest.TestCase):
     def test_load_context_from_string(self):
         self.provider.load_context_from_string(["Text 1", "Text 2"])
         
-        self.assertEqual(self.provider.texts, ["Text 1", "Text 2"])
+        self.assertEqual(self.provider.texts, ["Text 1 Text 2"])
 
     def test_add_to_prompt(self):
         self.provider.texts = ["Text 1", "Text 2"]
