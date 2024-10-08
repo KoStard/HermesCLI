@@ -1,11 +1,12 @@
 from typing import Generator
 from .base import ChatModel
-from groq import Groq
 from ..registry import register_model
 
 @register_model(name="groq", file_processor="default", prompt_builder="markdown", config_key='GROQ')
 class GroqModel(ChatModel):
     def initialize(self):
+        from groq import Groq
+
         api_key = self.config.get("api_key")
         if not api_key:
             raise ValueError("API key is required for Groq model")

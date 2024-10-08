@@ -1,14 +1,15 @@
 from typing import Generator
 from .base import ChatModel
 from ..registry import register_model
-from google import auth
-import google.auth.transport.requests as requests
-import openai
 
 
 @register_model(name="vertex", file_processor="default", prompt_builder="xml", config_key='VERTEX')
 class VertexModel(ChatModel):
     def initialize(self):
+        from google import auth
+        import google.auth.transport.requests as requests
+        import openai
+
         credentials, _ = auth.default()
         auth_request = requests.Request()
         credentials.refresh(auth_request)
@@ -25,6 +26,7 @@ class VertexModel(ChatModel):
         super().initialize()
 
     def send_history(self, messages) -> Generator[str, None, None]:
+        import openai
         try:
             stream = self.client.chat.completions.create(
                 model=self.model_id,

@@ -1,7 +1,5 @@
 from typing import Generator
 from .base import ChatModel
-import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from ..registry import register_model
 
 
@@ -13,6 +11,8 @@ from ..registry import register_model
 ], file_processor="default", prompt_builder="xml", config_key='GEMINI')
 class GeminiModel(ChatModel):
     def initialize(self):
+        import google.generativeai as genai
+
         api_key = self.config.get("api_key")
         if not api_key:
             raise ValueError("API key is required for Gemini model")
@@ -22,7 +22,9 @@ class GeminiModel(ChatModel):
         self.model = genai.GenerativeModel(model_name)
 
     def send_history(self, messages) -> Generator[str, None, None]:
-        history = [genai.types.ContentDict(
+        from google.generativeai.types import ContentDict, HarmCategory, HarmBlockThreshold
+
+        history = [ContentDict(
             role=self._get_message_role(msg['role']), parts=[msg['content']]) for msg in messages[:-1]]
         chat = self.model.start_chat(history=history)
         response = chat.send_message(messages[-1]['content'], stream=True, safety_settings={

@@ -1,11 +1,12 @@
 from typing import Generator
 from .base import ChatModel
-import openai
 from ..registry import register_model
 
 @register_model(name="openai", file_processor="default", prompt_builder="openai", config_key='OPENAI')
 class OpenAIModel(ChatModel):
     def initialize(self):
+        import openai
+
         api_key = self.config.get("api_key")
         if not api_key:
             raise ValueError("API key is required for OpenAI model")
@@ -14,6 +15,7 @@ class OpenAIModel(ChatModel):
         self.client = openai.Client(api_key=api_key, base_url=base_url)
 
     def send_history(self, messages) -> Generator[str, None, None]:
+        import openai
         try:
             stream = self.client.chat.completions.create(
                 model=self.model,

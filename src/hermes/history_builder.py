@@ -1,12 +1,11 @@
 import logging
 import json
-from typing import Any, Dict, List, Type
+from typing import Dict, List, Type
 
 from hermes.chat_ui import ChatUI
 from hermes.context_providers.base import ContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
-from hermes.registry import ModelRegistry
 from itertools import groupby
 
 # Set up logging

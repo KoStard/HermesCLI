@@ -1,11 +1,12 @@
 from typing import Generator
 from .base import ChatModel
-import anthropic
 from ..registry import register_model
 
 @register_model(name="claude-sonnet-3.5", file_processor="default", prompt_builder="claude", config_key='ANTHROPIC')
 class ClaudeModel(ChatModel):
     def initialize(self):
+        import anthropic
+        
         api_key = self.config.get("api_key")
         if not api_key:
             raise ValueError("API key is required for Claude model")
