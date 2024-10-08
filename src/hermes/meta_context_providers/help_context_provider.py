@@ -33,7 +33,8 @@ class HelpContextProvider(ContextProvider):
         if not self._is_simple_mode():
             prompt_builder.add_text(self.help_request)
             
-    
+
+    @staticmethod
     def get_command_key() -> str | List[str]:
         return "help"
     
