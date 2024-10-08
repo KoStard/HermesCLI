@@ -13,6 +13,9 @@ from hermes.meta_context_providers import load_meta_context_providers
 from hermes.model_factory import create_model_and_processors
 from hermes.registry import ModelRegistry
 from hermes.utils.markdown_highlighter import MarkdownHighlighter
+from importlib.metadata import version
+
+__version__ = version("hermes-cli")
 
 if os.name == 'posix':
     import readline
@@ -87,7 +90,7 @@ def main():
     parser.add_argument("--once", help="Run Hermes only once without entering the loop", action="store_true")
     parser.add_argument("--no-highlighting", help="Disable syntax highlighting for markdown output", action="store_true")
     parser.add_argument("--load-history", help="Load chat history from a file", type=str, metavar="FILEPATH")
-
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     # Load debug headers
     debug_headers = load_debug_headers()
 
