@@ -4,7 +4,7 @@ import shlex
 import sys
 import os
 from datetime import datetime
-from typing import Callable, Dict, List, Type, Generator
+from typing import Callable, Dict, List, Tuple, Type, Generator
 
 from tenacity import (before_sleep_log, retry, stop_after_attempt,
                       wait_exponential, retry_if_exception_type, retry_if_result)
@@ -13,6 +13,7 @@ from hermes.chat_models.base import ChatModel
 from hermes.chat_ui import ChatUI
 from hermes.context_providers.base import ContextProvider
 from hermes.history_builder import HistoryBuilder
+from hermes.utils.commands_extractor import extract_commands
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class ChatApplication:
             self._load_history_from_file(args.load_history)
 
         self._setup_initial_context_providers(args)
-        self._user_commands_queue = []
+        self._user_commands_queue: List[Tuple[str, str]] = []
 
         self.extra_commands = {
             "/exit",
@@ -169,54 +170,42 @@ class ChatApplication:
             user_input = self.ui.get_user_input()
 
             full_commands = self._process_user_input(user_input)
-            for command_and_args in full_commands:
-                self._user_commands_queue.append(command_and_args)
+            for command, args in full_commands:
+                self._user_commands_queue.append((command, args))
 
-        command_and_args = self._user_commands_queue.pop(0)
-        command = command_and_args[0]
-        command = command.lower()
-        args = command_and_args[1:]
+        command, args = self._user_commands_queue.pop(0)
+        lower_command = command.lower()
 
-        if command in ["/exit", "/quit", "/q"]:
+        if lower_command in ["/exit", "/quit", "/q"]:
             return 'exit'
-        elif command == "/clear":
+        elif lower_command == "/clear":
             self.clear_chat()
-        elif command == "/save_history":
+        elif lower_command == "/save_history":
             self._save_history(args)
-        elif command == "/load_history":
+        elif lower_command == "/load_history":
             self._load_history(args)
-        elif command.startswith("/"):
-            self._run_command(command[1:], args)
+        elif lower_command.startswith("/"):
+            self._run_command(lower_command[1:], args)
         else:
-            used_input_instance = " ".join(command_and_args)
-            self.history_builder.add_user_input(used_input_instance, active=True)
+            self.history_builder.add_user_input(args, active=True)
     
-    def _run_command(self, command, args):
-        provider_instances = self._setup_initial_context_provider(command, None, args, permanent=False)
+    def _run_command(self, command: str, args: str):
+        shlexer = shlex.shlex(args, posix=True)
+        shlexer.quotes = '"'
+        shlexer.commenters = ''
+        shlexer.whitespace_split = True
+        shlex_args = list(shlexer)
+
+        provider_instances = self._setup_initial_context_provider(command, None, shlex_args, permanent=False)
         for provider in provider_instances:
             self.history_builder.add_context(provider, provider.counts_as_input(), permanent=False)
         if command != 'prompt':
             self.ui.display_status(f"Context added for /{command}")
             
-    def _process_user_input(self, user_input: str) -> List[List[str]]:
-        lines = user_input.split('\n')
-        result = []
-        
-        for line in lines:
-            line = line.strip()
-            if line[0] == '/':
-                words = shlex.split(line)
-            else:
-                words = [line]
-            if not words:
-                continue
-            
-            if words[0].startswith('/') and (words[0][1:] in self.command_keys_map or words[0] in self.extra_commands):
-                result.append(words)
-            else:
-                result.append(['/prompt'] + words)
-        
-        return result
+    def _process_user_input(self, user_input: str) -> List[Tuple[str, str]]:
+        commands_set = set(self.command_keys_map.keys()) | {e[1:] for e in self.extra_commands}
+
+        return extract_commands(user_input, commands_set)
 
 
     @retry(
@@ -268,14 +257,12 @@ class ChatApplication:
         self.history_builder.clear_regular_history()
         self.ui.display_status("Chat history cleared.")
 
-    def _save_history(self, args):
-        if not args:
+    def _save_history(self, filename: str | None):
+        if not filename:
             # Create a timestamp string for the default filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"hermes_history_{timestamp}.json"
         else:
-            # Use the filename provided by the user
-            filename = ' '.join(args)
             # Ensure the filename ends with .json
             if not filename.lower().endswith('.json'):
                 filename += '.json'
@@ -289,11 +276,10 @@ class ChatApplication:
         
         return filename
 
-    def _load_history(self, args):
-        if not args:
+    def _load_history(self, file_path: str | None):
+        if not file_path:
             self.ui.display_status("Please provide a file path to load the history from.")
             return
-        file_path = ' '.join(args)
         try:
             self.history_builder.load_history(file_path)
             self.ui.display_status(f"Chat history loaded from {file_path}")

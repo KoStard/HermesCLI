@@ -134,6 +134,9 @@ class TestChatApplication(unittest.TestCase):
 
     def test_get_user_input_with_exit(self):
         self.chat_app.ui.get_user_input.return_value = "/exit"
+        self.chat_app._setup_initial_context_provider = Mock(return_value=[
+            self.mock_prompt_context_provider
+        ])
         response = self.chat_app.get_user_input()
         self.assertEqual(response, "exit")
     
@@ -143,12 +146,11 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app.get_user_input()
         self.chat_app.clear_chat.assert_called_once()
         self.history_builder.add_user_input.assert_not_called()
-        prompt_context_provider_mock = Mock(spec=PromptContextProvider, counts_as_input=Mock(return_value=True))
         self.chat_app._setup_initial_context_provider = Mock(return_value=[
-            prompt_context_provider_mock
+            self.mock_prompt_context_provider
         ])
         self.chat_app.get_user_input()
-        self.history_builder.add_context.assert_called_with(prompt_context_provider_mock, True, permanent=False)
+        self.history_builder.add_context.assert_called_with(self.mock_prompt_context_provider, True, permanent=False)
 
     def test_send_model_request(self):
         messages = ["message1", "message2"]
