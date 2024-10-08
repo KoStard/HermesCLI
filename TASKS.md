@@ -17,4 +17,6 @@
 - Same for extensions, have a specific place with a specific variable to import.
 - Improve how the filename is sent to the LLM, send original name
 
-# Necessary before release
+# From Feedback
+- Add version numbers
+- Add version check command
