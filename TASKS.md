@@ -20,3 +20,4 @@
 # From Feedback
 - Add version numbers
 - Add version check command
+- Allow adding help markdown file in extensions

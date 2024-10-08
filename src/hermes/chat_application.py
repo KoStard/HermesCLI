@@ -54,6 +54,7 @@ class ChatApplication:
 
     def _setup_initial_context_providers(self, args: argparse.Namespace):
         for key, value in vars(args).items():
+            # The value is checked here, as the keys are always present in the namespace, but their values are None
             if key in self.command_keys_map and value:
                 try:
                     provider_instances = self._setup_initial_context_provider(key, args, None, permanent=True)

@@ -28,7 +28,10 @@ def load_extensions() -> List[Type[ContextProvider]]:
                     spec.loader.exec_module(module)
 
                     for name, obj in inspect.getmembers(module):
-                        if inspect.isclass(obj) and issubclass(obj, ContextProvider) and obj != ContextProvider:
+                        if (inspect.isclass(obj) and
+                            issubclass(obj, ContextProvider) and
+                            obj != ContextProvider and
+                            not inspect.isabstract(obj)):
                             providers.append(obj)
             except Exception as e:
                 logger.warning(f"Error during loading of extension {subfolder}/{filename}: {str(e)}")

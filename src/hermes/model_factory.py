@@ -1,7 +1,7 @@
 import os
 import configparser
 import logging
-from typing import Tuple
+from typing import Tuple, Type
 
 from hermes.chat_models.base import ChatModel
 from hermes.prompt_builders.base import PromptBuilder
@@ -17,6 +17,7 @@ from .chat_models.sambanova import SambanovaModel
 from .chat_models.deepseek import DeepSeekModel
 from .chat_models.open_router import OpenRouterModel
 from .chat_models.vertex import VertexModel
+from .file_processors.base import FileProcessor
 from .file_processors.bedrock import BedrockFileProcessor
 from .file_processors.default import DefaultFileProcessor
 from .prompt_builders.xml_prompt_builder import XMLPromptBuilder
@@ -41,7 +42,7 @@ def merge_configs(base_config: dict, model_config: dict) -> dict:
         del merged['model']
     return merged
 
-def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str, PromptBuilder]:
+def create_model_and_processors(model_name: str | None) -> tuple[ChatModel, FileProcessor, Type[PromptBuilder]]:
     config = configparser.ConfigParser()
     config_dir = os.path.join(os.path.expanduser("~"), ".config", "hermes")
     config_path = os.path.join(config_dir, "config.ini")
