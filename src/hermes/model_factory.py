@@ -34,6 +34,13 @@ def get_default_model(config):
         return config['BASE']['model']
     return None
 
+def merge_configs(base_config: dict, model_config: dict) -> dict:
+    merged = base_config.copy()
+    merged.update(model_config)
+    if 'model' in merged:
+        del merged['model']
+    return merged
+
 def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str, PromptBuilder]:
     config = configparser.ConfigParser()
     config_dir = os.path.join(os.path.expanduser("~"), ".config", "hermes")
@@ -53,7 +60,10 @@ def create_model_and_processors(model_name: str | None) -> Tuple[ChatModel, str,
         logger.error(f"Model {model_name} not found, available models: {ModelRegistry.get_available_models()}")
         raise e
 
+    base_config = dict(config['BASE']) if 'BASE' in config else {}
     model_config = dict(config[config_key]) if config_key in config else {}
-    model, file_processor, prompt_builder_class = ModelRegistry.create_model(model_name, model_config)
+    merged_config = merge_configs(base_config, model_config)
+
+    model, file_processor, prompt_builder_class = ModelRegistry.create_model(model_name, merged_config)
 
     return model, file_processor, prompt_builder_class

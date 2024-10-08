@@ -6,7 +6,8 @@ from .base import ChatModel
 @register_model(name=["bedrock/sonnet-3", "bedrock/sonnet-3.5", "bedrock/opus-3", "bedrock/mistral"], file_processor="default", prompt_builder="bedrock", config_key='BEDROCK')
 class BedrockModel(ChatModel):
     def initialize(self):
-        self.client = boto3.client('bedrock-runtime')
+        aws_region = self.config.get("aws_region")
+        self.client = boto3.client('bedrock-runtime', region_name=aws_region)
         model_identifier = self.config["model_identifier"]
         self.model_id = self.get_model_id(model_identifier)
     

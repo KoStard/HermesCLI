@@ -5,14 +5,15 @@ from hermes.chat_models.bedrock import BedrockModel
 class TestBedrockModel(unittest.TestCase):
     def setUp(self):
         self.config = {
-            "model_identifier": "bedrock/sonnet-3"
+            "model_identifier": "bedrock/sonnet-3",
+            "aws_region": "us-east-1"
         }
         self.model = BedrockModel(self.config, "bedrock")
 
     @patch('boto3.client')
     def test_initialize(self, mock_boto3_client):
         self.model.initialize()
-        mock_boto3_client.assert_called_once_with('bedrock-runtime')
+        mock_boto3_client.assert_called_once_with('bedrock-runtime', region_name='us-east-1')
         self.assertEqual(self.model.model_id, 'anthropic.claude-3-sonnet-20240229-v1:0')
 
     @patch('boto3.client')
