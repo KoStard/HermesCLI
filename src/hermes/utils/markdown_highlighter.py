@@ -4,6 +4,7 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name, MarkdownLexer
 from pygments.formatters import Terminal256Formatter
 from typing import Generator
+import pygments
 
 
 class MarkdownHighlighter:
@@ -18,7 +19,10 @@ class MarkdownHighlighter:
     def get_lexer(self, element):
         info = element.get("attrs", {}).get("info", "")
         if info:
-            return get_lexer_by_name(info)
+            try:
+                return get_lexer_by_name(info)
+            except pygments.util.ClassNotFound:
+                return MarkdownLexer()
         else:
             return MarkdownLexer()
 
