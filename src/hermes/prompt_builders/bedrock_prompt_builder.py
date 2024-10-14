@@ -22,8 +22,7 @@ class BedrockPromptBuilder(PromptBuilder):
     def add_file(self, file_path: str, name: str):
         file_content = self.file_processor.read_file(file_path)
         if not file_content:
-            print(f"{file_path} could not be processed")
-            return
+            file_content = ""
         file_elem = ET.Element("document", name=name)
         file_elem.text = file_content
         self.contents.append({'text': ET.tostring(file_elem, encoding='unicode')})

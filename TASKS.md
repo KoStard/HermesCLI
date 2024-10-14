@@ -21,3 +21,7 @@
 - Add version numbers
 - Add version check command
 - Allow adding help markdown file in extensions
+- Sometimes we get "Chat interrupted by user. Continuing" and it doesn't stop. Seems to be related with pipe in.
+- We should allow the user to order the context they are providing. We should not group everything together.
+- There should be difference between context pieces that are just for context and the ones that we are actively focused on.
+- Some context providers should be stackable - build hierarchy of xml tags
