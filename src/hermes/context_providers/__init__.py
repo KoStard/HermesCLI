@@ -10,7 +10,8 @@ from .fill_gaps_context_provider import FillGapsContextProvider
 from .prompt_context_provider import PromptContextProvider
 from .eml_context_provider import EMLContextProvider
 from .clipboard_context_provider import ClipboardContextProvider
-from .base import ContextProvider
+from .live_file_context_provider import LiveFileContextProvider
+from .base import ContextProvider, LiveContextProvider
 
 def get_all_context_providers():
     return [
@@ -26,4 +27,5 @@ def get_all_context_providers():
         PromptContextProvider,
         EMLContextProvider,
         ClipboardContextProvider,
+        LiveFileContextProvider,
     ]

@@ -112,6 +112,12 @@ class ChatApplication:
             raise e
         
     def user_round(self):
+        user_command = self._user_round_receive_input()
+        if user_command == 'exit':
+            return 'exit'
+        self.history_builder.add_live_context_provider_snapshots()
+    
+    def _user_round_receive_input(self) -> str | None:
         keyboard_interrupt = False
         while self.history_builder.requires_user_input():
             try:
@@ -119,7 +125,7 @@ class ChatApplication:
                     return 'exit'
             except (KeyboardInterrupt, EOFError):
                 if not keyboard_interrupt:
-                    logger.info("\nChat interrupted by user. Continuing")
+                    logger.info("\nChat interrupted by user. Press Ctrl+C again to exit.")
                     keyboard_interrupt = True
                 else:
                     return 'exit'

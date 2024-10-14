@@ -84,7 +84,7 @@ def load_context_providers(disable_extensions=False) -> List[Type[ContextProvide
     return providers
 
 def main():
-    parser = argparse.ArgumentParser(description="Multi-model chat application")
+    parser = argparse.ArgumentParser(description="Hermes CLI")
     parser.add_argument("--model", choices=ModelRegistry.get_available_models(), help="Choose the model to use (optional if configured in config.ini)")
     parser.add_argument("--pretty", help="Print the output by rendering markdown", action="store_true")
     parser.add_argument("--once", help="Run Hermes only once without entering the loop", action="store_true")

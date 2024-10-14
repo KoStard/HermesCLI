@@ -3,7 +3,7 @@ import json
 from typing import Dict, List, Type
 
 from hermes.chat_ui import ChatUI
-from hermes.context_providers.base import ContextProvider
+from hermes.context_providers.base import ContextProvider, LiveContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
 from itertools import groupby
@@ -22,6 +22,7 @@ class HistoryBuilder:
         self.prompt_builder_class = prompt_builder_class
         self.file_processor = file_processor
         self.command_keys_map = command_keys_map
+        self.live_context_providers: List[LiveContextProvider] = []
 
         # New format
         # {'author': 'assistant', 'text': text}
@@ -62,6 +63,13 @@ class HistoryBuilder:
              "has_acted": False,
              "permanent": permanent}
         )
+        if isinstance(context_provider, LiveContextProvider):
+            self.live_context_providers.append(context_provider)
+    
+    def add_live_context_provider_snapshots(self):
+        for provider in self.live_context_providers:
+            for snapshot_provider in provider.get_live_diff_snapshot():
+                self.add_context(snapshot_provider, permanent=False)
 
     def _get_prompt_builder(self):
         return self.prompt_builder_class(self.file_processor)

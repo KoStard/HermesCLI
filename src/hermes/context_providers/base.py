@@ -154,3 +154,14 @@ class ContextProvider(ABC):
         :param data: A dictionary containing the serialized state of the context provider
         """
         pass
+
+
+class LiveContextProvider(ContextProvider, ABC):
+    @abstractmethod
+    def get_live_diff_snapshot(self) -> List[ContextProvider]:
+        """
+        Get the current live diff snapshot from the live provider.
+        
+        :return: A list of ContextProviders containing the current live diff snapshot
+        """
+        pass
