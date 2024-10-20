@@ -6,8 +6,10 @@ from ..registry import register_prompt_builder
 
 @register_prompt_builder("xml")
 class XMLPromptBuilder(PromptBuilder):
-    def __init__(self, file_processor: FileProcessor):
+    def __init__(self, file_processor: FileProcessor, author: str, do_introduction: bool = False):
         self.file_processor = file_processor
+        self.author = author
+        self.do_introduction = do_introduction
         self.root = None
         self.input_elem = None
         self.erase()

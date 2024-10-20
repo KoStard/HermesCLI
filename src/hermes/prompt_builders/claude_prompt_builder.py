@@ -1,5 +1,5 @@
 import base64
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from pathlib import Path
 from .base import PromptBuilder
 from hermes.file_processors.base import FileProcessor
@@ -7,9 +7,11 @@ from ..registry import register_prompt_builder
 
 @register_prompt_builder("claude")
 class ClaudePromptBuilder(PromptBuilder):
-    def __init__(self, file_processor: FileProcessor):
+    def __init__(self, file_processor: FileProcessor, author: str, do_introduction: bool = False):
         self.contents: List[Dict[str, Any]] = []
         self.file_processor = file_processor
+        self.author = author
+        self.do_introduction = do_introduction
 
     def add_text(self, text: str, name: Optional[str] = None):
         content = {"type": "text", "text": text}

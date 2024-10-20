@@ -14,6 +14,7 @@ from hermes.chat_ui import ChatUI
 from hermes.context_providers.base import ContextProvider
 from hermes.history_builder import HistoryBuilder
 from hermes.utils.commands_extractor import extract_commands
+from hermes.utils.history_logger import HistoryLogger
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class ChatApplication:
         history_builder: HistoryBuilder,
         command_keys_map: Dict[str, Type[ContextProvider]],
         args: argparse.Namespace,
+        history_logger: HistoryLogger
     ):
         self.model = model
         self.ui = ui
@@ -51,6 +53,8 @@ class ChatApplication:
         }
 
         logger.debug("ChatApplication initialization complete")
+
+        self.history_logger = history_logger
 
     def _setup_initial_context_providers(self, args: argparse.Namespace):
         for key, value in vars(args).items():
@@ -139,6 +143,7 @@ class ChatApplication:
     
     def _llm_interact(self):
         messages = self.history_builder.build_messages()
+        self.history_logger.add_user_prompt(messages)  # Log user prompt
         try:
             logger.debug("Sending request to model")
             response = self._send_model_request(messages)
@@ -156,6 +161,7 @@ class ChatApplication:
             response = self.ui.display_response(response)
             logger.debug(f"Received response from model: {response[:50]}...")
             self.history_builder.add_assistant_reply(response)
+            self.history_logger.add_assistant_reply(response)  # Log assistant reply
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Continuing")
             self.history_builder.force_need_for_user_input()

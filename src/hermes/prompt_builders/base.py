@@ -1,7 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from hermes.file_processors.base import FileProcessor
+
 class PromptBuilder(ABC):
+    @abstractmethod
+    def __init__(self, file_processor: FileProcessor, author: str, do_introduction: bool = False):
+        pass
+
     @abstractmethod
     def add_text(self, text: str, name: Optional[str] = None):
         """

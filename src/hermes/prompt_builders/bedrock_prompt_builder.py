@@ -9,9 +9,11 @@ from ..registry import register_prompt_builder
 
 @register_prompt_builder("bedrock")
 class BedrockPromptBuilder(PromptBuilder):
-    def __init__(self, file_processor: FileProcessor):
+    def __init__(self, file_processor: FileProcessor, author: str, do_introduction: bool = False):
         self.contents: List[Dict[str, Union[str, Dict[str, Any]]]] = []
         self.file_processor = file_processor
+        self.author = author
+        self.do_introduction = do_introduction
 
     def add_text(self, text: str, name: Optional[str] = None):
         if not text:

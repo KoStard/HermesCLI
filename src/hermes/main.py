@@ -14,6 +14,7 @@ from hermes.model_factory import create_model_and_processors
 from hermes.registry import ModelRegistry
 from hermes.utils.markdown_highlighter import MarkdownHighlighter
 from importlib.metadata import version
+from hermes.utils.history_logger import HistoryLogger
 
 __version__ = version("hermes-cli")
 
@@ -121,9 +122,11 @@ def main():
     logger.info(f"Using model {model.model_tag} with class {model.__class__.__name__}")
     logger.info(f"Using file processor: {type(file_processor).__name__}")
     logger.info(f"Using prompt builder: {prompt_builder_class.__name__}")
+
+    history_logger = HistoryLogger()
     
     ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter())
-    app = ChatApplication(model, ui, history_builder, command_keys_map, args)
+    app = ChatApplication(model, ui, history_builder, command_keys_map, args, history_logger)
     app.run_chat(args.once)
 
 if __name__ == "__main__":

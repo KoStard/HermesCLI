@@ -71,15 +71,18 @@ class HistoryBuilder:
             for snapshot_provider in provider.get_live_diff_snapshot():
                 self.add_context(snapshot_provider, permanent=False)
 
-    def _get_prompt_builder(self):
-        return self.prompt_builder_class(self.file_processor)
+    def _get_prompt_builder(self, author: str, do_introduction: bool = False):
+        return self.prompt_builder_class(self.file_processor, author, do_introduction)
 
     def build_messages(self) -> List[Dict[str, str]]:
         compiled_messages = []
+        is_first_user_message = True
 
         chunk_groups = groupby(self.chunks, lambda x: x["author"])
         for author, group in chunk_groups:
-            prompt_builder = self._get_prompt_builder()
+            prompt_builder = self._get_prompt_builder(author, is_first_user_message and author == "user")
+            if author == "user":
+                is_first_user_message = False
             for chunk in group:
                 if "context_provider" in chunk:
                     chunk["context_provider"].add_to_prompt(prompt_builder)
