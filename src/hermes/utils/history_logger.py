@@ -13,6 +13,7 @@ Goal:
 import os
 from datetime import datetime
 from typing import List, Dict
+import json
 
 class HistoryLogger:
     def __init__(self):
@@ -31,13 +32,22 @@ class HistoryLogger:
         
         with open(file_name, 'w', encoding='utf-8') as f:
             for message in messages:
-                if isinstance(message['content'], str):
-                    f.write(message['content'])
-                elif isinstance(message['content'], dict) and 'text' in message['content']:
-                    f.write(message['content']['text'])
-                else:
-                    f.write(message['content'])
+                f.write("="*100 + "\n")
+                self._log_into_file(f, message)
                 f.write("\n\n")
+    
+    def _log_into_file(self, f, content):
+        if isinstance(content, dict) and 'content' in content:
+            content = content['content']
+        if isinstance(content, str):
+            f.write(content + '\n')
+        elif isinstance(content, dict) and 'text' in content:
+            f.write(content['text'] + '\n')
+        elif isinstance(content, list):
+            for item in content:
+                self._log_into_file(f, item)
+        else:
+            f.write(json.dumps(content) + '\n')
 
     def add_assistant_reply(self, text: str):
         self.counter += 1
