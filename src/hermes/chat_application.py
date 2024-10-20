@@ -4,7 +4,7 @@ import shlex
 import sys
 import os
 from datetime import datetime
-from typing import Callable, Dict, List, Tuple, Type, Generator
+from typing import Callable, Dict, List, Tuple, Type, Generator, Optional
 
 from tenacity import (before_sleep_log, retry, stop_after_attempt,
                       wait_exponential, retry_if_exception_type, retry_if_result)
@@ -306,3 +306,10 @@ class ChatApplication:
         except Exception as e:
             self.ui.display_status(f"Error loading chat history: {str(e)}")
             logger.error(f"Error loading chat history from {file_path}: {str(e)}", exc_info=True)
+
+    def save_history_before_closing(self, file_path: Optional[str] = None):
+        """
+        Save the chat history before closing the application.
+        If file_path is None, an auto-generated filepath will be used.
+        """
+        self._save_history(file_path)

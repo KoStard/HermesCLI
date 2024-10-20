@@ -92,6 +92,8 @@ def main():
     parser.add_argument("--no-highlighting", help="Disable syntax highlighting for markdown output", action="store_true")
     parser.add_argument("--load-history", help="Load chat history from a file", type=str, metavar="FILEPATH")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("--save-history-before-closing", nargs='?', const='-', metavar="FILEPATH",
+                        help="Save chat history before closing. Specify a custom path or skip for auto-generated filepath.")
     # Load debug headers
     debug_headers = load_debug_headers()
 
@@ -128,6 +130,13 @@ def main():
     ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter())
     app = ChatApplication(model, ui, history_builder, command_keys_map, args, history_logger)
     app.run_chat(args.once)
+
+    # Save history before closing if the flag is set
+    if args.save_history_before_closing is not None:
+        save_path = args.save_history_before_closing
+        if save_path == '-':
+            save_path = None  # This will trigger auto-generation of the filepath
+        app.save_history_before_closing(save_path)
 
 if __name__ == "__main__":
     main()
