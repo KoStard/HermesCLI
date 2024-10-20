@@ -11,7 +11,7 @@ class OpenAIModel(ChatModel):
         if not api_key:
             raise ValueError("API key is required for OpenAI model")
         base_url = self.config.get("base_url", "https://api.openai.com/v1")
-        self.model = self.config.get("model", "gpt-4")
+        self.model = self.config.get("model", "gpt-4o")
         self.client = openai.Client(api_key=api_key, base_url=base_url)
 
     def send_history(self, messages) -> Generator[str, None, None]:
