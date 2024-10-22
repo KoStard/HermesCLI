@@ -93,6 +93,10 @@ class ChatUI:
             prompt_continuation=lambda width, line_number, is_soft_wrap: '.' * width
         )
 
+        # Display help message only for the first input
+        if not self.prompt_toolkit_history.get_strings():
+            self.console.print("Tip: Press Escape + Enter to send your message.", style="bold blue")
+
         while True:
             self.console.print("─" * self.console.width, style="dim")
             user_input = session.prompt(prompt)
