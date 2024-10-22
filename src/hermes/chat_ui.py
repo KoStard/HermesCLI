@@ -9,11 +9,12 @@ import sys
 from .utils.markdown_highlighter import MarkdownHighlighter
 
 class ChatUI:
-    def __init__(self, print_pretty: bool, use_highlighting: bool, markdown_highlighter: MarkdownHighlighter):
+    def __init__(self, print_pretty: bool, use_highlighting: bool, markdown_highlighter: MarkdownHighlighter, simple_input: bool):
         self.console = Console()
         self.print_pretty = print_pretty
         self.use_highlighting = use_highlighting
         self.markdown_highlighter = markdown_highlighter
+        self.simple_input = simple_input
 
     def display_response(self, response_generator: Generator[str, None, None]):
         if self.print_pretty:
@@ -49,26 +50,51 @@ class ChatUI:
 
     def get_user_input(self, prompt="You: ") -> str:
         if os.isatty(0):  # Check if input is coming from a terminal
-            while True:
-                self.console.print("─" * self.console.width, style="dim")
-                user_input = input(prompt)
-                if user_input.strip() == "{":
-                    lines = []
-                    while True:
-                        line = self.console.input()
-                        if line.strip() == "}":
-                            break
-                        lines.append(line)
-                    user_input = "\n".join(lines)
-                if user_input.strip():
-                    return user_input
-                self.console.print("Please enter a non-empty message.", style="bold red")
+            if self.simple_input:
+                return self._get_simple_input(prompt)
+            else:
+                return self._get_prompt_toolkit_input(prompt)
         else:  # Input is coming from a pipe
             stdin_input = sys.stdin.read().strip()
             if stdin_input:
                 return stdin_input
             else:
                 return '/exit'
+
+    def _get_simple_input(self, prompt: str) -> str:
+        while True:
+            self.console.print("─" * self.console.width, style="dim")
+            user_input = input(prompt)
+            if user_input.strip() == "{":
+                lines = []
+                while True:
+                    line = self.console.input()
+                    if line.strip() == "}":
+                        break
+                    lines.append(line)
+                user_input = "\n".join(lines)
+            if user_input.strip():
+                return user_input
+            self.console.print("Please enter a non-empty message.", style="bold red")
+
+    def _get_prompt_toolkit_input(self, prompt: str) -> str:
+        from prompt_toolkit import PromptSession
+        from prompt_toolkit.history import InMemoryHistory
+        from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+
+        session = PromptSession(
+            history=InMemoryHistory(),
+            auto_suggest=AutoSuggestFromHistory(),
+            multiline=True,
+            prompt_continuation=lambda width, line_number, is_soft_wrap: '.' * width
+        )
+
+        while True:
+            self.console.print("─" * self.console.width, style="dim")
+            user_input = session.prompt(prompt)
+            if user_input.strip():
+                return user_input
+            self.console.print("Please enter a non-empty message.", style="bold red")
 
     def display_status(self, message: str):
         self.console.print(Panel(message, expand=False), style="bold yellow")

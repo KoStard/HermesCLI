@@ -94,6 +94,7 @@ def main():
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--save-history-before-closing", nargs='?', const='-', metavar="FILEPATH",
                         help="Save chat history before closing. Specify a custom path or skip for auto-generated filepath.")
+    parser.add_argument("--simple-input", action="store_true", help="Use simple input method instead of prompt_toolkit")
     # Load debug headers
     debug_headers = load_debug_headers()
 
@@ -127,7 +128,7 @@ def main():
 
     history_logger = HistoryLogger()
     
-    ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter())
+    ui = ChatUI(print_pretty=args.pretty, use_highlighting=not args.no_highlighting, markdown_highlighter=MarkdownHighlighter(), simple_input=args.simple_input)
     app = ChatApplication(model, ui, history_builder, command_keys_map, args, history_logger)
     app.run_chat(args.once)
 
