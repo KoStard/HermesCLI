@@ -25,3 +25,6 @@
 - We should allow the user to order the context they are providing. We should not group everything together.
 - There should be difference between context pieces that are just for context and the ones that we are actively focused on.
 - Some context providers should be stackable - build hierarchy of xml tags
+- Ability to go back in history. Nice interface to go up up and enter. Can we track the key inputs? Maybe make some hot keys alongside commands?
+- Multi-line is broken
+- e.g. the user runs /append multiple times, what happens, how does the history look like

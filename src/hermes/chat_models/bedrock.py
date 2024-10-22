@@ -2,7 +2,7 @@ from typing import Generator
 from ..registry import register_model
 from .base import ChatModel
 
-@register_model(name=["bedrock/sonnet-3", "bedrock/sonnet-3.5", "bedrock/opus-3", "bedrock/mistral"], file_processor="default", prompt_builder="bedrock", config_key='BEDROCK')
+@register_model(name=["bedrock/sonnet-3", "bedrock/sonnet-3.5","bedrock/sonnet-3.5-v2", "bedrock/opus-3", "bedrock/mistral"], file_processor="default", prompt_builder="bedrock", config_key='BEDROCK')
 class BedrockModel(ChatModel):
     def initialize(self):
         import boto3
@@ -17,6 +17,8 @@ class BedrockModel(ChatModel):
             return 'anthropic.claude-3-sonnet-20240229-v1:0'
         elif model_identifier == 'bedrock/sonnet-3.5':
             return 'anthropic.claude-3-5-sonnet-20240620-v1:0'
+        elif model_identifier == 'bedrock/sonnet-3.5-v2':
+            return 'anthropic.claude-3-5-sonnet-20241022-v2:0'
         elif model_identifier == 'bedrock/opus':
             return 'anthropic.claude-3-opus-20240229-v1:0'
         elif model_identifier == 'bedrock/mistral':
