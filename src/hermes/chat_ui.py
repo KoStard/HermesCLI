@@ -15,6 +15,7 @@ class ChatUI:
         self.use_highlighting = use_highlighting
         self.markdown_highlighter = markdown_highlighter
         self.simple_input = simple_input
+        self.prompt_toolkit_history = None
 
     def display_response(self, response_generator: Generator[str, None, None]):
         if self.print_pretty:
@@ -81,9 +82,12 @@ class ChatUI:
         from prompt_toolkit import PromptSession
         from prompt_toolkit.history import InMemoryHistory
         from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+        
+        if self.prompt_toolkit_history is None:
+            self.prompt_toolkit_history = InMemoryHistory()
 
         session = PromptSession(
-            history=InMemoryHistory(),
+            history=self.prompt_toolkit_history,
             auto_suggest=AutoSuggestFromHistory(),
             multiline=True,
             prompt_continuation=lambda width, line_number, is_soft_wrap: '.' * width
