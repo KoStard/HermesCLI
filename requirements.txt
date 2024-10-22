@@ -21,3 +21,4 @@ google-cloud-aiplatform
 coverage
 pyperclip
 python-dotenv
+prompt_toolkit
