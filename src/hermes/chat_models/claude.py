@@ -2,7 +2,7 @@ from typing import Generator
 from .base import ChatModel
 from ..registry import register_model
 
-@register_model(name="claude-sonnet-3.5", file_processor="default", prompt_builder="claude", config_key='ANTHROPIC')
+@register_model(name=["claude-sonnet-3.5", "claude-sonnet-3.5-v2"], file_processor="default", prompt_builder="claude", config_key='ANTHROPIC')
 class ClaudeModel(ChatModel):
     def initialize(self):
         import anthropic
