@@ -11,10 +11,20 @@ class ClaudeModel(ChatModel):
         if not api_key:
             raise ValueError("API key is required for Claude model")
         self.client = anthropic.Anthropic(api_key=api_key)
+        model_identifier = self.config["model_identifier"]
+        self.model_id = self.get_model_id(model_identifier)
+
+    def get_model_id(self, model_identifier):
+        if model_identifier == 'claude-sonnet-3.5':
+            return 'claude-3-sonnet-20240229-v1:0'
+        elif model_identifier == 'claude-sonnet-3.5-v2':
+            return 'claude-3-5-sonnet-20241022'
+        else:
+            raise ValueError(f"Unsupported Claude model identifier: {model_identifier}")
 
     def send_history(self, messages) -> Generator[str, None, None]:
         with self.client.messages.stream(
-            model="claude-3-5-sonnet-20240620",
+            model=self.model_id,
             messages=messages,
             max_tokens=1024
         ) as stream:
