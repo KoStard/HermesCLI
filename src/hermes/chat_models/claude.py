@@ -16,7 +16,7 @@ class ClaudeModel(ChatModel):
 
     def get_model_id(self, model_identifier):
         if model_identifier == 'claude-sonnet-3.5':
-            return 'claude-3-sonnet-20240229-v1:0'
+            return 'claude-3-5-sonnet-20240620'
         elif model_identifier == 'claude-sonnet-3.5-v2':
             return 'claude-3-5-sonnet-20241022'
         else:
