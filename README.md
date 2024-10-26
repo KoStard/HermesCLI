@@ -14,24 +14,35 @@ Whether you're a developer, researcher, or anyone looking to leverage AI in thei
 
 ## Installation
 
-Follow these steps to install Hermes:
+There are two ways to install Hermes:
+
+### Option 1: Normal Installation (Recommended for most users)
+
+To install Hermes for regular use, follow these steps:
+
+1. Open your terminal or command prompt.
+
+2. Run the following command:
+   pip install --upgrade git+https://github.com/KoStard/HermesCLI.git
+
+This will install the latest version of Hermes directly from the GitHub repository.
+
+### Option 2: Development Installation
+
+If you're a developer looking to contribute or modify Hermes, follow these steps:
 
 1. Open your terminal or command prompt.
 
 2. Clone the Hermes repository:
-   ```
    git clone https://github.com/KoStard/HermesCLI
-   ```
 
 3. Navigate to the Hermes directory:
-   ```
    cd HermesCLI
-   ```
 
 4. Install Hermes in editable mode:
-   ```
    pip install -e .
-   ```
+
+This method allows you to make changes to the Hermes code and immediately see the effects without reinstalling.
 
 ## Configuration
 
