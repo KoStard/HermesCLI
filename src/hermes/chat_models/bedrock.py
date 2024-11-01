@@ -27,9 +27,14 @@ class BedrockModel(ChatModel):
             raise ValueError(f"Unsupported Bedrock model identifier: {model_identifier}")
 
     def send_history(self, messages) -> Generator[str, None, None]:
+        system_message = None
+        if messages[0]['role'] == 'system':
+            system_message = messages[0]['content']
+            messages = messages[1:]
         response = self.client.converse_stream(
             modelId=self.model_id,
-            messages=messages
+            messages=messages,
+            system=system_message
         )
 
         for event in response['stream']:

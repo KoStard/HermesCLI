@@ -17,12 +17,18 @@ class GeminiModel(ChatModel):
         if not api_key:
             raise ValueError("API key is required for Gemini model")
         model_identifier = self.config["model_identifier"]
-        model_name = self.get_model_id(model_identifier)
+        self.model_name = self.get_model_id(model_identifier)
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(model_name)
 
     def send_history(self, messages) -> Generator[str, None, None]:
         from google.generativeai.types import ContentDict, HarmCategory, HarmBlockThreshold
+        import google.generativeai as genai
+        
+        system_message = ""
+        if messages[0]['role'] == 'system':
+            system_message = '\n'.join([m.get('text') for m in messages[0]['content'] if m.get('text')])
+            messages = messages[1:]
+        self.model = genai.GenerativeModel(self.model_name, system_instruction=system_message)
 
         history = [ContentDict(
             role=self._get_message_role(msg['role']), parts=[msg['content']]) for msg in messages[:-1]]

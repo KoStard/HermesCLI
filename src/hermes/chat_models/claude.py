@@ -23,10 +23,15 @@ class ClaudeModel(ChatModel):
             raise ValueError(f"Unsupported Claude model identifier: {model_identifier}")
 
     def send_history(self, messages) -> Generator[str, None, None]:
+        system_message = None
+        if messages[0]['role'] == 'system':
+            system_message = '\n'.join([m.get('text') for m in messages[0]['content'] if m.get('text')])
+            messages = messages[1:]
         with self.client.messages.stream(
             model=self.model_id,
             messages=messages,
-            max_tokens=1024
+            system=system_message,
+            max_tokens=4096
         ) as stream:
             for text in stream.text_stream:
                 yield text
