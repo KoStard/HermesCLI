@@ -17,9 +17,10 @@ class MarkdownPromptBuilder(PromptBuilder):
         else:
             self.content.append(f"{text}")
 
-    def add_file(self, file_path: str, name: str):
+    def add_file(self, file_path: str, name: str, role: str = None):
         content = self.file_processor.read_file(file_path)
-        self.content.append(f"## {name}\n\n```\n{content}\n```")
+        role_info = f"\nRole: {role}" if role else ""
+        self.content.append(f"## {name}{role_info}\n\n```\n{content}\n```")
 
     def add_image(self, image_path: str, name: str):
         raise NotImplementedError("Images are not supported in Markdown format")
