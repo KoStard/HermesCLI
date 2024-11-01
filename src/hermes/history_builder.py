@@ -77,6 +77,7 @@ class HistoryBuilder:
     def build_messages(self) -> List[Dict[str, str]]:
         compiled_messages = []
         is_first_user_message = True
+        instructions_messages = set()
 
         chunk_groups = groupby(self.chunks, lambda x: x["author"])
         for author, group in chunk_groups:
@@ -86,6 +87,9 @@ class HistoryBuilder:
             for chunk in group:
                 if "context_provider" in chunk:
                     chunk["context_provider"].add_to_prompt(prompt_builder)
+                    instructions = chunk["context_provider"].get_instructions()
+                    if instructions:
+                        instructions_messages.add(instructions)
                 else:
                     prompt_builder.add_text(chunk["text"])
             compiled_messages.append(
@@ -94,6 +98,17 @@ class HistoryBuilder:
                     "content": prompt_builder.build_prompt(),
                 }
             )
+        
+        instructions_prompt_builder = self._get_prompt_builder("system", False)
+        for instruction in instructions_messages:
+            if instruction:
+                instructions_prompt_builder.add_text(instruction)
+        if instructions_messages:
+            compiled_messages.insert(0, {
+                "role": "system",
+                "content": instructions_prompt_builder.build_prompt(),
+            })
+        
         return compiled_messages
 
     def clear_regular_history(self):
