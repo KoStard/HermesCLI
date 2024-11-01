@@ -1,8 +1,5 @@
 ---
 name: notebook
-required_context_providers:
-    file:
-        - ./**/*.md
 ---
 
 # Task

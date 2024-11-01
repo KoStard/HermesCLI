@@ -80,11 +80,16 @@ class ChatUI:
 
     def _get_prompt_toolkit_input(self, prompt: str) -> str:
         from prompt_toolkit import PromptSession
-        from prompt_toolkit.history import InMemoryHistory
+        from prompt_toolkit.history import FileHistory
         from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
         
         if self.prompt_toolkit_history is None:
-            self.prompt_toolkit_history = InMemoryHistory()
+            history_dir = '/tmp/hermes/'
+            history_file_path = os.path.join(history_dir, 'hermes_chat_history.txt')
+
+            if not os.path.exists(history_dir):
+                os.makedirs(history_dir)
+            self.prompt_toolkit_history = FileHistory(history_file_path)
 
         session = PromptSession(
             history=self.prompt_toolkit_history,

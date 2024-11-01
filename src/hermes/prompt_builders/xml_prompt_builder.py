@@ -22,9 +22,12 @@ class XMLPromptBuilder(PromptBuilder):
             text_elem = ET.SubElement(self.input_elem, "text")
         text_elem.text = text
 
-    def add_file(self, file_path: str, name: str):
+    def add_file(self, file_path: str, name: str, role: str = None):
         content = self.file_processor.read_file(file_path)
-        file_elem = ET.SubElement(self.input_elem, "document", name=name)
+        attrs = {"name": name}
+        if role:
+            attrs["role"] = role
+        file_elem = ET.SubElement(self.input_elem, "document", **attrs)
         file_elem.text = content
 
     def add_image(self, image_path: str, name: str):

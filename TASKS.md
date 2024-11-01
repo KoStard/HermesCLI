@@ -28,3 +28,4 @@
 - Ability to go back in history. Nice interface to go up up and enter. Can we track the key inputs? Maybe make some hot keys alongside commands?
 - Multi-line is broken
 - e.g. the user runs /append multiple times, what happens, how does the history look like
+- Add /undo command

@@ -21,11 +21,14 @@ class BedrockPromptBuilder(PromptBuilder):
         content = text if not name else f"{name}:\n{text}"
         self.contents.append({'text': content + '\n'})
 
-    def add_file(self, file_path: str, name: str):
+    def add_file(self, file_path: str, name: str, role: str = None):
         file_content = self.file_processor.read_file(file_path)
         if not file_content:
             file_content = ""
-        file_elem = ET.Element("document", name=name)
+        attrs = {"name": name}
+        if role:
+            attrs["role"] = role
+        file_elem = ET.Element("document", **attrs)
         file_elem.text = file_content
         self.contents.append({'text': ET.tostring(file_elem, encoding='unicode')})
 

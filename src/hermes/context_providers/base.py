@@ -7,6 +7,14 @@ from hermes.prompt_builders.base import PromptBuilder
 T = TypeVar('T')  # Define a type variable
 
 class ContextProvider(ABC):
+    def get_instructions(self) -> str:
+        """
+        Get the instructions for this context provider.
+        
+        :return: A string containing the instructions
+        """
+        return ""
+    
     @staticmethod
     @abstractmethod
     def add_argument(parser: ArgumentParser):

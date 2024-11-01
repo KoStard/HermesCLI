@@ -36,9 +36,22 @@ class HistoryLogger:
                 self._log_into_file(f, message)
                 f.write("\n\n")
     
+    def _is_binary(self, data) -> bool:
+        if isinstance(data, bytes):
+            return True
+        return False
+
     def _log_into_file(self, f, content):
+        if self._is_binary(content):
+            f.write("[Binary content - not serialized]\n")
+            return
+
         if isinstance(content, dict) and 'content' in content:
             content = content['content']
+            if self._is_binary(content):
+                f.write("[Binary content - not serialized]\n")
+                return
+
         if isinstance(content, str):
             f.write(content + '\n')
         elif isinstance(content, dict) and 'text' in content:
@@ -47,7 +60,10 @@ class HistoryLogger:
             for item in content:
                 self._log_into_file(f, item)
         else:
-            f.write(json.dumps(content) + '\n')
+            try:
+                f.write(json.dumps(content) + '\n')
+            except (TypeError, ValueError):
+                f.write("[Content could not be serialized]\n")
 
     def add_assistant_reply(self, text: str):
         self.counter += 1

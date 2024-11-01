@@ -19,7 +19,7 @@ class PromptBuilder(ABC):
         pass
 
     @abstractmethod
-    def add_file(self, file_path: str, name: str):
+    def add_file(self, file_path: str, name: str, role: str = None):
         """
         Add a file to the prompt.
         
