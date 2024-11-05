@@ -1,0 +1,15 @@
+[
+  {
+    "author": "user",
+    "context_provider": {
+      "prompt": "hello"
+    },
+    "context_provider_keys": [
+      "prompt"
+    ],
+    "active": true,
+    "is_action": false,
+    "has_acted": false,
+    "permanent": false
+  }
+]
