@@ -44,7 +44,7 @@ class TestChatApplication(unittest.TestCase):
         self.assertEqual(self.chat_app.command_keys_map, {"key1": self.mock_context_provider})
 
     def test_user_round(self):
-        self.history_builder.requires_user_input.side_effect = [True, False]
+        self.history_builder.lacks_user_input.side_effect = [True, False]
         self.chat_app.get_user_input = Mock(return_value="test input")
 
         result = self.chat_app.user_round()
@@ -53,21 +53,21 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app.get_user_input.assert_called_once()
 
     def test_user_round_with_exit(self):
-        self.history_builder.requires_user_input.side_effect = [True, False]
+        self.history_builder.lacks_user_input.side_effect = [True, False]
         self.chat_app.get_user_input = Mock(return_value="exit")
 
         result = self.chat_app.user_round()
         self.assertEqual(result, "exit")
     
     def test_user_round_with_keyboard_interrupt(self):
-        self.history_builder.requires_user_input.side_effect = [True, False]
+        self.history_builder.lacks_user_input.side_effect = [True, False]
         self.chat_app.get_user_input = Mock(side_effect=KeyboardInterrupt)
 
         result = self.chat_app.user_round()
         self.assertIsNone(result)
 
     def test_user_round_with_keyboard_interrupt_twice(self):
-        self.history_builder.requires_user_input.side_effect = [True, True]
+        self.history_builder.lacks_user_input.side_effect = [True, True]
         self.chat_app.get_user_input = Mock(side_effect=KeyboardInterrupt)
 
         result = self.chat_app.user_round()

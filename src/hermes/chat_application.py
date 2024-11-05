@@ -35,10 +35,12 @@ class ChatApplication:
         self.history_builder = history_builder
         self.command_keys_map = command_keys_map
         self.is_model_initialised = False
+        self.actions_taken_after_user_input = False
 
         # Loading history before instantiating the context providers
         if args.load_history:
             self._load_history_from_file(args.load_history)
+            self.actions_taken_after_user_input = True
 
         self._setup_initial_context_providers(args)
         self._user_commands_queue: List[Tuple[str, str]] = []
@@ -123,7 +125,7 @@ class ChatApplication:
     
     def _user_round_receive_input(self) -> str | None:
         keyboard_interrupt = False
-        while self.history_builder.requires_user_input():
+        while self.history_builder.lacks_user_input():
             try:
                 if self.get_user_input() == 'exit':
                     return 'exit'
@@ -136,6 +138,9 @@ class ChatApplication:
             except Exception as e:
                 logger.error(f"Error during user round: {str(e)}", exc_info=True)
                 self.history_builder.force_need_for_user_input()
+        if self.actions_taken_after_user_input:
+            pass
+            
 
     def llm_round(self):
         self._llm_interact()
