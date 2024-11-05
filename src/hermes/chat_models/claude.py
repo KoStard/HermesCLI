@@ -31,7 +31,10 @@ class ClaudeModel(ChatModel):
             model=self.model_id,
             messages=messages,
             system=system_message,
-            max_tokens=4096
+            max_tokens=4096,
+            extra_headers={
+                "anthropic-beta": "pdfs-2024-09-25"
+            }
         ) as stream:
             for text in stream.text_stream:
                 yield text

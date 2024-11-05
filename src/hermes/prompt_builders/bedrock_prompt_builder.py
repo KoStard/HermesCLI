@@ -29,7 +29,7 @@ class BedrockPromptBuilder(PromptBuilder):
         if role:
             attrs["role"] = role
         file_elem = ET.Element("document", **attrs)
-        file_elem.text = file_content
+        file_elem.text = "\n" + file_content + "\n"
         self.contents.append({'text': ET.tostring(file_elem, encoding='unicode')})
 
     def add_image(self, image_path: str, name: str):
