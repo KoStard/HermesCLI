@@ -32,7 +32,7 @@ class HistoryBuilder:
         # or just some passive collected chunks that still requires user input
         self.chunks = []
 
-    def requires_user_input(self) -> bool:
+    def lacks_user_input(self) -> bool:
         for chunk in reversed(self.chunks):
             if chunk["author"] == "user" and chunk.get("active", False) and not chunk.get("override_passive", False):
                 return False  # We already have a user input
