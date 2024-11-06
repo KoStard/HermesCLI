@@ -27,6 +27,35 @@ New vision definition:
 """
 
 
+class History:
+    def __init__(self):
+        self.chunks: List[BaseChunk] = []
+
+    def add_chunk(self, chunk: BaseChunk):
+        """Add a new chunk to the history."""
+        self.chunks.append(chunk)
+
+    def remove_chunk(self, index: int):
+        """Remove a chunk at the specified index."""
+        if 0 <= index < len(self.chunks):
+            self.chunks.pop(index)
+
+    def get_grouped_chunks(self) -> List[List[BaseChunk]]:
+        return list(groupby(self.chunks, lambda x: x.author))
+
+    def clear_non_permanent(self):
+        """Remove all non-permanent chunks from history."""
+        self.chunks = [chunk for chunk in self.chunks if chunk.permanent]
+
+    def get_all_chunks(self) -> List[BaseChunk]:
+        """Return all chunks in the history."""
+        return self.chunks
+
+    def get_permanent_chunks(self) -> List[BaseChunk]:
+        """Return only permanent chunks."""
+        return [chunk for chunk in self.chunks if chunk.permanent]
+
+
 class HistoryBuilder:
     def __init__(
         self, 
@@ -38,10 +67,10 @@ class HistoryBuilder:
         self.file_processor = file_processor
         self.command_keys_map = command_keys_map
         self.live_context_providers: List[LiveContextProvider] = []
-        self.chunks: List[BaseChunk] = []
+        self.history = History()
 
     def lacks_user_input(self) -> bool:
-        for chunk in reversed(self.chunks):
+        for chunk in reversed(self.history.get_all_chunks()):
             if (chunk.author == "user" and 
                 chunk.active and 
                 not getattr(chunk, 'override_passive', False)):
@@ -51,20 +80,20 @@ class HistoryBuilder:
         return True
 
     def force_need_for_user_input(self):
-        for chunk in reversed(self.chunks):
+        for chunk in reversed(self.history.get_all_chunks()):
             if chunk.author == "user" and chunk.active:
                 setattr(chunk, 'override_passive', True)
             if chunk.author == "assistant":
                 return
 
     def add_assistant_reply(self, content: str):
-        self.chunks.append(AssistantChunk(text=content))
+        self.history.add_chunk(AssistantChunk(text=content))
 
     def add_user_input(self, content: str, active=False, permanent=False):
-        self.chunks.append(UserTextChunk(text=content, active=active, permanent=permanent))
+        self.history.add_chunk(UserTextChunk(text=content, active=active, permanent=permanent))
 
     def add_context(self, context_provider: ContextProvider, active=False, permanent=False):
-        self.chunks.append(
+        self.history.add_chunk(
             UserContextChunk(
                 context_provider=context_provider,
                 active=active,
@@ -87,8 +116,7 @@ class HistoryBuilder:
         is_first_user_message = True
         instructions_messages = set()
 
-        chunk_groups = groupby(self.chunks, lambda x: x.author)
-        for author, group in chunk_groups:
+        for author, group in self.history.get_grouped_chunks():
             prompt_builder = self._get_prompt_builder(author, is_first_user_message and author == "user")
             if author == "user":
                 is_first_user_message = False
@@ -120,7 +148,7 @@ class HistoryBuilder:
         return compiled_messages
 
     def clear_regular_history(self):
-        self.chunks = [chunk for chunk in self.chunks if chunk.permanent]
+        self.history.clear_non_permanent()
 
     def run_pending_actions(self, executor, ui: ChatUI):
         chunks = self._get_recent_action_chunks_to_run()
@@ -131,7 +159,7 @@ class HistoryBuilder:
                 ui.display_status(status)
 
     def _get_recent_action_chunks_to_run(self):
-        reversed_chunk_groups = groupby(self.chunks[::-1], lambda x: x.author)
+        reversed_chunk_groups = self.history.get_grouped_chunks()[::-1]
         found_assistant = False
         for author, group in reversed_chunk_groups:
             if found_assistant and author == "user":
@@ -147,7 +175,7 @@ class HistoryBuilder:
         return []
 
     def get_recent_llm_response(self):
-        reversed_chunk_groups = groupby(self.chunks[::-1], lambda x: x.author)
+        reversed_chunk_groups = self.history.get_grouped_chunks()[::-1]
         for author, group in reversed_chunk_groups:
             if author == "assistant":
                 return next((chunk.text for chunk in group if isinstance(chunk, AssistantChunk)), None)
@@ -155,7 +183,7 @@ class HistoryBuilder:
 
     def save_history(self, file_path: str):
         serialized_chunks = []
-        for chunk in self.chunks:
+        for chunk in self.history.get_all_chunks():
             if isinstance(chunk, AssistantChunk):
                 serialized_chunks.append({
                     'author': chunk.author,
@@ -190,10 +218,10 @@ class HistoryBuilder:
         with open(file_path, 'r') as f:
             serialized_chunks = json.load(f)
 
-        self.chunks = []
+        self.history.chunks = []
         for serialized_chunk in serialized_chunks:
             if serialized_chunk['author'] == 'assistant':
-                self.chunks.append(AssistantChunk(
+                self.history.add_chunk(AssistantChunk(
                     text=serialized_chunk['text'],
                     permanent=serialized_chunk.get('permanent', False)
                 ))
@@ -211,13 +239,13 @@ class HistoryBuilder:
                                 permanent=serialized_chunk.get('permanent', False)
                             )
                             context_chunk.has_acted = serialized_chunk.get('has_acted', False)
-                            self.chunks.append(context_chunk)
+                            self.history.add_chunk(context_chunk)
                         except Exception as e:
                             logger.warning(f"Failed to deserialize context provider {provider_key}: {str(e)}")
                     else:
                         logger.warning(f"Unknown context provider: {provider_key}")
                 else:
-                    self.chunks.append(UserTextChunk(
+                    self.history.add_chunk(UserTextChunk(
                         text=serialized_chunk['text'],
                         active=serialized_chunk['active'],
                         permanent=serialized_chunk.get('permanent', False)
