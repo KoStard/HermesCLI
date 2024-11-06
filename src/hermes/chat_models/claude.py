@@ -2,7 +2,7 @@ from typing import Generator
 from .base import ChatModel
 from ..registry import register_model
 
-@register_model(name=["claude-sonnet-3.5", "claude-sonnet-3.5-v2"], file_processor="default", prompt_builder="claude", config_key='ANTHROPIC')
+@register_model(name=["claude-sonnet-3.5", "claude-sonnet-3.5-v2", "claude-heiku-3.5"], file_processor="default", prompt_builder="claude", config_key='ANTHROPIC')
 class ClaudeModel(ChatModel):
     def initialize(self):
         import anthropic
@@ -19,6 +19,8 @@ class ClaudeModel(ChatModel):
             return 'claude-3-5-sonnet-20240620'
         elif model_identifier == 'claude-sonnet-3.5-v2':
             return 'claude-3-5-sonnet-20241022'
+        elif model_identifier == 'claude-heiku-3.5':
+            return 'claude-3-5-haiku-20241022'
         else:
             raise ValueError(f"Unsupported Claude model identifier: {model_identifier}")
 
@@ -27,14 +29,14 @@ class ClaudeModel(ChatModel):
         if messages[0]['role'] == 'system':
             system_message = '\n'.join([m.get('text') for m in messages[0]['content'] if m.get('text')])
             messages = messages[1:]
+        extra_kwargs = {}
+        if system_message:
+            extra_kwargs['system'] = system_message
         with self.client.messages.stream(
             model=self.model_id,
             messages=messages,
-            system=system_message,
             max_tokens=4096,
-            extra_headers={
-                "anthropic-beta": "pdfs-2024-09-25"
-            }
+            **extra_kwargs
         ) as stream:
             for text in stream.text_stream:
                 yield text

@@ -26,9 +26,14 @@ class GeminiModel(ChatModel):
         
         system_message = ""
         if messages[0]['role'] == 'system':
-            system_message = '\n'.join([m.get('text') for m in messages[0]['content'] if m.get('text')])
+            system_message = '\n'.join([m for m in messages[0]['content'] if m])
             messages = messages[1:]
-        self.model = genai.GenerativeModel(self.model_name, system_instruction=system_message)
+        
+        extra_args = {}
+        if system_message:
+            extra_args['system_instruction'] = system_message
+
+        self.model = genai.GenerativeModel(self.model_name, **extra_args)
 
         history = [ContentDict(
             role=self._get_message_role(msg['role']), parts=[msg['content']]) for msg in messages[:-1]]

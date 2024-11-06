@@ -112,8 +112,24 @@ class ContextProvider(ABC):
         :return: A boolean indicating whether this provider represents an action
         """
         return False
-    
-    def perform_action(self, recent_llm_response: str):
+
+    def get_action_instructions(self) -> str:
+        """
+        Return the instructions for the action. These will be included in the prompt, but not in the history.
+        """
+        if not self.is_action():
+            raise ValueError("This context provider does not represent an action.")
+        pass
+
+    def get_action_instructions_reduced(self) -> str:
+        """
+        Return the instructions for the action. These will be included in the prompt, but not in the history.
+        """
+        if not self.is_action():
+            raise ValueError("This context provider does not represent an action.")
+        pass
+
+    def perform_action(self, recent_llm_response: str) -> str:
         if not self.is_action():
             raise ValueError("This context provider does not represent an action.")
         pass

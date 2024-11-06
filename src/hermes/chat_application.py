@@ -43,7 +43,6 @@ class ChatApplication:
             self.actions_taken_after_user_input = True
 
         self._setup_initial_context_providers(args)
-        self._user_commands_queue: List[Tuple[str, str]] = []
 
         self.extra_commands = {
             "/exit",
@@ -63,13 +62,13 @@ class ChatApplication:
             # The value is checked here, as the keys are always present in the namespace, but their values are None
             if key in self.command_keys_map and value:
                 try:
-                    provider_instances = self._setup_initial_context_provider(key, args, None, permanent=True)
+                    provider_instances = self._setup_context_provider(key, args, None, permanent=True)
                     for provider in provider_instances:
-                        self.history_builder.add_context(provider, provider.counts_as_input(), permanent=True)
+                        self.history_builder.add_context(provider, permanent=True)
                 except Exception as e:
                     logger.error(f"Error during setup of initial context providers with {key}: {str(e)}", exc_info=True)
 
-    def _setup_initial_context_provider(
+    def _setup_context_provider(
         self,
         provider_key: str,
         cli_args: argparse.Namespace | None,
@@ -89,7 +88,7 @@ class ChatApplication:
         provider_instances = []
 
         for required_provider, required_args in required_providers.items():
-            provider_instances.extend(self._setup_initial_context_provider(required_provider, None, required_args, permanent=permanent))
+            provider_instances.extend(self._setup_context_provider(required_provider, None, required_args, permanent=permanent))
 
         provider_instances.append(provider)
 
@@ -137,75 +136,83 @@ class ChatApplication:
                     return 'exit'
             except Exception as e:
                 logger.error(f"Error during user round: {str(e)}", exc_info=True)
-                self.history_builder.force_need_for_user_input()
+                self.history_builder.mark_end_of_assistant_turn()
         if self.actions_taken_after_user_input:
             pass
             
 
     def llm_round(self):
-        self._llm_interact()
-        self._llm_act()
+        if not self._llm_act():
+            self._llm_interact()
     
-    def _llm_interact(self):
-        messages = self.history_builder.build_messages()
+    def _llm_interact(self, extra_instructions: str = "", extra_instructions_reduced: str = ""):
+        messages = self.history_builder.build_messages(extra_instructions)
         self.history_logger.add_user_prompt(messages)  # Log user prompt
         try:
             logger.debug("Sending request to model")
-            response = self._send_model_request(messages)
-            if response is None:
+            response_generator = self._send_model_request(messages)
+            if response_generator is None:
                 retry = self.ui.get_user_input("Model request failed. Retry? (Y/n): ").lower()
                 if retry in ['y', 'yes', '']:
                     logger.info("User chose to retry the model request")
-                    return self._llm_interact()
+                    return self._llm_interact(extra_instructions, extra_instructions_reduced)
                 else:
                     logger.debug("User chose not to retry the model request")
                     self.ui.display_status("Model request cancelled by user.")
-                    self.history_builder.force_need_for_user_input()
+                    self.history_builder.mark_end_of_assistant_turn()
                     return
 
-            response = self.ui.display_response(response)
+            response = self.ui.display_response(response_generator)
             logger.debug(f"Received response from model: {response[:50]}...")
+
+            if extra_instructions_reduced:
+                self.history_builder.add_user_input(extra_instructions_reduced)
+
             self.history_builder.add_assistant_reply(response)
             self.history_logger.add_assistant_reply(response)  # Log assistant reply
+            self.history_builder.mark_end_of_assistant_turn()
+            return response
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Continuing")
-            self.history_builder.force_need_for_user_input()
+            self.history_builder.mark_end_of_assistant_turn()
         
     def _llm_act(self):
-        recent_llm_response = self.history_builder.get_recent_llm_response()
-        # We sent these context providers that have actions to the LLM, received response, now we'll need to act on them
-        self.history_builder.run_pending_actions(
-            lambda action: action.perform_action(recent_llm_response),
-            self.ui
-        )
+        recent_actions = self.history_builder.get_recent_actions()
+        if not recent_actions:
+            return False
+        for action in recent_actions:
+            response = self._llm_interact(action.get_action_instructions(), action.get_action_instructions_reduced())
+            status = action.perform_action(response)
+            self.ui.display_status(status)
+        return True
     
     def decide_to_continue(self, run_once):
         is_output_piped = not sys.stdout.isatty()
         return not run_once and not is_output_piped
     
     def get_user_input(self):
-        if not self._user_commands_queue:
-            user_input = self.ui.get_user_input()
+        user_input = self.ui.get_user_input()
+        
+        # Process all commands in the input
+        commands = self._process_user_input(user_input)
+        for command, args in commands:
+            lower_command = command.lower()
 
-            full_commands = self._process_user_input(user_input)
-            for command, args in full_commands:
-                self._user_commands_queue.append((command, args))
-
-        command, args = self._user_commands_queue.pop(0)
-        lower_command = command.lower()
-
-        if lower_command in ["/exit", "/quit", "/q"]:
-            return 'exit'
-        elif lower_command == "/clear":
-            self.clear_chat()
-        elif lower_command == "/save_history":
-            self._save_history(args)
-        elif lower_command == "/load_history":
-            self._load_history(args)
-        elif lower_command.startswith("/"):
-            self._run_command(lower_command[1:], args)
-        else:
-            self.history_builder.add_user_input(args, active=True)
+            if lower_command in ["/exit", "/quit", "/q"]:
+                return 'exit'
+            elif lower_command == "/clear":
+                self.clear_chat()
+            elif lower_command == "/save_history":
+                self._save_history(args)
+            elif lower_command == "/load_history":
+                self._load_history(args)
+            elif lower_command.startswith("/"):
+                self._run_command(lower_command[1:], args)
+            else:
+                self.history_builder.add_user_input(args)
+        
+        # Mark end of user input after processing all commands
+        self.history_builder.mark_end_of_user_turn()
     
     def _run_command(self, command: str, args: str):
         shlexer = shlex.shlex(args, posix=True)
@@ -214,9 +221,9 @@ class ChatApplication:
         shlexer.whitespace_split = True
         shlex_args = list(shlexer)
 
-        provider_instances = self._setup_initial_context_provider(command, None, shlex_args, permanent=False)
+        provider_instances = self._setup_context_provider(command, None, shlex_args, permanent=False)
         for provider in provider_instances:
-            self.history_builder.add_context(provider, provider.counts_as_input(), permanent=False)
+            self.history_builder.add_context(provider, permanent=False)
         if command != 'prompt':
             self.ui.display_status(f"Context added for /{command}")
             

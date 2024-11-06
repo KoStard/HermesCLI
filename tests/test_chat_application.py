@@ -111,7 +111,7 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app._send_model_request = Mock(side_effect=KeyboardInterrupt)
         self.chat_app.ui.display_response = Mock(return_value="response")
         self.chat_app._llm_interact()
-        self.chat_app.history_builder.force_need_for_user_input.assert_called_once()
+        self.chat_app.history_builder.mark_end_of_assistant_turn.assert_called_once()
 
     def test_llm_act(self):
         self.chat_app.history_builder.get_recent_llm_response = Mock(return_value="response")
@@ -126,7 +126,7 @@ class TestChatApplication(unittest.TestCase):
 
     def test_get_user_input(self):
         self.chat_app.ui.get_user_input.return_value = "test input"
-        self.chat_app._setup_initial_context_provider = Mock(return_value=[
+        self.chat_app._setup_context_provider = Mock(return_value=[
             self.mock_prompt_context_provider
         ])
         self.chat_app.get_user_input()
@@ -134,7 +134,7 @@ class TestChatApplication(unittest.TestCase):
 
     def test_get_user_input_with_exit(self):
         self.chat_app.ui.get_user_input.return_value = "/exit"
-        self.chat_app._setup_initial_context_provider = Mock(return_value=[
+        self.chat_app._setup_context_provider = Mock(return_value=[
             self.mock_prompt_context_provider
         ])
         response = self.chat_app.get_user_input()
@@ -146,7 +146,7 @@ class TestChatApplication(unittest.TestCase):
         self.chat_app.get_user_input()
         self.chat_app.clear_chat.assert_called_once()
         self.history_builder.add_user_input.assert_not_called()
-        self.chat_app._setup_initial_context_provider = Mock(return_value=[
+        self.chat_app._setup_context_provider = Mock(return_value=[
             self.mock_prompt_context_provider
         ])
         self.chat_app.get_user_input()

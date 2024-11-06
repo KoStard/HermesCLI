@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from hermes.context_providers import ContextProvider, get_all_context_providers
 from hermes.extension_loader import load_extensions
 from hermes.history_builder import HistoryBuilder
-from hermes.meta_context_providers import load_meta_context_providers
+from hermes.meta_context_providers import get_all_meta_context_providers
+from hermes.active_context_providers import get_all_active_context_providers
 from hermes.model_factory import create_model_and_processors
 from hermes.registry import ModelRegistry
 from hermes.utils.markdown_highlighter import MarkdownHighlighter
@@ -105,8 +106,11 @@ def main():
     for provider_class in context_provider_classes:
         provider_class.add_argument(parser)
         
-    meta_context_providers = load_meta_context_providers()
+    meta_context_providers = get_all_meta_context_providers()
     context_provider_classes.extend(meta_context_providers)
+
+    active_context_providers = get_all_active_context_providers()
+    context_provider_classes.extend(active_context_providers)
 
     args = parser.parse_args()
     
