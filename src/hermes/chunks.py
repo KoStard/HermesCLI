@@ -1,13 +1,13 @@
-from dataclasses import dataclass
-from typing import Optional, List
 from hermes.context_providers.base import ContextProvider
 
-@dataclass
 class BaseChunk:
     author: str
-    permanent: bool = False
+    permanent: bool
 
-@dataclass(init=False)
+    def __init__(self, author: str, permanent: bool = False):
+        self.author = author
+        self.permanent = permanent
+
 class AssistantChunk(BaseChunk):
     text: str
 
@@ -15,7 +15,6 @@ class AssistantChunk(BaseChunk):
         super().__init__(author="assistant", permanent=permanent)
         self.text = text
 
-@dataclass(init=False)
 class UserTextChunk(BaseChunk):
     text: str
 
@@ -23,7 +22,6 @@ class UserTextChunk(BaseChunk):
         super().__init__(author="user", permanent=permanent)
         self.text = text
 
-@dataclass(init=False)
 class UserContextChunk(BaseChunk):
     context_provider: ContextProvider
 
@@ -35,7 +33,6 @@ class UserContextChunk(BaseChunk):
         super().__init__(author="user", permanent=permanent)
         self.context_provider = context_provider
 
-@dataclass(init=False)
 class EndOfTurnChunk(BaseChunk):
     """Represents the end of a turn for either the user or assistant"""
     
