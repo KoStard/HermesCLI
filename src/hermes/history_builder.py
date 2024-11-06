@@ -1,6 +1,6 @@
 import logging
 import json
-from typing import Dict, List, Type
+from typing import Dict, List, Tuple, Type
 
 from hermes.chat_ui import ChatUI
 from hermes.context_providers.base import ContextProvider, LiveContextProvider
@@ -40,8 +40,10 @@ class History:
         if 0 <= index < len(self.chunks):
             self.chunks.pop(index)
 
-    def get_grouped_chunks(self) -> List[List[BaseChunk]]:
-        return list(groupby(self.chunks, lambda x: x.author))
+    def get_partitioned_chunks_by_author(self) -> List[Tuple[str, List[BaseChunk]]]:
+        """Group chunks by author and return list of (author, chunks) tuples."""
+        chunks = self.get_all_chunks()
+        return [(author, list(group)) for author, group in groupby(chunks, key=lambda x: x.author)]
 
     def clear_non_permanent(self):
         """Remove all non-permanent chunks from history."""
@@ -103,12 +105,12 @@ class HistoryBuilder:
     def _get_prompt_builder(self, author: str, do_introduction: bool = False):
         return self.prompt_builder_class(self.file_processor, author, do_introduction)
 
-    def build_messages(self) -> List[Dict[str, str]]:
+    def build_messages(self, extra_instructions: str = "") -> List[Dict[str, str]]:
         compiled_messages = []
         is_first_user_message = True
         instructions_messages = set()
 
-        for author, group in self.history.get_grouped_chunks():
+        for author, group in self.history.get_partitioned_chunks_by_author():
             prompt_builder = self._get_prompt_builder(author, is_first_user_message and author == "user")
             if author == "user":
                 is_first_user_message = False
@@ -118,8 +120,14 @@ class HistoryBuilder:
                     instructions = chunk.context_provider.get_instructions()
                     if instructions:
                         instructions_messages.add(instructions)
-                else:
+                elif isinstance(chunk, EndOfTurnChunk):
+                    pass
+                elif isinstance(chunk, UserTextChunk):
                     prompt_builder.add_text(chunk.text)
+                elif isinstance(chunk, AssistantChunk):
+                    prompt_builder.add_text(chunk.text)
+                else:
+                    raise ValueError(f"Unknown chunk type: {type(chunk)}")
             compiled_messages.append(
                 {
                     "role": author,
@@ -131,23 +139,37 @@ class HistoryBuilder:
         for instruction in instructions_messages:
             if instruction:
                 instructions_prompt_builder.add_text(instruction)
+        
         if instructions_messages:
             compiled_messages.insert(0, {
                 "role": "system",
                 "content": instructions_prompt_builder.build_prompt(),
             })
         
+        if extra_instructions:
+            compiled_messages.append({
+                "role": "user",
+                "content": extra_instructions,
+            })
+
         return compiled_messages
 
     def clear_regular_history(self):
         self.history.clear_non_permanent()
 
-    def run_pending_actions(self, executor, ui: ChatUI):
-        # TODO: Implement new algorithm for running actions
-        pass
-
+    def get_recent_actions(self) -> List[ContextProvider]:
+        recent_actions = []
+        for author, group in self.history.get_partitioned_chunks_by_author()[::-1]:
+            if author == "user":
+                for chunk in group:
+                    if isinstance(chunk, UserContextChunk) and chunk.context_provider.is_action():
+                        recent_actions.append(chunk.context_provider)
+            else:
+                break
+        return recent_actions
+    
     def get_recent_llm_response(self):
-        reversed_chunk_groups = self.history.get_grouped_chunks()[::-1]
+        reversed_chunk_groups = self.history.get_partitioned_chunks_by_author()[::-1]
         for author, group in reversed_chunk_groups:
             if author == "assistant":
                 return next((chunk.text for chunk in group if isinstance(chunk, AssistantChunk)), None)

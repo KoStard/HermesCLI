@@ -64,7 +64,7 @@ class ChatApplication:
                 try:
                     provider_instances = self._setup_context_provider(key, args, None, permanent=True)
                     for provider in provider_instances:
-                        self.history_builder.add_context(provider, provider.counts_as_input(), permanent=True)
+                        self.history_builder.add_context(provider, permanent=True)
                 except Exception as e:
                     logger.error(f"Error during setup of initial context providers with {key}: {str(e)}", exc_info=True)
 
@@ -142,40 +142,49 @@ class ChatApplication:
             
 
     def llm_round(self):
-        self._llm_interact()
-        self._llm_act()
+        if not self._llm_act():
+            self._llm_interact()
     
-    def _llm_interact(self):
-        messages = self.history_builder.build_messages()
+    def _llm_interact(self, extra_instructions: str = "", extra_instructions_reduced: str = ""):
+        messages = self.history_builder.build_messages(extra_instructions)
         self.history_logger.add_user_prompt(messages)  # Log user prompt
         try:
             logger.debug("Sending request to model")
-            response = self._send_model_request(messages)
-            if response is None:
+            response_generator = self._send_model_request(messages)
+            if response_generator is None:
                 retry = self.ui.get_user_input("Model request failed. Retry? (Y/n): ").lower()
                 if retry in ['y', 'yes', '']:
                     logger.info("User chose to retry the model request")
-                    return self._llm_interact()
+                    return self._llm_interact(extra_instructions, extra_instructions_reduced)
                 else:
                     logger.debug("User chose not to retry the model request")
                     self.ui.display_status("Model request cancelled by user.")
                     self.history_builder.mark_end_of_assistant_turn()
                     return
 
-            response = self.ui.display_response(response)
+            response = self.ui.display_response(response_generator)
             logger.debug(f"Received response from model: {response[:50]}...")
+
+            if extra_instructions_reduced:
+                self.history_builder.add_user_input(extra_instructions_reduced)
+
             self.history_builder.add_assistant_reply(response)
             self.history_logger.add_assistant_reply(response)  # Log assistant reply
             self.history_builder.mark_end_of_assistant_turn()
+            return response
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Continuing")
             self.history_builder.mark_end_of_assistant_turn()
         
     def _llm_act(self):
-        # TODO: Implement new action handling model
-        # This should process all actions accumulated during the conversation
-        # rather than handling them one by one
-        pass
+        recent_actions = self.history_builder.get_recent_actions()
+        if not recent_actions:
+            return False
+        for action in recent_actions:
+            response = self._llm_interact(action.get_action_instructions(), action.get_action_instructions_reduced())
+            status = action.perform_action(response)
+            self.ui.display_status(status)
+        return True
     
     def decide_to_continue(self, run_once):
         is_output_piped = not sys.stdout.isatty()
@@ -214,7 +223,7 @@ class ChatApplication:
 
         provider_instances = self._setup_context_provider(command, None, shlex_args, permanent=False)
         for provider in provider_instances:
-            self.history_builder.add_context(provider, provider.counts_as_input(), permanent=False)
+            self.history_builder.add_context(provider, permanent=False)
         if command != 'prompt':
             self.ui.display_status(f"Context added for /{command}")
             
