@@ -43,7 +43,6 @@ class ChatApplication:
             self.actions_taken_after_user_input = True
 
         self._setup_initial_context_providers(args)
-        self._user_commands_queue: List[Tuple[str, str]] = []
 
         self.extra_commands = {
             "/exit",
@@ -137,7 +136,7 @@ class ChatApplication:
                     return 'exit'
             except Exception as e:
                 logger.error(f"Error during user round: {str(e)}", exc_info=True)
-                self.history_builder.force_need_for_user_input()
+                self.history_builder.mark_end_of_assistant_turn()
         if self.actions_taken_after_user_input:
             pass
             
@@ -160,52 +159,51 @@ class ChatApplication:
                 else:
                     logger.debug("User chose not to retry the model request")
                     self.ui.display_status("Model request cancelled by user.")
-                    self.history_builder.force_need_for_user_input()
+                    self.history_builder.mark_end_of_assistant_turn()
                     return
 
             response = self.ui.display_response(response)
             logger.debug(f"Received response from model: {response[:50]}...")
             self.history_builder.add_assistant_reply(response)
             self.history_logger.add_assistant_reply(response)  # Log assistant reply
+            self.history_builder.mark_end_of_assistant_turn()
         except KeyboardInterrupt:
             logger.info("Chat interrupted by user. Continuing")
-            self.history_builder.force_need_for_user_input()
+            self.history_builder.mark_end_of_assistant_turn()
         
     def _llm_act(self):
-        recent_llm_response = self.history_builder.get_recent_llm_response()
-        # We sent these context providers that have actions to the LLM, received response, now we'll need to act on them
-        self.history_builder.run_pending_actions(
-            lambda action: action.perform_action(recent_llm_response),
-            self.ui
-        )
+        # TODO: Implement new action handling model
+        # This should process all actions accumulated during the conversation
+        # rather than handling them one by one
+        pass
     
     def decide_to_continue(self, run_once):
         is_output_piped = not sys.stdout.isatty()
         return not run_once and not is_output_piped
     
     def get_user_input(self):
-        if not self._user_commands_queue:
-            user_input = self.ui.get_user_input()
+        user_input = self.ui.get_user_input()
+        
+        # Process all commands in the input
+        commands = self._process_user_input(user_input)
+        for command, args in commands:
+            lower_command = command.lower()
 
-            full_commands = self._process_user_input(user_input)
-            for command, args in full_commands:
-                self._user_commands_queue.append((command, args))
-
-        command, args = self._user_commands_queue.pop(0)
-        lower_command = command.lower()
-
-        if lower_command in ["/exit", "/quit", "/q"]:
-            return 'exit'
-        elif lower_command == "/clear":
-            self.clear_chat()
-        elif lower_command == "/save_history":
-            self._save_history(args)
-        elif lower_command == "/load_history":
-            self._load_history(args)
-        elif lower_command.startswith("/"):
-            self._run_command(lower_command[1:], args)
-        else:
-            self.history_builder.add_user_input(args)
+            if lower_command in ["/exit", "/quit", "/q"]:
+                return 'exit'
+            elif lower_command == "/clear":
+                self.clear_chat()
+            elif lower_command == "/save_history":
+                self._save_history(args)
+            elif lower_command == "/load_history":
+                self._load_history(args)
+            elif lower_command.startswith("/"):
+                self._run_command(lower_command[1:], args)
+            else:
+                self.history_builder.add_user_input(args)
+        
+        # Mark end of user input after processing all commands
+        self.history_builder.mark_end_of_user_turn()
     
     def _run_command(self, command: str, args: str):
         shlexer = shlex.shlex(args, posix=True)

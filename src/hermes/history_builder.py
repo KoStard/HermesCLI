@@ -73,7 +73,10 @@ class HistoryBuilder:
                 return True
         return True
 
-    def force_need_for_user_input(self):
+    def mark_end_of_assistant_turn(self):
+        self.history.add_chunk(EndOfTurnChunk(author="assistant"))
+    
+    def mark_end_of_user_turn(self):
         self.history.add_chunk(EndOfTurnChunk(author="user"))
 
     def add_assistant_reply(self, content: str):
