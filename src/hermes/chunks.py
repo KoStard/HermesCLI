@@ -26,8 +26,6 @@ class UserTextChunk(BaseChunk):
 @dataclass(init=False)
 class UserContextChunk(BaseChunk):
     context_provider: ContextProvider
-    is_action: bool
-    has_acted: bool = False
 
     def __init__(
         self, 
@@ -36,7 +34,6 @@ class UserContextChunk(BaseChunk):
     ):
         super().__init__(author="user", permanent=permanent)
         self.context_provider = context_provider
-        self.is_action = context_provider.is_action()
 
 @dataclass(init=False)
 class EndOfTurnChunk(BaseChunk):

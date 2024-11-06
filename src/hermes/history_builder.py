@@ -143,28 +143,8 @@ class HistoryBuilder:
         self.history.clear_non_permanent()
 
     def run_pending_actions(self, executor, ui: ChatUI):
-        chunks = self._get_recent_action_chunks_to_run()
-        for chunk in chunks:
-            status = executor(chunk.context_provider)
-            chunk.has_acted = True
-            if status != None:
-                ui.display_status(status)
-
-    def _get_recent_action_chunks_to_run(self):
-        reversed_chunk_groups = self.history.get_grouped_chunks()[::-1]
-        found_assistant = False
-        for author, group in reversed_chunk_groups:
-            if found_assistant and author == "user":
-                return [
-                    chunk
-                    for chunk in group
-                    if isinstance(chunk, UserContextChunk)
-                    and chunk.is_action
-                    and not getattr(chunk, 'has_acted', False)
-                ]
-            if author == "assistant":
-                found_assistant = True
-        return []
+        # TODO: Implement new algorithm for running actions
+        pass
 
     def get_recent_llm_response(self):
         reversed_chunk_groups = self.history.get_grouped_chunks()[::-1]
@@ -196,8 +176,6 @@ class HistoryBuilder:
                     'author': chunk.author,
                     'context_provider': chunk.context_provider.serialize(),
                     'context_provider_keys': keys,
-                    'is_action': chunk.is_action,
-                    'has_acted': chunk.has_acted,
                     'permanent': chunk.permanent
                 })
 
@@ -227,7 +205,6 @@ class HistoryBuilder:
                                 context_provider=provider_instance,
                                 permanent=serialized_chunk.get('permanent', False)
                             )
-                            context_chunk.has_acted = serialized_chunk.get('has_acted', False)
                             self.history.add_chunk(context_chunk)
                         except Exception as e:
                             logger.warning(f"Failed to deserialize context provider {provider_key}: {str(e)}")

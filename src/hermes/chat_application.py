@@ -62,13 +62,13 @@ class ChatApplication:
             # The value is checked here, as the keys are always present in the namespace, but their values are None
             if key in self.command_keys_map and value:
                 try:
-                    provider_instances = self._setup_initial_context_provider(key, args, None, permanent=True)
+                    provider_instances = self._setup_context_provider(key, args, None, permanent=True)
                     for provider in provider_instances:
                         self.history_builder.add_context(provider, provider.counts_as_input(), permanent=True)
                 except Exception as e:
                     logger.error(f"Error during setup of initial context providers with {key}: {str(e)}", exc_info=True)
 
-    def _setup_initial_context_provider(
+    def _setup_context_provider(
         self,
         provider_key: str,
         cli_args: argparse.Namespace | None,
@@ -88,7 +88,7 @@ class ChatApplication:
         provider_instances = []
 
         for required_provider, required_args in required_providers.items():
-            provider_instances.extend(self._setup_initial_context_provider(required_provider, None, required_args, permanent=permanent))
+            provider_instances.extend(self._setup_context_provider(required_provider, None, required_args, permanent=permanent))
 
         provider_instances.append(provider)
 
@@ -212,7 +212,7 @@ class ChatApplication:
         shlexer.whitespace_split = True
         shlex_args = list(shlexer)
 
-        provider_instances = self._setup_initial_context_provider(command, None, shlex_args, permanent=False)
+        provider_instances = self._setup_context_provider(command, None, shlex_args, permanent=False)
         for provider in provider_instances:
             self.history_builder.add_context(provider, provider.counts_as_input(), permanent=False)
         if command != 'prompt':
