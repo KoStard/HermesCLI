@@ -26,7 +26,7 @@ class GeminiModel(ChatModel):
         
         system_message = ""
         if messages[0]['role'] == 'system':
-            system_message = '\n'.join([m.get('text') for m in messages[0]['content'] if m.get('text')])
+            system_message = '\n'.join([m for m in messages[0]['content'] if m])
             messages = messages[1:]
         
         extra_args = {}
