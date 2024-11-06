@@ -7,7 +7,7 @@ from hermes.context_providers.base import ContextProvider, LiveContextProvider
 from hermes.file_processors.base import FileProcessor
 from hermes.prompt_builders.base import PromptBuilder
 from itertools import groupby
-from hermes.chunks import BaseChunk, AssistantChunk, UserTextChunk, UserContextChunk
+from hermes.chunks import BaseChunk, AssistantChunk, EndOfTurnChunk, UserTextChunk, UserContextChunk
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -51,10 +51,6 @@ class History:
         """Return all chunks in the history."""
         return self.chunks
 
-    def get_permanent_chunks(self) -> List[BaseChunk]:
-        """Return only permanent chunks."""
-        return [chunk for chunk in self.chunks if chunk.permanent]
-
 
 class HistoryBuilder:
     def __init__(
@@ -71,32 +67,25 @@ class HistoryBuilder:
 
     def lacks_user_input(self) -> bool:
         for chunk in reversed(self.history.get_all_chunks()):
-            if (chunk.author == "user" and 
-                chunk.active and 
-                not getattr(chunk, 'override_passive', False)):
+            if (chunk.author == "user" and isinstance(chunk, EndOfTurnChunk)):
                 return False
             if chunk.author == "assistant":
                 return True
         return True
 
     def force_need_for_user_input(self):
-        for chunk in reversed(self.history.get_all_chunks()):
-            if chunk.author == "user" and chunk.active:
-                setattr(chunk, 'override_passive', True)
-            if chunk.author == "assistant":
-                return
+        self.history.add_chunk(EndOfTurnChunk(author="user"))
 
     def add_assistant_reply(self, content: str):
         self.history.add_chunk(AssistantChunk(text=content))
 
-    def add_user_input(self, content: str, active=False, permanent=False):
-        self.history.add_chunk(UserTextChunk(text=content, active=active, permanent=permanent))
+    def add_user_input(self, content: str, permanent=False):
+        self.history.add_chunk(UserTextChunk(text=content, permanent=permanent))
 
-    def add_context(self, context_provider: ContextProvider, active=False, permanent=False):
+    def add_context(self, context_provider: ContextProvider, permanent=False):
         self.history.add_chunk(
             UserContextChunk(
                 context_provider=context_provider,
-                active=active,
                 permanent=permanent
             )
         )
@@ -194,7 +183,6 @@ class HistoryBuilder:
                 serialized_chunks.append({
                     'author': chunk.author,
                     'text': chunk.text,
-                    'active': chunk.active,
                     'permanent': chunk.permanent
                 })
             elif isinstance(chunk, UserContextChunk):
@@ -205,7 +193,6 @@ class HistoryBuilder:
                     'author': chunk.author,
                     'context_provider': chunk.context_provider.serialize(),
                     'context_provider_keys': keys,
-                    'active': chunk.active,
                     'is_action': chunk.is_action,
                     'has_acted': chunk.has_acted,
                     'permanent': chunk.permanent
@@ -235,7 +222,6 @@ class HistoryBuilder:
                             provider_instance.deserialize(serialized_chunk['context_provider'])
                             context_chunk = UserContextChunk(
                                 context_provider=provider_instance,
-                                active=serialized_chunk['active'],
                                 permanent=serialized_chunk.get('permanent', False)
                             )
                             context_chunk.has_acted = serialized_chunk.get('has_acted', False)
@@ -247,6 +233,5 @@ class HistoryBuilder:
                 else:
                     self.history.add_chunk(UserTextChunk(
                         text=serialized_chunk['text'],
-                        active=serialized_chunk['active'],
                         permanent=serialized_chunk.get('permanent', False)
                     ))

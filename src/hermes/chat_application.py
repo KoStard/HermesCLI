@@ -205,7 +205,7 @@ class ChatApplication:
         elif lower_command.startswith("/"):
             self._run_command(lower_command[1:], args)
         else:
-            self.history_builder.add_user_input(args, active=True)
+            self.history_builder.add_user_input(args)
     
     def _run_command(self, command: str, args: str):
         shlexer = shlex.shlex(args, posix=True)
