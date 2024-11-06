@@ -68,3 +68,6 @@ class AppendContextProvider(FileContextProvider):
 
     def get_action_instructions(self) -> str:
         return self.special_command_prompt
+    
+    def get_action_instructions_reduced(self) -> str:
+        return "<Reducted Request: You were asked to append to a file, and reply with a specific format. This applies only to the message you replied with, next messages are not affected.>"
