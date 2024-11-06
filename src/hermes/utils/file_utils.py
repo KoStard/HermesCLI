@@ -35,10 +35,7 @@ def is_binary(file_path):
 def process_file_name(file_path: str) -> str:
     """Process the file name to create a consistent reference."""
     import re
-    base_name = os.path.basename(file_path)
-    name, _ = os.path.splitext(base_name)
-    result = re.sub(r'[^\w\d\-\(\)\[\]]', '_', name).lower()
-    return result
+    return re.sub(r'[^\w\d\-\(\)\[\]]', '_', os.path.basename(file_path)).lower()
 
 def write_file(file_path: str, content: str, mode: str = 'w') -> None:
     with open(file_path, mode, encoding='utf-8') as file:

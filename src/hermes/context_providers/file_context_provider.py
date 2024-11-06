@@ -76,6 +76,9 @@ class FileContextProvider(ContextProvider):
             matched_paths = glob.glob(file_path, recursive=True)
             if not matched_paths:
                 self.logger.warning(f"Invalid path: {file_path}")
+                if not file_path.endswith('/'):
+                    # Adding invalid path as a file, so that it's clear that the file doesn't exist (maybe intentional)
+                    self.file_paths[role].append(file_path)
             for matched_path in matched_paths:
                 self.file_paths[role].append(matched_path)
                 role_str = f" as {role}" if role else ""
