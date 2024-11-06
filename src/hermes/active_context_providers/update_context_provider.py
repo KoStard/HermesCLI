@@ -43,11 +43,6 @@ class UpdateContextProvider(FileContextProvider):
             file_name=file_utils.process_file_name(self.file_paths["active"][0])
         )
 
-    def add_to_prompt(self, prompt_builder: PromptBuilder):
-        if self.file_paths:
-            prompt_builder.add_text(self.special_command_prompt, "update_command")
-            super().add_to_prompt(prompt_builder)
-
     @staticmethod
     def get_command_key() -> List[str]:
         return ["update", "create"]
@@ -65,3 +60,9 @@ class UpdateContextProvider(FileContextProvider):
     def deserialize(self, data: Dict[str, Any]):
         super().deserialize(data)
         self.special_command_prompt = data.get("special_command_prompt", "")
+
+    def is_action(self) -> bool:
+        return True
+
+    def get_action_instructions(self) -> str:
+        return self.special_command_prompt
