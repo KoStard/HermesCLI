@@ -86,5 +86,5 @@ class History:
         
         self.clear()
         
-        for history_item in history_data:
+        for history_item in history_data["messages"]:
             self._items.append(HistoryItem.from_json(history_item))
