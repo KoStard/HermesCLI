@@ -9,7 +9,7 @@ class BedrockRequestBuilder(RequestBuilder):
         self._active_author = None
         self._active_author_contents = []
 
-    def _add_content(self, content: str | dict, author: str):
+    def _add_content(self, content: dict, author: str):
         if self._active_author != author:
             self._flush_active_author()
             self._active_author = author
@@ -35,7 +35,9 @@ class BedrockRequestBuilder(RequestBuilder):
         }
     
     def handle_text_message(self, text: str, author: str, message_id: int):
-        self._add_content({"text": text}, author)
+        text = text.strip()
+        if text:
+            self._add_content({"text": text}, author)
         
     def _get_message_role(self, role: str) -> str:
         if role == 'user':
