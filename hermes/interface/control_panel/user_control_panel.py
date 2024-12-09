@@ -2,9 +2,9 @@ from argparse import ArgumentParser, Namespace
 from typing import Generator
 from .base_control_panel import ControlPanel, ControlPanelCommand
 from .peekable_generator import PeekableGenerator, iterate_while
-from hermes_beta.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
-from hermes_beta.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
-from hermes_beta.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
+from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 
 class UserControlPanel(ControlPanel):
     def __init__(self, *, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):

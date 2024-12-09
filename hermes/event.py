@@ -7,7 +7,7 @@ from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
 import os
-from hermes_beta.message import Message
+from hermes.message import Message
 
 @dataclass(init=False)
 class Event(ABC):

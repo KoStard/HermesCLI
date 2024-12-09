@@ -7,8 +7,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Callable, Generator, Optional
 from .peekable_generator import PeekableGenerator
-from hermes_beta.message import Message, TextMessage, TextGeneratorMessage
-from hermes_beta.event import Event
+from hermes.message import Message, TextMessage, TextGeneratorMessage
+from hermes.event import Event
 
 @dataclass
 class ControlPanelCommand:

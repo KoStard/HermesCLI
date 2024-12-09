@@ -1,8 +1,8 @@
 from typing import Generator
 from .base_control_panel import ControlPanel, ControlPanelCommand
 from .peekable_generator import PeekableGenerator, iterate_while
-from hermes_beta.message import Message, TextGeneratorMessage, TextMessage
-from hermes_beta.event import Event, MessageEvent
+from hermes.message import Message, TextGeneratorMessage, TextMessage
+from hermes.event import Event, MessageEvent
 class LLMControlPanel(ControlPanel):
     def __init__(self, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()

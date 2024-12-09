@@ -1,4 +1,4 @@
-from hermes_beta.interface.assistant.request_builder.base import RequestBuilder
+from hermes.interface.assistant.request_builder.base import RequestBuilder
 
 
 class BedrockRequestBuilder(RequestBuilder):

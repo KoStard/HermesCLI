@@ -1,12 +1,12 @@
 import logging
 from typing import Generator
 
-from hermes_beta.interface.assistant.chat_models.base import ChatModel
+from hermes.interface.assistant.chat_models.base import ChatModel
 
 from ..base import Interface
-from hermes_beta.interface.control_panel import LLMControlPanel
-from hermes_beta.event import Event, MessageEvent, NotificationEvent
-from hermes_beta.message import Message, TextGeneratorMessage, TextMessage
+from hermes.interface.control_panel import LLMControlPanel
+from hermes.event import Event, MessageEvent, NotificationEvent
+from hermes.message import Message, TextGeneratorMessage, TextMessage
 
 logger = logging.getLogger(__name__)
 

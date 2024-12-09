@@ -1,8 +1,8 @@
 from base64 import b64encode
 from typing import List, Dict, Any
 
-from hermes_beta.interface.assistant.request_builder.base import RequestBuilder
-from hermes_beta.utils.file_extension import get_file_extension
+from hermes.interface.assistant.request_builder.base import RequestBuilder
+from hermes.utils.file_extension import get_file_extension
 
 
 class OpenAIRequestBuilder(RequestBuilder):

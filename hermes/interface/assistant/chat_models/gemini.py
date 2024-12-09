@@ -1,8 +1,8 @@
 from typing import Generator
 
-from hermes_beta.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
-from hermes_beta.interface.assistant.request_builder.base import RequestBuilder
-from hermes_beta.interface.assistant.request_builder.gemini import GeminiRequestBuilder
+from hermes.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
+from hermes.interface.assistant.request_builder.base import RequestBuilder
+from hermes.interface.assistant.request_builder.gemini import GeminiRequestBuilder
 from .base import ChatModel
 
 class GeminiModel(ChatModel):

@@ -5,9 +5,9 @@ import subprocess
 import platform
 from typing import Generator
 
-from hermes_beta.interface.assistant.llm_interface import LLMInterface
-from hermes_beta.interface.control_panel import LLMControlPanel
-from hermes_beta.message import Message, TextMessage
+from hermes.interface.assistant.llm_interface import LLMInterface
+from hermes.interface.control_panel import LLMControlPanel
+from hermes.message import Message, TextMessage
 
 class DebugInterface(LLMInterface):
     def __init__(self, port=12345, control_panel: LLMControlPanel = None):

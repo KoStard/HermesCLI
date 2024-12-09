@@ -1,9 +1,9 @@
 from base64 import b64encode
 import time
-from hermes_beta.interface.assistant.prompt_builder.base import PromptBuilderFactory
-from hermes_beta.interface.assistant.request_builder.base import RequestBuilder
-from hermes_beta.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes_beta.utils.file_extension import get_file_extension
+from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
+from hermes.interface.assistant.request_builder.base import RequestBuilder
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.utils.file_extension import get_file_extension
 
 
 class GeminiRequestBuilder(RequestBuilder):

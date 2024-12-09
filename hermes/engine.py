@@ -1,11 +1,11 @@
 from asyncio import Event
 import logging
 from typing import Generator
-from hermes_beta.event import ClearHistoryEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, SaveHistoryEvent
-from hermes_beta.interface.control_panel.peekable_generator import PeekableGenerator
-from hermes_beta.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes_beta.participants import Participant
-from hermes_beta.history import History
+from hermes.event import ClearHistoryEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, SaveHistoryEvent
+from hermes.interface.control_panel.peekable_generator import PeekableGenerator
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.participants import Participant
+from hermes.history import History
 from itertools import cycle, chain
 
 logger = logging.getLogger(__name__)

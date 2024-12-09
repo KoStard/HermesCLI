@@ -5,7 +5,7 @@ def read_requirements(file_path):
         return [line.strip() for line in file if line.strip() and not line.startswith('#')]
 
 setup(
-    name="hermes_beta",
+    name="hermes-cli",
     version="0.1.0",
     packages=find_packages(),
     include_package_data=True,
@@ -15,7 +15,7 @@ setup(
     install_requires=read_requirements('requirements.txt'),
     entry_points={
         "console_scripts": [
-            "hermes_beta=hermes_beta.main:main",
+            "hermes=hermes.main:main",
         ],
     },
     python_requires='>=3.7',

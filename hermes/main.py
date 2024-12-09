@@ -1,18 +1,18 @@
 import textwrap
-from hermes_beta.extensions_loader import load_extensions
-from hermes_beta.engine import Engine
+from hermes.extensions_loader import load_extensions
+from hermes.engine import Engine
 from argparse import ArgumentParser, Namespace
-from hermes_beta.history import History
-from hermes_beta.interface.assistant.model_factory import ModelFactory
-from hermes_beta.interface.user.command_completer import CommandCompleter
-from hermes_beta.interface.control_panel import LLMControlPanel, UserControlPanel
-from hermes_beta.interface.debug.debug_interface import DebugInterface
-from hermes_beta.interface.assistant.llm_interface import LLMInterface
-from hermes_beta.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes_beta.interface.user.markdown_highlighter import MarkdownHighlighter
-from hermes_beta.interface.user.stt_input_handler import STTInputHandler
-from hermes_beta.interface.user.user_interface import UserInterface
-from hermes_beta.participants import DebugParticipant, LLMParticipant, UserParticipant
+from hermes.history import History
+from hermes.interface.assistant.model_factory import ModelFactory
+from hermes.interface.user.command_completer import CommandCompleter
+from hermes.interface.control_panel import LLMControlPanel, UserControlPanel
+from hermes.interface.debug.debug_interface import DebugInterface
+from hermes.interface.assistant.llm_interface import LLMInterface
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
+from hermes.interface.user.stt_input_handler import STTInputHandler
+from hermes.interface.user.user_interface import UserInterface
+from hermes.participants import DebugParticipant, LLMParticipant, UserParticipant
 import configparser
 import os
 

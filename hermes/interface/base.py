@@ -9,8 +9,8 @@ Basically interface is what the user sees and interacts with
 
 from abc import ABC, abstractmethod
 from typing import Generator
-from hermes_beta.event import Event
-from hermes_beta.history import History
+from hermes.event import Event
+from hermes.history import History
 
 class Interface(ABC):
     @abstractmethod

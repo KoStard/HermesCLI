@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from hermes_beta.interface.assistant.prompt_builder.base import PromptBuilder, PromptBuilderFactory
-from hermes_beta.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes_beta.message import AudioFileMessage, AutoRedactedInvisibleTextMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, UrlMessage, VideoMessage
+from hermes.interface.assistant.prompt_builder.base import PromptBuilder, PromptBuilderFactory
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.message import AudioFileMessage, AutoRedactedInvisibleTextMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, UrlMessage, VideoMessage
 
 """
 RequestBuilder is responsible for building the actual API request to the LLM provider.

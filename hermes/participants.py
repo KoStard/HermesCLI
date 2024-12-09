@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 import logging
 from typing import Generator
-from hermes_beta.history import History
-from hermes_beta.interface.assistant.llm_interface import LLMInterface
-from hermes_beta.interface.debug.debug_interface import DebugInterface
-from hermes_beta.interface.user.user_interface import UserInterface
-from hermes_beta.message import Message
-from hermes_beta.event import Event
+from hermes.history import History
+from hermes.interface.assistant.llm_interface import LLMInterface
+from hermes.interface.debug.debug_interface import DebugInterface
+from hermes.interface.user.user_interface import UserInterface
+from hermes.message import Message
+from hermes.event import Event
 
 logger = logging.getLogger(__name__)
 

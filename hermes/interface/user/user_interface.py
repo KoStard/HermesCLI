@@ -7,16 +7,16 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
 
-from hermes_beta.history import History
+from hermes.history import History
 
-from hermes_beta.interface.base import Interface
-from hermes_beta.interface.control_panel import UserControlPanel
-from hermes_beta.interface.user.markdown_highlighter import MarkdownHighlighter
-from hermes_beta.interface.user.stt_input_handler import STTInputHandler
-from hermes_beta.message import InvisibleMessage, Message, TextGeneratorMessage, TextMessage
-from hermes_beta.event import Event, MessageEvent, NotificationEvent
-from hermes_beta.interface.helpers import CLINotificationsPrinter, CLIColors, colorize_text, print_colored_text
-from hermes_beta.interface.user.command_completer import CommandCompleter
+from hermes.interface.base import Interface
+from hermes.interface.control_panel import UserControlPanel
+from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
+from hermes.interface.user.stt_input_handler import STTInputHandler
+from hermes.message import InvisibleMessage, Message, TextGeneratorMessage, TextMessage
+from hermes.event import Event, MessageEvent, NotificationEvent
+from hermes.interface.helpers import CLINotificationsPrinter, CLIColors, colorize_text, print_colored_text
+from hermes.interface.user.command_completer import CommandCompleter
 
 
 class UserInterface(Interface):

@@ -1,7 +1,7 @@
 import os
 import sys
 import select
-from hermes_beta.utils.overriding_printer import OverridingPrinter
+from hermes.utils.overriding_printer import OverridingPrinter
 
 
 class STTInputHandler:

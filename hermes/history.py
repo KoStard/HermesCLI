@@ -6,8 +6,8 @@ import json
 from asyncio import Event
 from typing import List
 
-from hermes_beta.event import MessageEvent
-from hermes_beta.message import Message, DESERIALIZATION_KEYMAP
+from hermes.event import MessageEvent
+from hermes.message import Message, DESERIALIZATION_KEYMAP
 
 
 class History:

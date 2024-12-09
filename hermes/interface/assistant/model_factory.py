@@ -1,13 +1,13 @@
 from typing import List, Type
-from hermes_beta.interface.assistant.chat_models.base import ChatModel
-from hermes_beta.interface.assistant.chat_models.openai import OpenAIModel
-from hermes_beta.interface.assistant.chat_models.claude import ClaudeModel
-from hermes_beta.interface.assistant.chat_models.gemini import GeminiModel
-from hermes_beta.interface.assistant.chat_models.groq import GroqModel
-from hermes_beta.interface.assistant.chat_models.deepseek import DeepSeekModel
-from hermes_beta.interface.assistant.chat_models.sambanova import SambanovaModel
-from hermes_beta.interface.assistant.chat_models.open_router import OpenRouterModel
-from hermes_beta.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.interface.assistant.chat_models.base import ChatModel
+from hermes.interface.assistant.chat_models.openai import OpenAIModel
+from hermes.interface.assistant.chat_models.claude import ClaudeModel
+from hermes.interface.assistant.chat_models.gemini import GeminiModel
+from hermes.interface.assistant.chat_models.groq import GroqModel
+from hermes.interface.assistant.chat_models.deepseek import DeepSeekModel
+from hermes.interface.assistant.chat_models.sambanova import SambanovaModel
+from hermes.interface.assistant.chat_models.open_router import OpenRouterModel
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 
 
 class ModelFactory:

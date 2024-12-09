@@ -14,8 +14,8 @@ from abc import ABC, abstractmethod
 
 import requests
 
-from hermes_beta.utils.binary_file import is_binary
-from hermes_beta.utils.file_extension import get_file_extension
+from hermes.utils.binary_file import is_binary
+from hermes.utils.file_extension import get_file_extension
 
 @dataclass(init=False)
 class Message(ABC):

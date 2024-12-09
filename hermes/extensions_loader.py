@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 import logging
-from hermes_beta.interface.control_panel.base_control_panel import ControlPanelCommand
+from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
 
 def get_extensions_dir() -> Path:
     """Get the path to the extensions directory"""

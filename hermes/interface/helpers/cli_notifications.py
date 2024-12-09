@@ -4,8 +4,8 @@ Goal:
 - Have the first implementation, which prints the given message to the CLI in a round rectangle.
 """
 
-from hermes_beta.interface.helpers.terminal_coloring import CLIColors, colorize_text
-from hermes_beta.interface.helpers.terminal_window import get_terminal_size
+from hermes.interface.helpers.terminal_coloring import CLIColors, colorize_text
+from hermes.interface.helpers.terminal_window import get_terminal_size
 
 class CLINotificationsPrinter:
     def __init__(self):
