@@ -84,14 +84,14 @@ class UserInterface(Interface):
         else:
             user_input = self._get_user_input_from_terminal()
 
-        input_message = TextMessage(author="user", text=user_input)
+        input_message = TextMessage(author="user", text=user_input, is_manually_entered=True)
 
         sendable_content_present = False
 
         for event in self.control_panel.break_down_and_execute_message(input_message):
             if isinstance(event, MessageEvent):
                 self.last_messages.append(event.get_message())
-                if message_source != "cli" or isinstance(event.get_message(), TextMessage):
+                if message_source != "cli" or (isinstance(event.get_message(), TextMessage) and event.get_message().is_manually_entered):
                     sendable_content_present = True
             yield event
         

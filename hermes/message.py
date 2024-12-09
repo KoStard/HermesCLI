@@ -53,10 +53,12 @@ class TextMessage(Message):
     """Class for regular text messages"""
     
     text: str
+    is_manually_entered: bool
     
-    def __init__(self, *, author: str, text: str, timestamp: Optional[datetime] = None):
+    def __init__(self, *, author: str, text: str, timestamp: Optional[datetime] = None, is_manually_entered: bool = False):
         super().__init__(author=author, timestamp=timestamp)
         self.text = text
+        self.is_manually_entered = is_manually_entered
     
     def get_content_for_user(self) -> str:
         return self.text

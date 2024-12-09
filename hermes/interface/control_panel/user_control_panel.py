@@ -19,7 +19,7 @@ class UserControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(command_label="/url", description="Add url to the conversation", parser=lambda line: MessageEvent(UrlMessage(author="user", url=line))))
         self._register_command(ControlPanelCommand(command_label="/save_history", description="Save history to a file", parser=lambda line: SaveHistoryEvent(line), visible_from_cli=False))
         self._register_command(ControlPanelCommand(command_label="/load_history", description="Load history from a file", parser=lambda line: LoadHistoryEvent(line), priority=98))
-        self._register_command(ControlPanelCommand(command_label="/text", description="Add text to the conversation", parser=lambda line: MessageEvent(TextMessage(author="user", text=line))))
+        self._register_command(ControlPanelCommand(command_label="/text", description="Add text to the conversation", parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_manually_entered=True))))
         self._register_command(ControlPanelCommand(command_label="/exit", description="Exit the application", parser=lambda _: ExitEvent(), priority=100))
 
         if extra_commands:
@@ -40,12 +40,15 @@ class UserControlPanel(ControlPanel):
             matching_command = self._line_command_match(line)
             if matching_command:
                 if current_message_text:
-                    prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text))))
+                    prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_manually_entered=True))))
                     current_message_text = ""
                 
                 command_priority = self.commands[matching_command].priority
                 command_parser = self.commands[matching_command].parser
                 command_content = self._extract_command_content_in_line(matching_command, line)
+
+                self.notifications_printer.print_notification(f"Command {matching_command} received")
+
                 try:
                     parsed_command_event = command_parser(command_content)
                 except Exception as e:
@@ -56,14 +59,12 @@ class UserControlPanel(ControlPanel):
                     self.notifications_printer.print_error(f"Command {matching_command} returned a non-event object: {parsed_command_event}")
                     continue
 
-                self.notifications_printer.print_notification(f"Command {matching_command} received")
-
                 prioritised_backlog.append((command_priority, parsed_command_event))
             else:
                 current_message_text += line
 
         if current_message_text:
-            prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text))))
+            prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_manually_entered=True))))
 
         # Highest priority first
         for _, event in sorted(prioritised_backlog, key=lambda x: -x[0]):
