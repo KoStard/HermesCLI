@@ -139,8 +139,10 @@ class RequestBuilder(ABC):
         Then use .handle_text_message
         """
         try:
+            file_identifier = f"// Content of file {text_filepath}\n"
             with open(text_filepath, 'r', encoding='utf-8') as file:
                 file_content = file.read()
+                file_content = file_identifier + file_content
                 self.handle_text_message(file_content, author, message_id)
         except Exception as e:
             self.notifications_printer.print_error(f"Error reading file {text_filepath}: {e}")
