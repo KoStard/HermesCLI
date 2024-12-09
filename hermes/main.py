@@ -65,10 +65,12 @@ def main():
             participants.append(debug_participant)
 
         else:
-            provider, model_tag = cli_args.model.split("/", 1)
+            model_info_string = cli_args.model
+            if not model_info_string:
+                model_info_string = get_default_model_info_string(config)
+            provider, model_tag = model_info_string.split("/", 1)
             provider = provider.upper()
             config_section = get_config_section(config, provider)
-            model_id = get_model_id(cli_args, config_section, provider)
             
             model = model_factory.get_model(provider, model_tag, config_section)
             llm_interface = LLMInterface(model, control_panel=llm_control_panel)
@@ -79,7 +81,7 @@ def main():
             f"""
             Welcome to Hermes!
             
-            Using model {model_id}
+            Using model {model_info_string}
             """))
 
         history = History()
@@ -109,18 +111,14 @@ def get_stt_input_handler(cli_args: Namespace, config: configparser.ConfigParser
         return STTInputHandler(api_key=config["GROQ"]["api_key"])
     else:
         return None
-    
+
+def get_default_model_info_string(config: configparser.ConfigParser):
+    return config["BASE"]["model"]
+
 def get_config_section(config: configparser.ConfigParser, provider: str):
     if provider not in config.sections():
         raise ValueError(f"Config section {provider} is not found. Please double check it and specify it in the config file ~/.config/hermes/config.ini.")
     return config[provider]
-
-def get_model_id(cli_args: Namespace, config_section, provider: str):
-    config_model = config_section.get("model")
-    model_id = cli_args.model if cli_args.model else config_model
-    if model_id is None:
-        raise ValueError(f"Model is not specified. Please specify it with --model or in the config file for the current provider {provider}.")
-    return model_id
 
 
 if __name__ == "__main__":
