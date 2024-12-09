@@ -1,7 +1,7 @@
 from asyncio import Event
 import logging
 from typing import Generator
-from hermes.event import ClearHistoryEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, SaveHistoryEvent
+from hermes.event import ClearHistoryEvent, CreateFileEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, SaveHistoryEvent
 from hermes.interface.control_panel.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.participants import Participant
@@ -79,6 +79,10 @@ class Engine:
                         participant.initialize_from_history(self.history)
                 elif isinstance(event, ExitEvent):
                     self._handle_exit_event()
+                elif isinstance(event, CreateFileEvent):
+                    self.notifications_printer.print_notification(f"Creating file {event.file_path}")
+                    with open(event.file_path, "w") as file:
+                        file.write(event.content)
                 else:
                     print(f"Unknown engine command, skipping: {event}")
                 continue

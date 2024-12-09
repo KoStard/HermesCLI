@@ -70,6 +70,11 @@ class LoadHistoryEvent(EngineCommandEvent):
 class ExitEvent(EngineCommandEvent):
     pass
 
+@dataclass
+class CreateFileEvent(EngineCommandEvent):
+    file_path: str
+    content: str
+
 """
 Notification events are events that contain a notification and are sent to the next participant.
 """
