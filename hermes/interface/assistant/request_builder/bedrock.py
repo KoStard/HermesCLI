@@ -15,10 +15,16 @@ class BedrockRequestBuilder(RequestBuilder):
             self._active_author = author
             self._active_author_contents = []
         self._active_author_contents.append(content)
+    
+    def _is_text_message(self, content: dict) -> bool:
+        return "text" in content
 
     def _flush_active_author(self):
         if self._active_author:
-            self.messages.append({"role": self._get_message_role(self._active_author), "content": self._active_author_contents})
+            text_pieces = [content for content in self._active_author_contents if self._is_text_message(content)]
+            joined_text = self._join_text_pieces(text_pieces)
+            remaining_contents = [content for content in self._active_author_contents if not self._is_text_message(content)]
+            self.messages.append({"role": self._get_message_role(self._active_author), "content": [joined_text, *remaining_contents]})
             self._active_author = None
             self._active_author_contents = []
     

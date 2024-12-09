@@ -53,26 +53,25 @@ def main():
     participants.append(user_participant)
 
     debug_participant = None
-    model_id = None
     is_debug_mode = cli_args.debug
 
     try:
         llm_control_panel = LLMControlPanel(extra_commands=llm_extra_commands)
+        model_info_string = cli_args.model
+        if not model_info_string:
+            model_info_string = get_default_model_info_string(config)
+        provider, model_tag = model_info_string.split("/", 1)
+        provider = provider.upper()
+        config_section = get_config_section(config, provider)
+        
+        model = model_factory.get_model(provider, model_tag, config_section)
 
         if is_debug_mode:
-            debug_interface = DebugInterface(control_panel=llm_control_panel)
+            debug_interface = DebugInterface(control_panel=llm_control_panel, model=model)
             debug_participant = DebugParticipant(debug_interface)
             participants.append(debug_participant)
 
         else:
-            model_info_string = cli_args.model
-            if not model_info_string:
-                model_info_string = get_default_model_info_string(config)
-            provider, model_tag = model_info_string.split("/", 1)
-            provider = provider.upper()
-            config_section = get_config_section(config, provider)
-            
-            model = model_factory.get_model(provider, model_tag, config_section)
             llm_interface = LLMInterface(model, control_panel=llm_control_panel)
             llm_participant = LLMParticipant(llm_interface)
             participants.append(llm_participant)
