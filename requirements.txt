@@ -1,24 +1,5 @@
-anthropic
-boto3
-google-generativeai
-PyPDF2==3.0.1
-rich
-openai
-argcomplete
-pyyaml
-pyreadline3; sys_platform == 'win32'
-ollama
-pdfminer.six
-markdownify==0.11.6
-tenacity
-wheel
-groq
-python-docx
-pytest
 mistune
 pygments
-google-cloud-aiplatform
-coverage
-pyperclip
-python-dotenv
 prompt_toolkit
+markdownify
+requests

@@ -1,1 +1,0 @@
-hermes --prefill hermes_assistant --prompt "How to use fill-gaps command?" --once

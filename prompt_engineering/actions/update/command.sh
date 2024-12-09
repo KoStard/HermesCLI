@@ -1,1 +1,0 @@
-hermes --update fibonacci.py --once
