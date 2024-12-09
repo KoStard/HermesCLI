@@ -5,7 +5,7 @@ from prompt_toolkit import ANSI, PromptSession
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 
 from hermes.history import History
 
@@ -108,6 +108,15 @@ class UserInterface(Interface):
                 os.makedirs(history_dir)
             self.prompt_toolkit_history = FileHistory(history_file_path)
 
+        kb = KeyBindings()
+
+        @kb.add('c-z', eager=True)
+        def _(event: KeyPressEvent):
+            buffer = event.current_buffer
+            buffer.undo()
+        
+        # Redo didn't work
+
         session = PromptSession(
             history=self.prompt_toolkit_history,
             auto_suggest=AutoSuggestFromHistory(),
@@ -115,6 +124,7 @@ class UserInterface(Interface):
             prompt_continuation=lambda width, line_number, is_soft_wrap: '.' * width,
             completer=self.command_completer,
             complete_while_typing=True,
+            key_bindings=kb
         )
 
         if not self.tip_shown:
