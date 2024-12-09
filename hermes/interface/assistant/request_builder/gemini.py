@@ -89,11 +89,8 @@ class GeminiRequestBuilder(RequestBuilder):
         return self._default_handle_textual_file_message(text_filepath, author, message_id)
 
     def handle_image_message(self, image_path: str, author: str, message_id: int):
-        base64_image = self._get_base64_image(image_path)
-        self._add_content({
-            'mime_type': f'image/{self._get_extension(image_path)}',
-            'data': base64_image
-        }, author)
+        uploaded_file = self._upload_file(image_path)
+        self._add_content(uploaded_file, author)
 
     def _get_base64_image(self, image_path: str) -> str:
         with open(image_path, "rb") as image_file:
