@@ -1,3 +1,4 @@
+import requests
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 
 
@@ -28,13 +29,13 @@ class BedrockRequestBuilder(RequestBuilder):
             "modelId": self.model_tag,
             "system": [],
             "inferenceConfig": {},
-            "toolConfig": {},
-            "guardrailConfig": {},
+            # "toolConfig": {},
+            # "guardrailConfig": {},
             "messages": self.messages
         }
     
     def handle_text_message(self, text: str, author: str):
-        self._add_content(text, author)
+        self._add_content({"text": text}, author)
         
     def _get_message_role(self, role: str) -> str:
         if role == 'user':
@@ -42,14 +43,52 @@ class BedrockRequestBuilder(RequestBuilder):
         return "assistant"
 
     def handle_embedded_pdf_message(self, pdf_path: str, author: str):
-        # Only for anthropic models
-        pass
+        self._add_content({"document": {
+                "format": "pdf",
+                "name": self._get_file_name(pdf_path),
+                "source": {
+                    "bytes": self._get_file_bytes(pdf_path)
+                }
+            }}, author)
+        
+    def _get_file_name(self, file_path: str) -> str:
+        import os
+        return os.path.basename(file_path)
+
+    def _get_file_bytes(self, file_path: str) -> bytes:
+        with open(file_path, 'rb') as file:
+            return file.read()
 
     def handle_image_message(self, image_path: str, author: str):
-        pass
+        image_format = self._get_image_format(image_path)
+        image_content = self._get_file_bytes(image_path)
+        self._add_content({
+            "image": {
+                "format": image_format,
+                "source": {
+                    "bytes": image_content
+                }
+            }
+        })
+    
+    def _get_image_format(self, image_path: str) -> str:
+        import os
+        _, file_extension = os.path.splitext(image_path)
+        file_extension = file_extension[1:].lower()
+        if file_extension in ['jpg', 'jpeg']:
+            return 'jpeg'
+        return file_extension
 
     def handle_image_url_message(self, url: str, author: str):
-        pass
+        image_content = requests.get(url).content
+        self._add_content({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/jpeg",
+                "data": image_content
+            }
+        }, author)
 
     def handle_textual_file_message(self, text_filepath: str, author: str):
         return self._default_handle_textual_file_message(text_filepath, author)

@@ -1,5 +1,6 @@
 from typing import List, Type
 from hermes.interface.assistant.chat_models.base import ChatModel
+from hermes.interface.assistant.chat_models.bedrock import BedrockModel
 from hermes.interface.assistant.chat_models.openai import OpenAIModel
 from hermes.interface.assistant.chat_models.claude import ClaudeModel
 from hermes.interface.assistant.chat_models.gemini import GeminiModel
@@ -13,7 +14,7 @@ from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 class ModelFactory:
     def __init__(self, notifications_printer: CLINotificationsPrinter):
         self.notifications_printer = notifications_printer
-        self.model_classes: List[Type[ChatModel]] = [OpenAIModel, ClaudeModel, GeminiModel, GroqModel, DeepSeekModel, SambanovaModel, OpenRouterModel]
+        self.model_classes: List[Type[ChatModel]] = [OpenAIModel, ClaudeModel, GeminiModel, GroqModel, DeepSeekModel, SambanovaModel, OpenRouterModel, BedrockModel]
         self.provider_to_model_class_map = {model.get_provider().upper(): model for model in self.model_classes}
         self.provider_and_model_tag_pairs = [(model.get_provider().upper(), model_tag) for model in self.model_classes for model_tag in model.get_model_tags()]
 
