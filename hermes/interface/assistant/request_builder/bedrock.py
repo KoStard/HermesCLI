@@ -34,7 +34,7 @@ class BedrockRequestBuilder(RequestBuilder):
             "messages": self.messages
         }
     
-    def handle_text_message(self, text: str, author: str):
+    def handle_text_message(self, text: str, author: str, message_id: int):
         self._add_content({"text": text}, author)
         
     def _get_message_role(self, role: str) -> str:
@@ -42,7 +42,7 @@ class BedrockRequestBuilder(RequestBuilder):
             return "user"
         return "assistant"
 
-    def handle_embedded_pdf_message(self, pdf_path: str, author: str):
+    def handle_embedded_pdf_message(self, pdf_path: str, author: str, message_id: int):
         self._add_content({"document": {
                 "format": "pdf",
                 "name": self._get_file_name(pdf_path),
@@ -59,7 +59,7 @@ class BedrockRequestBuilder(RequestBuilder):
         with open(file_path, 'rb') as file:
             return file.read()
 
-    def handle_image_message(self, image_path: str, author: str):
+    def handle_image_message(self, image_path: str, author: str, message_id: int):
         image_format = self._get_image_format(image_path)
         image_content = self._get_file_bytes(image_path)
         self._add_content({
@@ -79,7 +79,7 @@ class BedrockRequestBuilder(RequestBuilder):
             return 'jpeg'
         return file_extension
 
-    def handle_image_url_message(self, url: str, author: str):
+    def handle_image_url_message(self, url: str, author: str, message_id: int):
         image_content = requests.get(url).content
         self._add_content({
             "type": "image",
@@ -90,8 +90,8 @@ class BedrockRequestBuilder(RequestBuilder):
             }
         }, author)
 
-    def handle_textual_file_message(self, text_filepath: str, author: str):
-        return self._default_handle_textual_file_message(text_filepath, author)
+    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
+        return self._default_handle_textual_file_message(text_filepath, author, message_id)
 
-    def handle_url_message(self, url: str, author: str):
-        return self._default_handle_url_message(url, author)
+    def handle_url_message(self, url: str, author: str, message_id: int):
+        return self._default_handle_url_message(url, author, message_id)
