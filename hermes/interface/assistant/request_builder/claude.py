@@ -26,7 +26,7 @@ class ClaudeRequestBuilder(RequestBuilder):
             text_pieces = [content for content in self._active_author_contents if self._is_text_message(content)]
             joined_text = self._join_text_pieces(text_pieces)
             remaining_contents = [content for content in self._active_author_contents if not self._is_text_message(content)]
-            self.messages.append({"role": self._get_message_role(self._active_author), "content": [joined_text, *remaining_contents]})
+            self.messages.append({"role": self._get_message_role(self._active_author), "content": [{"type": "text", "text": joined_text}, *remaining_contents]})
             self._active_author = None
             self._active_author_contents = remaining_contents
     

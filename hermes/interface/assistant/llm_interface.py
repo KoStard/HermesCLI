@@ -25,9 +25,9 @@ class LLMInterface(Interface):
 
         rendered_messages = []
 
-        control_panel_message = self.control_panel.render()
-        if isinstance(control_panel_message, TextMessage) and control_panel_message.text:
-            rendered_messages.append(control_panel_message)
+        control_panel_content = self.control_panel.render()
+        if control_panel_content:
+            rendered_messages.append(TextMessage(author="user", text=control_panel_content))
         
         help_message = self._get_help_message()
         if help_message:

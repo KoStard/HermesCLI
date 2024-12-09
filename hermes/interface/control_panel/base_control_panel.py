@@ -23,6 +23,7 @@ class ControlPanelCommand:
 class ControlPanel(ABC):
     def __init__(self):
         self.commands = {}
+        self.help_contents = []
 
     @abstractmethod
     def render(self) -> str:
@@ -38,6 +39,12 @@ class ControlPanel(ABC):
         The parser will receive a line that starts with the command
         """
         self.commands[command.command_label] = command
+
+    def _add_help_content(self, content: str):
+        self.help_contents.append(content)
+    
+    def _render_help_content(self) -> str:
+        return "\n".join(self.help_contents)
 
     def _render_command_in_control_panel(self, command_label: str) -> str:
         return f"{command_label} - {self.commands[command_label].description}"
