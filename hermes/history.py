@@ -4,28 +4,44 @@ History keeps track of the messages in the conversation.
 
 import json
 from asyncio import Event
+from dataclasses import dataclass
 from typing import List
 
 from hermes.event import MessageEvent
 from hermes.message import Message, DESERIALIZATION_KEYMAP
 
 
+@dataclass
+class HistoryItem:
+    """Wrapper for messages in history with additional metadata"""
+    message: Message
+    # Add additional fields here as needed, e.g.:
+    # timestamp: datetime
+    # metadata: dict
+
+    def to_json(self) -> dict:
+        return {
+            **self.message.to_json(),
+            # Add serialization for additional fields here
+        }
+
+
 class History:
-    messages: List[Message]
+    _items: List[HistoryItem]
     def __init__(self):
-        self.messages = []
+        self._items = []
 
     def add_message(self, message: Message):
-        self.messages.append(message)
+        self._items.append(HistoryItem(message=message))
 
     def get_messages(self) -> List[Message]:
-        return self.messages[:]
+        return [item.message for item in self._items]
     
     def get_messages_as_events(self) -> List[Event]:
-        return [MessageEvent(message) for message in self.messages]
+        return [MessageEvent(item.message) for item in self._items]
 
     def clear(self):
-        self.messages = []
+        self._items = []
     
     def save(self, filename: str):
         """
@@ -36,10 +52,8 @@ class History:
         """
         history_data = {
             "messages": [
-                {
-                    **message.to_json(),
-                }
-                for message in self.messages
+                item.to_json()
+                for item in self._items
             ]
         }
         
@@ -69,4 +83,4 @@ class History:
                 raise ValueError(f"Unknown message type: {message_type}")
             
             message = DESERIALIZATION_KEYMAP[message_type](message_data)
-            self.add_message(message)
+            self._items.append(HistoryItem(message=message))
