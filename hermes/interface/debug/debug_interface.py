@@ -1,22 +1,24 @@
 from asyncio import Event
+import json
 import os
 import socket
 import subprocess
 import platform
 from typing import Generator
 
+from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.interface.assistant.llm_interface import LLMInterface
 from hermes.interface.control_panel import LLMControlPanel
 from hermes.message import Message, TextMessage
 
 class DebugInterface(LLMInterface):
-    def __init__(self, port=12345, control_panel: LLMControlPanel = None):
+    def __init__(self, port=12345, control_panel: LLMControlPanel = None, model: ChatModel = None):
         self.port = port
         self.socket = None
         self.connection = None
         self._spawn_debug_client()
         self._setup_server()
-        super().__init__(None, control_panel)
+        super().__init__(model, control_panel)
         
     def _spawn_debug_client(self):
         system = platform.system()
@@ -50,7 +52,7 @@ class DebugInterface(LLMInterface):
             yield event
     
     def _send_request(self):
-        message_data = "\n".join(f"{msg['role']}: {msg['content']}" for msg in self.rendered_messages)
+        message_data = json.dumps(self.request)
         self.connection.send(message_data.encode())
         
         response = self.connection.recv(1024).decode()

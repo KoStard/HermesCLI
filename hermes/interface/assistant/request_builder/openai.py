@@ -14,18 +14,24 @@ class OpenAIRequestBuilder(RequestBuilder):
         self._active_author = None
         self._active_author_contents = []
 
-    def _add_content(self, content: str | dict, author: str):
+    def _add_content(self, content: dict, author: str):
         if self._active_author != author:
             self._flush_active_author()
             self._active_author = author
             self._active_author_contents = []
         self._active_author_contents.append(content)
-
+    
+    def _is_text_message(self, content: dict) -> bool:
+        return content["type"] == "text"
+    
     def _flush_active_author(self):
         if self._active_author:
-            self.messages.append({"role": self._active_author, "content": self._active_author_contents})
+            text_pieces = [content for content in self._active_author_contents if self._is_text_message(content)]
+            joined_text = self._join_text_pieces(text_pieces)
+            remaining_contents = [content for content in self._active_author_contents if not self._is_text_message(content)]
+            self.messages.append({"role": self._active_author, "content": [joined_text, *remaining_contents]})
             self._active_author = None
-            self._active_author_contents = []
+            self._active_author_contents = remaining_contents
         
     def handle_text_message(self, text: str, author: str, message_id: int):
         self._add_content({

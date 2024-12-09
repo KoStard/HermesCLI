@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 class LLMInterface(Interface):
     model: ChatModel
-    rendered_messages: list[Message]
+    request: any
+    
     def __init__(self, model: ChatModel, control_panel: LLMControlPanel):
         self.model = model
         self.model.initialize()
@@ -27,6 +28,10 @@ class LLMInterface(Interface):
         control_panel_message = self.control_panel.render()
         if isinstance(control_panel_message, TextMessage) and control_panel_message.text:
             rendered_messages.append(control_panel_message)
+        
+        help_message = self._get_help_message()
+        if help_message:
+            rendered_messages.append(TextMessage(author="user", text=help_message))
 
         for event in events:
             if not isinstance(event, MessageEvent):
@@ -47,3 +52,6 @@ class LLMInterface(Interface):
     
     def clear(self):
         pass
+
+    def _get_help_message(self):
+        return self.model.get_request_builder().prompt_builder_factory.get_help_message()
