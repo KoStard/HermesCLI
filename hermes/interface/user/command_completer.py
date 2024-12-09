@@ -38,11 +38,12 @@ class CommandCompleter(Completer):
 
     def get_completions(self, document, complete_event):
         text = document.text
-        if not text.startswith('/'):
+        latest_line = text.split('\n')[-1].strip()
+        if not latest_line.startswith('/'):
             return
         
         # Remove the leading slash for matching
-        search_text = text[1:]
+        search_text = latest_line[1:]
         
         # Get all matches with scores
         matches = []
@@ -55,4 +56,4 @@ class CommandCompleter(Completer):
         
         # Sort by score and yield completions
         for score, command in sorted(matches):
-            yield Completion(command, start_position=-len(text))
+            yield Completion(command, start_position=-len(latest_line))
