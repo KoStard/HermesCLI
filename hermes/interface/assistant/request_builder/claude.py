@@ -1,5 +1,4 @@
 from base64 import b64encode
-import requests
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.utils.file_extension import get_file_extension
 
@@ -10,6 +9,7 @@ class ClaudeRequestBuilder(RequestBuilder):
 
         self._active_author = None
         self._active_author_contents = []
+        self._extracted_pdfs = {}
 
     def _add_content(self, content: str | dict, author: str):
         if self._active_author != author:
@@ -32,7 +32,7 @@ class ClaudeRequestBuilder(RequestBuilder):
             "max_tokens": 4096,
         }
     
-    def handle_text_message(self, text: str, author: str):
+    def handle_text_message(self, text: str, author: str, message_id: int):
         self._add_content(text, author)
     
     def _get_message_role(self, role: str) -> str:
@@ -45,7 +45,15 @@ class ClaudeRequestBuilder(RequestBuilder):
         with open(file_path, "rb") as file:
             return base64.b64encode(file.read()).decode('utf-8')
 
-    def handle_embedded_pdf_message(self, pdf_path: str, author: str):
+    def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
+        extracted_pdf_key = (pdf_path, tuple(pages))
+        # Extract specified pages if pages are provided
+        if extracted_pdf_key in self.extracted_pdfs:
+            pdf_path = self.extracted_pdfs[extracted_pdf_key]
+        else:
+            if pages:
+                pdf_path = self._extract_pages_from_pdf(pdf_path, pages)
+            self.extracted_pdfs[extracted_pdf_key] = pdf_path
         self._add_content({
             "type": "document",
             "source": {
@@ -58,7 +66,7 @@ class ClaudeRequestBuilder(RequestBuilder):
     def _get_image_extension(self, image_path: str) -> str:
         return get_file_extension(image_path)
 
-    def handle_image_message(self, image_path: str, author: str):
+    def handle_image_message(self, image_path: str, author: str, message_id: int):
         self._add_content({
             "type": "image",
             "source": {
@@ -68,8 +76,8 @@ class ClaudeRequestBuilder(RequestBuilder):
             }
         }, author)
 
-    def handle_image_url_message(self, url: str, author: str):
-        image_data = requests.get(url).content
+    def handle_image_url_message(self, url: str, author: str, message_id: int):
+        image_data = self._get_url_image_content(url, message_id)
         base64_image = b64encode(image_data).decode('utf-8')
         self._add_content({
             "type": "image",
@@ -80,8 +88,8 @@ class ClaudeRequestBuilder(RequestBuilder):
             }
         }, author)
 
-    def handle_textual_file_message(self, text_filepath: str, author: str):
-        return self._default_handle_textual_file_message(text_filepath, author)
+    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
+        return self._default_handle_textual_file_message(text_filepath, author, message_id)
     
-    def handle_url_message(self, url: str, author: str):
-        return self._default_handle_url_message(url, author)
+    def handle_url_message(self, url: str, author: str, message_id: int):
+        return self._default_handle_url_message(url, author, message_id)

@@ -8,6 +8,8 @@ from .base import ChatModel
 class ClaudeModel(ChatModel):
     def initialize(self):
         import anthropic
+
+        self.request_builder = ClaudeRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
         
         api_key = self.config.get("api_key")
         if not api_key:
@@ -24,7 +26,7 @@ class ClaudeModel(ChatModel):
                 yield text
 
     def get_request_builder(self) -> RequestBuilder:
-        return ClaudeRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+        return self.request_builder
 
     @staticmethod
     def get_provider() -> str:

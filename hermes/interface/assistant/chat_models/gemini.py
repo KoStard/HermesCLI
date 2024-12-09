@@ -9,6 +9,8 @@ class GeminiModel(ChatModel):
     def initialize(self):
         import google.generativeai as genai
 
+        self.request_builder = GeminiRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+
         api_key = self.config.get("api_key")
         if not api_key:
             raise ValueError("API key is required for Gemini model")
@@ -42,4 +44,4 @@ class GeminiModel(ChatModel):
         return models
 
     def get_request_builder(self) -> RequestBuilder:
-        return GeminiRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+        return self.request_builder

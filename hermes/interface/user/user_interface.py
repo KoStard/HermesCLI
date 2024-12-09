@@ -74,9 +74,11 @@ class UserInterface(Interface):
         yield from []
 
     def get_input(self) -> Generator[Event, None, None]:
+        message_source = "terminal"
         if self.user_input_from_cli:
             user_input = self.user_input_from_cli
             self.user_input_from_cli = None
+            message_source = "cli"
         elif self.stt_input_handler:
             return self._get_user_input_from_speech()
         else:
@@ -89,7 +91,8 @@ class UserInterface(Interface):
         for event in self.control_panel.break_down_and_execute_message(input_message):
             if isinstance(event, MessageEvent):
                 self.last_messages.append(event.get_message())
-                sendable_content_present = True
+                if message_source != "cli" or isinstance(event.get_message(), TextMessage):
+                    sendable_content_present = True
             yield event
         
         if not sendable_content_present:

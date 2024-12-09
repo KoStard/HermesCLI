@@ -14,8 +14,8 @@ class UserControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(command_label="/image_url", description="Add image from url to the conversation", parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line))))
         self._register_command(ControlPanelCommand(command_label="/audio", description="Add audio to the conversation", parser=lambda line: MessageEvent(AudioFileMessage(author="user", audio_filepath=line))))
         self._register_command(ControlPanelCommand(command_label="/video", description="Add video to the conversation", parser=lambda line: MessageEvent(VideoMessage(author="user", video_filepath=line))))
-        self._register_command(ControlPanelCommand(command_label="/pdf", description="Add pdf to the conversation", parser=lambda line: MessageEvent(EmbeddedPDFMessage(author="user", pdf_filepath=line))))
-        self._register_command(ControlPanelCommand(command_label="/textual_file", description="Add text file to the conversation", parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line))))
+        self._register_command(ControlPanelCommand(command_label="/pdf", description="Add pdf to the conversation. After the PDF path, optionally use {<page_number>, <page_number>:<page_number>, ...} to specify pages.", parser=lambda line: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line))))
+        self._register_command(ControlPanelCommand(command_label="/textual_file", description="Add text file to the conversation", parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line)), default_on_cli=True))
         self._register_command(ControlPanelCommand(command_label="/url", description="Add url to the conversation", parser=lambda line: MessageEvent(UrlMessage(author="user", url=line))))
         self._register_command(ControlPanelCommand(command_label="/save_history", description="Save history to a file", parser=lambda line: SaveHistoryEvent(line), visible_from_cli=False))
         self._register_command(ControlPanelCommand(command_label="/load_history", description="Load history from a file", parser=lambda line: LoadHistoryEvent(line), priority=98))
@@ -76,6 +76,8 @@ class UserControlPanel(ControlPanel):
         user_commands_group = parser.add_argument_group("User commands")
         for command_label in self.get_command_labels():
             if self.commands[command_label].visible_from_cli:
+                if self.commands[command_label].default_on_cli:
+                    user_commands_group.add_argument(command_label[1:], type=str, nargs='*', help=self.commands[command_label].description)
                 user_commands_group.add_argument('--' + command_label[1:], type=str, action="append", help=self.commands[command_label].description)
         
         user_commands_group.add_argument('--prompt', type=str, action="append", help="Prompt for the LLM")

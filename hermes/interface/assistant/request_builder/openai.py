@@ -27,24 +27,22 @@ class OpenAIRequestBuilder(RequestBuilder):
             self._active_author = None
             self._active_author_contents = []
         
-    def handle_text_message(self, text: str, author: str):
+    def handle_text_message(self, text: str, author: str, message_id: int):
         self._add_content({
             "type": "text",
             "text": text
         }, author)
     
-    def handle_image_message(self, image_path: str, author: str):
+    def handle_image_message(self, image_path: str, author: str, message_id: int):
         base64_image = self._get_base64_image(image_path)
         
         # Create content list with text and image
-        content = [
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/{self._get_extension(image_path)};base64,{base64_image}"
-                }
+        content = {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/{self._get_extension(image_path)};base64,{base64_image}"
             }
-        ]
+        }
         
         self._add_content(content, author)
     
@@ -55,23 +53,21 @@ class OpenAIRequestBuilder(RequestBuilder):
     def _get_extension(self, image_path: str) -> str:
         return get_file_extension(image_path)
     
-    def handle_image_url_message(self, url: str, author: str):
-        content = [
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": url
-                }
+    def handle_image_url_message(self, url: str, author: str, message_id: int):
+        content = {
+            "type": "image_url",
+            "image_url": {
+                "url": url
             }
-        ]
+        }
         
         self._add_content(content, author)
 
-    def handle_textual_file_message(self, text_filepath: str, author: str):
-        self._default_handle_url_message(text_filepath, author)
+    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
+        self._default_handle_textual_file_message(text_filepath, author, message_id)
 
-    def handle_url_message(self, url: str, author: str):
-        self._default_handle_url_message(url, author)
+    def handle_url_message(self, url: str, author: str, message_id: int):
+        self._default_handle_url_message(url, author, message_id)
 
 
     def compile_request(self) -> dict:

@@ -7,6 +7,8 @@ from .base import ChatModel
 
 class BedrockModel(ChatModel):
     def initialize(self):
+        self.request_builder = BedrockRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+
         import boto3
 
         aws_region = self.config.get("aws_region")
@@ -25,7 +27,7 @@ class BedrockModel(ChatModel):
                 break
     
     def get_request_builder(self) -> RequestBuilder:
-        return BedrockRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+        return self.request_builder
 
     @staticmethod
     def get_provider() -> str:

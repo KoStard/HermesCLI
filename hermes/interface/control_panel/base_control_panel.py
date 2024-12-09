@@ -18,6 +18,7 @@ class ControlPanelCommand:
     priority: int = 0
     # For user commands only
     visible_from_cli: bool = True
+    default_on_cli: bool = False
 
 class ControlPanel(ABC):
     def __init__(self):

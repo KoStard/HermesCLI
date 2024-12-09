@@ -7,6 +7,8 @@ from .base import ChatModel
 
 class OpenAIModel(ChatModel):
     def initialize(self):
+        self.request_builder = OpenAIRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+
         import openai
 
         api_key = self.config.get("api_key")
@@ -37,4 +39,4 @@ class OpenAIModel(ChatModel):
         return ["gpt-4o"]
     
     def get_request_builder(self) -> RequestBuilder:
-        return OpenAIRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+        return self.request_builder

@@ -225,27 +225,11 @@ class ImageMessage(Message):
         super().__init__(author=author, timestamp=timestamp)
         self.image_path = image_path
     
-    # def _encode_image(self, image_path: str) -> str:
-    #     with open(image_path, "rb") as image_file:
-    #         return base64.b64encode(image_file.read()).decode("utf-8")
-    
-    # def _get_extension(self, image_path: str) -> str:
-    #     extension = get_file_extension(image_path)
-    #     return self.IMAGE_EXTENSION_MAP.get(extension, extension)
-
     def get_content_for_user(self) -> str:
         return f"Image: {self.image_path}"
     
     def get_content_for_assistant(self):
         return self.image_path
-
-    # def get_content_for_assistant(self) -> dict:
-    #     return {
-    #         "type": "image_url",
-    #         "image_url": {
-    #             "url": f"data:image/{self._get_extension(self.image_path)};base64,{self._encode_image(self.image_path)}"
-    #         }
-    #     }
 
     def to_json(self) -> dict:
         return {
@@ -272,24 +256,12 @@ class AudioFileMessage(Message):
     def __init__(self, *, author: str, audio_filepath: str, timestamp: Optional[datetime] = None):
         super().__init__(author=author, timestamp=timestamp)
         self.audio_filepath = audio_filepath
-
-    # def _encode_audio(self, audio_filepath: str) -> str:
-    #     with open(audio_filepath, "rb") as audio_file:
-    #         return base64.b64encode(audio_file.read()).decode("utf-8")
     
     def get_content_for_user(self) -> str:
         return f"Audio: {self.audio_filepath}"
     
     def get_content_for_assistant(self):
         return self.audio_filepath
-
-    # def get_content_for_assistant(self) -> dict:
-    #     return {
-    #         "type": "image_url",
-    #         "image_url": {
-    #             "url": f"data:audio/{get_file_extension(self.audio_filepath)};base64,{self._encode_audio(self.audio_filepath)}"
-    #         }
-    #     }
 
     def to_json(self) -> dict:
         return {
@@ -319,18 +291,8 @@ class VideoMessage(Message):
     def get_content_for_user(self) -> str:
         return f"Video: {self.video_filepath}"
     
-    # def _encode_video(self, video_filepath: str) -> str:
-    #     with open(video_filepath, "rb") as video_file:
-    #         return base64.b64encode(video_file.read()).decode("utf-8")
-        
     def get_content_for_assistant(self):
         return self.video_filepath
-    
-    # # def get_content_for_assistant(self) -> dict:
-    #     return {
-    #         "type": "image_url",
-    #         "image_url": f"data:video/{get_file_extension(self.video_filepath)};base64,{self._encode_video(self.video_filepath)}"
-    #     }
 
     def to_json(self) -> dict:
         return {
@@ -353,29 +315,27 @@ class VideoMessage(Message):
 class EmbeddedPDFMessage(Message):
     """Class for messages that are embedded PDFs"""
     pdf_filepath: str
+    pages: Optional[list[int]]
 
-    def __init__(self, *, author: str, pdf_filepath: str, timestamp: Optional[datetime] = None):
+    def __init__(self, *, author: str, pdf_filepath: str, timestamp: Optional[datetime] = None, pages: Optional[list[int]] = None):
         super().__init__(author=author, timestamp=timestamp)
         self.pdf_filepath = pdf_filepath
+        self.pages = pages
 
     def get_content_for_user(self) -> str:
         return f"PDF: {self.pdf_filepath}"
 
-    # def get_content_for_assistant(self) -> dict:
-    #     with open(self.pdf_filepath, "rb") as pdf_file:
-    #         encoded_file = base64.b64encode(pdf_file.read()).decode("utf-8")
-    #     return {
-    #         "type": "image_url",
-    #         "image_url": f"data:application/pdf;base64,{encoded_file}",
-    #     }
-
     def get_content_for_assistant(self):
-        return self.pdf_filepath
+        return {
+            "pdf_filepath": self.pdf_filepath,
+            "pages": self.pages,
+        }
 
     def to_json(self) -> dict:
         return {
             "type": "pdf",
             "pdf_filepath": self.pdf_filepath,
+            "pages": self.pages,
             "author": self.author,
             "timestamp": self.timestamp.isoformat()
         }
@@ -385,8 +345,40 @@ class EmbeddedPDFMessage(Message):
         return EmbeddedPDFMessage(
             author=json_data["author"],
             pdf_filepath=json_data["pdf_filepath"],
+            pages=json_data["pages"],
             timestamp=datetime.fromisoformat(json_data["timestamp"])
         )
+    
+    @staticmethod
+    def build_from_line(author: str, raw_line: str) -> "EmbeddedPDFMessage":
+        """
+        Build a EmbeddedPDFMessage from a line of user input.
+        Input format: <pdf_filepath> {<page_number>, <page_number>:<page_number>, ...}
+        Page numbers are 1-indexed.
+        It can be individual pages or ranges of pages.
+        pdf_filepath might contain spaces.
+        """
+        raw_line = raw_line.strip()
+        if raw_line.endswith("}"):
+            pdf_filepath, pages_marker = raw_line[:-1].rsplit("{", 1)
+            pdf_filepath = pdf_filepath.strip()
+            pages_marker = pages_marker.strip()
+
+            pages = []
+            for page_or_range in pages_marker.split(","):
+                page_or_range = page_or_range.strip()
+                if "-" in page_or_range:
+                    start, end = page_or_range.split("-")
+                    pages.extend(range(int(start), int(end) + 1))
+                elif ":" in page_or_range:
+                    start, end = page_or_range.split(":")
+                    pages.extend(range(int(start), int(end) + 1))
+                else:
+                    pages.append(int(page_or_range))
+        else:
+            pdf_filepath = raw_line
+            pages = None
+        return EmbeddedPDFMessage(author=author, pdf_filepath=pdf_filepath, pages=pages)
 
 @dataclass(init=False)
 class TextualFileMessage(Message):
@@ -399,32 +391,9 @@ class TextualFileMessage(Message):
 
     def get_content_for_user(self) -> str:
         return f"Text file: {self.text_filepath}"
-    
-    # def _get_file_content(self, filepath: str) -> str:
-    #     if is_binary(filepath):
-    #         extension = get_file_extension(filepath)
-    #         if extension == "pdf":
-    #             return self._extract_text_from_pdf(filepath)
-    #         elif extension == "docx":
-    #             return self._extract_text_from_docx(filepath)
-    #         else:
-    #             raise ValueError(f"File {filepath} is binary, cannot be converted to text")
-    #     with open(filepath, "r") as file:
-    #         return file.read()
 
     def get_content_for_assistant(self):
         return self.text_filepath
-
-    # def _extract_text_from_pdf(self, file_path: str) -> str:
-    #     import PyPDF2
-    #     with open(file_path, 'rb') as file:
-    #         reader = PyPDF2.PdfReader(file)
-    #         return ' '.join(page.extract_text() for page in reader.pages)
-
-    # def _extract_text_from_docx(self, file_path: str) -> str:
-    #     import docx
-    #     doc = docx.Document(file_path)
-    #     return ' '.join(paragraph.text for paragraph in doc.paragraphs)
 
     def to_json(self) -> dict:
         return {
@@ -479,12 +448,6 @@ class UrlMessage(Message):
 
     def get_content_for_assistant(self):
         return self.url
-        # html_content = self._get_url_content(self.url)
-        # markdown_content = self._convert_html_to_markdown(html_content)
-        # return {
-        #     "type": "text",
-        #     "text": markdown_content
-        # }
 
     def to_json(self) -> dict:
         return {
