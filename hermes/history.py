@@ -15,15 +15,24 @@ from hermes.message import Message, DESERIALIZATION_KEYMAP
 class HistoryItem:
     """Wrapper for messages in history with additional metadata"""
     message: Message
-    # Add additional fields here as needed, e.g.:
-    # timestamp: datetime
-    # metadata: dict
 
     def to_json(self) -> dict:
         return {
-            **self.message.to_json(),
-            # Add serialization for additional fields here
+            "message": self.message.to_json()
         }
+    
+    @staticmethod
+    def from_json(history_item: dict):
+        if "message" not in history_item:
+            print("Missing 'message' key in history data, skipping:", history_item)
+            return
+        message_data = history_item["message"]
+        message_type = message_data["type"]
+        if message_type not in DESERIALIZATION_KEYMAP:
+            raise ValueError(f"Unknown message type: {message_type}")
+        
+        message = DESERIALIZATION_KEYMAP[message_type](message_data)
+        return HistoryItem(message=message)
 
 
 class History:
@@ -77,10 +86,5 @@ class History:
         
         self.clear()
         
-        for message_data in history_data["messages"]:
-            message_type = message_data["type"]
-            if message_type not in DESERIALIZATION_KEYMAP:
-                raise ValueError(f"Unknown message type: {message_type}")
-            
-            message = DESERIALIZATION_KEYMAP[message_type](message_data)
-            self._items.append(HistoryItem(message=message))
+        for history_item in history_data:
+            self._items.append(HistoryItem.from_json(history_item))
