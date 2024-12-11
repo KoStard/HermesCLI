@@ -19,7 +19,7 @@ import os
 def build_cli_interface(user_control_panel: UserControlPanel, model_factory: ModelFactory):
     parser = ArgumentParser()
     parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--model", type=str, help="Model for the LLM", choices=[f"{provider.lower()}/{model_tag}" for provider, model_tag in model_factory.provider_and_model_tag_pairs])
+    parser.add_argument("--model", type=str, help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.provider_and_model_tag_pairs)})")
     parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
 
     user_control_panel.build_cli_arguments(parser)
