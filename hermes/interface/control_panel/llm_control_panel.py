@@ -14,12 +14,13 @@ class LLMControlPanel(ControlPanel):
         super().__init__()
 
         self._add_help_content("You are allowed to use the following commands. Use them **only** if the user directly asks for them. Understand that they can cause the user frustration and lose trust if used incorrectly. The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. You don't have access to tools other than these. If the content doesn't match these instructions, they will be ignored. The command syntax should be used literally, symbol-by-symbol correctly.")
+        
         self._register_command(ControlPanelCommand(
             command_label="///create_file", 
             description=textwrap.dedent(
-            """
+            f"""
             **IMPORTANT:** When the user asks you to "create a file", "make a file", "generate a file", or uses similar wording that implies the creation of a new file, you **MUST** use the `///create_file` command.
-            Create a new file. Syntax: `///create_file <file_name>`, from next line write the file content, finish with `///end_file` in a new line. 
+            Create a new file. Syntax: `///create_file <relative_or_absolute_file_path>`, from next line write the file content, finish with `///end_file` in a new line. 
             Everything between the opening and closing tags should be the valid content of the desired file, nothing else is allowed.
             The content will go to the file as-is, without any additional formatting.
             Example (don't put ``` even for code):
@@ -27,6 +28,24 @@ class LLMControlPanel(ControlPanel):
             import random
             print(random.randint(0, 100))
             ///end_file
+            
+            Another example for same content, but relative path:
+            
+            ///create_file ../experiments/experiment.py
+            import random
+            print(random.randint(0, 100))
+            ///end_file
+            
+            ///create_file ~/Downloads/experiment.py
+            import random
+            print(random.randint(0, 100))
+            ///end_file
+            
+            Make sure not to override anything important from the OS, not to cause frustration and lose trust with the customer.
+            The user will be asked to confirm or reject if you are overwriting an existing file.
+            
+            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
+            All relative paths will be resolved from this location.
             """),
             parser=lambda line, peekable_generator: CreateFileCommandHandler(line).handle(peekable_generator)
         ))
@@ -63,8 +82,19 @@ class LLMControlPanel(ControlPanel):
 
 class CreateFileCommandHandler:
     def __init__(self, line: str):
+        """
+        Possible inputs of line. It can contain only one value. Allow spaces in the names.
+        filename.extension
+        ./relative/path/filename.extension
+        ../../relative/path/filename.extension
+        /absolute/path/filename.extension
+        ~/absolute/path/filename.extension
+        """
         self.line = line
-        self.file_path = self._escape_filepath(line.split(" ", 1)[1].strip())
+        # The line contains the command as well, so it starts with `///create_file `
+        raw_path = line.split(" ", 1)[1].strip()
+        unquoted_path = self._remove_quotes(raw_path)
+        self.file_path = self._escape_filepath(unquoted_path)
 
         self._content = []
 
@@ -85,8 +115,47 @@ class CreateFileCommandHandler:
         self._content = []
         return create_file_event
 
-    def _escape_filepath(self, filepath: str) -> str:
+    def _remove_quotes(self, path: str) -> str:
         """
-        The filepath should not be allowed to contain subfolders, etc. This function should work across all operating systems.
+        Remove various types of quotes from the path.
+        
+        Args:
+            path: Input path that might contain quotes
+                
+        Returns:
+            Path with quotes removed
         """
-        return os.path.basename(filepath)
+        # Remove single quotes, double quotes, and smart quotes
+        quotes = {"'", '"', '“', '”'}
+        result = []
+        for c in path:
+            if c not in quotes:
+                result.append(c)
+        return ''.join(result)
+
+    def _escape_filepath(self, filepath_expression: str) -> str:
+        """
+        Convert various filepath formats to a normalized absolute path.
+        
+        Args:
+            filepath_expression: Input path that can be:
+                - filename.extension
+                - ./relative/path/filename.extension
+                - ../../relative/path/filename.extension
+                - /absolute/path/filename.extension
+                - ~/absolute/path/filename.extension
+                
+        Returns:
+            Normalized absolute path
+        """
+        # Expand user directory (~)
+        expanded_path = os.path.expanduser(filepath_expression)
+        
+        # Convert to absolute path if relative
+        if not os.path.isabs(expanded_path):
+            expanded_path = os.path.abspath(expanded_path)
+            
+        # Normalize the path (resolve .. and . components)
+        normalized_path = os.path.normpath(expanded_path)
+        
+        return normalized_path
