@@ -22,28 +22,57 @@ class RequestBuilder(ABC):
 
         for message in messages:
             if isinstance(message, TextMessage):
-                self.handle_text_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    content = content.strip()
+                    if content:
+                        self.handle_text_message(content, message.author, id(message))
             elif isinstance(message, TextGeneratorMessage):
-                self.handle_text_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    content = content.strip()
+                    if content:
+                        self.handle_text_message(content, message.author, id(message))
             elif isinstance(message, InvisibleMessage):
-                self.handle_text_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    content = content.strip()
+                    if content:
+                        self.handle_text_message(content, message.author, id(message))
             elif isinstance(message, AutoRedactedInvisibleTextMessage):
-                self.handle_text_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    content = content.strip()
+                    if content:
+                        self.handle_text_message(content, message.author, id(message))
             elif isinstance(message, ImageUrlMessage):
-                self.handle_image_url_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_image_url_message(content, message.author, id(message))
             elif isinstance(message, ImageMessage):
-                self.handle_image_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_image_message(content, message.author, id(message))
             elif isinstance(message, AudioFileMessage):
-                self.handle_audio_file_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_audio_file_message(content, message.author, id(message))
             elif isinstance(message, VideoMessage):
-                self.handle_video_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_video_message(content, message.author, id(message))
             elif isinstance(message, EmbeddedPDFMessage):
-                pdf_details = message.get_content_for_assistant()
-                self.handle_embedded_pdf_message(pdf_details["pdf_filepath"], pdf_details["pages"], message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_embedded_pdf_message(content["pdf_filepath"], content["pages"], message.author, id(message))
             elif isinstance(message, TextualFileMessage):
-                self.handle_textual_file_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_textual_file_message(content, message.author, id(message))
             elif isinstance(message, UrlMessage):
-                self.handle_url_message(message.get_content_for_assistant(), message.author, id(message))
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_url_message(content, message.author, id(message))
             else:
                 self.notifications_printer.print_error(f"Unsupported message type: {type(message)}. Discarding message.")
                 continue
