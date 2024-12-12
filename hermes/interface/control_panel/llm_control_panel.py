@@ -43,6 +43,8 @@ class LLMControlPanel(ControlPanel):
             
             Make sure not to override anything important from the OS, not to cause frustration and lose trust with the customer.
             The user will be asked to confirm or reject if you are overwriting an existing file.
+
+            If the user hasn't mentioned where to create a file, or you just want to create a sandbox file, create it in /tmp/hermes_sandbox/ folder.
             
             **CURRENT WORKING DIRECTORY:** {os.getcwd()}
             All relative paths will be resolved from this location.
