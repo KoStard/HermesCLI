@@ -37,7 +37,7 @@ class Message(ABC):
         pass
 
     @abstractmethod
-    def get_content_for_assistant(self) -> dict:
+    def get_content_for_assistant(self) -> any:
         pass
 
     @abstractmethod
@@ -64,7 +64,7 @@ class TextMessage(Message):
     def get_content_for_user(self) -> str:
         return self.text
 
-    def get_content_for_assistant(self) -> dict:
+    def get_content_for_assistant(self) -> str:
         return self.text
     
     def to_json(self) -> dict:
@@ -104,7 +104,7 @@ class TextGeneratorMessage(Message):
                 yield chunk
             self.has_finished = True
 
-    def get_content_for_assistant(self):
+    def get_content_for_assistant(self) -> str:
         for chunk in self.text_generator:
             self.text += chunk
 
@@ -196,7 +196,7 @@ class ImageUrlMessage(Message):
     def get_content_for_user(self) -> str:
         return f"Image URL: {self.image_url}"
 
-    def get_content_for_assistant(self) -> dict:
+    def get_content_for_assistant(self) -> str:
         return self.image_url
     
     def to_json(self) -> dict:
@@ -231,7 +231,7 @@ class ImageMessage(Message):
     def get_content_for_user(self) -> str:
         return f"Image: {self.image_path}"
     
-    def get_content_for_assistant(self):
+    def get_content_for_assistant(self) -> str:
         return self.image_path
 
     def to_json(self) -> dict:
@@ -263,7 +263,7 @@ class AudioFileMessage(Message):
     def get_content_for_user(self) -> str:
         return f"Audio: {self.audio_filepath}"
     
-    def get_content_for_assistant(self):
+    def get_content_for_assistant(self) -> str:
         return self.audio_filepath
 
     def to_json(self) -> dict:
@@ -294,7 +294,7 @@ class VideoMessage(Message):
     def get_content_for_user(self) -> str:
         return f"Video: {self.video_filepath}"
     
-    def get_content_for_assistant(self):
+    def get_content_for_assistant(self) -> str:
         return self.video_filepath
 
     def to_json(self) -> dict:
@@ -328,7 +328,7 @@ class EmbeddedPDFMessage(Message):
     def get_content_for_user(self) -> str:
         return f"PDF: {self.pdf_filepath}"
 
-    def get_content_for_assistant(self):
+    def get_content_for_assistant(self) -> dict:
         return {
             "pdf_filepath": self.pdf_filepath,
             "pages": self.pages,
@@ -411,7 +411,7 @@ class TextualFileMessage(Message):
     def get_content_for_user(self) -> str:
         return f"Text file: {self.text_filepath}"
 
-    def get_content_for_assistant(self):
+    def get_content_for_assistant(self) -> str:
         return self.text_filepath
 
     def to_json(self) -> dict:
@@ -465,7 +465,7 @@ class UrlMessage(Message):
             print(f"Error converting HTML to Markdown, falling back to raw HTML: {e}")
             return html
 
-    def get_content_for_assistant(self):
+    def get_content_for_assistant(self) -> str:
         return self.url
 
     def to_json(self) -> dict:
