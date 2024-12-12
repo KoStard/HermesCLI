@@ -18,7 +18,6 @@ class LLMInterface(Interface):
         self.model = model
         self.model.initialize()
         self.control_panel = control_panel
-        self.control_panel_rendered = False
 
     def render(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         logger.debug("Asked to render on LLM", self.control_panel)
@@ -26,11 +25,9 @@ class LLMInterface(Interface):
 
         rendered_messages = []
 
-        if not self.control_panel_rendered:
-            control_panel_content = self.control_panel.render()
-            if control_panel_content:
-                rendered_messages.append(TextMessage(author="user", text=control_panel_content))
-            self.control_panel_rendered = True
+        control_panel_content = self.control_panel.render()
+        if control_panel_content:
+            rendered_messages.append(TextMessage(author="user", text=control_panel_content))
         
         help_message = self._get_help_message()
         if help_message:
