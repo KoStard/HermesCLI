@@ -214,9 +214,3 @@ class RequestBuilder(ABC):
         except Exception as e:
             self.notifications_printer.print_error(f"Error extracting pages from PDF {pdf_path}, sending whole file: {e}")
             return pdf_path  # Return original file path if extraction fails
-        
-    def _join_text_pieces(self, text_pieces: list[str]) -> str:
-        prompt_builder = self.prompt_builder_factory.create_prompt_builder()
-        for text in text_pieces:
-            prompt_builder.add_text(text)
-        return prompt_builder.compile_prompt()

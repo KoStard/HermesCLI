@@ -1,45 +1,44 @@
 from base64 import b64encode
 from hermes.interface.assistant.request_builder.base import RequestBuilder
+from hermes.interface.assistant.request_builder.text_messages_aggregator import TextMessagesAggregator
+from hermes.interface.assistant.request_builder.all_messages_aggregator import AllMessagesAggregator
 from hermes.utils.file_extension import get_file_extension
 
 
 class ClaudeRequestBuilder(RequestBuilder):
     def initialize_request(self):
-        self.messages = []
-
-        self._active_author = None
-        self._active_author_contents = []
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory.create_prompt_builder())
+        self.all_messages_aggregator = AllMessagesAggregator()
         self._extracted_pdfs = {}
 
-    def _add_content(self, content: str | dict, author: str):
-        if self._active_author != author:
-            self._flush_active_author()
-            self._active_author = author
-            self._active_author_contents = []
-        self._active_author_contents.append(content)
+    def _add_content(self, content: dict, author: str):
+        self.all_messages_aggregator.add_message(content, author)
     
-    def _is_text_message(self, content: dict) -> bool:
-        return isinstance(content, str)
-
-    def _flush_active_author(self):
-        if self._active_author:
-            text_pieces = [content for content in self._active_author_contents if self._is_text_message(content)]
-            joined_text = self._join_text_pieces(text_pieces)
-            remaining_contents = [content for content in self._active_author_contents if not self._is_text_message(content)]
-            self.messages.append({"role": self._get_message_role(self._active_author), "content": [{"type": "text", "text": joined_text}, *remaining_contents]})
-            self._active_author = None
-            self._active_author_contents = remaining_contents
+    def _flush_text_messages(self):
+        content = self.text_messages_aggregator.compile_request()
+        self._add_content({"type": "text", "text": content}, self.text_messages_aggregator.get_current_author())
+        self.text_messages_aggregator.clear()
     
     def compile_request(self) -> any:
-        self._flush_active_author()
+        self._flush_text_messages()
+
+        final_messages = []
+        for messages, author in self.all_messages_aggregator.get_aggregated_messages():
+            final_messages.append({
+                "role": self._get_message_role(author), 
+                "content": messages
+            })
+
         return {
             "model": self.model_tag,
-            "messages": self.messages,
+            "messages": final_messages,
             "max_tokens": 4096,
         }
     
     def handle_text_message(self, text: str, author: str, message_id: int):
-        self._add_content(text, author)
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
+            self._flush_text_messages()
+        self.text_messages_aggregator.add_message(text, author, message_id)
     
     def _get_message_role(self, role: str) -> str:
         if role == 'user':
@@ -54,12 +53,13 @@ class ClaudeRequestBuilder(RequestBuilder):
     def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
         extracted_pdf_key = (pdf_path, tuple(pages))
         # Extract specified pages if pages are provided
-        if extracted_pdf_key in self.extracted_pdfs:
-            pdf_path = self.extracted_pdfs[extracted_pdf_key]
+        if extracted_pdf_key in self._extracted_pdfs:
+            pdf_path = self._extracted_pdfs[extracted_pdf_key]
         else:
             if pages:
                 pdf_path = self._extract_pages_from_pdf(pdf_path, pages)
-            self.extracted_pdfs[extracted_pdf_key] = pdf_path
+            self._extracted_pdfs[extracted_pdf_key] = pdf_path
+        
         self._add_content({
             "type": "document",
             "source": {

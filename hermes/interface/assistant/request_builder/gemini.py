@@ -1,7 +1,9 @@
 from base64 import b64encode
 import time
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
+from hermes.interface.assistant.request_builder.all_messages_aggregator import AllMessagesAggregator
 from hermes.interface.assistant.request_builder.base import RequestBuilder
+from hermes.interface.assistant.request_builder.text_messages_aggregator import TextMessagesAggregator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.utils.file_extension import get_file_extension
 
@@ -19,45 +21,38 @@ class GeminiRequestBuilder(RequestBuilder):
         self.extracted_pdfs = {}
 
     def initialize_request(self):
-        self.messages = []
-
-        self._active_author = None
-        self._active_author_contents = []
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory.create_prompt_builder())
+        self.all_messages_aggregator = AllMessagesAggregator()
 
     def _add_content(self, content: str | dict, author: str):
-        if self._active_author != author:
-            self._flush_active_author()
-            self._active_author = author
-            self._active_author_contents = []
-        self._active_author_contents.append(content)
+        self.all_messages_aggregator.add_message(content, author)
     
-    def _is_text_message(self, content: str | dict) -> bool:
-        return isinstance(content, str)
+    def _flush_text_messages(self):
+        content = self.text_messages_aggregator.compile_request()
+        self._add_content(content, self.text_messages_aggregator.get_current_author())
+        self.text_messages_aggregator.clear()
 
-    def _flush_active_author(self):
-        if self._active_author:
-            text_pieces = [content for content in self._active_author_contents if self._is_text_message(content)]
-            joined_text = self._join_text_pieces(text_pieces)
-            remaining_contents = [content for content in self._active_author_contents if not self._is_text_message(content)]
-            self.messages.append({"role": self._get_message_role(self._active_author), "parts": [joined_text, *remaining_contents]})
-            self._active_author = None
-            self._active_author_contents = remaining_contents
-    
     def handle_text_message(self, text: str, author: str, message_id: int):
-        self._add_content(text, author)
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
+            self._flush_text_messages()
+        self.text_messages_aggregator.add_message(text, author, message_id)
     
     def compile_request(self) -> any:
         from google.generativeai.types import HarmCategory, HarmBlockThreshold
         self._wait_for_uploaded_files()
-        self._flush_active_author()
+        self._flush_text_messages()
 
+        final_messages = []
+        for messages, author in self.all_messages_aggregator.get_aggregated_messages():
+            final_messages.append({"role": self._get_message_role(author), "parts": messages})
+        
         return {
             "model_kwargs": {
                 "model_name": self.model_tag
             },
-            "history": self._build_history(self.messages),
+            "history": self._build_history(final_messages),
             "message": {
-                "content": self.messages[-1]["parts"],
+                "content": final_messages[-1]["parts"],
                 "stream": True,
                 "safety_settings": {
                     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
