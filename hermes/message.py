@@ -16,6 +16,7 @@ import requests
 
 from hermes.utils.binary_file import is_binary
 from hermes.utils.file_extension import get_file_extension
+import os
 
 @dataclass(init=False)
 class Message(ABC):
@@ -389,7 +390,23 @@ class TextualFileMessage(Message):
 
     def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None):
         super().__init__(author=author, timestamp=timestamp)
-        self.text_filepath = text_filepath
+        self.text_filepath = self._get_full_filepath(text_filepath)
+    
+    def _get_full_filepath(self, text_filepath: str) -> str:
+        """
+        Convert a relative filepath to an absolute filepath.
+        """
+        # Expand user directory (~)
+        expanded_path = os.path.expanduser(text_filepath)
+
+        # Convert to absolute path if relative
+        if not os.path.isabs(expanded_path):
+            expanded_path = os.path.abspath(expanded_path)
+
+        # Normalize the path (resolve .. and . components)
+        normalized_path = os.path.normpath(expanded_path)
+
+        return normalized_path
 
     def get_content_for_user(self) -> str:
         return f"Text file: {self.text_filepath}"
