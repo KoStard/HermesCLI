@@ -2,55 +2,43 @@ from base64 import b64encode
 from typing import List, Dict, Any
 
 from hermes.interface.assistant.request_builder.base import RequestBuilder
+from hermes.interface.assistant.request_builder.text_messages_aggregator import TextMessagesAggregator
+from hermes.interface.assistant.request_builder.all_messages_aggregator import AllMessagesAggregator
 from hermes.utils.file_extension import get_file_extension
 
 
 class OpenAIRequestBuilder(RequestBuilder):
     def initialize_request(self):
-        self.messages: List[Dict[str, Any]] = []
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory.create_prompt_builder())
+        self.all_messages_aggregator = AllMessagesAggregator()
         self.max_tokens = 4096  # Default max tokens
         self.temperature = 0.7  # Default temperature
 
-        self._active_author = None
-        self._active_author_contents = []
-
     def _add_content(self, content: dict, author: str):
-        if self._active_author != author:
-            self._flush_active_author()
-            self._active_author = author
-            self._active_author_contents = []
-        self._active_author_contents.append(content)
+        self.all_messages_aggregator.add_message(content, author)
     
-    def _is_text_message(self, content: dict) -> bool:
-        return content["type"] == "text"
-    
-    def _flush_active_author(self):
-        if self._active_author:
-            text_pieces = [content for content in self._active_author_contents if self._is_text_message(content)]
-            joined_text = self._join_text_pieces(text_pieces)
-            remaining_contents = [content for content in self._active_author_contents if not self._is_text_message(content)]
-            self.messages.append({"role": self._active_author, "content": [joined_text, *remaining_contents]})
-            self._active_author = None
-            self._active_author_contents = remaining_contents
-        
-    def handle_text_message(self, text: str, author: str, message_id: int):
+    def _flush_text_messages(self):
+        content = self.text_messages_aggregator.compile_request()
         self._add_content({
             "type": "text",
-            "text": text
-        }, author)
+            "text": content
+        }, self.text_messages_aggregator.get_current_author())
+        self.text_messages_aggregator.clear()
+        
+    def handle_text_message(self, text: str, author: str, message_id: int):
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
+            self._flush_text_messages()
+        self.text_messages_aggregator.add_message(text, author, message_id)
     
     def handle_image_message(self, image_path: str, author: str, message_id: int):
         base64_image = self._get_base64_image(image_path)
         
-        # Create content list with text and image
-        content = {
+        self._add_content({
             "type": "image_url",
             "image_url": {
                 "url": f"data:image/{self._get_extension(image_path)};base64,{base64_image}"
             }
-        }
-        
-        self._add_content(content, author)
+        }, author)
     
     def _get_base64_image(self, image_path: str) -> str:
         with open(image_path, "rb") as image_file:
@@ -60,14 +48,12 @@ class OpenAIRequestBuilder(RequestBuilder):
         return get_file_extension(image_path)
     
     def handle_image_url_message(self, url: str, author: str, message_id: int):
-        content = {
+        self._add_content({
             "type": "image_url",
             "image_url": {
                 "url": url
             }
-        }
-        
-        self._add_content(content, author)
+        }, author)
 
     def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
         self._default_handle_textual_file_message(text_filepath, author, message_id)
@@ -75,12 +61,19 @@ class OpenAIRequestBuilder(RequestBuilder):
     def handle_url_message(self, url: str, author: str, message_id: int):
         self._default_handle_url_message(url, author, message_id)
 
-
     def compile_request(self) -> dict:
-        self._flush_active_author()
+        self._flush_text_messages()
+
+        final_messages = []
+        for messages, author in self.all_messages_aggregator.get_aggregated_messages():
+            final_messages.append({
+                "role": author,
+                "content": messages if len(messages) > 1 else messages[0]["text"]
+            })
+
         return {
             "model": self.model_tag,
-            "messages": self.messages,
+            "messages": final_messages,
             "stream": True,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,

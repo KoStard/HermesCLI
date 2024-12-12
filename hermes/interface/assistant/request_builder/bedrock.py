@@ -1,47 +1,43 @@
 import requests
+from hermes.interface.assistant.request_builder.all_messages_aggregator import AllMessagesAggregator
 from hermes.interface.assistant.request_builder.base import RequestBuilder
+from hermes.interface.assistant.request_builder.text_messages_aggregator import TextMessagesAggregator
 
 
 class BedrockRequestBuilder(RequestBuilder):
     def initialize_request(self):
-        self.messages = []
-
-        self._active_author = None
-        self._active_author_contents = []
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory.create_prompt_builder())
+        self.all_messages_aggregator = AllMessagesAggregator()
 
     def _add_content(self, content: dict, author: str):
-        if self._active_author != author:
-            self._flush_active_author()
-            self._active_author = author
-            self._active_author_contents = []
-        self._active_author_contents.append(content)
-    
-    def _is_text_message(self, content: dict) -> bool:
-        return "text" in content
-
-    def _flush_active_author(self):
-        if self._active_author:
-            text_pieces = [content["text"] for content in self._active_author_contents if self._is_text_message(content)]
-            joined_text = self._join_text_pieces(text_pieces)
-            remaining_contents = [content for content in self._active_author_contents if not self._is_text_message(content)]
-            self.messages.append({"role": self._get_message_role(self._active_author), "content": [{"text": joined_text}, *remaining_contents]})
-            self._active_author = None
-            self._active_author_contents = []
+        self.all_messages_aggregator.add_message(content, author)
     
     def compile_request(self) -> any:
+        self._flush_text_messages()
+
+        final_messages = []
+        for messages, author in self.all_messages_aggregator.get_aggregated_messages():
+            final_messages.append({"role": self._get_message_role(author), "content": messages})
+
         # Using Converse API
-        self._flush_active_author()
         return {
             "modelId": self.model_tag,
             "system": [],
             "inferenceConfig": {},
             # "toolConfig": {},
             # "guardrailConfig": {},
-            "messages": self.messages
+            "messages": final_messages
         }
     
+    def _flush_text_messages(self):
+        content = self.text_messages_aggregator.compile_request()
+        self._add_content({"text": content}, self.text_messages_aggregator.get_current_author())
+        self.text_messages_aggregator.clear()
+    
     def handle_text_message(self, text: str, author: str, message_id: int):
-        self._add_content({"text": text}, author)
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
+            self._flush_text_messages()
+        self.text_messages_aggregator.add_message(text, author, message_id)
         
     def _get_message_role(self, role: str) -> str:
         if role == 'user':
