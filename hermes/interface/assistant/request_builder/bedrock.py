@@ -41,6 +41,8 @@ class BedrockRequestBuilder(RequestBuilder):
         }
     
     def handle_text_message(self, text: str, author: str, message_id: int):
+        if not text:
+            return
         text = text.strip()
         if text:
             self._add_content({"text": text}, author)
