@@ -8,6 +8,8 @@ from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.participants import Participant
 from hermes.history import History
 from itertools import cycle, chain
+from datetime import datetime
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,6 @@ class Engine:
                 current_participant, next_participant = next_participant, next(participants_cycle)
                 consumption_events = current_participant.consume_events(self._extend_with_history_and_save(events_stream_without_engine_commands))
 
-                # TODO: Check if the error is somewhere here.
                 action_events_stream = current_participant.act()
                 events_stream = chain(consumption_events, action_events_stream)
 
@@ -115,6 +116,30 @@ class Engine:
                 self.notifications_printer.print_notification("File creation cancelled.")
                 return False
         return True
+    
+    def _backup_existing_file(self, file_path: str) -> None:
+        """
+        Backup the existing file to prevent possible data loss.
+        Copy to the /tmp/hermes/backups/filename_timestamp.bak
+        
+        Args:
+            file_path: Path to the file to be backed up
+        """
+        if not os.path.exists(file_path):
+            return
+
+        # Create backup directory
+        backup_dir = os.path.join('/tmp', 'hermes', 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+
+        # Generate backup filename with timestamp
+        filename = os.path.basename(file_path)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_path = os.path.join(backup_dir, f"{filename}_{timestamp}.bak")
+
+        # Create the backup
+        shutil.copy2(file_path, backup_path)
+        self.notifications_printer.print_notification(f"Created backup at {backup_path}")
 
     def _ensure_directory_exists(self, file_path: str) -> None:
         """
@@ -130,12 +155,15 @@ class Engine:
 
     def _create_file(self, file_path: str, content: str) -> None:
         """
-        Create a file with the given content.
+        Create a file with the given content. If file exists, create a backup first.
         
         Args:
             file_path: Path where to create the file
             content: Content to write to the file
         """
+        if os.path.exists(file_path):
+            self._backup_existing_file(file_path)
+        
         self.notifications_printer.print_notification(f"Creating file {file_path}")
         with open(file_path, "w") as file:
             file.write(content)
