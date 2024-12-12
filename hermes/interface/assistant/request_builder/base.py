@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Callable
 
 from hermes.interface.assistant.prompt_builder.base import PromptBuilder, PromptBuilderFactory
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -175,6 +174,7 @@ class RequestBuilder(ABC):
                 self.handle_text_message(file_content, author, message_id)
         except Exception as e:
             self.notifications_printer.print_error(f"Error reading file {text_filepath}: {e}")
+            self.handle_text_message(f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}", author, message_id)
 
     def _extract_pages_from_pdf(self, pdf_path: str, pages: list[int]) -> str:
         """
