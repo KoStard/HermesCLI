@@ -49,9 +49,6 @@ def main():
                                    user_input_from_cli=user_input_from_cli)
     user_participant = UserParticipant(user_interface)
 
-    participants = []
-    participants.append(user_participant)
-
     debug_participant = None
     is_debug_mode = cli_args.debug
 
@@ -69,12 +66,12 @@ def main():
         if is_debug_mode:
             debug_interface = DebugInterface(control_panel=llm_control_panel, model=model)
             debug_participant = DebugParticipant(debug_interface)
-            participants.append(debug_participant)
+            assistant_participant = debug_participant
 
         else:
             llm_interface = LLMInterface(model, control_panel=llm_control_panel)
             llm_participant = LLMParticipant(llm_interface)
-            participants.append(llm_participant)
+            assistant_participant = llm_participant
         
         notifications_printer.print_notification(textwrap.dedent(
             f"""
@@ -84,7 +81,7 @@ def main():
             """))
 
         history = History()
-        engine = Engine(participants, history)
+        engine = Engine(user_participant, assistant_participant, history)
         engine.run()
     except KeyboardInterrupt:
         print("\nExiting gracefully...")
