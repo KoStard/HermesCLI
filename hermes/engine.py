@@ -14,36 +14,44 @@ import shutil
 logger = logging.getLogger(__name__)
 
 class Engine:
-    def __init__(self, participants: list[Participant], history: History):
-        self.participants = participants
+    def __init__(self, user_participant: Participant, assistant_participant: Participant, history: History):
+        self.user_participant = user_participant
+        self.assistant_participant = assistant_participant
+        self.participants = [self.user_participant, self.assistant_participant]
         self.history = history
         self.notifications_printer = CLINotificationsPrinter()
 
     def run(self):
+        while True:
+            try:
+                self._run_cycle()
+            except Exception as e:
+                if isinstance(e, KeyboardInterrupt):
+                    continue
+                if isinstance(e, EOFError):
+                    return
+                self._handle_save_history_event(SaveHistoryEvent())
+                raise e
+        
+    def _run_cycle(self):
         participants_cycle = cycle(self.participants)
         current_participant = None
         next_participant = next(participants_cycle)
-
         events_stream_without_engine_commands = []
-        
-        try:
-            while True:
-                current_participant, next_participant = next_participant, next(participants_cycle)
-                consumption_events = current_participant.consume_events(self._extend_with_history_and_save(events_stream_without_engine_commands))
 
-                action_events_stream = current_participant.act()
-                events_stream = chain(consumption_events, action_events_stream)
+        while True:
+            current_participant, next_participant = next_participant, next(participants_cycle)
+            consumption_events = current_participant.consume_events(self._extend_with_history_and_save(events_stream_without_engine_commands))
 
-                # Make sure there is at least one event in the stream before moving to the next participant. Use peek method.
-                events_stream = PeekableGenerator(events_stream)
-                logger.debug("Peeking for the first time", current_participant)
-                events_stream.peek()
-                
-                events_stream_without_engine_commands = self._handle_engine_commands_from_stream(events_stream)
-        except Exception as e:
-            if not isinstance(e, EOFError) and not isinstance(e, KeyboardInterrupt):
-                self._handle_save_history_event(SaveHistoryEvent())
-            raise e
+            action_events_stream = current_participant.act()
+            events_stream = chain(consumption_events, action_events_stream)
+
+            # Make sure there is at least one event in the stream before moving to the next participant. Use peek method.
+            events_stream = PeekableGenerator(events_stream)
+            logger.debug("Peeking for the first time", current_participant)
+            events_stream.peek()
+            
+            events_stream_without_engine_commands = self._handle_engine_commands_from_stream(events_stream)
 
     def _extend_with_history_and_save(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """
