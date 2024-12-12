@@ -1,9 +1,9 @@
-from hermes.interface.assistant.prompt_builder.base import PromptBuilder
+from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 
 
 class TextMessagesAggregator:
-    def __init__(self, prompt_builder: PromptBuilder):
-        self.prompt_builder = prompt_builder
+    def __init__(self, prompt_builder_factory: PromptBuilderFactory):
+        self.prompt_builder_factory = prompt_builder_factory
         self.messages = []
 
     def add_message(self, message: str, author: str, message_id: int):
@@ -25,11 +25,13 @@ class TextMessagesAggregator:
         if self.get_current_author() != "user":
             return "\n".join([message["content"] for message in self.messages])
         
+        prompt_builder = self.prompt_builder_factory.create_prompt_builder()
+        
         for message in self.messages:
-            self.prompt_builder.add_text(
+            prompt_builder.add_text(
                 text=message["content"],
             )
-        return self.prompt_builder.compile_prompt()
+        return prompt_builder.compile_prompt()
     
     def clear(self):
         self.messages = []

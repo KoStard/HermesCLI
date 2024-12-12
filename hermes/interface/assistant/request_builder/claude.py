@@ -7,7 +7,7 @@ from hermes.utils.file_extension import get_file_extension
 
 class ClaudeRequestBuilder(RequestBuilder):
     def initialize_request(self):
-        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory.create_prompt_builder())
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
         self._extracted_pdfs = {}
 

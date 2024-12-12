@@ -21,7 +21,7 @@ class GeminiRequestBuilder(RequestBuilder):
         self.extracted_pdfs = {}
 
     def initialize_request(self):
-        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory.create_prompt_builder())
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
 
     def _add_content(self, content: str | dict, author: str):
