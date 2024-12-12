@@ -152,4 +152,3 @@ class GeminiRequestBuilder(RequestBuilder):
             self.extracted_pdfs[extracted_pdf_key] = pdf_path
             
         uploaded_file = self._upload_file(pdf_path)
-        self._add_content(uploaded_file, author)
