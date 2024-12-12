@@ -11,7 +11,7 @@ class PromptBuilder(ABC):
         pass
 
     @abstractmethod
-    def compile_prompt(self):
+    def compile_prompt(self) -> str:
         pass
 
 
