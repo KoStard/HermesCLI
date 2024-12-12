@@ -6,7 +6,7 @@ from hermes.interface.assistant.request_builder.text_messages_aggregator import 
 
 class BedrockRequestBuilder(RequestBuilder):
     def initialize_request(self):
-        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory.create_prompt_builder())
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
 
     def _add_content(self, content: dict, author: str):
