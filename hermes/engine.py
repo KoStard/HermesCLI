@@ -1,4 +1,5 @@
 from asyncio import Event
+import os
 import logging
 from typing import Generator
 from hermes.event import ClearHistoryEvent, CreateFileEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, SaveHistoryEvent
@@ -80,9 +81,11 @@ class Engine:
                 elif isinstance(event, ExitEvent):
                     self._handle_exit_event()
                 elif isinstance(event, CreateFileEvent):
-                    self.notifications_printer.print_notification(f"Creating file {event.file_path}")
-                    with open(event.file_path, "w") as file:
-                        file.write(event.content)
+                    if not self._confirm_file_creation(event.file_path):
+                        continue
+                    
+                    self._ensure_directory_exists(event.file_path)
+                    self._create_file(event.file_path, event.content)
                 else:
                     print(f"Unknown engine command, skipping: {event}")
                 continue
@@ -94,3 +97,45 @@ class Engine:
 
     def _handle_exit_event(self):
         raise EOFError
+
+    def _confirm_file_creation(self, file_path: str) -> bool:
+        """
+        Check if file exists and ask for confirmation to overwrite if it does.
+        
+        Args:
+            file_path: Path to the file to be created
+            
+        Returns:
+            bool: True if file should be created, False otherwise
+        """
+        if os.path.exists(file_path):
+            self.notifications_printer.print_notification(f"File {file_path} already exists.")
+            response = input("Do you want to overwrite it? [y/N] ").strip().lower()
+            if response != 'y':
+                self.notifications_printer.print_notification("File creation cancelled.")
+                return False
+        return True
+
+    def _ensure_directory_exists(self, file_path: str) -> None:
+        """
+        Create directory structure for the given file path if it doesn't exist.
+        
+        Args:
+            file_path: Path to the file to be created
+        """
+        directory = os.path.dirname(file_path)
+        if directory and not os.path.exists(directory):
+            self.notifications_printer.print_notification(f"Creating directory structure: {directory}")
+            os.makedirs(directory, exist_ok=True)
+
+    def _create_file(self, file_path: str, content: str) -> None:
+        """
+        Create a file with the given content.
+        
+        Args:
+            file_path: Path where to create the file
+            content: Content to write to the file
+        """
+        self.notifications_printer.print_notification(f"Creating file {file_path}")
+        with open(file_path, "w") as file:
+            file.write(content)
