@@ -6,9 +6,14 @@ class TextMessagesAggregator:
         self.prompt_builder_factory = prompt_builder_factory
         self.messages = []
 
-    def add_message(self, message: str, author: str, message_id: int):
+    def add_message(self, *, message: str, author: str, message_id: int, name: str = None, text_role: str = None):
         if message:
-            self.messages.append({"role": author, "content": message})
+            msg = {"role": author, "content": message}
+            if name:
+                msg["name"] = name
+            if text_role:
+                msg["text_role"] = text_role
+            self.messages.append(msg)
 
     def get_current_author(self) -> str:
         if not self.messages:
@@ -30,8 +35,11 @@ class TextMessagesAggregator:
         for message in self.messages:
             prompt_builder.add_text(
                 text=message["content"],
+                name=message.get("name"),
+                text_role=message.get("text_role")
             )
-        return prompt_builder.compile_prompt()
+        compiled_prompt = prompt_builder.compile_prompt()
+        return compiled_prompt
     
     def clear(self):
         self.messages = []
