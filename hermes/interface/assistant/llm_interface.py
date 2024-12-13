@@ -1,11 +1,11 @@
 import logging
-from typing import Generator
+from typing import Generator, List
 
 from hermes.interface.assistant.chat_models.base import ChatModel
 
 from ..base import Interface
 from hermes.interface.control_panel import LLMControlPanel
-from hermes.event import Event, MessageEvent, NotificationEvent
+from hermes.event import Event, MessageEvent, NotificationEvent, RawContentForHistoryEvent
 from hermes.message import Message, TextGeneratorMessage, TextMessage
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class LLMInterface(Interface):
         self.model.initialize()
         self.control_panel = control_panel
 
-    def render(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def render(self, history_snapshot: List[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         logger.debug("Asked to render on LLM", self.control_panel)
         request_builder = self.model.get_request_builder()
 
@@ -32,6 +32,9 @@ class LLMInterface(Interface):
         help_message = self._get_help_message()
         if help_message:
             rendered_messages.append(TextMessage(author="user", text=help_message))
+        
+        for message in history_snapshot:
+            rendered_messages.append(message)
 
         for event in events:
             if not isinstance(event, MessageEvent):
@@ -46,7 +49,7 @@ class LLMInterface(Interface):
     def get_input(self) -> Generator[Event, None, None]:
         logger.debug("Sending request to LLM")
         message = TextGeneratorMessage(author="assistant", text_generator=self.model.send_request(self.request))
-        
+        yield RawContentForHistoryEvent(message)
         for event in self.control_panel.break_down_and_execute_message(message):
             yield event
     

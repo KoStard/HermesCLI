@@ -2,7 +2,7 @@ from asyncio import Event
 import os
 import logging
 from typing import Generator
-from hermes.event import ClearHistoryEvent, CreateFileEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, SaveHistoryEvent
+from hermes.event import ClearHistoryEvent, CreateFileEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
 from hermes.interface.control_panel.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.participants import Participant
@@ -41,7 +41,8 @@ class Engine:
 
         while True:
             current_participant, next_participant = next_participant, next(participants_cycle)
-            consumption_events = current_participant.consume_events(self._extend_with_history_and_save(events_stream_without_engine_commands))
+            history_snapshot = self.history.get_history_for(current_participant.get_name())
+            consumption_events = current_participant.consume_events(history_snapshot, self._save_to_history(events_stream_without_engine_commands))
 
             action_events_stream = current_participant.act()
             events_stream = chain(consumption_events, action_events_stream)
@@ -53,23 +54,12 @@ class Engine:
             
             events_stream_without_engine_commands = self._handle_engine_commands_from_stream(events_stream)
 
-    def _extend_with_history_and_save(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
-        """
-        Extend the events stream with the history events.
-
-        """
-        history_yielded = False
+    def _save_to_history(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         for event in events:
-            """
-            Wait for the first event to come, but then first yield all history events before yielding the actual events.
-            """
-            if not history_yielded:
-                for history_event in self.history.get_messages_as_events():
-                    yield history_event
-                history_yielded = True
-            
             if isinstance(event, MessageEvent):
                 self.history.add_message(event.get_message())
+            elif isinstance(event, RawContentForHistoryEvent):
+                self.history.add_raw_content(event)
             yield event
 
     def _handle_engine_commands_from_stream(self, stream: Generator[Event, None, None]) -> Generator[Event, None, None]:
