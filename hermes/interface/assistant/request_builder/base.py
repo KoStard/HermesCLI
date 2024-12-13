@@ -164,14 +164,18 @@ class RequestBuilder(ABC):
     def _default_handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
         """
         Read the content of the file, and create a text message with the content of the file
-        Then use .handle_text_message
+        Then use .handle_text_message with the filepath as name and 'textual_file' as role
         """
         try:
-            file_identifier = f"// Content of file {text_filepath}\n"
             with open(text_filepath, 'r', encoding='utf-8') as file:
                 file_content = file.read()
-                file_content = file_identifier + file_content
-                self.handle_text_message(file_content, author, message_id, None, None)
+                self.handle_text_message(
+                    text=file_content,
+                    author=author,
+                    message_id=message_id,
+                    name=text_filepath,
+                    text_role="textual_file"
+                )
         except Exception as e:
             self.notifications_printer.print_error(f"Error reading file {text_filepath}: {e}")
             self.handle_text_message(f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}", author, message_id, None, None)
