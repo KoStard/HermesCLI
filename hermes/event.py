@@ -7,7 +7,7 @@ from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
 import os
-from hermes.message import Message
+from hermes.message import Message, TextGeneratorMessage, TextMessage
 
 @dataclass(init=False)
 class Event(ABC):
@@ -85,3 +85,24 @@ class NotificationEvent(Event):
 
     def __init__(self, text: str):
         self.text = text
+
+
+@dataclass
+class RawContentForHistoryEvent(Event):
+    content: TextMessage | TextGeneratorMessage
+
+    def to_json(self) -> dict:
+        return {
+            "type": "raw_content",
+            "content": self.content.to_json()
+        }
+    
+    @staticmethod
+    def from_json(json_data: dict) -> "RawContentForHistoryEvent":
+        content_type = json_data["content"]["type"]
+        if content_type == "text":
+            return RawContentForHistoryEvent(content=TextMessage.from_json(json_data["content"]))
+        elif content_type == "text_generator":
+            return RawContentForHistoryEvent(content=TextGeneratorMessage.from_json(json_data["content"]))
+        else:
+            raise ValueError(f"Unknown content type: {content_type}")

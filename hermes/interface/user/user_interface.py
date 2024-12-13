@@ -1,5 +1,5 @@
 import os
-from typing import Generator, Optional
+from typing import Generator, List, Optional
 
 from prompt_toolkit import ANSI, PromptSession
 from prompt_toolkit.history import FileHistory
@@ -14,7 +14,7 @@ from hermes.interface.control_panel import UserControlPanel
 from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
 from hermes.message import InvisibleMessage, Message, TextGeneratorMessage, TextMessage
-from hermes.event import Event, MessageEvent, NotificationEvent
+from hermes.event import Event, MessageEvent, NotificationEvent, RawContentForHistoryEvent
 from hermes.interface.helpers import CLINotificationsPrinter, CLIColors, colorize_text, print_colored_text
 from hermes.interface.user.command_completer import CommandCompleter
 
@@ -28,7 +28,6 @@ class UserInterface(Interface):
                  stt_input_handler: Optional[STTInputHandler], 
                  notifications_printer: CLINotificationsPrinter,
                  user_input_from_cli: str):
-        self.last_messages = []
         self.control_panel = control_panel
         self.command_completer = command_completer
         self.control_panel_has_rendered = False
@@ -39,21 +38,13 @@ class UserInterface(Interface):
         self.notifications_printer = notifications_printer
         self.user_input_from_cli = user_input_from_cli
 
-    def render(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def render(self, history_snapshot: List[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         if not self.control_panel_has_rendered:
             print_colored_text(self.control_panel.render(), CLIColors.GREEN)
             self.control_panel_has_rendered = True
 
         last_author = None
         for i, event in enumerate(events):
-            if i < len(self.last_messages):
-                if isinstance(event, MessageEvent) and event.get_message() == self.last_messages[i]:
-                    continue
-                else:
-                    self.notifications_printer.print_error("Messages history has changed, printing the new history")
-                    self.last_messages = self.last_messages[:i]
-
-                
             if not isinstance(event, MessageEvent):
                 if isinstance(event, NotificationEvent):
                     self.notifications_printer.print_notification(event.text)
@@ -64,7 +55,6 @@ class UserInterface(Interface):
                 print()
                 last_author = message.author
                 print_colored_text(f"{message.author}: ", CLIColors.YELLOW, end="", flush=True)
-            self.last_messages.append(message)
 
             if isinstance(message, TextMessage):
                 self.markdown_highlighter.process_markdown(iter(message.get_content_for_user()))
@@ -84,14 +74,14 @@ class UserInterface(Interface):
         else:
             user_input = self._get_user_input_from_terminal()
 
-        input_message = TextMessage(author="user", text=user_input, is_manually_entered=True)
+        input_message = TextMessage(author="user", text=user_input)
+        yield RawContentForHistoryEvent(input_message)
 
         sendable_content_present = False
 
         for event in self.control_panel.break_down_and_execute_message(input_message):
             if isinstance(event, MessageEvent):
-                self.last_messages.append(event.get_message())
-                if message_source != "cli" or (isinstance(event.get_message(), TextMessage) and event.get_message().is_manually_entered):
+                if message_source != "cli" or (isinstance(event.get_message(), TextMessage) and event.get_message().is_directory_entered):
                     sendable_content_present = True
             yield event
         
@@ -155,9 +145,7 @@ class UserInterface(Interface):
 
     
     def clear(self):
-        self.last_messages = []
+        pass
 
     def initialize_from_history(self, history: History):
-        all_messages = history.get_messages()
-        user_messages = [message for message in all_messages if message.author == "user"]
-        self.last_messages = user_messages
+        pass

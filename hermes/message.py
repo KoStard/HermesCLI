@@ -54,12 +54,12 @@ class TextMessage(Message):
     """Class for regular text messages"""
     
     text: str
-    is_manually_entered: bool
+    is_directory_entered: bool
     
-    def __init__(self, *, author: str, text: str, timestamp: Optional[datetime] = None, is_manually_entered: bool = False):
+    def __init__(self, *, author: str, text: str, timestamp: Optional[datetime] = None, is_directory_entered: bool = False):
         super().__init__(author=author, timestamp=timestamp)
         self.text = text
-        self.is_manually_entered = is_manually_entered
+        self.is_directory_entered = is_directory_entered
     
     def get_content_for_user(self) -> str:
         return self.text
@@ -72,12 +72,13 @@ class TextMessage(Message):
             "type": "text",
             "text": self.text,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
+            "is_directory_entered": self.is_directory_entered
         }
     
     @staticmethod
     def from_json(json_data: dict) -> "TextMessage":
-        return TextMessage(author=json_data["author"], text=json_data["text"], timestamp=datetime.fromisoformat(json_data["timestamp"]))
+        return TextMessage(author=json_data["author"], text=json_data["text"], timestamp=datetime.fromisoformat(json_data["timestamp"]), is_directory_entered=json_data["is_directory_entered"])
 
 @dataclass(init=False)
 class TextGeneratorMessage(Message):
@@ -86,13 +87,15 @@ class TextGeneratorMessage(Message):
     text_generator: Generator[str, None, None]
     text: str
     has_finished: bool
+    is_directory_entered: bool
 
-    def __init__(self, *, author: str, text_generator: Generator[str, None, None], timestamp: Optional[datetime] = None):
+    def __init__(self, *, author: str, text_generator: Generator[str, None, None], timestamp: Optional[datetime] = None, is_directory_entered: bool = False):
         super().__init__(author=author, timestamp=timestamp)
         # We should track the output of the generator, and save it to self.text
         self.text_generator = text_generator
         self.text = ""
         self.has_finished = False
+        self.is_directory_entered = is_directory_entered
 
     def get_content_for_user(self) -> Generator[str, None, None]:
         # Yield each new chunk from the generator and accumulate in self.text
@@ -116,7 +119,8 @@ class TextGeneratorMessage(Message):
             "text": self.text,
             "has_finished": self.has_finished,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
+            "is_directory_entered": self.is_directory_entered
         }
 
     @staticmethod
@@ -128,7 +132,8 @@ class TextGeneratorMessage(Message):
         msg = TextGeneratorMessage(
             author=json_data["author"],
             text_generator=text_gen(),
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
+            is_directory_entered=json_data.get("is_directory_entered", False)
         )
         msg.text = json_data["text"]
         msg.has_finished = json_data["has_finished"]
