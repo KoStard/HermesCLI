@@ -34,10 +34,10 @@ class BedrockRequestBuilder(RequestBuilder):
         self._add_content({"text": content}, self.text_messages_aggregator.get_current_author())
         self.text_messages_aggregator.clear()
     
-    def handle_text_message(self, text: str, author: str, message_id: int):
+    def handle_text_message(self, text: str, author: str, message_id: int, name: str = None, text_role: str = None):
         if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()
-        self.text_messages_aggregator.add_message(text, author, message_id)
+        self.text_messages_aggregator.add_message(message=text, author=author, message_id=message_id, name=name, text_role=text_role)
         
     def _get_message_role(self, role: str) -> str:
         if role == 'user':

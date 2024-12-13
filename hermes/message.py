@@ -55,11 +55,15 @@ class TextMessage(Message):
     
     text: str
     is_directory_entered: bool
+    name: Optional[str]
+    text_role: Optional[str]
     
-    def __init__(self, *, author: str, text: str, timestamp: Optional[datetime] = None, is_directory_entered: bool = False):
+    def __init__(self, *, author: str, text: str, timestamp: Optional[datetime] = None, is_directory_entered: bool = False, name: Optional[str] = None, text_role: Optional[str] = None):
         super().__init__(author=author, timestamp=timestamp)
         self.text = text
         self.is_directory_entered = is_directory_entered
+        self.name = name
+        self.text_role = text_role
     
     def get_content_for_user(self) -> str:
         return self.text
@@ -73,12 +77,21 @@ class TextMessage(Message):
             "text": self.text,
             "author": self.author,
             "timestamp": self.timestamp.isoformat(),
-            "is_directory_entered": self.is_directory_entered
+            "is_directory_entered": self.is_directory_entered,
+            "name": self.name,
+            "text_role": self.text_role
         }
     
     @staticmethod
     def from_json(json_data: dict) -> "TextMessage":
-        return TextMessage(author=json_data["author"], text=json_data["text"], timestamp=datetime.fromisoformat(json_data["timestamp"]), is_directory_entered=json_data["is_directory_entered"])
+        return TextMessage(
+            author=json_data["author"], 
+            text=json_data["text"], 
+            timestamp=datetime.fromisoformat(json_data["timestamp"]), 
+            is_directory_entered=json_data["is_directory_entered"],
+            name=json_data.get("name"),
+            text_role=json_data.get("text_role")
+        )
 
 @dataclass(init=False)
 class TextGeneratorMessage(Message):
@@ -88,14 +101,18 @@ class TextGeneratorMessage(Message):
     text: str
     has_finished: bool
     is_directory_entered: bool
+    name: Optional[str]
+    text_role: Optional[str]
 
-    def __init__(self, *, author: str, text_generator: Generator[str, None, None], timestamp: Optional[datetime] = None, is_directory_entered: bool = False):
+    def __init__(self, *, author: str, text_generator: Generator[str, None, None], timestamp: Optional[datetime] = None, is_directory_entered: bool = False, name: Optional[str] = None, text_role: Optional[str] = None):
         super().__init__(author=author, timestamp=timestamp)
         # We should track the output of the generator, and save it to self.text
         self.text_generator = text_generator
         self.text = ""
         self.has_finished = False
         self.is_directory_entered = is_directory_entered
+        self.name = name
+        self.text_role = text_role
 
     def get_content_for_user(self) -> Generator[str, None, None]:
         # Yield each new chunk from the generator and accumulate in self.text
@@ -120,7 +137,9 @@ class TextGeneratorMessage(Message):
             "has_finished": self.has_finished,
             "author": self.author,
             "timestamp": self.timestamp.isoformat(),
-            "is_directory_entered": self.is_directory_entered
+            "is_directory_entered": self.is_directory_entered,
+            "name": self.name,
+            "text_role": self.text_role
         }
 
     @staticmethod
@@ -133,7 +152,9 @@ class TextGeneratorMessage(Message):
             author=json_data["author"],
             text_generator=text_gen(),
             timestamp=datetime.fromisoformat(json_data["timestamp"]),
-            is_directory_entered=json_data.get("is_directory_entered", False)
+            is_directory_entered=json_data.get("is_directory_entered", False),
+            name=json_data.get("name"),
+            text_role=json_data.get("text_role")
         )
         msg.text = json_data["text"]
         msg.has_finished = json_data["has_finished"]
@@ -145,49 +166,6 @@ class InvisibleMessage(TextMessage):
     
     def get_content_for_user(self) -> str:
         return ""
-
-@dataclass(init=False)
-class AutoRedactedInvisibleTextMessage(InvisibleMessage):
-    """Class for messages that are automatically redacted from the LLM and are invisible to the user"""
-    text: str
-    redacted_text: str
-
-    def __init__(self, *, author: str, text: str, redacted_text: str, timestamp: Optional[datetime] = None):
-        super().__init__(author=author, timestamp=timestamp)
-        self.text = text
-        self.redacted_text = redacted_text
-        self.is_redacted = False
-    
-    def get_content_for_user(self) -> str:
-        return ""
-
-    def get_content_for_assistant(self) -> str:
-        if not self.is_redacted:
-            self.is_redacted = True
-            return self.text
-        return self.redacted_text
-
-    def to_json(self) -> dict:
-        return {
-            "type": "auto_redacted_invisible",
-            "text": self.text,
-            "redacted_text": self.redacted_text,
-            "author": self.author,
-            "timestamp": self.timestamp.isoformat(),
-            "is_redacted": self.is_redacted
-        }
-
-    @staticmethod
-    def from_json(json_data: dict) -> "AutoRedactedInvisibleTextMessage":
-        msg = AutoRedactedInvisibleTextMessage(
-            author=json_data["author"],
-            text=json_data["text"],
-            redacted_text=json_data["redacted_text"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
-        )
-        msg.is_redacted = json_data["is_redacted"]
-        return msg
-
 
 @dataclass(init=False)
 class ImageUrlMessage(Message):
@@ -495,7 +473,6 @@ DESERIALIZATION_KEYMAP = {
     "text": TextMessage.from_json,
     "text_generator": TextGeneratorMessage.from_json,
     "invisible": InvisibleMessage.from_json,
-    "auto_redacted_invisible": AutoRedactedInvisibleTextMessage.from_json,
     "image_url": ImageUrlMessage.from_json,
     "image": ImageMessage.from_json,
     "audio": AudioFileMessage.from_json,
