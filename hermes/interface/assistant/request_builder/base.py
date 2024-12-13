@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from hermes.interface.assistant.prompt_builder.base import PromptBuilder, PromptBuilderFactory
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.message import AudioFileMessage, AutoRedactedInvisibleTextMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, UrlMessage, VideoMessage
+from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, UrlMessage, VideoMessage
 
 """
 RequestBuilder is responsible for building the actual API request to the LLM provider.
@@ -25,25 +25,25 @@ class RequestBuilder(ABC):
                 if content:
                     content = content.strip()
                     if content:
-                        self.handle_text_message(content, message.author, id(message))
+                        self.handle_text_message(
+                            text=content,
+                            author=message.author,
+                            message_id=id(message),
+                            name=message.name,
+                            text_role=message.text_role
+                        )
             elif isinstance(message, TextGeneratorMessage):
                 content = message.get_content_for_assistant()
                 if content:
                     content = content.strip()
                     if content:
-                        self.handle_text_message(content, message.author, id(message))
+                        self.handle_text_message(content, message.author, id(message), message.name, message.text_role)
             elif isinstance(message, InvisibleMessage):
                 content = message.get_content_for_assistant()
                 if content:
                     content = content.strip()
                     if content:
-                        self.handle_text_message(content, message.author, id(message))
-            elif isinstance(message, AutoRedactedInvisibleTextMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    content = content.strip()
-                    if content:
-                        self.handle_text_message(content, message.author, id(message))
+                        self.handle_text_message(content, message.author, id(message), message.name, message.text_role)
             elif isinstance(message, ImageUrlMessage):
                 content = message.get_content_for_assistant()
                 if content:
@@ -78,7 +78,7 @@ class RequestBuilder(ABC):
         
         return self.compile_request()
     
-    def handle_text_message(self, text: str, author: str, message_id: int):
+    def handle_text_message(self, text: str, author: str, message_id: int, name: str = None, text_role: str = None):
         self.notifications_printer.print_error(f"Text message not supported by {self.model_tag}. Discarding message.")
 
     def handle_image_url_message(self, url: str, author: str, message_id: int):
@@ -171,10 +171,10 @@ class RequestBuilder(ABC):
             with open(text_filepath, 'r', encoding='utf-8') as file:
                 file_content = file.read()
                 file_content = file_identifier + file_content
-                self.handle_text_message(file_content, author, message_id)
+                self.handle_text_message(file_content, author, message_id, None, None)
         except Exception as e:
             self.notifications_printer.print_error(f"Error reading file {text_filepath}: {e}")
-            self.handle_text_message(f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}", author, message_id)
+            self.handle_text_message(f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}", author, message_id, None, None)
 
     def _extract_pages_from_pdf(self, pdf_path: str, pages: list[int]) -> str:
         """
