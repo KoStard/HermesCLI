@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import logging
-from typing import Generator
+from typing import Generator, List
 from hermes.history import History
 from hermes.interface.assistant.llm_interface import LLMInterface
 from hermes.interface.debug.debug_interface import DebugInterface
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Participant(ABC):
     @abstractmethod
-    def consume_events(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def consume_events(self, history_snapshot: List[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         pass
 
     @abstractmethod
@@ -31,13 +31,17 @@ class Participant(ABC):
     def initialize_from_history(self, history: History):
         pass
 
+    @abstractmethod
+    def get_name(self) -> str:
+        pass
+
 class DebugParticipant(Participant):
     interface: DebugInterface
     def __init__(self, interface: DebugInterface):
         self.interface = interface
 
-    def consume_events(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
-        return self.interface.render(events)
+    def consume_events(self, history_snapshot: List[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+        return self.interface.render(history_snapshot, events)
 
     def act(self) -> Generator[Event, None, None]:
         return self.interface.get_input()
@@ -51,13 +55,16 @@ class DebugParticipant(Participant):
     def initialize_from_history(self, history: History):
         self.interface.initialize_from_history(history)
 
+    def get_name(self) -> str:
+        return "assistant"
+
 class LLMParticipant(Participant):
     def __init__(self, interface: LLMInterface):
         self.interface = interface
     
-    def consume_events(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def consume_events(self, history_snapshot: List[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         logger.debug("Asked to consume events on LLM", self.interface)
-        return self.interface.render(events)
+        return self.interface.render(history_snapshot, events)
     
     def act(self) -> Generator[Event, None, None]:
         logger.debug("Asked to act on LLM", self.interface)
@@ -72,12 +79,15 @@ class LLMParticipant(Participant):
     def initialize_from_history(self, history: History):
         self.interface.initialize_from_history(history)
 
+    def get_name(self) -> str:
+        return "assistant"
+
 class UserParticipant(Participant):
     def __init__(self, interface: UserInterface):
         self.interface = interface
     
-    def consume_events(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
-        return self.interface.render(events)
+    def consume_events(self, history_snapshot: List[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+        return self.interface.render(history_snapshot, events)
 
     def act(self) -> Generator[Event, None, None]:
         return self.interface.get_input()
@@ -90,3 +100,6 @@ class UserParticipant(Participant):
 
     def initialize_from_history(self, history: History):
         self.interface.initialize_from_history(history)
+
+    def get_name(self) -> str:
+        return "user"

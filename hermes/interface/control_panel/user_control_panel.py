@@ -19,7 +19,7 @@ class UserControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(command_label="/url", description="Add url to the conversation", parser=lambda line: MessageEvent(UrlMessage(author="user", url=line))))
         self._register_command(ControlPanelCommand(command_label="/save_history", description="Save history to a file", parser=lambda line: SaveHistoryEvent(line), visible_from_cli=False))
         self._register_command(ControlPanelCommand(command_label="/load_history", description="Load history from a file", parser=lambda line: LoadHistoryEvent(line), priority=98))
-        self._register_command(ControlPanelCommand(command_label="/text", description="Add text to the conversation", parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_manually_entered=True))))
+        self._register_command(ControlPanelCommand(command_label="/text", description="Add text to the conversation", parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directory_entered=True))))
         self._register_command(ControlPanelCommand(command_label="/exit", description="Exit the application", parser=lambda _: ExitEvent(), priority=-100))  # Run exit after running any other command
 
         if extra_commands:
@@ -40,7 +40,7 @@ class UserControlPanel(ControlPanel):
             matching_command = self._line_command_match(line)
             if matching_command:
                 if current_message_text:
-                    prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_manually_entered=True))))
+                    prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_directory_entered=True))))
                     current_message_text = ""
                 
                 command_priority = self.commands[matching_command].priority
@@ -64,7 +64,7 @@ class UserControlPanel(ControlPanel):
                 current_message_text += line
 
         if current_message_text:
-            prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_manually_entered=True))))
+            prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_directory_entered=True))))
 
         # Highest priority first
         for _, event in sorted(prioritised_backlog, key=lambda x: -x[0]):

@@ -79,7 +79,7 @@ class LLMControlPanel(ControlPanel):
 
                 yield from self.commands[command_label].parser(line, peekable_generator)
             else:
-                yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)))) 
+                yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directory_entered=True)) 
 
 
 class CreateFileCommandHandler:
