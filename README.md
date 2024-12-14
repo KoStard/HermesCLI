@@ -55,6 +55,9 @@ api_key = YOUR_OPENROUTER_API_KEY
 
 [BEDROCK]
 aws_region = YOUR_AWS_REGION  ; Will use your default profile in you AWS credentials
+
+[XAI]
+api_key = YOUR_XAI_API_KEY
 ```
 
 Replace `YOUR_API_KEY` with your actual API keys for each provider.

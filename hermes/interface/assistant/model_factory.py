@@ -8,13 +8,14 @@ from hermes.interface.assistant.chat_models.groq import GroqModel
 from hermes.interface.assistant.chat_models.deepseek import DeepSeekModel
 from hermes.interface.assistant.chat_models.sambanova import SambanovaModel
 from hermes.interface.assistant.chat_models.open_router import OpenRouterModel
+from hermes.interface.assistant.chat_models.xai import XAIModel
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 
 
 class ModelFactory:
     def __init__(self, notifications_printer: CLINotificationsPrinter):
         self.notifications_printer = notifications_printer
-        self.model_classes: List[Type[ChatModel]] = [OpenAIModel, ClaudeModel, GeminiModel, GroqModel, DeepSeekModel, SambanovaModel, OpenRouterModel, BedrockModel]
+        self.model_classes: List[Type[ChatModel]] = [OpenAIModel, ClaudeModel, GeminiModel, GroqModel, DeepSeekModel, SambanovaModel, OpenRouterModel, BedrockModel, XAIModel]
         self.provider_to_model_class_map = {model.get_provider().upper(): model for model in self.model_classes}
         self.provider_and_model_tag_pairs = [(model.get_provider().upper(), model_tag) for model in self.model_classes for model_tag in model.get_model_tags()]
 
