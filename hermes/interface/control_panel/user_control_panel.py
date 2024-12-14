@@ -124,3 +124,4 @@ class UserControlPanel(ControlPanel):
         return tuple(
             (k, v) for k, v in args_dict.items() 
             if k in group_arg_names and v is not None
+        )
