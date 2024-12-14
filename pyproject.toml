@@ -14,6 +14,7 @@ dependencies = [
     "google-generativeai>=0.8.3",
     "litellm>=1.55.2",
     "markdownify>=0.14.1",
+    "markitdown>=0.0.1a2",
     "mistune>=3.0.2",
     "numpy>=2.2.0",
     "openai>=1.57.4",
