@@ -1,6 +1,0 @@
-mistune
-pygments
-prompt_toolkit
-markdownify
-requests
-PyPDF2
