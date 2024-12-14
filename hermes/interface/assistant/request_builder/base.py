@@ -1,8 +1,13 @@
 from abc import ABC, abstractmethod
 
-from hermes.interface.assistant.prompt_builder.base import PromptBuilder, PromptBuilderFactory
+from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, UrlMessage, VideoMessage
+from hermes.utils.binary_file import is_binary
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 RequestBuilder is responsible for building the actual API request to the LLM provider.
@@ -155,8 +160,8 @@ class RequestBuilder(ABC):
         Read the content of the file, and create a text message with the content of the file
         Then use .handle_text_message with the filepath as name and 'textual_file' as role
         """
+        from markitdown import MarkItDown, UnsupportedFormatException
         try:
-            from markitdown import MarkItDown
             markitdown = MarkItDown()
             conversion_result = markitdown.convert(text_filepath)
             file_content = conversion_result.text_content
@@ -167,6 +172,21 @@ class RequestBuilder(ABC):
                 name=text_filepath,
                 text_role="textual_file"
             )
+        except UnsupportedFormatException as e:
+            if not is_binary(text_filepath):
+                logger.debug(f"Failed to use markitdown to get the data from {text_filepath}, reading it as a text file", e)
+                with open(text_filepath) as f:
+                    file_content = f.read()
+                self.handle_text_message(
+                    text=file_content,
+                    author=author,
+                    message_id=message_id,
+                    name=text_filepath,
+                    text_role="textual_file"
+                )
+            else:
+                self.notifications_printer.print_error(f"Error reading file {text_filepath}: {e}")
+                self.handle_text_message(f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}", author, message_id, None, None)
         except Exception as e:
             self.notifications_printer.print_error(f"Error reading file {text_filepath}: {e}")
             self.handle_text_message(f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}", author, message_id, None, None)
