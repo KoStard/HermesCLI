@@ -118,17 +118,16 @@ class RequestBuilder(ABC):
 
         markdown_content = self._get_url_text_content(url, message_id)
         if markdown_content is not None:
-            self.handle_text_message(markdown_content, author, message_id)
+            self.handle_text_message(markdown_content, author, message_id, name=url, text_role="webpage")
     
     def _get_url_text_content(self, url: str, message_id: int) -> str:
         if message_id in self._url_contents:
             return self._url_contents[message_id]
         try:
-            import requests
-            response = requests.get(url)
-            response.raise_for_status()
-            html_content = response.text
-            markdown_content = self._convert_html_to_markdown(html_content)
+            from markitdown import MarkItDown
+            markitdown = MarkItDown()
+            conversion_result = markitdown.convert(url)
+            markdown_content = conversion_result.text_content
             self._url_contents[message_id] = markdown_content
             return markdown_content
         except Exception as e:
@@ -151,31 +150,23 @@ class RequestBuilder(ABC):
             self._url_contents[message_id] = None
             return None
 
-    def _convert_html_to_markdown(self, html: str) -> str:
-        from markdownify import markdownify as md
-        try:
-            markdown = md(html)
-            return markdown
-        except Exception as e:
-            # Handle or log the exception as needed
-            print(f"Error converting HTML to Markdown, falling back to raw HTML: {e}")
-            return html
-
     def _default_handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
         """
         Read the content of the file, and create a text message with the content of the file
         Then use .handle_text_message with the filepath as name and 'textual_file' as role
         """
         try:
-            with open(text_filepath, 'r', encoding='utf-8') as file:
-                file_content = file.read()
-                self.handle_text_message(
-                    text=file_content,
-                    author=author,
-                    message_id=message_id,
-                    name=text_filepath,
-                    text_role="textual_file"
-                )
+            from markitdown import MarkItDown
+            markitdown = MarkItDown()
+            conversion_result = markitdown.convert(text_filepath)
+            file_content = conversion_result.text_content
+            self.handle_text_message(
+                text=file_content,
+                author=author,
+                message_id=message_id,
+                name=text_filepath,
+                text_role="textual_file"
+            )
         except Exception as e:
             self.notifications_printer.print_error(f"Error reading file {text_filepath}: {e}")
             self.handle_text_message(f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}", author, message_id, None, None)
