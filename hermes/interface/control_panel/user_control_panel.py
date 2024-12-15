@@ -5,10 +5,22 @@ from .peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
 from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.utils.tree_generator import TreeGenerator
+import os
+
+from argparse import ArgumentParser, Namespace
+from typing import Generator
+from .base_control_panel import ControlPanel, ControlPanelCommand
+from .peekable_generator import PeekableGenerator, iterate_while
+from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
+from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.utils.tree_generator import TreeGenerator
 
 class UserControlPanel(ControlPanel):
     def __init__(self, *, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
+        self.tree_generator = TreeGenerator(exclusions=["."])
         self._register_command(ControlPanelCommand(command_label="/clear", description="Clear the conversation history", parser=lambda _: ClearHistoryEvent(), priority=99, visible_from_cli=False)) # Clear history should be the first command, we'll clear then do the rest
         self._register_command(ControlPanelCommand(command_label="/image", description="Add image to the conversation", parser=lambda line: MessageEvent(ImageMessage(author="user", image_path=line))))
         self._register_command(ControlPanelCommand(command_label="/image_url", description="Add image from url to the conversation", parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line))))
@@ -21,6 +33,13 @@ class UserControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(command_label="/load_history", description="Load history from a file", parser=lambda line: LoadHistoryEvent(line), priority=98))
         self._register_command(ControlPanelCommand(command_label="/text", description="Add text to the conversation", parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directory_entered=True))))
         self._register_command(ControlPanelCommand(command_label="/exit", description="Exit the application", parser=lambda _: ExitEvent(), priority=-100))  # Run exit after running any other command
+        self._register_command(ControlPanelCommand(command_label="/tree", description="Generate a directory tree", parser=self._parse_tree_command))
+        
+        if extra_commands:
+            for command in extra_commands:
+                self._register_command(command)
+        
+        self.notifications_printer = notifications_printer
 
         if extra_commands:
             for command in extra_commands:
@@ -95,6 +114,25 @@ class UserControlPanel(ControlPanel):
                     lines.append(v)
         return "\n".join(lines)
     
+    def _parse_tree_command(self, line: str) -> MessageEvent:
+        """
+        Parse the /tree command and generate a directory tree.
+
+        Args:
+            line: The parsed command line input.
+
+        Returns:
+            A MessageEvent containing the directory tree.
+        """
+        line = line.strip()
+        if line:
+            depth = int(line)
+        else:
+            depth = None
+
+        tree_message = self.tree_generator.generate_tree(os.getcwd(), depth)
+        return MessageEvent(tree_message)
+
     def _get_arguments_by_group(self, parser: ArgumentParser, args: Namespace, group_name: str) -> tuple[tuple[str, list[str]]]:
         """
         Extract arguments that belong to a specific argument group from parsed command-line arguments.
