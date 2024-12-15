@@ -26,6 +26,7 @@ class Engine:
             try:
                 self._run_cycle()
             except Exception as e:
+                print("Exception")
                 if isinstance(e, KeyboardInterrupt):
                     continue
                 if isinstance(e, EOFError):
@@ -34,22 +35,37 @@ class Engine:
                 raise e
         
     def _run_cycle(self):
-        participants_cycle = cycle(self.participants)
-        current_participant = None
-        next_participant = next(participants_cycle)
         events_stream_without_engine_commands = []
-
+        
         while True:
-            current_participant, next_participant = next_participant, next(participants_cycle)
-            history_snapshot = self.history.get_history_for(current_participant.get_name())
-            consumption_events = current_participant.consume_events(history_snapshot, self._save_to_history(events_stream_without_engine_commands))
+            # Handle user events and engine commands
+            user_participant = self.user_participant
+            history_snapshot = self.history.get_history_for(user_participant.get_name())
+            consumption_events = user_participant.consume_events(history_snapshot, self._save_to_history(events_stream_without_engine_commands))
 
-            action_events_stream = current_participant.act()
+            action_events_stream = user_participant.act()
             events_stream = chain(consumption_events, action_events_stream)
 
             # Make sure there is at least one event in the stream before moving to the next participant. Use peek method.
             events_stream = PeekableGenerator(events_stream)
-            logger.debug("Peeking for the first time", current_participant)
+            logger.debug("Peeking for the first time", user_participant)
+            events_stream.peek()
+            
+            # As user events don't come async, and we can't make the LLM request before finishing the user side, waiting for the user events to come.
+            # This is also important as user events can impact the past history
+            events_stream_without_engine_commands = list(self._handle_engine_commands_from_stream(events_stream))
+
+            # Handle assistant events
+            assistant_participant = self.assistant_participant
+            history_snapshot = self.history.get_history_for(assistant_participant.get_name())
+            consumption_events = assistant_participant.consume_events(history_snapshot, self._save_to_history(events_stream_without_engine_commands))
+
+            action_events_stream = assistant_participant.act()
+            events_stream = chain(consumption_events, action_events_stream)
+
+            # Make sure there is at least one event in the stream before moving to the next participant. Use peek method.
+            events_stream = PeekableGenerator(events_stream)
+            logger.debug("Peeking for the first time", assistant_participant)
             events_stream.peek()
             
             events_stream_without_engine_commands = self._handle_engine_commands_from_stream(events_stream)
