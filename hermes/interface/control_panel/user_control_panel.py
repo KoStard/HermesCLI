@@ -20,7 +20,7 @@ from hermes.utils.tree_generator import TreeGenerator
 class UserControlPanel(ControlPanel):
     def __init__(self, *, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
-        self.tree_generator = TreeGenerator(exclusions=["."])
+        self.tree_generator = TreeGenerator()
         self._register_command(ControlPanelCommand(command_label="/clear", description="Clear the conversation history", parser=lambda _: ClearHistoryEvent(), priority=99, visible_from_cli=False)) # Clear history should be the first command, we'll clear then do the rest
         self._register_command(ControlPanelCommand(command_label="/image", description="Add image to the conversation", parser=lambda line: MessageEvent(ImageMessage(author="user", image_path=line))))
         self._register_command(ControlPanelCommand(command_label="/image_url", description="Add image from url to the conversation", parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line))))
