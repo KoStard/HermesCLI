@@ -2,6 +2,8 @@ import logging
 import os
 import textwrap
 from typing import Generator
+
+from hermes.utils.file_extension import remove_quotes
 from .base_control_panel import ControlPanel, ControlPanelCommand
 from .peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import Message, TextGeneratorMessage, TextMessage
@@ -95,7 +97,7 @@ class CreateFileCommandHandler:
         self.line = line
         # The line contains the command as well, so it starts with `///create_file `
         raw_path = line.split(" ", 1)[1].strip()
-        unquoted_path = self._remove_quotes(raw_path)
+        unquoted_path = remove_quotes(raw_path)
         self.file_path = self._escape_filepath(unquoted_path)
 
         self._content = []
@@ -116,24 +118,6 @@ class CreateFileCommandHandler:
         create_file_event = CreateFileEvent(file_path=self.file_path, content="".join(self._content))
         self._content = []
         return create_file_event
-
-    def _remove_quotes(self, path: str) -> str:
-        """
-        Remove various types of quotes from the path.
-        
-        Args:
-            path: Input path that might contain quotes
-                
-        Returns:
-            Path with quotes removed
-        """
-        # Remove single quotes, double quotes, and smart quotes
-        quotes = {"'", '"', '“', '”'}
-        result = []
-        for c in path:
-            if c not in quotes:
-                result.append(c)
-        return ''.join(result)
 
     def _escape_filepath(self, filepath_expression: str) -> str:
         """
