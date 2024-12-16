@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 import requests
 
 from hermes.utils.binary_file import is_binary
-from hermes.utils.file_extension import get_file_extension
+from hermes.utils.file_extension import get_file_extension, remove_quotes
 import os
 
 @dataclass(init=False)
@@ -380,6 +380,7 @@ class TextualFileMessage(Message):
         Convert a relative filepath to an absolute filepath.
         """
         # Expand user directory (~)
+        text_filepath = remove_quotes(text_filepath)
         expanded_path = os.path.expanduser(text_filepath)
 
         # Convert to absolute path if relative
