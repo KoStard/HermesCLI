@@ -7,7 +7,7 @@ from hermes.utils.file_extension import remove_quotes
 from .base_control_panel import ControlPanel, ControlPanelCommand
 from .peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import Message, TextGeneratorMessage, TextMessage
-from hermes.event import CreateFileEvent, Event, MessageEvent
+from hermes.event import FileEditEvent, Event, MessageEvent
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class LLMControlPanel(ControlPanel):
         self._add_help_content("You are allowed to use the following commands. Use them **only** if the user directly asks for them. Understand that they can cause the user frustration and lose trust if used incorrectly. The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. You don't have access to tools other than these. If the content doesn't match these instructions, they will be ignored. The command syntax should be used literally, symbol-by-symbol correctly.")
         
         self._register_command(ControlPanelCommand(
-            command_label="///create_file", 
+            command_label="///create_file",
             description=textwrap.dedent(
             f"""
             **IMPORTANT:** When the user asks you to "create a file", "make a file", "generate a file", or uses similar wording that implies the creation of a new file, you **MUST** use the `///create_file` command.
@@ -51,7 +51,26 @@ class LLMControlPanel(ControlPanel):
             **CURRENT WORKING DIRECTORY:** {os.getcwd()}
             All relative paths will be resolved from this location.
             """),
-            parser=lambda line, peekable_generator: CreateFileCommandHandler(line).handle(peekable_generator)
+            parser=lambda line, peekable_generator: FileEditCommandHandler(line, "create").handle(peekable_generator)
+        ))
+        
+        self._register_command(ControlPanelCommand(
+            command_label="///append_file",
+            description=textwrap.dedent(
+            f"""
+            Append content to an existing file or create if it doesn't exist. Syntax: `///append_file <relative_or_absolute_file_path>`, from next line write the content to append, finish with `///end_file` in a new line.
+            Everything between the opening and closing tags will be appended to the file, nothing else is allowed.
+            The content will be appended as-is, without any additional formatting.
+            Example (don't put ``` even for code):
+            ///append_file experiment.py
+            # Adding more content
+            print("This will be appended")
+            ///end_file
+            
+            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
+            All relative paths will be resolved from this location.
+            """),
+            parser=lambda line, peekable_generator: FileEditCommandHandler(line, "append").handle(peekable_generator)
         ))
 
         if extra_commands:
@@ -83,9 +102,8 @@ class LLMControlPanel(ControlPanel):
             else:
                 yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directory_entered=True)) 
 
-
-class CreateFileCommandHandler:
-    def __init__(self, line: str):
+class FileEditCommandHandler:
+    def __init__(self, line: str, mode: str):
         """
         Possible inputs of line. It can contain only one value. Allow spaces in the names.
         filename.extension
@@ -95,7 +113,8 @@ class CreateFileCommandHandler:
         ~/absolute/path/filename.extension
         """
         self.line = line
-        # The line contains the command as well, so it starts with `///create_file `
+        self.mode = mode
+        # The line contains the command, so it starts with `///create_file ` or `///append_file `
         raw_path = line.split(" ", 1)[1].strip()
         unquoted_path = remove_quotes(raw_path)
         self.file_path = self._escape_filepath(unquoted_path)
@@ -115,9 +134,9 @@ class CreateFileCommandHandler:
             yield self._finish()
 
     def _finish(self):
-        create_file_event = CreateFileEvent(file_path=self.file_path, content="".join(self._content))
+        file_edit_event = FileEditEvent(file_path=self.file_path, content="".join(self._content), mode=self.mode)
         self._content = []
-        return create_file_event
+        return file_edit_event
 
     def _escape_filepath(self, filepath_expression: str) -> str:
         """

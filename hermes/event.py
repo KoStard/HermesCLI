@@ -71,9 +71,11 @@ class ExitEvent(EngineCommandEvent):
     pass
 
 @dataclass
-class CreateFileEvent(EngineCommandEvent):
+class FileEditEvent(EngineCommandEvent):
+    """Event for file operations like create or append"""
     file_path: str
     content: str
+    mode: str  # 'create' or 'append'
 
 """
 Notification events are events that contain a notification and are sent to the next participant.

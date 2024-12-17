@@ -2,7 +2,7 @@ from asyncio import Event
 import os
 import logging
 from typing import Generator
-from hermes.event import ClearHistoryEvent, CreateFileEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
+from hermes.event import ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
 from hermes.interface.control_panel.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.participants import Participant
@@ -95,12 +95,15 @@ class Engine:
                         participant.initialize_from_history(self.history)
                 elif isinstance(event, ExitEvent):
                     self._handle_exit_event()
-                elif isinstance(event, CreateFileEvent):
-                    if not self._confirm_file_creation(event.file_path):
-                        continue
-                    
-                    self._ensure_directory_exists(event.file_path)
-                    self._create_file(event.file_path, event.content)
+                elif isinstance(event, FileEditEvent):
+                    if event.mode == 'create':
+                        if not self._confirm_file_creation(event.file_path):
+                            continue
+                        self._ensure_directory_exists(event.file_path)
+                        self._create_file(event.file_path, event.content)
+                    elif event.mode == 'append':
+                        self._ensure_directory_exists(event.file_path)
+                        self._append_file(event.file_path, event.content)
                 else:
                     print(f"Unknown engine command, skipping: {event}")
                 continue
@@ -180,4 +183,18 @@ class Engine:
         
         self.notifications_printer.print_notification(f"Creating file {file_path}")
         with open(file_path, "w") as file:
+            file.write(content)
+
+    def _append_file(self, file_path: str, content: str) -> None:
+        """
+        Append content to a file. Create if doesn't exist.
+        
+        Args:
+            file_path: Path where to append content
+            content: Content to append to the file
+        """
+        mode = "a" if os.path.exists(file_path) else "w"
+        action = "Appending to" if mode == "a" else "Creating"
+        self.notifications_printer.print_notification(f"{action} file {file_path}")
+        with open(file_path, mode) as file:
             file.write(content)
