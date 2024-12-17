@@ -130,15 +130,32 @@ class RequestBuilder(ABC):
             return self._url_contents[message_id]
         try:
             from markitdown import MarkItDown
+            import requests
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1'
+            }
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
             markitdown = MarkItDown()
-            conversion_result = markitdown.convert(url)
+            conversion_result = markitdown.convert(response)
             markdown_content = conversion_result.text_content
             self._url_contents[message_id] = markdown_content
             return markdown_content
         except Exception as e:
             self.notifications_printer.print_error(f"Error fetching URL {url}: {e}")
-            self._url_contents[message_id] = None
-            return None
+            placeholder_content = f"Error getting the contents of the URL {url}"
+            self._url_contents[message_id] = placeholder_content
+            return placeholder_content
     
     def _get_url_image_content(self, url: str, message_id: int):
         if message_id in self._url_contents:
