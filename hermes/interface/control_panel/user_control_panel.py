@@ -41,12 +41,6 @@ class UserControlPanel(ControlPanel):
         
         self.notifications_printer = notifications_printer
 
-        if extra_commands:
-            for command in extra_commands:
-                self._register_command(command)
-        
-        self.notifications_printer = notifications_printer
-
     def render(self):
         return "\n".join(self._render_command_in_control_panel(command) for command in self.commands)
 
