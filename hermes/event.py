@@ -77,6 +77,21 @@ class FileEditEvent(EngineCommandEvent):
     content: str
     mode: str  # 'create' or 'append'
 
+@dataclass
+class UpdateLLMToolchain(EngineCommandEvent):
+    """Event to update the LLM toolchain with a list of enabled tools."""
+    enabled_tools: list[str]
+
+    def __init__(self, tools: str):
+        self.enabled_tools = [tool.strip() for tool in tools.split(",")]
+        self._validate_tools()
+
+    def _validate_tools(self):
+        valid_tools = []  # Hardcoded list of valid tools, currently empty
+        invalid_tools = [tool for tool in self.enabled_tools if tool not in valid_tools]
+        if invalid_tools:
+            raise ValueError(f"Invalid tools provided: {', '.join(invalid_tools)}")
+
 """
 Notification events are events that contain a notification and are sent to the next participant.
 """

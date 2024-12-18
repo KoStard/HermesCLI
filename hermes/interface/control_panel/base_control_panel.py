@@ -13,6 +13,7 @@ from hermes.event import Event
 @dataclass
 class ControlPanelCommand:
     command_label: str
+    command_key: str = None
     description: str
     parser: Callable[[str], Event]
     priority: int = 0
@@ -22,8 +23,17 @@ class ControlPanelCommand:
 
 class ControlPanel(ABC):
     def __init__(self):
-        self.commands = {}
+        self._all_commands = {}
+        self._disabled_tools = set()
         self.help_contents = []
+
+    @property
+    def enabled_tools(self) -> set[str]:
+        return {cmd_key for cmd_key in self._all_commands.keys() if cmd_key not in self._disabled_tools}
+
+    @property
+    def disabled_tools(self) -> set[str]:
+        return self._disabled_tools
 
     @abstractmethod
     def render(self) -> str:
@@ -38,7 +48,7 @@ class ControlPanel(ABC):
         Register a command that can be executed by a participant
         The parser will receive a line that starts with the command
         """
-        self.commands[command.command_label] = command
+        self._all_commands[command.command_key] = command
 
     def _add_help_content(self, content: str):
         self.help_contents.append(content)
@@ -46,8 +56,10 @@ class ControlPanel(ABC):
     def _render_help_content(self) -> str:
         return "\n".join(self.help_contents)
 
-    def _render_command_in_control_panel(self, command_label: str) -> str:
-        return f"{command_label} - {self.commands[command_label].description}"
+    def _render_command_in_control_panel(self, command_key: str) -> str:
+        if command_key in self._disabled_tools:
+            return f"{self._all_commands[command_key].command_label} - Disabled"
+        return f"{self._all_commands[command_key].command_label} - {self._all_commands[command_key].description}"
     
     def _lines_from_message(self, message: Message) -> Generator[str, None, None]:
         if isinstance(message, TextMessage):
@@ -65,9 +77,10 @@ class ControlPanel(ABC):
     
     def _line_command_match(self, line: str) -> Optional[str]:
         line = line.strip()
-        for command_label in self.commands:
-            if line.startswith(command_label + " ") or line == command_label:
-                return command_label
+        for command_key, command in self._all_commands.items():
+            if command_key not in self._disabled_tools:
+                if line.startswith(command.command_label + " ") or line == command.command_label:
+                    return command_key
         return None
 
     def _extract_command_content_in_line(self, command_label: str, line: str) -> str:

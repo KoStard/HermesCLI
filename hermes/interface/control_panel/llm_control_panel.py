@@ -19,6 +19,7 @@ class LLMControlPanel(ControlPanel):
         
         self._register_command(ControlPanelCommand(
             command_label="///create_file",
+            command_key="create_file",
             description=textwrap.dedent(
             f"""
             **IMPORTANT:** When the user asks you to "create a file", "make a file", "generate a file", or uses similar wording that implies the creation of a new file, you **MUST** use the `///create_file` command.
@@ -56,6 +57,7 @@ class LLMControlPanel(ControlPanel):
         
         self._register_command(ControlPanelCommand(
             command_label="///append_file",
+            command_key="append_file",
             description=textwrap.dedent(
             f"""
             Append content to an existing file or create if it doesn't exist. Syntax: `///append_file <relative_or_absolute_file_path>`, from next line write the content to append, finish with `///end_file` in a new line.
