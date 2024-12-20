@@ -111,7 +111,7 @@ class UserInterface(Interface):
             history=self.prompt_toolkit_history,
             auto_suggest=AutoSuggestFromHistory(),
             multiline=True,
-            prompt_continuation=lambda width, line_number, is_soft_wrap: '.' * width,
+            prompt_continuation=lambda width, line_number, is_soft_wrap: ' ' * width,
             completer=self.command_completer,
             complete_while_typing=True,
             key_bindings=kb
