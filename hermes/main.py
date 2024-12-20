@@ -57,6 +57,8 @@ def main():
         model_info_string = cli_args.model
         if not model_info_string:
             model_info_string = get_default_model_info_string(config)
+        if not model_info_string:
+            raise ValueError("No model specified. Please specify a model using the --model argument or add a default model in the config file ~/.config/hermes/config.ini.")
         provider, model_tag = model_info_string.split("/", 1)
         provider = provider.upper()
         config_section = get_config_section(config, provider)
@@ -97,8 +99,12 @@ def main():
 
 
 def load_config():
+    config_path = os.path.expanduser("~/.config/hermes/config.ini")
+    if not os.path.exists(config_path):
+        raise ValueError("Configuration file at ~/.config/hermes/config.ini not found. Please go to https://github.com/KoStard/HermesCLI/ and follow the setup steps.")
+
     config = configparser.ConfigParser()
-    config.read(os.path.expanduser("~/.config/hermes/config.ini"))
+    config.read(config_path)
     return config
 
 
@@ -109,11 +115,14 @@ def get_stt_input_handler(cli_args: Namespace, config: configparser.ConfigParser
         return None
 
 def get_default_model_info_string(config: configparser.ConfigParser):
-    return config["BASE"]["model"]
+    if 'BASE' not in config:
+        return None
+    base_section = config['BASE']
+    return base_section.get('model')
 
 def get_config_section(config: configparser.ConfigParser, provider: str):
     if provider not in config.sections():
-        raise ValueError(f"Config section {provider} is not found. Please double check it and specify it in the config file ~/.config/hermes/config.ini.")
+        raise ValueError(f"Config section {provider} is not found. Please double check it and specify it in the config file ~/.config/hermes/config.ini. You might need to specify the api_key there.")
     return config[provider]
 
 
