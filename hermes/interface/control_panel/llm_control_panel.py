@@ -135,7 +135,7 @@ class LLMControlPanel(ControlPanel):
             command_label="///append_file", 
             description=textwrap.dedent(
             f"""
-            Append content to an existing file or create if it doesn't exist. Syntax: `///append_file <relative_or_absolute_file_path>`, from next line write the content to append, finish with `///end_file` in a new line.
+            Append content to the end of an existing file or create if it doesn't exist. Syntax: `///append_file <relative_or_absolute_file_path>`, from next line write the content to append, finish with `///end_file` in a new line.
             Everything between the opening and closing tags will be appended to the file, nothing else is allowed.
             The content will be appended as-is, without any additional formatting.
             Example (don't put ``` even for code):
@@ -148,6 +148,23 @@ class LLMControlPanel(ControlPanel):
             All relative paths will be resolved from this location.
             """),
             parser=lambda line, peekable_generator: FileEditCommandHandler(line, "append").handle(peekable_generator)
+        ))
+
+        self._register_command(ControlPanelCommand(
+            command_label="///prepend_file",
+            description=textwrap.dedent(
+            f"""
+            Same as ///append_file, but adding at the top of the file. Syntax: `///prepend_file <relative_or_absolute_file_path>`, from next line write the content to prepend, finish with `///end_file` in a new line.
+            Example (don't put ``` even for code):
+            ///prepend_file experiment.py
+            # Adding content at the top
+            print("This will be prepended")
+            ///end_file
+            
+            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
+            All relative paths will be resolved from this location.
+            """),
+            parser=lambda line, peekable_generator: FileEditCommandHandler(line, "prepend").handle(peekable_generator)
         ))
 
         if extra_commands:
