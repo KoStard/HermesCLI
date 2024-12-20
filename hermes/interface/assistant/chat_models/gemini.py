@@ -31,7 +31,8 @@ class GeminiModel(ChatModel):
         has_finished_thinking = False if self._supports_thinking else True
         for chunk in response:
             parts = chunk.candidates[0].content.parts
-
+            if not parts:
+                continue
             yield from self._convert_to_llm_response(self._handle_part(parts[0]), is_thinking=not has_finished_thinking)
             if len(parts) == 2:
                 has_finished_thinking = True
