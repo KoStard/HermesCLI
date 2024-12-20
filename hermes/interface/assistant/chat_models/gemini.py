@@ -34,8 +34,12 @@ class GeminiModel(ChatModel):
             if not parts:
                 continue
             yield from self._convert_to_llm_response(self._handle_part(parts[0]), is_thinking=not has_finished_thinking)
-            if len(parts) == 2:
+
+            if len(response._result.candidates[0].content.parts) == 2 or len(parts) == 2:
+                # Sometimes the len(parts) is 1, but the next chunk is already of the response.
                 has_finished_thinking = True
+            
+            if len(parts) == 2:
                 yield from self._convert_to_llm_response(self._handle_part(parts[1]), is_thinking=not has_finished_thinking)
     
     def _handle_part(self, part) -> Generator[str, None, None]:
@@ -89,6 +93,8 @@ class GeminiModel(ChatModel):
             'gemini-1.5-flash-002',
             'gemini-exp-1114',
             'gemini-1.5-pro-002/grounded',
+            'gemini-2.0-flash-exp',
+            'gemini-2.0-flash-thinking-exp-1219',
         ]
         return models
 
