@@ -5,7 +5,7 @@ from typing import Generator
 
 from hermes.utils.file_extension import remove_quotes
 from .base_control_panel import ControlPanel, ControlPanelCommand
-from .peekable_generator import PeekableGenerator, iterate_while
+from ..helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import Message, TextGeneratorMessage, TextMessage
 from hermes.event import FileEditEvent, Event, MessageEvent
 
@@ -100,7 +100,7 @@ class LLMControlPanel(ControlPanel):
 
                 yield from self.commands[command_label].parser(line, peekable_generator)
             else:
-                yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directory_entered=True)) 
+                yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directly_entered=True)) 
 
 class FileEditCommandHandler:
     def __init__(self, line: str, mode: str):

@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, Namespace
 from typing import Generator
 from .base_control_panel import ControlPanel, ControlPanelCommand
-from .peekable_generator import PeekableGenerator, iterate_while
+from ..helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
 from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -11,7 +11,7 @@ import os
 from argparse import ArgumentParser, Namespace
 from typing import Generator
 from .base_control_panel import ControlPanel, ControlPanelCommand
-from .peekable_generator import PeekableGenerator, iterate_while
+from ..helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
 from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -31,7 +31,7 @@ class UserControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(command_label="/url", description="Add url to the conversation", parser=lambda line: MessageEvent(UrlMessage(author="user", url=line))))
         self._register_command(ControlPanelCommand(command_label="/save_history", description="Save history to a file", parser=lambda line: SaveHistoryEvent(line), visible_from_cli=False))
         self._register_command(ControlPanelCommand(command_label="/load_history", description="Load history from a file", parser=lambda line: LoadHistoryEvent(line), priority=98))
-        self._register_command(ControlPanelCommand(command_label="/text", description="Add text to the conversation", parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directory_entered=True))))
+        self._register_command(ControlPanelCommand(command_label="/text", description="Add text to the conversation", parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directly_entered=True))))
         self._register_command(ControlPanelCommand(command_label="/exit", description="Exit the application", parser=lambda _: ExitEvent(), priority=-100))  # Run exit after running any other command
         self._register_command(ControlPanelCommand(command_label="/tree", description="Generate a directory tree", parser=self._parse_tree_command))
         
@@ -53,7 +53,7 @@ class UserControlPanel(ControlPanel):
             matching_command = self._line_command_match(line)
             if matching_command:
                 if current_message_text:
-                    prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_directory_entered=True))))
+                    prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_directly_entered=True))))
                     current_message_text = ""
                 
                 command_priority = self.commands[matching_command].priority
@@ -77,7 +77,7 @@ class UserControlPanel(ControlPanel):
                 current_message_text += line
 
         if current_message_text:
-            prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_directory_entered=True))))
+            prioritised_backlog.append((0, MessageEvent(TextMessage(author="user", text=current_message_text, is_directly_entered=True))))
 
         # Highest priority first
         for _, event in sorted(prioritised_backlog, key=lambda x: -x[0]):

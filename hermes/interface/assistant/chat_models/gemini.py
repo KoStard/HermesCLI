@@ -1,5 +1,6 @@
 from typing import Generator
 
+from hermes.interface.assistant.llm_response_types import BaseLLMResponse, TextLLMResponse, ThinkingLLMResponse
 from hermes.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.gemini import GeminiRequestBuilder
@@ -31,14 +32,10 @@ class GeminiModel(ChatModel):
         for chunk in response:
             parts = chunk.candidates[0].content.parts
 
-            yield from self._handle_part(parts[0])
+            yield from self._convert_to_llm_response(self._handle_part(parts[0]), is_thinking=not has_finished_thinking)
             if len(parts) == 2:
-                if not has_finished_thinking:
-                    # Here I could do something, as I see the middle between the thinking and the response
-                    # This will require some refactoring though. I could consider getting rid of the text generator type
-                    has_finished_thinking = True
                 has_finished_thinking = True
-                yield from self._handle_part(parts[1])
+                yield from self._convert_to_llm_response(self._handle_part(parts[1]), is_thinking=not has_finished_thinking)
     
     def _handle_part(self, part) -> Generator[str, None, None]:
         if "text" in part:
@@ -68,6 +65,14 @@ class GeminiModel(ChatModel):
             yield part.code_execution_result.output
             yield "```"
             return
+
+    def _convert_to_llm_response(self, responses: Generator[str, None, None], is_thinking: bool) -> Generator[BaseLLMResponse, None, None]:
+        for response in responses:
+            # response += "\n"
+            if is_thinking:
+                yield ThinkingLLMResponse(response)
+            else:
+                yield TextLLMResponse(response)
 
     @staticmethod
     def get_provider() -> str:

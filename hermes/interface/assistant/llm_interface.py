@@ -2,11 +2,12 @@ import logging
 from typing import Generator, List
 
 from hermes.interface.assistant.chat_models.base import ChatModel
+from hermes.interface.assistant.llm_response_types import BaseLLMResponse, TextLLMResponse
 
 from ..base import Interface
 from hermes.interface.control_panel import LLMControlPanel
 from hermes.event import Event, MessageEvent, NotificationEvent, RawContentForHistoryEvent
-from hermes.message import Message, TextGeneratorMessage, TextMessage
+from hermes.message import Message, TextGeneratorMessage, TextMessage, ThinkingAndResponseGeneratorMessage
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +49,21 @@ class LLMInterface(Interface):
         
     def get_input(self) -> Generator[Event, None, None]:
         logger.debug("Sending request to LLM")
-        message = TextGeneratorMessage(author="assistant", text_generator=self.model.send_request(self.request))
+        llm_responses_generator = self._handle_string_output(self.model.send_request(self.request))
+        message = ThinkingAndResponseGeneratorMessage(author="assistant", thinking_and_response_generator=llm_responses_generator)
         yield RawContentForHistoryEvent(message)
         for event in self.control_panel.break_down_and_execute_message(message):
             yield event
+    
+    def _handle_string_output(self, llm_response_generator: Generator[str, None, None]) -> Generator[BaseLLMResponse, None, None]:
+        """
+        This is implemented for backwards compatibility, as not all models support thinking tokens yet and they currently just return string.
+        """
+        for response in llm_response_generator:
+            if isinstance(response, str):
+                yield TextLLMResponse(response)
+            else:
+                yield response
     
     def clear(self):
         pass

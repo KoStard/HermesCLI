@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import List
 
 from hermes.event import MessageEvent, RawContentForHistoryEvent
-from hermes.message import Message, DESERIALIZATION_KEYMAP, TextGeneratorMessage, TextMessage
+from hermes.message import Message, DESERIALIZATION_KEYMAP, TextGeneratorMessage, TextMessage, ThinkingAndResponseGeneratorMessage
 
 
 @dataclass
@@ -67,11 +67,9 @@ class History:
                 if item.message.author != author:
                     results.append(item.message)
                 elif item.message.author == author:
-                    if isinstance(item.message, TextMessage) or isinstance(item.message, TextGeneratorMessage):
-                        if not item.message.is_directory_entered:
-                            results.append(item.message)
-                    else:
-                        results.append(item.message)
+                    if hasattr(item.message, "is_directly_entered") and item.message.is_directly_entered:
+                        continue
+                    results.append(item.message)
             elif item.raw_content and item.raw_content.content.author == author:
                 results.append(item.raw_content.content)
         return results

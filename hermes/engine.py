@@ -3,7 +3,7 @@ import os
 import logging
 from typing import Generator
 from hermes.event import ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
-from hermes.interface.control_panel.peekable_generator import PeekableGenerator
+from hermes.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.participants import Participant
 from hermes.history import History

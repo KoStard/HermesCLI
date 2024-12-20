@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, UrlMessage, VideoMessage
+from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, ThinkingAndResponseGeneratorMessage, UrlMessage, VideoMessage
 from hermes.utils.binary_file import is_binary
 
 import logging
@@ -38,6 +38,12 @@ class RequestBuilder(ABC):
                             text_role=message.text_role
                         )
             elif isinstance(message, TextGeneratorMessage):
+                content = message.get_content_for_assistant()
+                if content:
+                    content = content.strip()
+                    if content:
+                        self.handle_text_message(content, message.author, id(message), message.name, message.text_role)
+            elif isinstance(message, ThinkingAndResponseGeneratorMessage):
                 content = message.get_content_for_assistant()
                 if content:
                     content = content.strip()

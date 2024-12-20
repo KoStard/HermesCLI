@@ -6,7 +6,9 @@ Control panel is a part of the interface that handles user interaction
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Callable, Generator, Optional
-from .peekable_generator import PeekableGenerator
+
+from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
+from ..helpers.peekable_generator import PeekableGenerator
 from hermes.message import Message, TextMessage, TextGeneratorMessage
 from hermes.event import Event
 
@@ -50,18 +52,7 @@ class ControlPanel(ABC):
         return f"{command_label} - {self.commands[command_label].description}"
     
     def _lines_from_message(self, message: Message) -> Generator[str, None, None]:
-        if isinstance(message, TextMessage):
-            for line in message.text.split("\n"):
-                yield line + "\n"
-        elif isinstance(message, TextGeneratorMessage):
-            buffer = ""
-            for chunk in message.get_content_for_user():
-                buffer += chunk
-                while "\n" in buffer:
-                    yield buffer[:buffer.index("\n")] + "\n"
-                    buffer = buffer[buffer.index("\n") + 1:]
-            if buffer:
-                yield buffer + "\n"
+        return chunks_to_lines(message.get_content_for_user())
     
     def _line_command_match(self, line: str) -> Optional[str]:
         line = line.strip()

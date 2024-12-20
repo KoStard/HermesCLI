@@ -59,6 +59,8 @@ def main():
             model_info_string = get_default_model_info_string(config)
         if not model_info_string:
             raise ValueError("No model specified. Please specify a model using the --model argument or add a default model in the config file ~/.config/hermes/config.ini.")
+        if "/" not in model_info_string:
+            raise ValueError("Model info string should be in the format provider/model_tag")
         provider, model_tag = model_info_string.split("/", 1)
         provider = provider.upper()
         config_section = get_config_section(config, provider)
