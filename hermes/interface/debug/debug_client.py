@@ -34,7 +34,13 @@ def main():
                 # Display the message history
                 print("\nMessage History:")
                 print("-" * 50)
-                print(data)
+                data = json.loads(data)
+                try:
+                    for message in data['messages']:
+                        print(message['role'])
+                        print(message['content'])
+                except Exception:
+                    print(data)
                 print("-" * 50)
             
                 # Get user input
