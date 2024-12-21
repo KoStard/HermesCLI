@@ -175,6 +175,7 @@ class LLMControlPanel(ControlPanel):
             if command_label:
                 next(peekable_generator) # Consume the line
 
+                line = line.lstrip()
                 yield from self.commands[command_label].parser(line, peekable_generator)
             else:
                 yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directly_entered=True)) 
@@ -229,7 +230,7 @@ class MarkdownSectionCommandHandler:
             _, file_path, *rest = list(splitter)  # Split into [command, file_path, section_path]
             section_path_raw = " ".join(rest)
         except Exception as e:
-            logger.warning("shlex.split() failed, falling back to basic split, spaces won't work", e)
+            logger.warning("shlex.split() failed, falling back to basic s/append_fileplit, spaces won't work", e)
             _, file_path, section_path_raw = line.split(" ", 1)  # Split into [command, file_path, section_path]
             
         self.file_path = _escape_filepath(remove_quotes(file_path.strip()))
