@@ -550,15 +550,14 @@ class ThinkingAndResponseGeneratorMessage(Message):
 
     @staticmethod
     def from_json(json_data: dict) -> "ThinkingAndResponseGeneratorMessage":
-        def gen_thinking():
+        def gen_thinking_and_response():
             yield from []
         def gen_response():
             yield from []
         
         msg = ThinkingAndResponseGeneratorMessage(
             author=json_data["author"],
-            thinking_generator=gen_thinking(),
-            response_generator=gen_response(),
+            thinking_and_response_generator=gen_thinking_and_response(),
             timestamp=datetime.fromisoformat(json_data["timestamp"]),
             is_directly_entered=json_data.get("is_directly_entered", False),
             name=json_data.get("name", ""),
