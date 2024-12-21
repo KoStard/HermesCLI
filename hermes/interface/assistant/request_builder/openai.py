@@ -11,7 +11,6 @@ class OpenAIRequestBuilder(RequestBuilder):
     def initialize_request(self):
         self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
-        self.max_tokens = 4096  # Default max tokens
         self.temperature = 0.7  # Default temperature
 
     def _add_content(self, content: dict, author: str):
@@ -75,6 +74,5 @@ class OpenAIRequestBuilder(RequestBuilder):
             "model": self.model_tag,
             "messages": final_messages,
             "stream": True,
-            "max_tokens": self.max_tokens,
             "temperature": self.temperature,
         }
