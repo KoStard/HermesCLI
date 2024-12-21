@@ -15,22 +15,35 @@ def main():
 
     try:
         while True:
-            # Receive message history from server
-            data = client_socket.recv(4096).decode()
-            if not data:
-                break
-
-            # Display the message history
-            print("\nMessage History:")
-            print("-" * 50)
-            print(data)
-            print("-" * 50)
-
-            # Get user input
-            user_input = input("\nYour response: ")
+            # Receive message history from server with buffering
+            buffer = []
+            client_socket.settimeout(0.5)  # Set timeout for receiving data
             
-            # Send response back to server
-            client_socket.send(user_input.encode())
+            try:
+                while True:
+                    chunk = client_socket.recv(4096).decode()
+                    if not chunk:
+                        break
+                    buffer.append(chunk)
+            except socket.timeout:
+                if not buffer:
+                    continue
+
+            if buffer:
+                data = ''.join(buffer)
+                # Display the message history
+                print("\nMessage History:")
+                print("-" * 50)
+                print(data)
+                print("-" * 50)
+            
+                # Get user input
+                user_input = input("\nYour response: ")
+                
+                # Send response back to server
+                client_socket.send(user_input.encode())
+
+            # client_socket.settimeout(None)  # Reset timeout for next iteration
 
     except KeyboardInterrupt:
         print("\nClosing debug client...")
