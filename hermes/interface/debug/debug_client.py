@@ -1,6 +1,9 @@
 import socket
 import argparse
 import json
+from prompt_toolkit import PromptSession
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.formatted_text import HTML
 
 def main():
     parser = argparse.ArgumentParser(description='Debug Interface Client')
@@ -43,11 +46,21 @@ def main():
                     print(data)
                 print("-" * 50)
             
+                session = PromptSession(
+                    history=None,
+                    auto_suggest=None,
+                    multiline=True,
+                    prompt_continuation=lambda width, line_number, is_soft_wrap: ' ' * width,
+                )
+
                 # Get user input
-                user_input = input("\nYour response: ")
-                
-                # Send response back to server
-                client_socket.send(user_input.encode())
+                try:
+                    user_input = session.prompt(HTML("\n<ansiyellow>Your response: </ansiyellow>"))
+                    if user_input.strip():
+                        # Send response back to server
+                        client_socket.send(user_input.encode())
+                except KeyboardInterrupt:
+                    continue
 
             # client_socket.settimeout(None)  # Reset timeout for next iteration
 
