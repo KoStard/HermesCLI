@@ -72,10 +72,12 @@ class ExitEvent(EngineCommandEvent):
 
 @dataclass
 class FileEditEvent(EngineCommandEvent):
-    """Event for file operations like create or append"""
+    """Event for file operations like create, append or update markdown sections"""
     file_path: str
     content: str
-    mode: str  # 'create' or 'append'
+    mode: str  # 'create', 'append', 'update_markdown_section', 'append_markdown_section'
+    submode: str = None  # Optional, only for specific use cases
+    section_path: list[str] = None  # For markdown section updates, e.g. ['Introduction', 'Overview', '__preface']
 
 """
 Notification events are events that contain a notification and are sent to the next participant.

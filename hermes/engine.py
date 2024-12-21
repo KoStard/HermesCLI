@@ -104,6 +104,9 @@ class Engine:
                     elif event.mode == 'append':
                         self._ensure_directory_exists(event.file_path)
                         self._append_file(event.file_path, event.content)
+                    elif event.mode == 'update_markdown_section':
+                        self._ensure_directory_exists(event.file_path)
+                        self._update_markdown_section(event.file_path, event.section_path, event.content, event.submode)
                 else:
                     print(f"Unknown engine command, skipping: {event}")
                 continue
@@ -184,6 +187,28 @@ class Engine:
         self.notifications_printer.print_notification(f"Creating file {file_path}")
         with open(file_path, "w") as file:
             file.write(content)
+
+    def _update_markdown_section(self, file_path: str, section_path: list[str], new_content: str, submode: str) -> None:
+        """
+        Update a specific section in a markdown file.
+        
+        Args:
+            file_path: Path to the markdown file
+            section_path: List of headers leading to target section
+            new_content: New content for the section
+        """
+        from hermes.interface.markdown.document_updater import MarkdownDocumentUpdater
+        
+        updater = MarkdownDocumentUpdater(file_path)
+               
+        try:
+            updater.update_section(section_path, new_content, submode)
+            action = 'Updated' if submode == 'update_markdown_section' else 'Appended to'
+            self.notifications_printer.print_notification(
+                f"{action} section {' > '.join(section_path)} in {file_path}")
+        except ValueError as e:
+            self.notifications_printer.print_notification(str(e))
+            raise
 
     def _append_file(self, file_path: str, content: str) -> None:
         """

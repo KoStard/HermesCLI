@@ -16,6 +16,14 @@ class LLMControlPanel(ControlPanel):
         super().__init__()
 
         self._add_help_content("You are allowed to use the following commands. Use them **only** if the user directly asks for them. Understand that they can cause the user frustration and lose trust if used incorrectly. The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. You don't have access to tools other than these. If the content doesn't match these instructions, they will be ignored. The command syntax should be used literally, symbol-by-symbol correctly.")
+
+        self._add_help_content(textwrap.dedent("""
+        If you are specifying a filepath that has spaces, you should enclose the path in double quotes. For example:
+        ///create_file "path with spaces/file.txt"
+        
+        While if you are specifying a filepath that doesn't have spaces, you can skip the quotes. For example:
+        ///create_file path_without_spaces/file.txt
+        """))
         
         self._register_command(ControlPanelCommand(
             command_label="///create_file",
@@ -53,9 +61,78 @@ class LLMControlPanel(ControlPanel):
             """),
             parser=lambda line, peekable_generator: FileEditCommandHandler(line, "create").handle(peekable_generator)
         ))
+
         
+        # Register markdown section commands
         self._register_command(ControlPanelCommand(
-            command_label="///append_file",
+            command_label="///markdown_update_section",
+            description=textwrap.dedent(
+            f"""
+            Update a specific section in a markdown file. Syntax: `///markdown_update_section <file_path> <section_path>`, 
+            where section_path is a '>' separated list of headers leading to the target section.
+
+            More on the definition of the section path:
+            1. You point at the section with the section path. The section path doesn't say what happens with the content.
+            2. The section path includes everything in its scope. Except for __preface, it also includes all the children (sections with higher level)
+            3. You specify the section path, by writing the section titles (without the #) separated by '>'. Example: T1 > T2 > T3
+            4. It's possible you'll have content in the given parent section before the child section starts. To point at that content, 
+                add '__preface' at the end of the section path. This will target the content inside that section, 
+                before any other section starts (even child sections).
+                Example:
+                T1 > T2 > __preface
+                to target:
+                ## T1
+                ### T2
+                Some content <<< This content will be targeted
+                #### T3
+            
+            From the next line you start the content that you want to update the section with, finish with `///end_section` in a new line.
+
+            Examples:
+            ///markdown_update_section document.md Introduction > Overview
+            This is some for the Overview section under Introduction.
+            ///end_section
+
+            ///markdown_update_section document.md Chapter 1 > Section 1.1 > __preface
+            This is some content inside Section 1.1. before any child sections (e.g. Section 1.1.1).
+            ///end_section
+
+            The section path must exactly match the headers in the document.
+            Sections are identified by their markdown headers (##, ###, etc).
+            """),
+            parser=lambda line, peekable_generator: 
+                MarkdownSectionCommandHandler(line, "update_markdown_section").handle(peekable_generator)
+        ))
+
+        self._register_command(ControlPanelCommand(
+            command_label="///markdown_append_section",
+            description=textwrap.dedent(
+            f"""
+            Append content to a specific section in a markdown file. Syntax: `///markdown_append_section <file_path> <section_path>`, 
+            where section_path is a '>' separated list of headers leading to the target section.
+
+            It works the same as `///markdown_update_section`, but the content will be appended to the section instead of replacing it.
+            If the selected section contains child sections, the content will be appended in the end of the whole section, including the child sections.
+            Example:
+                Document content:
+                ## Chapter 1
+                ### Section 1.1
+                ### Section 1.2
+                ///markdown_append_section document.md Chapter 1
+                This content will be appended to the end of Chapter 1.
+                ///end_section
+
+                This will produce this output:
+                ## Chapter 1
+                ### Section 1.1
+                ### Section 1.2
+                This content will be appended to the end of Chapter 1.
+            """),
+            parser=lambda line, peekable_generator: 
+                MarkdownSectionCommandHandler(line, "append_markdown_section").handle(peekable_generator)
+        ))
+        self._register_command(ControlPanelCommand(
+            command_label="///append_file", 
             description=textwrap.dedent(
             f"""
             Append content to an existing file or create if it doesn't exist. Syntax: `///append_file <relative_or_absolute_file_path>`, from next line write the content to append, finish with `///end_file` in a new line.
@@ -117,7 +194,7 @@ class FileEditCommandHandler:
         # The line contains the command, so it starts with `///create_file ` or `///append_file `
         raw_path = line.split(" ", 1)[1].strip()
         unquoted_path = remove_quotes(raw_path)
-        self.file_path = self._escape_filepath(unquoted_path)
+        self.file_path = _escape_filepath(unquoted_path)
 
         self._content = []
 
@@ -138,29 +215,71 @@ class FileEditCommandHandler:
         self._content = []
         return file_edit_event
 
-    def _escape_filepath(self, filepath_expression: str) -> str:
+class MarkdownSectionCommandHandler:
+    def __init__(self, line: str, mode: str):
         """
-        Convert various filepath formats to a normalized absolute path.
-        
-        Args:
-            filepath_expression: Input path that can be:
-                - filename.extension
-                - ./relative/path/filename.extension
-                - ../../relative/path/filename.extension
-                - /absolute/path/filename.extension
-                - ~/absolute/path/filename.extension
-                
-        Returns:
-            Normalized absolute path
+        Parse the markdown update section command.
+        Expected format: ///markdown_update_section <file_path> <section1> > <section2> > ...
         """
-        # Expand user directory (~)
-        expanded_path = os.path.expanduser(filepath_expression)
-        
-        # Convert to absolute path if relative
-        if not os.path.isabs(expanded_path):
-            expanded_path = os.path.abspath(expanded_path)
+        try:
+            import shlex
+            splitter = shlex.shlex(line, posix=True)
+            splitter.quotes = '"'
+            splitter.whitespace_split = True
+            _, file_path, *rest = list(splitter)  # Split into [command, file_path, section_path]
+            section_path_raw = " ".join(rest)
+        except Exception as e:
+            logger.warning("shlex.split() failed, falling back to basic split, spaces won't work", e)
+            _, file_path, section_path_raw = line.split(" ", 1)  # Split into [command, file_path, section_path]
             
-        # Normalize the path (resolve .. and . components)
-        normalized_path = os.path.normpath(expanded_path)
+        self.file_path = _escape_filepath(remove_quotes(file_path.strip()))
+        self.section_path = [s.strip() for s in section_path_raw.split(">")]
+        self._content = []
+        self.mode = mode
+
+    def handle(self, peekable_generator: PeekableGenerator) -> Generator[Event, None, None]:
+        for line in peekable_generator:
+            if line.strip() == "///end_section":
+                yield self._finish()
+                return
+            else:
+                print(line, end="")
+                self._content.append(line)
+        if self._content:
+            yield self._finish()
+
+    def _finish(self):
+        return FileEditEvent(
+            file_path=self.file_path,
+            content="".join(self._content),
+            mode="update_markdown_section",
+            submode=self.mode,
+            section_path=self.section_path
+        )
+
+def _escape_filepath(filepath_expression: str) -> str:
+    """
+    Convert various filepath formats to a normalized absolute path.
+    
+    Args:
+        filepath_expression: Input path that can be:
+            - filename.extension
+            - ./relative/path/filename.extension
+            - ../../relative/path/filename.extension
+            - /absolute/path/filename.extension
+            - ~/absolute/path/filename.extension
+            
+    Returns:
+        Normalized absolute path
+    """
+    # Expand user directory (~)
+    expanded_path = os.path.expanduser(filepath_expression)
+    
+    # Convert to absolute path if relative
+    if not os.path.isabs(expanded_path):
+        expanded_path = os.path.abspath(expanded_path)
         
-        return normalized_path
+    # Normalize the path (resolve .. and . components)
+    normalized_path = os.path.normpath(expanded_path)
+    
+    return normalized_path
