@@ -15,4 +15,4 @@ class XAIModel(OpenAIModel):
     
     @staticmethod
     def get_model_tags() -> list[str]:
-        return ["grok-beta"]
+        return ["grok-beta", "grok-2-1212"]
