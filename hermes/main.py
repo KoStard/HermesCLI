@@ -5,7 +5,7 @@ from argparse import ArgumentParser, Namespace
 from hermes.history import History
 from hermes.interface.assistant.model_factory import ModelFactory
 from hermes.interface.user.command_completer import CommandCompleter
-from hermes.interface.control_panel import LLMControlPanel, UserControlPanel
+from hermes.interface.control_panel import LLMControlPanel, UserControlPanel, CommandsLister
 from hermes.interface.debug.debug_interface import DebugInterface
 from hermes.interface.assistant.llm_interface import LLMInterface
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -21,6 +21,24 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--model", type=str, help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.provider_and_model_tag_pairs)})")
     parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
+    
+    subparsers = parser.add_subparsers(dest="meta_command")
+    
+    # Info command
+    info_parser = subparsers.add_parser("info", help="Get command information")
+    info_subparsers = info_parser.add_subparsers(dest="info_command", required=True)
+    
+    # List assistant commands
+    info_subparsers.add_parser(
+        "list-assistant-commands",
+        help="List all assistant commands"
+    )
+    
+    # List user commands
+    info_subparsers.add_parser(
+        "list-user-commands",
+        help="List all user commands"
+    )
 
     user_control_panel.build_cli_arguments(parser)
 
@@ -37,8 +55,13 @@ def main():
     model_factory = ModelFactory(notifications_printer)
 
     user_control_panel = UserControlPanel(notifications_printer=notifications_printer, extra_commands=user_extra_commands)
+    llm_control_panel = LLMControlPanel(extra_commands=llm_extra_commands)
     cli_arguments_parser = build_cli_interface(user_control_panel, model_factory)
     cli_args = cli_arguments_parser.parse_args()
+    
+    if cli_args.meta_command:
+        handle_meta_command(cli_args, user_control_panel.get_commands(), llm_control_panel.get_commands())
+        return
     user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(cli_arguments_parser, cli_args)
     stt_input_handler_optional = get_stt_input_handler(cli_args, config)
     user_interface = UserInterface(control_panel=user_control_panel, 
@@ -53,7 +76,6 @@ def main():
     is_debug_mode = cli_args.debug
 
     try:
-        llm_control_panel = LLMControlPanel(extra_commands=llm_extra_commands)
         model_info_string = cli_args.model
         if not model_info_string:
             model_info_string = get_default_model_info_string(config)
@@ -98,6 +120,14 @@ def main():
         if debug_participant is not None:
             print("Cleaning up debug interface")
             debug_participant.interface.cleanup()
+
+
+def handle_meta_command(cli_args, user_commands, llm_commands):
+    lister = CommandsLister()
+    if cli_args.info_command == "list-assistant-commands":
+        lister.print_commands(llm_commands)
+    elif cli_args.info_command == "list-user-commands":
+        lister.print_commands(user_commands)
 
 
 def load_config():
