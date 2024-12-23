@@ -17,6 +17,7 @@ class ControlPanelCommand:
     command_id: str  # The unique ID of the command which will be used in configuration
     command_label: str
     description: str
+    short_description: str
     parser: Callable[[str], Event]
     priority: int = 0
     # For user commands only

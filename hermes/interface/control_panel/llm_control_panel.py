@@ -28,6 +28,7 @@ class LLMControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(
             command_id="create_file",
             command_label="///create_file",
+            short_description="Create a new file",
             description=textwrap.dedent(
             f"""
             **IMPORTANT:** When the user asks you to "create a file", "make a file", "generate a file", or uses similar wording that implies the creation of a new file, you **MUST** use the `///create_file` command.
@@ -70,6 +71,7 @@ class LLMControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(
             command_id="markdown_update_section",
             command_label="///markdown_update_section",
+            short_description="Replace markdown section content",
             description=textwrap.dedent(
             f"""
             Update a specific section in a markdown file, doesn't work on non-markdown files. Syntax: `///markdown_update_section <file_path> <section_path>`, 
@@ -111,6 +113,7 @@ class LLMControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(
             command_id="markdown_append_section",
             command_label="///markdown_append_section",
+            short_description="Add content to markdown section",
             description=textwrap.dedent(
             f"""
             Append content to a specific section in a markdown file, doesn't work on non-markdown files. Syntax: `///markdown_append_section <file_path> <section_path>`, 
@@ -138,7 +141,8 @@ class LLMControlPanel(ControlPanel):
         ))
         self._register_command(ControlPanelCommand(
             command_id="append_file",
-            command_label="///append_file", 
+            command_label="///append_file",
+            short_description="Append to file end",
             description=textwrap.dedent(
             f"""
             Append content to the end of an existing file or create if it doesn't exist. Syntax: `///append_file <relative_or_absolute_file_path>`, from next line write the content to append, finish with `///end_file` in a new line.
@@ -159,6 +163,7 @@ class LLMControlPanel(ControlPanel):
         self._register_command(ControlPanelCommand(
             command_id="prepend_file",
             command_label="///prepend_file",
+            short_description="Add to file beginning",
             description=textwrap.dedent(
             f"""
             Same as ///append_file, but adding at the top of the file. Syntax: `///prepend_file <relative_or_absolute_file_path>`, from next line write the content to prepend, finish with `///end_file` in a new line.
