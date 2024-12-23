@@ -70,7 +70,7 @@ class LLMControlPanel(ControlPanel):
             command_label="///markdown_update_section",
             description=textwrap.dedent(
             f"""
-            Update a specific section in a markdown file. Syntax: `///markdown_update_section <file_path> <section_path>`, 
+            Update a specific section in a markdown file, doesn't work on non-markdown files. Syntax: `///markdown_update_section <file_path> <section_path>`, 
             where section_path is a '>' separated list of headers leading to the target section.
 
             More on the definition of the section path:
@@ -110,7 +110,7 @@ class LLMControlPanel(ControlPanel):
             command_label="///markdown_append_section",
             description=textwrap.dedent(
             f"""
-            Append content to a specific section in a markdown file. Syntax: `///markdown_append_section <file_path> <section_path>`, 
+            Append content to a specific section in a markdown file, doesn't work on non-markdown files. Syntax: `///markdown_append_section <file_path> <section_path>`, 
             where section_path is a '>' separated list of headers leading to the target section.
 
             It works the same as `///markdown_update_section`, but the content will be appended to the section instead of replacing it.
