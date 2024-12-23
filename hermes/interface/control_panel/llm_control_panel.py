@@ -56,6 +56,8 @@ class LLMControlPanel(ControlPanel):
 
             If the user hasn't mentioned where to create a file, or you just want to create a sandbox file, create it in /tmp/hermes_sandbox/ folder.
             
+            If any of the folders in the filepath don't exist, the folders will be automatically created.
+            
             **CURRENT WORKING DIRECTORY:** {os.getcwd()}
             All relative paths will be resolved from this location.
             """),
