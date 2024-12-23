@@ -26,6 +26,7 @@ class LLMControlPanel(ControlPanel):
         """))
         
         self._register_command(ControlPanelCommand(
+            command_id="create_file",
             command_label="///create_file",
             description=textwrap.dedent(
             f"""
@@ -67,6 +68,7 @@ class LLMControlPanel(ControlPanel):
         
         # Register markdown section commands
         self._register_command(ControlPanelCommand(
+            command_id="markdown_update_section",
             command_label="///markdown_update_section",
             description=textwrap.dedent(
             f"""
@@ -107,6 +109,7 @@ class LLMControlPanel(ControlPanel):
         ))
 
         self._register_command(ControlPanelCommand(
+            command_id="markdown_append_section",
             command_label="///markdown_append_section",
             description=textwrap.dedent(
             f"""
@@ -134,6 +137,7 @@ class LLMControlPanel(ControlPanel):
                 MarkdownSectionCommandHandler(line, "append_markdown_section").handle(peekable_generator)
         ))
         self._register_command(ControlPanelCommand(
+            command_id="append_file",
             command_label="///append_file", 
             description=textwrap.dedent(
             f"""
@@ -153,6 +157,7 @@ class LLMControlPanel(ControlPanel):
         ))
 
         self._register_command(ControlPanelCommand(
+            command_id="prepend_file",
             command_label="///prepend_file",
             description=textwrap.dedent(
             f"""
