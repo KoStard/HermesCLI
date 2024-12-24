@@ -18,11 +18,12 @@ import os
 
 def build_cli_interface(user_control_panel: UserControlPanel, model_factory: ModelFactory):
     parser = ArgumentParser()
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--model", type=str, help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.provider_and_model_tag_pairs)})")
-    parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
-    
-    subparsers = parser.add_subparsers(dest="meta_command")
+    subparsers = parser.add_subparsers(dest="execution_mode", required=True)
+    chat_parser = subparsers.add_parser("chat", help="Get command information")
+
+    chat_parser.add_argument("--debug", action="store_true")
+    chat_parser.add_argument("--model", type=str, help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.provider_and_model_tag_pairs)})")
+    chat_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
     
     # Info command
     info_parser = subparsers.add_parser("info", help="Get command information")
@@ -40,7 +41,7 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
         help="List all user commands"
     )
 
-    user_control_panel.build_cli_arguments(parser)
+    user_control_panel.build_cli_arguments(chat_parser)
 
     return parser
 
@@ -59,8 +60,8 @@ def main():
     cli_arguments_parser = build_cli_interface(user_control_panel, model_factory)
     cli_args = cli_arguments_parser.parse_args()
     
-    if cli_args.meta_command:
-        handle_meta_command(cli_args, user_control_panel.get_commands(), llm_control_panel.get_commands())
+    if cli_args.execution_mode == "info":
+        execute_info_command(cli_args, user_control_panel.get_commands(), llm_control_panel.get_commands())
         return
     user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(cli_arguments_parser, cli_args)
     stt_input_handler_optional = get_stt_input_handler(cli_args, config)
@@ -122,7 +123,7 @@ def main():
             debug_participant.interface.cleanup()
 
 
-def handle_meta_command(cli_args, user_commands, llm_commands):
+def execute_info_command(cli_args, user_commands, llm_commands):
     lister = CommandsLister()
     if cli_args.info_command == "list-assistant-commands":
         lister.print_commands(llm_commands)
