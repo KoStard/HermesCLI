@@ -5,7 +5,7 @@ Control panel is a part of the interface that handles user interaction
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Callable, Generator, Optional
+from typing import Callable, Generator, Optional, List
 
 from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
 from ..helpers.peekable_generator import PeekableGenerator
@@ -14,8 +14,10 @@ from hermes.event import Event
 
 @dataclass
 class ControlPanelCommand:
+    command_id: str  # The unique ID of the command which will be used in configuration
     command_label: str
     description: str
+    short_description: str
     parser: Callable[[str], Event]
     priority: int = 0
     # For user commands only
@@ -63,3 +65,6 @@ class ControlPanel(ABC):
 
     def _extract_command_content_in_line(self, command_label: str, line: str) -> str:
         return line[len(command_label):].strip()
+    
+    def get_commands(self) -> List[ControlPanelCommand]:
+        return self.commands.values()
