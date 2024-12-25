@@ -67,25 +67,25 @@ Replace `YOUR_API_KEY` with your actual API keys for each provider.
 To start a conversation with the default LLM, simply run:
 
 ```bash
-hermes
+hermes chat
 ```
 
 You can also specify a particular model using the `--model` flag:
 
 ```bash
-hermes --model OPENAI/gpt-4o
+hermes chat --model OPENAI/gpt-4o
 ```
 
 For debugging purposes, you can use the `--debug` flag to spawn a separate terminal window that will act as the LLM, this way you can see what the LLM "sees":
 
 ```bash
-hermes --debug
+hermes chat --debug
 ```
 
 To use speech-to-text input, use the `--stt` flag (requires your Groq API keys):
 
 ```bash
-hermes --stt
+hermes chat --stt
 ```
 
 ### User Commands
@@ -112,7 +112,7 @@ Hermes supports several user commands to enhance your interaction with LLMs:
 You can also pass user commands directly as CLI arguments:
 
 ```bash
-hermes --image_url "https://example.com/image.jpg" --text "Describe this image"
+hermes chat --image_url "https://example.com/image.jpg" --text "Describe this image"
 ```
 
 Arguments are processed in the order they are provided.
