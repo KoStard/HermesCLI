@@ -155,6 +155,9 @@ class RequestBuilder(ABC):
             markitdown = MarkItDown()
             conversion_result = markitdown.convert(response)
             markdown_content = conversion_result.text_content
+            if not markdown_content:
+                markdown_content = "No content found in the URL"
+                self.notifications_printer.print_error(f"No content found in the URL {url}")
             self._url_contents[message_id] = markdown_content
             return markdown_content
         except Exception as e:
