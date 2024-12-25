@@ -91,6 +91,7 @@ class LLMControlPanel(ControlPanel):
                 ### T2
                 Some content <<< This content will be targeted
                 #### T3
+            5. The section path must start from the root node, which is the top-level header of the document. If there are multiple top-level headers, include the one where the target section is.
             
             From the next line you start the content that you want to update the section with, finish with `///end_section` in a new line.
 
