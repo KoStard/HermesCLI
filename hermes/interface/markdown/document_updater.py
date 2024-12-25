@@ -31,7 +31,7 @@ class MarkdownDocumentUpdater:
         backup_path = os.path.join(self.backup_dir, f"{filename}_{timestamp}.bak")
         shutil.copy2(self.file_path, backup_path)
         
-    def update_section(self, section_path: List[str], new_content: str, mode: str) -> None:
+    def update_section(self, section_path: List[str], new_content: str, mode: str) -> bool:
         """
         Update a section in the markdown document.
         
@@ -39,10 +39,13 @@ class MarkdownDocumentUpdater:
             section_path: List of headers leading to target section
             new_content: Content to update/append
             mode: 'append_markdown_section' or 'update_markdown_section'
+            
+        Returns:
+            bool: True if section was found and updated, False otherwise
         """
         if not os.path.exists(self.file_path):
             self._create_if_not_exists(section_path, new_content)
-            return
+            return True
             
         self._backup_file()
         if not new_content.endswith('\n'):
@@ -56,19 +59,26 @@ class MarkdownDocumentUpdater:
             section_path = section_path[:-1]
             is_preface = True
 
-        updated_lines = self._process_lines(lines, section_path, new_content, mode, is_preface)
+        updated_lines, section_found = self._process_lines(lines, section_path, new_content, mode, is_preface)
         
         with open(self.file_path, 'w') as f:
             f.writelines(updated_lines)
             
+        return section_found
+            
     def _process_lines(self, lines: List[str], section_path: List[str], 
-                      new_content: str, mode: str, is_preface: bool) -> List[str]:
-        """Process document lines and apply the update."""
+                      new_content: str, mode: str, is_preface: bool) -> tuple[List[str], bool]:
+        """Process document lines and apply the update.
+        
+        Returns:
+            tuple: (updated_lines, section_found) where section_found is True if the section was found
+        """
         if mode not in ['append_markdown_section', 'update_markdown_section']:
             raise ValueError(f"Invalid mode: {mode}")
         path_tracker = SectionPath()
         updated_lines = []
         i = 0
+        section_found = False
         
         while i < len(lines):
             line = lines[i]
@@ -77,6 +87,7 @@ class MarkdownDocumentUpdater:
             if header:
                 path_tracker.update(header)
                 if path_tracker.matches(section_path):
+                    section_found = True
                     if is_preface:
                         start_of_next_section = self._find_start_of_next_section(lines[i+1:]) + 1
                         if mode == 'append_markdown_section':
@@ -100,7 +111,7 @@ class MarkdownDocumentUpdater:
                 updated_lines.append(line)
             i += 1
                 
-        return updated_lines
+        return updated_lines, section_found
         
     def _find_section_end(self, lines: List[str], current_level: int) -> int:
         """Find the end index of current section."""

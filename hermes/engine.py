@@ -4,7 +4,7 @@ import logging
 from typing import Generator
 from hermes.event import ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
 from hermes.interface.helpers.peekable_generator import PeekableGenerator
-from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter, CLIColors
 from hermes.participants import Participant
 from hermes.history import History
 from itertools import cycle, chain
@@ -205,10 +205,15 @@ class Engine:
         updater = MarkdownDocumentUpdater(file_path)
                
         try:
-            updater.update_section(section_path, new_content, submode)
-            action = 'Updated' if submode == 'update_markdown_section' else 'Appended to'
-            self.notifications_printer.print_notification(
-                f"{action} section {' > '.join(section_path)} in {file_path}")
+            was_updated = updater.update_section(section_path, new_content, submode)
+            if was_updated:
+                action = 'Updated' if submode == 'update_markdown_section' else 'Appended to'
+                self.notifications_printer.print_notification(
+                    f"{action} section {' > '.join(section_path)} in {file_path}")
+            else:
+                self.notifications_printer.print_notification(
+                    f"Warning: Section {' > '.join(section_path)} not found in {file_path}. No changes made.",
+                    color=CLIColors.YELLOW)
         except ValueError as e:
             self.notifications_printer.print_notification(str(e))
             raise
