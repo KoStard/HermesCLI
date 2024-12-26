@@ -6,18 +6,14 @@ Imagine using Telegram or some other messaging app. What you can add and press S
 
 
 
-import base64
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Generator, Optional, Tuple
+from typing import Generator, Optional
 from abc import ABC, abstractmethod
-
-import requests
 
 from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
 from hermes.interface.helpers.peekable_generator import PeekableGenerator, iterate_while
-from hermes.utils.binary_file import is_binary
-from hermes.utils.file_extension import get_file_extension, remove_quotes
+from hermes.utils.file_extension import remove_quotes
 from hermes.interface.assistant.llm_response_types import BaseLLMResponse, ThinkingLLMResponse
 import os
 
@@ -430,29 +426,6 @@ class UrlMessage(Message):
     
     def get_content_for_user(self) -> str:
         return f"URL: {self.url}"
-    
-    def _get_url_content(self, url: str) -> str:
-        response = requests.get(url)
-        return response.text
-    
-    def _convert_html_to_markdown(self, html: str) -> str:
-        """
-        Converts HTML content to Markdown format.
-
-        Args:
-            html (str): The HTML content to convert.
-
-        Returns:
-            str: The converted Markdown content.
-        """
-        from markdownify import markdownify as md
-        try:
-            markdown = md(html)
-            return markdown
-        except Exception as e:
-            # Handle or log the exception as needed
-            print(f"Error converting HTML to Markdown, falling back to raw HTML: {e}")
-            return html
 
     def get_content_for_assistant(self) -> str:
         return self.url
