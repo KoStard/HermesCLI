@@ -26,7 +26,6 @@ class Engine:
             try:
                 self._run_cycle()
             except Exception as e:
-                print("Exception")
                 if isinstance(e, KeyboardInterrupt):
                     continue
                 if isinstance(e, EOFError):

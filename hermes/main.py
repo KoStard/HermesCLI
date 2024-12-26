@@ -143,6 +143,8 @@ def load_config():
 
 def get_stt_input_handler(cli_args: Namespace, config: configparser.ConfigParser):
     if cli_args.stt:
+        if 'GROQ' not in config or 'api_key' not in config['GROQ']:
+            raise ValueError("Please set the GROQ api key in ~/.config/hermes/config.ini")
         return STTInputHandler(api_key=config["GROQ"]["api_key"])
     else:
         return None
