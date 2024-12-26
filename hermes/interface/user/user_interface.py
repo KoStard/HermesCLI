@@ -70,7 +70,8 @@ class UserInterface(Interface):
             self.user_input_from_cli = None
             message_source = "cli"
         elif self.stt_input_handler:
-            return self._get_user_input_from_speech()
+            yield from self._get_user_input_from_speech()
+            return
         else:
             user_input = self._get_user_input_from_terminal()
 
@@ -133,15 +134,9 @@ class UserInterface(Interface):
         
         return user_input
     
-    def _get_user_input_from_speech(self):
-        try:
-            text = self.stt_input_handler.get_input()
-            yield MessageEvent(TextMessage(author="user", text=text))
-            return
-        except KeyboardInterrupt as e:
-            print(e)
-            # TODO: Not working
-            print("Recording interrupted")
+    def _get_user_input_from_speech(self) -> Generator[Event, None, None]:
+        text = self.stt_input_handler.get_input()
+        yield MessageEvent(TextMessage(author="user", text=text))
 
     
     def clear(self):
