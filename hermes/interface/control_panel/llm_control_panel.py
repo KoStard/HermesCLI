@@ -15,7 +15,23 @@ class LLMControlPanel(ControlPanel):
     def __init__(self, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
 
-        self._add_help_content("You are allowed to use the following commands. Use them **only** if the user directly asks for them. Understand that they can cause the user frustration and lose trust if used incorrectly. The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. You don't have access to tools other than these. If the content doesn't match these instructions, they will be ignored. The command syntax should be used literally, symbol-by-symbol correctly.")
+        self._add_help_content(textwrap.dedent(
+            # The control panel currently is rendered into a user message, so the I refers to the user, the you refers to the assistant.
+            """
+            I am the user.
+            You as the assistant have certain commands. The commands you have access to are different from the ones the user has.
+            You have the assistant set of commands, they are listed below.
+
+            How to use the commands?
+            Your message is parsed by an engine before it reaches the user.
+            The engine looks for specific commands in your message, by checking if the line starts with the command label (///command_label).
+            For the specific command label, check below.
+
+            Use them **only** if the user directly asks for them.
+            Understand that they can cause the user frustration and lose trust if used incorrectly. 
+            The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. Y
+            ou don't have access to tools other than these. If the content doesn't match these instructions, they will be ignored. 
+            The command syntax should be used literally, symbol-by-symbol correctly."""))
 
         self._add_help_content(textwrap.dedent("""
         If you are specifying a filepath that has spaces, you should enclose the path in double quotes. For example:
