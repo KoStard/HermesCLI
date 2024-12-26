@@ -75,17 +75,18 @@ class STTInputHandler:
         return temp_wav
 
     def transcribe_audio(self, audio_file: str) -> str:
-        import litellm
+        from groq import Groq
+        client = Groq(api_key=self.api_key)
+
         with open(audio_file, "rb") as audio:
-            transcript = litellm.transcription(
-                model="groq/whisper-large-v3",
-                api_key=self.api_key,
-                file=audio,
+            transcript = client.audio.transcriptions.create(
+                file=(audio_file, audio),
+                model="whisper-large-v3-turbo",
                 prompt="This is a recording of a human message in a chat, please transcribe it as accurately as possible, capture if the user has a question",
                 temperature=0,
                 response_format="text"
             )
-        return transcript.text
+        return transcript
 
     def cleanup(self, audio_file: str):
         os.remove(audio_file)
@@ -95,6 +96,11 @@ if __name__ == "__main__":
     import configparser
     config = configparser.ConfigParser()
     config.read(os.path.expanduser("~/.config/hermes/config.ini"))
+    try:
+        api_key = config["GROQ"]["api_key"]
+    except KeyError:
+        print("Please set the GROQ api key in ~/.config/hermes/config.ini")
+        sys.exit(1)
     stt_input_handler = STTInputHandler(api_key=config["GROQ"]["api_key"])
     
     while True:
