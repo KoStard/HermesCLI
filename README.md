@@ -21,7 +21,7 @@ To install Hermes, you need to have Python 3.10 or later installed on your syste
 ```bash
 pip install --upgrade git+https://github.com/KoStard/HermesCLI.git
 # or with uv
-uv tool install git+https://github.com/KoStard/HermesCLI --upgrade
+uv tool install git+https://github.com/KoStard/HermesCLI --upgrade --python 3.10
 ```
 
 ### Configuration
@@ -64,13 +64,13 @@ Replace `YOUR_API_KEY` with your actual API keys for each provider.
 
 ### Basic Usage
 
-To start a conversation with the default LLM, simply run:
+To start a conversation with the default LLM model (from the configuration file), simply run:
 
 ```bash
 hermes chat
 ```
 
-You can also specify a particular model using the `--model` flag:
+You can also override the model using the `--model` flag:
 
 ```bash
 hermes chat --model OPENAI/gpt-4o
@@ -99,8 +99,8 @@ Hermes supports several user commands to enhance your interaction with LLMs:
 | `/image_url <image_url>`                          | Add an image from a URL to the conversation.                                                                                                |
 | `/audio <audio_filepath>`                         | Add an audio file to the conversation.                                                                                                      |
 | `/video <video_filepath>`                         | Add a video file to the conversation.                                                                                                      |
-| `/pdf <pdf_filepath> {<page_num>, <start>:<end>}` | Add a PDF file to the conversation. Optionally, specify pages using individual numbers or ranges (e.g., `1, 3:5`).                        |
-| `/textual_file <text_filepath>`                   | Add a textual file (e.g., .txt, .md, .pdf, .docx) to the conversation. Supported formats include plain text, PDF, DOC, PowerPoint, Excel. |
+| `/pdf <pdf_filepath> {<page_num>, <start>:<end>}` | Add a PDF file to the conversation. Optionally, specify pages using individual numbers or ranges (e.g., `1, 3:5`).<br>This is for LLM models that support direct PDF embedding (e.g. Claude 3.5 Sonnet, Gemini models, etc). In this case they also look at the pages as images.                        |
+| `/textual_file <text_filepath>`                   | Add a textual file (e.g., .txt, .md, .pdf, .docx) to the conversation. Supported formats include plain text (with any extension/format), PDF, DOC, PowerPoint, Excel. If you want to attach a PDF file, but only its text content, use this. |
 | `/url <url>`                                      | Add a URL to the conversation.                                                                                                             |
 | `/save_history <filepath>`                       | Save the conversation history to a file.                                                                                                   |
 | `/load_history <filepath>`                       | Load a conversation history from a file.                                                                                                   |
@@ -112,17 +112,28 @@ Hermes supports several user commands to enhance your interaction with LLMs:
 You can also pass user commands directly as CLI arguments:
 
 ```bash
-hermes chat --image_url "https://example.com/image.jpg" --text "Describe this image"
+hermes chat file1 file2 file3 --image_url "https://example.com/image.jpg" --text "Describe this image"
 ```
 
-Arguments are processed in the order they are provided.
+The files provided are treated as `--textual_file`.
 
 ### LLM Commands
 
-The same way as you (the user) has access to commands in Hermes, the LLM has access to commands as well.
-Currently, the only implemented command is the `///create_file` command.
-The LLM knows the current working directory, and will see the paths of the attached files. It can create files with relative and absolute paths.
-To make the usage safer, in case the file already exists, before overwriting, it asks the user to confirm and backs up the file in `/tmp/hermes/backups/{filename}_{timestamp}.bak`.
+The same way as you (the user) has access to commands in Hermes, the LLM has access to commands as well. These commands allow the LLM to interact with the file system in a controlled manner. Below is a table of available LLM commands:
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `///create_file` | Creates a new file with specified content. If the file exists, it will ask for confirmation before overwriting. | `///create_file example.txt`<br>This is some content<br>`///end_file` |
+| `///markdown_update_section` | Updates a specific section in a markdown file. The section is identified by its header path. | `///markdown_update_section README.md Features`<br>New feature description<br>`///end_section` |
+| `///markdown_append_section` | Appends content to a specific section in a markdown file. The content is added at the end of the specified section. | `///markdown_append_section README.md Features`<br>Additional feature description<br>`///end_section` |
+| `///append_file` | Appends content to the end of an existing file. Creates the file if it doesn't exist. | `///append_file log.txt`<br>New log entry<br>`///end_file` |
+| `///prepend_file` | Adds content to the beginning of an existing file. Creates the file if it doesn't exist. | `///prepend_file notes.txt`<br>Important note<br>`///end_file` |
+
+**Important Notes:**
+1. The LLM knows the current working directory and can create files with relative and absolute paths.
+2. For safety, if a file already exists, the LLM will ask for confirmation before overwriting and will create a backup in `/tmp/hermes/backups/{filename}_{timestamp}.bak`.
+3. The LLM is asked to only use these commands when explicitly asked by the user, but it might sometimes show initiative.
+4. When creating files, if no specific location is mentioned, files will be created in Hermes' sandbox under `/tmp/hermes_sandbox/`.
 
 ## Extending Hermes
 
@@ -138,7 +149,7 @@ Hermes can be extended by adding custom commands. Extensions are loaded from the
 
 ### Example Extension
 
-Here's an example of an `extension.py` file:
+Here's an example of an `extension.py` file that you can put to `~/.config/hermes/extensions/example_extension/`:
 
 ```python
 from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
@@ -146,17 +157,84 @@ from hermes.event import MessageEvent
 from hermes.message import TextMessage
 
 def get_user_extra_commands():
+    """
+    These are the commands that the user will be able to trigger from CLI arguments or during the chat with slash commands.
+    Define the command label with a single slash (/command).
+    """
     return [
         ControlPanelCommand(
-            command_label="/my_command",
-            description="My custom command",
-            parser=lambda line: MessageEvent(TextMessage(author="user",text="We are playing ping pong. It's my turn: ping."))
+            command_id="example_command",
+            short_description="Example Command",
+            command_label="/example_command",
+            description="An example custom command",
+            parser=lambda line: MessageEvent(TextMessage(author="user", text="This is an example command response that the LLM will receive."))
         )
     ]
 
 def get_llm_extra_commands():
+    """
+    These are the commands that the LLM will be able to trigger during the chat with tripple-slash commands.
+    Define the command label with a tripple-slash (///command).
+    If you want to allow multiline input, you can have a special closing tag, like ///end_file.
+    For more details check the hermes/interface/control_panel/llm_control_panel.py
+    """
     return []
 ```
+
+## Listing the available commands
+
+Hermes provides commands for both users and LLMs. You can list all available commands using the following CLI commands:
+
+### Listing User Commands
+
+To list all available user commands, run:
+
+```bash
+hermes info list-user-commands
+```
+
+Example output:
+
+```txt
+Command ID      | Description
+----------------+----------------------------
+audio           | Share an audio file
+clear           | Clear chat history
+example_command | Example Command       <--- Notice the example command we added in the extension
+exit            | Exit Hermes
+image           | Share an image file
+image_url       | Share an image via URL
+load_history    | Load chat history
+pdf             | Share a PDF file
+save_history    | Save chat history
+text            | Send a text message
+textual_file    | Share a text-based document
+tree            | Show directory structure
+url             | Share a URL◊
+video           | Share a video file
+```
+
+### Listing LLM Commands
+
+To list all available LLM commands, run:
+
+```bash
+hermes info list-assistant-commands
+```
+
+Example output:
+
+```txt
+Command ID              | Description
+------------------------+---------------------------------
+append_file             | Append to file end
+create_file             | Create a new file
+markdown_append_section | Add content to markdown section
+markdown_update_section | Replace markdown section content
+prepend_file            | Add to file beginning
+```
+
+These commands provide a comprehensive list of all available commands with their descriptions, helping users and LLMs understand the available functionality.
 
 ## Contributing
 
@@ -174,7 +252,6 @@ Hermes is built using several excellent open-source libraries, including:
 - [Boto3](https://aws.amazon.com/sdk-for-python/)
 - [Google Generative AI](https://ai.google.dev/)
 - [LiteLLM](https://litellm.ai/)
-- [Markdownify](https://github.com/matthewwithanm/python-markdownify)
 - [MarkItDown](https://github.com/microsoft/markitdown/)
 - [Mistune](https://mistune.lepture.com/)
 - [NumPy](https://numpy.org/)
