@@ -21,6 +21,7 @@ class UserControlPanel(ControlPanel):
     def __init__(self, *, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
         self.tree_generator = TreeGenerator()
+        self._cli_arguments = set()  # Track which arguments were added to CLI
         self._register_command(ControlPanelCommand(command_id="clear", command_label="/clear", description="Clear the conversation history", short_description="Clear chat history", parser=lambda _: ClearHistoryEvent(), priority=99, visible_from_cli=False)) # Clear history should be the first command, we'll clear then do the rest
         self._register_command(ControlPanelCommand(command_id="image", command_label="/image", description="Add image to the conversation", short_description="Share an image file", parser=lambda line: MessageEvent(ImageMessage(author="user", image_path=line))))
         self._register_command(ControlPanelCommand(command_id="image_url", command_label="/image_url", description="Add image from url to the conversation", short_description="Share an image via URL", parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line))))
@@ -87,25 +88,28 @@ class UserControlPanel(ControlPanel):
         return [command_label for command_label in self.commands]
 
     def build_cli_arguments(self, parser: ArgumentParser):
-        user_commands_group = parser.add_argument_group("User commands")
         for command_label in self.get_command_labels():
             if self.commands[command_label].visible_from_cli:
                 if self.commands[command_label].default_on_cli:
-                    user_commands_group.add_argument(command_label[1:], type=str, nargs='*', help=self.commands[command_label].description)
-                user_commands_group.add_argument('--' + command_label[1:], type=str, action="append", help=self.commands[command_label].description)
+                    parser.add_argument(command_label[1:], type=str, nargs='*', help=self.commands[command_label].description)
+                    self._cli_arguments.add(command_label[1:])
+                parser.add_argument('--' + command_label[1:], type=str, action="append", help=self.commands[command_label].description)
+                self._cli_arguments.add(command_label[1:])
         
-        user_commands_group.add_argument('--prompt', type=str, action="append", help="Prompt for the LLM")
+        parser.add_argument('--prompt', type=str, action="append", help="Prompt for the LLM")
+        self._cli_arguments.add('prompt')
 
     def convert_cli_arguments_to_text(self, parser: ArgumentParser, args: Namespace) -> str:
-        commands_group = self._get_arguments_by_group(parser, args, "User commands")
         lines = []
-        for arg, value in commands_group:
-            if arg != "prompt":
-                for v in value:
-                    lines.append(f"/{arg} {v}")
-            else:
-                for v in value:
-                    lines.append(v)
+        args_dict = vars(args)
+        for arg, value in args_dict.items():
+            if value is not None and arg in self._cli_arguments:
+                if arg != "prompt":
+                    for v in value:
+                        lines.append(f"/{arg} {v}")
+                else:
+                    for v in value:
+                        lines.append(v)
         return "\n".join(lines)
     
     def _parse_tree_command(self, line: str) -> MessageEvent:
@@ -126,34 +130,3 @@ class UserControlPanel(ControlPanel):
 
         tree_message = self.tree_generator.generate_tree(os.getcwd(), depth)
         return MessageEvent(tree_message)
-
-    def _get_arguments_by_group(self, parser: ArgumentParser, args: Namespace, group_name: str) -> tuple[tuple[str, list[str]]]:
-        """
-        Extract arguments that belong to a specific argument group from parsed command-line arguments.
-        
-        Args:
-            args: Parsed command-line arguments
-            group_name: Name of the argument group to extract
-            
-        Returns:
-            Dictionary mapping argument names to their values for the specified group
-        """
-        # Find the argument group by name
-        target_group = None
-        for group in parser._action_groups:
-            if group.title == group_name:
-                target_group = group
-                break
-                
-        if not target_group:
-            return tuple()
-            
-        # Get the argument names (destinations) that belong to this group
-        group_arg_names = {action.dest for action in target_group._group_actions}
-        
-        # Convert args Namespace to dictionary and filter for group arguments
-        args_dict = vars(args)
-        return tuple(
-            (k, v) for k, v in args_dict.items() 
-            if k in group_arg_names and v is not None
-        )
