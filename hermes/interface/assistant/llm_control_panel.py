@@ -214,6 +214,27 @@ class LLMControlPanel(ControlPanel):
             parser=lambda line, peekable_generator: self._parse_tree_command(line)
         ))
 
+        self._register_command(ControlPanelCommand(
+            command_id="open_file",
+            command_label="///open_file",
+            short_description="Read file contents",
+            description=textwrap.dedent(
+            f"""
+            Read and return the contents of a file. Syntax: `///open_file <file_path>`
+            - file_path: Path to the file to read (relative or absolute)
+              Use quotes around paths containing spaces: `///open_file "path/with spaces/file.txt"`
+            
+            Examples:
+            ///open_file example.txt
+            ///open_file /path/to/file.txt
+            ///open_file "path/with spaces/file.txt"
+            
+            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
+            All relative paths will be resolved from this location.
+            """),
+            parser=lambda line, peekable_generator: self._parse_open_file_command(line)
+        ))
+
         if extra_commands:
             for command in extra_commands:
                 self._register_command(command)
@@ -264,6 +285,37 @@ class LLMControlPanel(ControlPanel):
         tree_generator = TreeGenerator()
         tree_message = tree_generator.generate_tree(path, depth)
         yield MessageEvent(tree_message)
+
+    def _parse_open_file_command(self, content: str) -> Generator[Event, None, None]:
+        """
+        Parse the ///open_file command and read file contents.
+        
+        Args:
+            content: The command content after the label
+            
+        Returns:
+            Generator yielding MessageEvent with the file contents
+        """
+        import shlex
+        parts = shlex.split(content)
+        
+        if not parts:
+            yield MessageEvent(TextMessage(author="user", text="Error: No file path provided"))
+            return
+            
+        file_path = remove_quotes(parts[0])
+        normalized_path = _escape_filepath(file_path)
+        
+        try:
+            with open(normalized_path, 'r', encoding='utf-8') as f:
+                contents = f.read()
+                yield MessageEvent(TextMessage(author="user", text=f"Contents of {normalized_path}:\n{contents}"))
+        except FileNotFoundError:
+            yield MessageEvent(TextMessage(author="user", text=f"Error: File not found at {normalized_path}"))
+        except PermissionError:
+            yield MessageEvent(TextMessage(author="user", text=f"Error: Permission denied reading {normalized_path}"))
+        except Exception as e:
+            yield MessageEvent(TextMessage(author="user", text=f"Error reading {normalized_path}: {str(e)}"))
 
 class FileEditCommandHandler:
     def __init__(self, content: str, mode: str):
