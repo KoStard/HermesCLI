@@ -17,7 +17,26 @@ class LLMControlPanel(ControlPanel):
     def __init__(self, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
         self.notifications_printer = notifications_printer
+        
+        # Add help content
+        self._add_initial_help_content()
+        
+        # Register core file editing commands
+        self._register_file_commands()
+        
+        # Register markdown section commands
+        self._register_markdown_commands()
+        
+        # Register utility commands
+        self._register_utility_commands()
+        
+        # Add any extra commands provided
+        if extra_commands:
+            for command in extra_commands:
+                self._register_command(command)
 
+    def _add_initial_help_content(self):
+        """Add initial help content about command usage"""
         self._add_help_content(textwrap.dedent(
             """
             You are allowed to use the following commands. 
@@ -30,7 +49,7 @@ class LLMControlPanel(ControlPanel):
 
             You'll see the results of the command after you send your final message.
             """))
-
+            
         self._add_help_content(textwrap.dedent("""
         If you are specifying a filepath that has spaces, you should enclose the path in double quotes. For example:
         ///create_file "path with spaces/file.txt"
@@ -39,6 +58,8 @@ class LLMControlPanel(ControlPanel):
         ///create_file path_without_spaces/file.txt
         """))
         
+    def _register_file_commands(self):
+        """Register commands for file creation and editing"""
         self._register_command(ControlPanelCommand(
             command_id="create_file",
             command_label="///create_file",
@@ -80,8 +101,48 @@ class LLMControlPanel(ControlPanel):
             parser=lambda line, peekable_generator: FileEditCommandHandler(line, "create").handle(peekable_generator)
         ))
 
-        
-        # Register markdown section commands
+        self._register_command(ControlPanelCommand(
+            command_id="append_file",
+            command_label="///append_file",
+            short_description="Append to file end",
+            description=textwrap.dedent(
+            f"""
+            Append content to the end of an existing file or create if it doesn't exist. Syntax: `///append_file <relative_or_absolute_file_path>`, from next line write the content to append, finish with `///end_file` in a new line.
+            Everything between the opening and closing tags will be appended to the file, nothing else is allowed.
+            The content will be appended as-is, without any additional formatting.
+            Example (don't put ``` even for code):
+            ///append_file experiment.py
+            # Adding more content
+            print("This will be appended")
+            ///end_file
+            
+            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
+            All relative paths will be resolved from this location.
+            """),
+            parser=lambda line, peekable_generator: FileEditCommandHandler(line, "append").handle(peekable_generator)
+        ))
+
+        self._register_command(ControlPanelCommand(
+            command_id="prepend_file",
+            command_label="///prepend_file",
+            short_description="Add to file beginning",
+            description=textwrap.dedent(
+            f"""
+            Same as ///append_file, but adding at the top of the file. Syntax: `///prepend_file <relative_or_absolute_file_path>`, from next line write the content to prepend, finish with `///end_file` in a new line.
+            Example (don't put ``` even for code):
+            ///prepend_file experiment.py
+            # Adding content at the top
+            print("This will be prepended")
+            ///end_file
+            
+            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
+            All relative paths will be resolved from this location.
+            """),
+            parser=lambda line, peekable_generator: FileEditCommandHandler(line, "prepend").handle(peekable_generator)
+        ))
+
+    def _register_markdown_commands(self):
+        """Register commands for markdown section editing"""
         self._register_command(ControlPanelCommand(
             command_id="markdown_update_section",
             command_label="///markdown_update_section",
@@ -154,47 +215,9 @@ class LLMControlPanel(ControlPanel):
             parser=lambda line, peekable_generator: 
                 MarkdownSectionCommandHandler(line, "append_markdown_section").handle(peekable_generator)
         ))
-        self._register_command(ControlPanelCommand(
-            command_id="append_file",
-            command_label="///append_file",
-            short_description="Append to file end",
-            description=textwrap.dedent(
-            f"""
-            Append content to the end of an existing file or create if it doesn't exist. Syntax: `///append_file <relative_or_absolute_file_path>`, from next line write the content to append, finish with `///end_file` in a new line.
-            Everything between the opening and closing tags will be appended to the file, nothing else is allowed.
-            The content will be appended as-is, without any additional formatting.
-            Example (don't put ``` even for code):
-            ///append_file experiment.py
-            # Adding more content
-            print("This will be appended")
-            ///end_file
-            
-            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
-            All relative paths will be resolved from this location.
-            """),
-            parser=lambda line, peekable_generator: FileEditCommandHandler(line, "append").handle(peekable_generator)
-        ))
 
-        self._register_command(ControlPanelCommand(
-            command_id="prepend_file",
-            command_label="///prepend_file",
-            short_description="Add to file beginning",
-            description=textwrap.dedent(
-            f"""
-            Same as ///append_file, but adding at the top of the file. Syntax: `///prepend_file <relative_or_absolute_file_path>`, from next line write the content to prepend, finish with `///end_file` in a new line.
-            Example (don't put ``` even for code):
-            ///prepend_file experiment.py
-            # Adding content at the top
-            print("This will be prepended")
-            ///end_file
-            
-            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
-            All relative paths will be resolved from this location.
-            """),
-            parser=lambda line, peekable_generator: FileEditCommandHandler(line, "prepend").handle(peekable_generator)
-        ))
-
-        # Register tree command
+    def _register_utility_commands(self):
+        """Register utility commands for file and directory operations"""
         self._register_command(ControlPanelCommand(
             command_id="tree",
             command_label="///tree",
@@ -236,10 +259,6 @@ class LLMControlPanel(ControlPanel):
             """),
             parser=lambda line, peekable_generator: self._parse_open_file_command(line)
         ))
-
-        if extra_commands:
-            for command in extra_commands:
-                self._register_command(command)
 
     def render(self) -> str:
         content = []
