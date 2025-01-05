@@ -371,10 +371,12 @@ class EmbeddedPDFMessage(Message):
 class TextualFileMessage(Message):
     """Class for messages that are textual files"""
     text_filepath: str
+    file_role: Optional[str]
 
-    def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None):
+    def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None, file_role: Optional[str] = None):
         super().__init__(author=author, timestamp=timestamp)
         self.text_filepath = self._get_full_filepath(text_filepath)
+        self.file_role = file_role
     
     def _get_full_filepath(self, text_filepath: str) -> str:
         """
@@ -404,7 +406,8 @@ class TextualFileMessage(Message):
             "type": "textual_file",
             "text_filepath": self.text_filepath,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
+            "file_role": self.file_role
         }
 
     @staticmethod
@@ -412,7 +415,8 @@ class TextualFileMessage(Message):
         return TextualFileMessage(
             author=json_data["author"],
             text_filepath=json_data["text_filepath"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
+            file_role=json_data.get("file_role")
         )
 
 @dataclass(init=False)

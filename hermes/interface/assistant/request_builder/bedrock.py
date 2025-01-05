@@ -1,4 +1,5 @@
 import requests
+from typing import Optional
 from hermes.interface.assistant.request_builder.all_messages_aggregator import AllMessagesAggregator
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.text_messages_aggregator import TextMessagesAggregator
@@ -92,8 +93,8 @@ class BedrockRequestBuilder(RequestBuilder):
             }
         }, author)
 
-    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
-        return self._default_handle_textual_file_message(text_filepath, author, message_id)
+    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int, file_role: Optional[str] = None):
+        return self._default_handle_textual_file_message(text_filepath, author, message_id, file_role)
 
     def handle_url_message(self, url: str, author: str, message_id: int):
         return self._default_handle_url_message(url, author, message_id)
