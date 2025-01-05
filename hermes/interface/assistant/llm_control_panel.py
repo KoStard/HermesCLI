@@ -4,7 +4,7 @@ import textwrap
 from typing import Generator
 
 from hermes.utils.file_extension import remove_quotes
-from .base_control_panel import ControlPanel, ControlPanelCommand
+from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import Message, TextGeneratorMessage, TextMessage
 from hermes.event import FileEditEvent, Event, MessageEvent

@@ -10,9 +10,9 @@ from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from hermes.history import History
 
 from hermes.interface.base import Interface
-from hermes.interface.control_panel import UserControlPanel
 from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
+from hermes.interface.user.user_control_panel import UserControlPanel
 from hermes.message import InvisibleMessage, Message, TextGeneratorMessage, TextMessage
 from hermes.event import Event, MessageEvent, NotificationEvent, RawContentForHistoryEvent
 from hermes.interface.helpers import CLINotificationsPrinter, CLIColors, colorize_text, print_colored_text
