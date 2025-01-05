@@ -1,3 +1,4 @@
+import shlex
 from argparse import ArgumentParser, Namespace
 from typing import Generator
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
@@ -6,6 +7,7 @@ from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextM
 from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.utils.tree_generator import TreeGenerator
+from hermes.utils.file_extension import remove_quotes
 import os
 
 from argparse import ArgumentParser, Namespace
@@ -296,21 +298,21 @@ class UserControlPanel(ControlPanel):
                         lines.append(v)
         return "\n".join(lines)
     
-    def _parse_tree_command(self, line: str) -> MessageEvent:
+    def _parse_tree_command(self, content: str) -> MessageEvent:
         """
         Parse the /tree command and generate a directory tree.
-
+        
         Args:
-            line: The parsed command line input.
-
+            content: The command content after the label
+            
         Returns:
-            A MessageEvent containing the directory tree.
+            MessageEvent with the tree structure
         """
-        line = line.strip()
-        if line:
-            depth = int(line)
-        else:
-            depth = None
-
-        tree_message = self.tree_generator.generate_tree(os.getcwd(), depth)
+        # Handle quoted paths with spaces
+        parts = shlex.split(content)
+        
+        path = os.getcwd() if not parts else remove_quotes(parts[0])
+        depth = int(parts[1]) if len(parts) > 1 else None
+        
+        tree_message = self.tree_generator.generate_tree(path, depth)
         return MessageEvent(tree_message)
