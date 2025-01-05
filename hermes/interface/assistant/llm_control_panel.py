@@ -2,6 +2,7 @@ import logging
 import os
 import textwrap
 from typing import Generator
+from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
@@ -13,8 +14,9 @@ from hermes.event import FileEditEvent, Event, MessageEvent
 logger = logging.getLogger(__name__)
 
 class LLMControlPanel(ControlPanel):
-    def __init__(self, extra_commands: list[ControlPanelCommand] = None):
+    def __init__(self, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
+        self.notifications_printer = notifications_printer
 
         self._add_help_content(textwrap.dedent(
             """
@@ -261,6 +263,7 @@ class LLMControlPanel(ControlPanel):
                 next(peekable_generator) # Consume the line
                 
                 content = self._extract_command_content_in_line(command_label, full_line)
+                self.notifications_printer.print_notification(f"LLM used command: {command_label}")
                 yield from self.commands[command_label].parser(content, peekable_generator)
             else:
                 yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directly_entered=True)) 

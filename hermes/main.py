@@ -58,7 +58,7 @@ def main():
     model_factory = ModelFactory(notifications_printer)
 
     user_control_panel = UserControlPanel(notifications_printer=notifications_printer, extra_commands=user_extra_commands)
-    llm_control_panel = LLMControlPanel(extra_commands=llm_extra_commands)
+    llm_control_panel = LLMControlPanel(notifications_printer=notifications_printer, extra_commands=llm_extra_commands)
     cli_arguments_parser = build_cli_interface(user_control_panel, model_factory)
     cli_args = cli_arguments_parser.parse_args()
     
