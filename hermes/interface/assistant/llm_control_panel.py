@@ -286,7 +286,8 @@ class LLMControlPanel(ControlPanel):
         depth = int(parts[1]) if len(parts) > 1 else None
         
         tree_generator = TreeGenerator()
-        tree_message = tree_generator.generate_tree(path, depth)
+        tree_string = tree_generator.generate_tree(path, depth)
+        tree_message = TextMessage(author="user", text=tree_string, text_role="CommandOutput", name="Directory Tree")
         yield MessageEvent(tree_message)
 
     def _parse_open_file_command(self, content: str) -> Generator[Event, None, None]:
@@ -303,7 +304,7 @@ class LLMControlPanel(ControlPanel):
         parts = shlex.split(content)
         
         if not parts:
-            yield MessageEvent(TextMessage(author="user", text="Error: No file path provided"))
+            yield MessageEvent(TextMessage(author="user", text="Error: No file path provided", text_role="CommandOutput"))
             return
             
         file_path = remove_quotes(parts[0])
@@ -312,13 +313,13 @@ class LLMControlPanel(ControlPanel):
         try:
             with open(normalized_path, 'r', encoding='utf-8') as f:
                 contents = f.read()
-                yield MessageEvent(TextMessage(author="user", text=f"Contents of {normalized_path}:\n{contents}"))
+                yield MessageEvent(TextMessage(author="user", text=contents), text_role="CommandOutput", name=f"Contents of {normalized_path}")
         except FileNotFoundError:
-            yield MessageEvent(TextMessage(author="user", text=f"Error: File not found at {normalized_path}"))
+            yield MessageEvent(TextMessage(author="user", text=f"Error: File not found at {normalized_path}"), text_role="CommandOutput")
         except PermissionError:
-            yield MessageEvent(TextMessage(author="user", text=f"Error: Permission denied reading {normalized_path}"))
+            yield MessageEvent(TextMessage(author="user", text=f"Error: Permission denied reading {normalized_path}"), text_role="CommandOutput")
         except Exception as e:
-            yield MessageEvent(TextMessage(author="user", text=f"Error reading {normalized_path}: {str(e)}"))
+            yield MessageEvent(TextMessage(author="user", text=f"Error reading {normalized_path}: {str(e)}"), text_role="CommandOutput")
 
 class FileEditCommandHandler:
     def __init__(self, content: str, mode: str):

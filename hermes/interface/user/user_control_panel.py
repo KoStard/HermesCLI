@@ -314,5 +314,6 @@ class UserControlPanel(ControlPanel):
         path = os.getcwd() if not parts else remove_quotes(parts[0])
         depth = int(parts[1]) if len(parts) > 1 else None
         
-        tree_message = self.tree_generator.generate_tree(path, depth)
+        tree_string = self.tree_generator.generate_tree(path, depth)
+        tree_message = TextMessage(author="user", text=tree_string)
         return MessageEvent(tree_message)
