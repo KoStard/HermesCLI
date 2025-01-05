@@ -9,7 +9,7 @@ from hermes.utils.tree_generator import TreeGenerator
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import Message, TextGeneratorMessage, TextMessage, TextualFileMessage
-from hermes.event import FileEditEvent, Event, MessageEvent
+from hermes.event import AssistantDoneEvent, FileEditEvent, Event, MessageEvent
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ class LLMControlPanel(ControlPanel):
     def __init__(self, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
         self.notifications_printer = notifications_printer
+        self._agent_mode = False
         
         # Add help content
         self._add_initial_help_content()
@@ -29,6 +30,9 @@ class LLMControlPanel(ControlPanel):
         
         # Register utility commands
         self._register_utility_commands()
+
+        # Register agent-only commands
+        self._register_agent_commands()
         
         # Add any extra commands provided
         if extra_commands:
@@ -260,11 +264,38 @@ class LLMControlPanel(ControlPanel):
             parser=lambda line, peekable_generator: self._parse_open_file_command(line)
         ))
 
+    def _register_agent_commands(self):
+        """Register commands that are only available in agent mode"""
+        self._register_command(ControlPanelCommand(
+            command_id="done",
+            command_label="///done",
+            short_description="Mark task as done and provide final report",
+            description=textwrap.dedent(
+            """
+            Mark the current task as done and provide a final report to the user.
+            Syntax: `///done`, followed by the report content on subsequent lines,
+            ending with `///end_report` on a new line.
+            
+            Example:
+            ///done
+            I have completed the task. Here are the results:
+            - Created 3 new files
+            - Updated 2 existing files
+            - Verified all changes work as expected
+            ///end_report
+            """),
+            parser=lambda line, peekable_generator: self._parse_done_command(peekable_generator),
+            is_agent_command=True
+        ))
+
     def render(self) -> str:
         content = []
         content.append(self._render_help_content())
         for command_label in self.commands:
-            content.append(self._render_command_in_control_panel(command_label))
+            command = self.commands[command_label]
+            # Only show agent commands when in agent mode
+            if not command.is_agent_command or self._agent_mode:
+                content.append(self._render_command_in_control_panel(command_label))
         return "\n".join(content)
 
     def break_down_and_execute_message(self, message: Message) -> Generator[Event, None, None]:
@@ -285,6 +316,9 @@ class LLMControlPanel(ControlPanel):
                 self.notifications_printer.print_notification(f"LLM used command: {command_label}")
                 yield from self.commands[command_label].parser(content, peekable_generator)
             else:
+                # TODO, it's a problem, if the TextGeneratorMessage is not finished, and this method is called again for a yield.
+                # Maybe we shouldn't have the text generator message andjust generate text messages.
+                # We need a kind of lock otherwise.
                 yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directly_entered=True)) 
 
     def _parse_tree_command(self, content: str) -> Generator[Event, None, None]:
@@ -308,6 +342,39 @@ class LLMControlPanel(ControlPanel):
         tree_string = tree_generator.generate_tree(path, depth)
         tree_message = TextMessage(author="user", text=tree_string, text_role="CommandOutput", name="Directory Tree")
         yield MessageEvent(tree_message)
+
+    def _parse_done_command(self, peekable_generator: PeekableGenerator) -> Generator[Event, None, None]:
+        """
+        Parse the ///done command and collect the report content.
+        
+        Args:
+            peekable_generator: The generator of message lines
+            
+        Returns:
+            Generator yielding MessageEvent with the final report
+        """
+        report_content = []
+        for line in peekable_generator:
+            if line.strip() == "///end_report":
+                yield AssistantDoneEvent()
+                yield MessageEvent(TextMessage(
+                    author="assistant",
+                    text="\n".join(report_content),
+                    text_role="AgentReport",
+                    name="Task Completion Report"
+                ))
+                return
+            report_content.append(line)
+        
+        # If we reach here without finding ///end_report, yield what we have
+        if report_content:
+            yield AssistantDoneEvent()
+            yield MessageEvent(TextMessage(
+                author="assistant",
+                text="\n".join(report_content),
+                text_role="AgentReport",
+                name="Task Completion Report"
+            ))
 
     def _parse_open_file_command(self, content: str) -> Generator[Event, None, None]:
         """
@@ -335,6 +402,13 @@ class LLMControlPanel(ControlPanel):
             yield MessageEvent(TextMessage(author="user", text=f"Error: Permission denied reading {normalized_path}"), text_role="CommandOutput")
         else:
             yield MessageEvent(TextualFileMessage(author="user", text_filepath=normalized_path, file_role="CommandOutput"))
+    
+    def enable_agent_mode(self):
+        self._agent_mode = True
+
+    def disable_agent_mode(self):
+        self._agent_mode = False
+        # TODO: Inform the assistant that the agent mode was disabled and it might have lost access to some commands
 
 class FileEditCommandHandler:
     def __init__(self, content: str, mode: str):

@@ -4,7 +4,7 @@ from typing import Generator
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
-from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
+from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent, AgentModeEvent
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.utils.tree_generator import TreeGenerator
 from hermes.utils.file_extension import remove_quotes
@@ -225,6 +225,16 @@ class UserControlPanel(ControlPanel):
                 description="Generate a directory tree",
                 short_description="Show directory structure",
                 parser=self._parse_tree_command
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="agent_mode",
+                command_label="/agent_mode",
+                description="Enable or disable agent mode (on/off)",
+                short_description="Toggle agent mode",
+                parser=lambda line: AgentModeEvent(enabled=line.strip().lower() == "on")
             )
         )
 

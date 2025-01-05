@@ -2,9 +2,10 @@ from asyncio import Event
 import os
 import logging
 from typing import Generator
-from hermes.event import ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
+from hermes.event import AssistantDoneEvent, ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent, AgentModeEvent
 from hermes.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter, CLIColors
+from hermes.message import TextMessage
 from hermes.participants import Participant
 from hermes.history import History
 from itertools import cycle, chain
@@ -20,6 +21,7 @@ class Engine:
         self.participants = [self.user_participant, self.assistant_participant]
         self.history = history
         self.notifications_printer = CLINotificationsPrinter()
+        self._received_assistant_done_event = False
 
     def run(self):
         while True:
@@ -34,40 +36,66 @@ class Engine:
                 raise e
         
     def _run_cycle(self):
-        events_stream_without_engine_commands = []
-        
+        assistant_events = []
         while True:
-            # Handle user events and engine commands
-            user_participant = self.user_participant
-            history_snapshot = self.history.get_history_for(user_participant.get_name())
-            consumption_events = user_participant.consume_events(history_snapshot, self._save_to_history(events_stream_without_engine_commands))
+            user_events = self._run_user(assistant_events)
+            assistant_events = self._run_assistant(user_events)
 
-            action_events_stream = user_participant.act()
+    def _run_user(self, assistant_events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+        """Handle user events and engine commands"""
+        history_snapshot = self.history.get_history_for(self.user_participant.get_name())
+        consumption_events = self.user_participant.consume_events(history_snapshot, self._save_to_history(assistant_events))
+
+        action_events_stream = self.user_participant.act()
+        events_stream = chain(consumption_events, action_events_stream)
+
+        # Make sure there is at least one event in the stream before moving to the next participant
+        events_stream = PeekableGenerator(events_stream)
+        logger.debug("Peeking for the first time", self.user_participant)
+        events_stream.peek()
+        
+        # As user events don't come async, and we can't make the LLM request before finishing the user side
+        # Converting to list is also important as user events can impact the past history
+        return list(self._handle_engine_commands_from_stream(events_stream))
+
+    def _run_assistant(self, user_events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+        """Handle assistant events and agent mode continuation"""
+        is_first_cycle = True
+        is_llm_turn = True
+        
+        while is_llm_turn:
+            # Add continuation prompt if in agent mode, in all cycles except the first
+            if self.assistant_participant.interface.control_panel._agent_mode:
+                if not is_first_cycle:
+                    continuation_msg = TextMessage(
+                        author="user",
+                        text="Continue please. When you are done with the task, use the done command to send to the user.",
+                        is_directly_entered=True
+                    )
+                    user_events = [MessageEvent(continuation_msg)]
+                is_first_cycle = False
+                
+            history_snapshot = self.history.get_history_for(self.assistant_participant.get_name())
+
+            consumption_events = self.assistant_participant.consume_events(history_snapshot, self._save_to_history(user_events))
+            action_events_stream = self.assistant_participant.act()
             events_stream = chain(consumption_events, action_events_stream)
 
-            # Make sure there is at least one event in the stream before moving to the next participant. Use peek method.
+            # Make sure there is at least one event in the stream
             events_stream = PeekableGenerator(events_stream)
-            logger.debug("Peeking for the first time", user_participant)
+            logger.debug("Peeking for the first time", self.assistant_participant)
             events_stream.peek()
             
-            # As user events don't come async, and we can't make the LLM request before finishing the user side, waiting for the user events to come.
-            # This is also important as user events can impact the past history
-            events_stream_without_engine_commands = list(self._handle_engine_commands_from_stream(events_stream))
+            yield from self._handle_engine_commands_from_stream(events_stream)
 
-            # Handle assistant events
-            assistant_participant = self.assistant_participant
-            history_snapshot = self.history.get_history_for(assistant_participant.get_name())
-            consumption_events = assistant_participant.consume_events(history_snapshot, self._save_to_history(events_stream_without_engine_commands))
-
-            action_events_stream = assistant_participant.act()
-            events_stream = chain(consumption_events, action_events_stream)
-
-            # Make sure there is at least one event in the stream before moving to the next participant. Use peek method.
-            events_stream = PeekableGenerator(events_stream)
-            logger.debug("Peeking for the first time", assistant_participant)
-            events_stream.peek()
-            
-            events_stream_without_engine_commands = self._handle_engine_commands_from_stream(events_stream)
+            # Check if we should continue in agent mode
+            if not self.assistant_participant.interface.control_panel._agent_mode:
+                is_llm_turn = False
+                
+            # Check if we received an AssistantDoneEvent
+            if self._received_assistant_done_event:
+                self._received_assistant_done_event = False
+                is_llm_turn = False
 
     def _save_to_history(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         for event in events:
@@ -78,6 +106,9 @@ class Engine:
             yield event
 
     def _handle_engine_commands_from_stream(self, stream: Generator[Event, None, None]) -> Generator[Event, None, None]:
+        """
+        Handles engine commands from the stream and emits the rest of the events.
+        """
         for event in stream:
             if isinstance(event, EngineCommandEvent):
                 if isinstance(event, ClearHistoryEvent):
@@ -94,6 +125,17 @@ class Engine:
                         participant.initialize_from_history(self.history)
                 elif isinstance(event, ExitEvent):
                     self._handle_exit_event()
+                elif isinstance(event, AgentModeEvent):
+                    if event.enabled:
+                        self.assistant_participant.interface.control_panel.enable_agent_mode()
+                        self.notifications_printer.print_notification("Agent mode enabled")
+                    else:
+                        self.assistant_participant.interface.control_panel.disable_agent_mode()
+                        self.notifications_printer.print_notification("Agent mode disabled")
+                elif isinstance(event, AssistantDoneEvent):
+                    self.notifications_printer.print_notification("Assistant marked task as done")
+                    self._received_assistant_done_event = True
+                    # TODO: Handle the completion report and any cleanup
                 elif isinstance(event, FileEditEvent):
                     if event.mode == 'create':
                         if not self._confirm_file_creation(event.file_path):
