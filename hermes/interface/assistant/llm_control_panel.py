@@ -4,6 +4,7 @@ import textwrap
 from typing import Generator
 
 from hermes.utils.file_extension import remove_quotes
+from hermes.utils.tree_generator import TreeGenerator
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import Message, TextGeneratorMessage, TextMessage
@@ -15,7 +16,18 @@ class LLMControlPanel(ControlPanel):
     def __init__(self, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
 
-        self._add_help_content("You are allowed to use the following commands. Use them **only** if the user directly asks for them. Understand that they can cause the user frustration and lose trust if used incorrectly. The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. You don't have access to tools other than these. If the content doesn't match these instructions, they will be ignored. The command syntax should be used literally, symbol-by-symbol correctly.")
+        self._add_help_content(textwrap.dedent(
+            """
+            You are allowed to use the following commands. 
+            Use them **only** if the user directly asks for them. 
+            Understand that they can cause the user frustration and lose trust if used incorrectly. 
+            The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. 
+            You don't have access to tools other than these. 
+            If the content doesn't match these instructions, they will be ignored. 
+            The command syntax should be used literally, symbol-by-symbol correctly.
+
+            You'll see the results of the command after you send your final message.
+            """))
 
         self._add_help_content(textwrap.dedent("""
         If you are specifying a filepath that has spaces, you should enclose the path in double quotes. For example:
@@ -180,6 +192,28 @@ class LLMControlPanel(ControlPanel):
             parser=lambda line, peekable_generator: FileEditCommandHandler(line, "prepend").handle(peekable_generator)
         ))
 
+        # Register tree command
+        self._register_command(ControlPanelCommand(
+            command_id="tree",
+            command_label="///tree",
+            short_description="Generate directory tree",
+            description=textwrap.dedent(
+            f"""
+            Generate a directory tree structure. Syntax: `///tree [<path>] [<depth>]`
+            - path: Optional path to generate tree for (default: current directory)
+              Use quotes around paths containing spaces: `///tree "path/with spaces"`
+            - depth: Optional maximum depth of the tree (default: full depth)
+            
+            Examples:
+            ///tree
+            ///tree /path/to/dir
+            ///tree /path/to/dir 2
+            ///tree "path/with spaces"
+            ///tree "path/with spaces" 2
+            """),
+            parser=lambda line, peekable_generator: self._parse_tree_command(line)
+        ))
+
         if extra_commands:
             for command in extra_commands:
                 self._register_command(command)
@@ -196,34 +230,54 @@ class LLMControlPanel(ControlPanel):
 
         while True:
             try:
-                line = peekable_generator.peek()
+                full_line = peekable_generator.peek()
             except StopIteration:
                 return
 
-            command_label = self._line_command_match(line)
+            command_label = self._line_command_match(full_line)
 
             if command_label:
                 next(peekable_generator) # Consume the line
-
-                line = line.lstrip()
-                yield from self.commands[command_label].parser(line, peekable_generator)
+                
+                content = self._extract_command_content_in_line(command_label, full_line)
+                yield from self.commands[command_label].parser(content, peekable_generator)
             else:
                 yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directly_entered=True)) 
 
-class FileEditCommandHandler:
-    def __init__(self, line: str, mode: str):
+    def _parse_tree_command(self, content: str) -> Generator[Event, None, None]:
         """
-        Possible inputs of line. It can contain only one value. Allow spaces in the names.
+        Parse the ///tree command and generate a directory tree.
+        
+        Args:
+            content: The command content after the label
+            
+        Returns:
+            Generator yielding MessageEvent with the tree structure
+        """
+        # Handle quoted paths with spaces
+        import shlex
+        parts = shlex.split(content)
+        
+        path = os.getcwd() if not parts else remove_quotes(parts[0])
+        depth = int(parts[1]) if len(parts) > 1 else None
+        
+        tree_generator = TreeGenerator()
+        tree_message = tree_generator.generate_tree(path, depth)
+        yield MessageEvent(tree_message)
+
+class FileEditCommandHandler:
+    def __init__(self, content: str, mode: str):
+        """
+        Possible inputs of content. It can contain only one value. Allow spaces in the names.
         filename.extension
         ./relative/path/filename.extension
         ../../relative/path/filename.extension
         /absolute/path/filename.extension
         ~/absolute/path/filename.extension
         """
-        self.line = line
         self.mode = mode
-        # The line contains the command, so it starts with `///create_file ` or `///append_file `
-        raw_path = line.split(" ", 1)[1].strip()
+        # The content contains just the path after the command
+        raw_path = content.strip()
         unquoted_path = remove_quotes(raw_path)
         self.file_path = _escape_filepath(unquoted_path)
 
@@ -247,21 +301,21 @@ class FileEditCommandHandler:
         return file_edit_event
 
 class MarkdownSectionCommandHandler:
-    def __init__(self, line: str, mode: str):
+    def __init__(self, content: str, mode: str):
         """
         Parse the markdown update section command.
-        Expected format: ///markdown_update_section <file_path> <section1> > <section2> > ...
+        Expected format: <file_path> <section1> > <section2> > ...
         """
         try:
             import shlex
-            splitter = shlex.shlex(line, posix=True)
+            splitter = shlex.shlex(content, posix=True)
             splitter.quotes = '"'
             splitter.whitespace_split = True
-            _, file_path, *rest = list(splitter)  # Split into [command, file_path, section_path]
+            file_path, *rest = list(splitter)  # Split into [file_path, section_path]
             section_path_raw = " ".join(rest)
         except Exception as e:
-            logger.warning("shlex.split() failed, falling back to basic s/append_fileplit, spaces won't work", e)
-            _, file_path, section_path_raw = line.split(" ", 1)  # Split into [command, file_path, section_path]
+            logger.warning("shlex.split() failed, falling back to basic split, spaces won't work", e)
+            file_path, section_path_raw = content.split(" ", 1)  # Split into [file_path, section_path]
             
         self.file_path = _escape_filepath(remove_quotes(file_path.strip()))
         self.section_path = [s.strip() for s in section_path_raw.split(">")]
