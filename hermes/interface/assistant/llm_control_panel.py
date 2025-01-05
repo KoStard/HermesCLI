@@ -8,7 +8,7 @@ from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator, iterate_while
-from hermes.message import Message, TextGeneratorMessage, TextMessage
+from hermes.message import Message, TextGeneratorMessage, TextMessage, TextualFileMessage
 from hermes.event import FileEditEvent, Event, MessageEvent
 
 logger = logging.getLogger(__name__)
@@ -292,13 +292,13 @@ class LLMControlPanel(ControlPanel):
 
     def _parse_open_file_command(self, content: str) -> Generator[Event, None, None]:
         """
-        Parse the ///open_file command and read file contents.
+        Parse the ///open_file command and return a TextualFileMessage.
         
         Args:
             content: The command content after the label
             
         Returns:
-            Generator yielding MessageEvent with the file contents
+            Generator yielding MessageEvent with TextualFileMessage
         """
         import shlex
         parts = shlex.split(content)
@@ -310,16 +310,12 @@ class LLMControlPanel(ControlPanel):
         file_path = remove_quotes(parts[0])
         normalized_path = _escape_filepath(file_path)
         
-        try:
-            with open(normalized_path, 'r', encoding='utf-8') as f:
-                contents = f.read()
-                yield MessageEvent(TextMessage(author="user", text=contents), text_role="CommandOutput", name=f"Contents of {normalized_path}")
-        except FileNotFoundError:
+        if not os.path.exists(normalized_path):
             yield MessageEvent(TextMessage(author="user", text=f"Error: File not found at {normalized_path}"), text_role="CommandOutput")
-        except PermissionError:
+        elif not os.access(normalized_path, os.R_OK):
             yield MessageEvent(TextMessage(author="user", text=f"Error: Permission denied reading {normalized_path}"), text_role="CommandOutput")
-        except Exception as e:
-            yield MessageEvent(TextMessage(author="user", text=f"Error reading {normalized_path}: {str(e)}"), text_role="CommandOutput")
+        else:
+            yield MessageEvent(TextualFileMessage(author="user", text_filepath=normalized_path, file_role="CommandOutput"))
 
 class FileEditCommandHandler:
     def __init__(self, content: str, mode: str):
