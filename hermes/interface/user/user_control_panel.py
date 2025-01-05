@@ -22,25 +22,209 @@ class UserControlPanel(ControlPanel):
         super().__init__()
         self.tree_generator = TreeGenerator()
         self._cli_arguments = set()  # Track which arguments were added to CLI
-        self._register_command(ControlPanelCommand(command_id="clear", command_label="/clear", description="Clear the conversation history", short_description="Clear chat history", parser=lambda _: ClearHistoryEvent(), priority=99, visible_from_cli=False)) # Clear history should be the first command, we'll clear then do the rest
-        self._register_command(ControlPanelCommand(command_id="image", command_label="/image", description="Add image to the conversation", short_description="Share an image file", parser=lambda line: MessageEvent(ImageMessage(author="user", image_path=line))))
-        self._register_command(ControlPanelCommand(command_id="image_url", command_label="/image_url", description="Add image from url to the conversation", short_description="Share an image via URL", parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line))))
-        self._register_command(ControlPanelCommand(command_id="audio", command_label="/audio", description="Add audio to the conversation", short_description="Share an audio file", parser=lambda line: MessageEvent(AudioFileMessage(author="user", audio_filepath=line))))
-        self._register_command(ControlPanelCommand(command_id="video", command_label="/video", description="Add video to the conversation", short_description="Share a video file", parser=lambda line: MessageEvent(VideoMessage(author="user", video_filepath=line))))
-        self._register_command(ControlPanelCommand(command_id="pdf", command_label="/pdf", description="Add pdf to the conversation. After the PDF path, optionally use {<page_number>, <page_number>:<page_number>, ...} to specify pages.", short_description="Share a PDF file", parser=lambda line: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line))))
-        self._register_command(ControlPanelCommand(command_id="textual_file", command_label="/textual_file", description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.", short_description="Share a text-based document", parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line)), default_on_cli=True))
-        self._register_command(ControlPanelCommand(command_id="url", command_label="/url", description="Add url to the conversation", short_description="Share a URL", parser=lambda line: MessageEvent(UrlMessage(author="user", url=line))))
-        self._register_command(ControlPanelCommand(command_id="save_history", command_label="/save_history", description="Save history to a file", short_description="Save chat history", parser=lambda line: SaveHistoryEvent(line), visible_from_cli=False))
-        self._register_command(ControlPanelCommand(command_id="load_history", command_label="/load_history", description="Load history from a file", short_description="Load chat history", parser=lambda line: LoadHistoryEvent(line), priority=98))
-        self._register_command(ControlPanelCommand(command_id="text", command_label="/text", description="Add text to the conversation", short_description="Send a text message", parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directly_entered=True))))
-        self._register_command(ControlPanelCommand(command_id="exit", command_label="/exit", description="Exit the application", short_description="Exit Hermes", parser=lambda _: ExitEvent(), priority=-100))  # Run exit after running any other command
-        self._register_command(ControlPanelCommand(command_id="tree", command_label="/tree", description="Generate a directory tree", short_description="Show directory structure", parser=self._parse_tree_command))
+        self.notifications_printer = notifications_printer
         
+        # Register core commands
+        self._register_core_commands()
+        
+        # Register file sharing commands
+        self._register_file_commands()
+        
+        # Register history management commands
+        self._register_history_commands()
+        
+        # Register utility commands
+        self._register_utility_commands()
+        
+        # Add any extra commands provided
         if extra_commands:
             for command in extra_commands:
                 self._register_command(command)
+
+    def _register_core_commands(self):
+        """Register basic text and exit commands"""
+        self._register_command(
+            ControlPanelCommand(
+                command_id="text",
+                command_label="/text",
+                description="Add text to the conversation",
+                short_description="Send a text message",
+                parser=lambda line: MessageEvent(
+                    TextMessage(
+                        author="user",
+                        text=line,
+                        is_directly_entered=True
+                    )
+                )
+            )
+        )
         
-        self.notifications_printer = notifications_printer
+        self._register_command(
+            ControlPanelCommand(
+                command_id="exit",
+                command_label="/exit",
+                description="Exit the application",
+                short_description="Exit Hermes",
+                parser=lambda _: ExitEvent(),
+                priority=-100  # Run exit after running any other command
+            )
+        )
+
+    def _register_file_commands(self):
+        """Register commands for sharing different file types"""
+        self._register_command(
+            ControlPanelCommand(
+                command_id="image",
+                command_label="/image",
+                description="Add image to the conversation",
+                short_description="Share an image file",
+                parser=lambda line: MessageEvent(
+                    ImageMessage(
+                        author="user",
+                        image_path=line
+                    )
+                )
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="image_url",
+                command_label="/image_url",
+                description="Add image from url to the conversation",
+                short_description="Share an image via URL",
+                parser=lambda line: MessageEvent(
+                    ImageUrlMessage(
+                        author="user",
+                        image_url=line
+                    )
+                )
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="audio",
+                command_label="/audio",
+                description="Add audio to the conversation",
+                short_description="Share an audio file",
+                parser=lambda line: MessageEvent(
+                    AudioFileMessage(
+                        author="user",
+                        audio_filepath=line
+                    )
+                )
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="video",
+                command_label="/video",
+                description="Add video to the conversation",
+                short_description="Share a video file",
+                parser=lambda line: MessageEvent(
+                    VideoMessage(
+                        author="user",
+                        video_filepath=line
+                    )
+                )
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="pdf",
+                command_label="/pdf",
+                description="Add pdf to the conversation. After the PDF path, optionally use {<page_number>, <page_number>:<page_number>, ...} to specify pages.",
+                short_description="Share a PDF file",
+                parser=lambda line: MessageEvent(
+                    EmbeddedPDFMessage.build_from_line(
+                        author="user",
+                        raw_line=line
+                    )
+                )
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="textual_file",
+                command_label="/textual_file",
+                description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
+                short_description="Share a text-based document",
+                parser=lambda line: MessageEvent(
+                    TextualFileMessage(
+                        author="user",
+                        text_filepath=line
+                    )
+                ),
+                default_on_cli=True
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="url",
+                command_label="/url",
+                description="Add url to the conversation",
+                short_description="Share a URL",
+                parser=lambda line: MessageEvent(
+                    UrlMessage(
+                        author="user",
+                        url=line
+                    )
+                )
+            )
+        )
+
+    def _register_history_commands(self):
+        """Register commands for managing conversation history"""
+        self._register_command(
+            ControlPanelCommand(
+                command_id="clear",
+                command_label="/clear",
+                description="Clear the conversation history",
+                short_description="Clear chat history",
+                parser=lambda _: ClearHistoryEvent(),
+                priority=99,  # Clear history should be first
+                visible_from_cli=False
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="save_history",
+                command_label="/save_history",
+                description="Save history to a file",
+                short_description="Save chat history",
+                parser=lambda line: SaveHistoryEvent(line),
+                visible_from_cli=False
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="load_history",
+                command_label="/load_history",
+                description="Load history from a file",
+                short_description="Load chat history",
+                parser=lambda line: LoadHistoryEvent(line),
+                priority=98
+            )
+        )
+
+    def _register_utility_commands(self):
+        """Register utility commands like directory tree generation"""
+        self._register_command(
+            ControlPanelCommand(
+                command_id="tree",
+                command_label="/tree",
+                description="Generate a directory tree",
+                short_description="Show directory structure",
+                parser=self._parse_tree_command
+            )
+        )
 
     def render(self):
         return "\n".join(self._render_command_in_control_panel(command) for command in self.commands)
