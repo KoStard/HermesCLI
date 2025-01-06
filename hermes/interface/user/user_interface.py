@@ -51,14 +51,16 @@ class UserInterface(Interface):
                 continue
 
             message = event.get_message()
-            did_author_change = message.author != last_author
-            last_author = message.author
 
             if isinstance(message, TextMessage):
+                did_author_change = message.author != last_author
+                last_author = message.author
                 if did_author_change:
                     self.print_author(message.author)
                 self.markdown_highlighter.process_markdown(iter(message.get_content_for_user()))
             elif isinstance(message, TextGeneratorMessage):
+                did_author_change = message.author != last_author
+                last_author = message.author
                 if did_author_change:
                     self.print_author(message.author)
                 self.markdown_highlighter.process_markdown(message.get_content_for_user())
