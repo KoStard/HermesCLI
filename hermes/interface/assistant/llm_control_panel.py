@@ -287,6 +287,9 @@ class LLMControlPanel(ControlPanel):
             description=textwrap.dedent(
             """
             Mark the current task as done and provide a final report to the user.
+            You can take as many steps as you need to accomplish the task before running ///done.
+            If you run ///done without actually finishing the task, it will cause loss of customer trust.
+            Make sure you have finished and read through all the command outputs before marking the task as done.
             Syntax: `///done`, followed by the report content on subsequent lines,
             ending with `///end_report` on a new line.
             
