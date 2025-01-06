@@ -3,7 +3,7 @@ from typing import Optional
 
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, ThinkingAndResponseGeneratorMessage, UrlMessage, VideoMessage
+from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, LLMRunCommandOutput, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, ThinkingAndResponseGeneratorMessage, UrlMessage, VideoMessage
 from hermes.utils.binary_file import is_binary
 
 import logging
@@ -89,6 +89,15 @@ class RequestBuilder(ABC):
                 content = message.get_content_for_assistant()
                 if content:
                     self.handle_url_message(content, message.author, id(message))
+            elif isinstance(message, LLMRunCommandOutput):
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_llm_run_command_output(
+                        text=content,
+                        author=message.author,
+                        message_id=id(message),
+                        name=message.name
+                    )
             else:
                 self.notifications_printer.print_error(f"Unsupported message type: {type(message)}. Discarding message.")
                 continue
@@ -115,6 +124,16 @@ class RequestBuilder(ABC):
 
     def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int, file_role: Optional[str] = None):
         self.notifications_printer.print_error(f"Textual file message not supported by {self.model_tag}. Discarding message.")
+
+    def handle_llm_run_command_output(self, text: str, author: str, message_id: int, name: Optional[str] = None):
+        """Handle LLM-run command output messages by converting them to text messages with CommandExecutionOutput role"""
+        self.handle_text_message(
+            text=text,
+            author=author,
+            message_id=message_id,
+            name=name,
+            text_role="CommandExecutionOutput"
+        )
 
     def handle_url_message(self, url: str, author: str, message_id: int):
         self.notifications_printer.print_error(f"URL message not supported by {self.model_tag}. Discarding message.")

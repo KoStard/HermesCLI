@@ -420,6 +420,39 @@ class TextualFileMessage(Message):
         )
 
 @dataclass(init=False)
+class LLMRunCommandOutput(Message):
+    """Class for messages that represent the output of LLM-run commands"""
+    text: str
+    name: Optional[str]
+
+    def __init__(self, *, text: str, timestamp: Optional[datetime] = None, name: Optional[str] = None):
+        super().__init__(author="user", timestamp=timestamp)
+        self.text = text
+        self.name = name
+    
+    def get_content_for_user(self) -> str:
+        return f"LLM Run Command Output: {self.text}"
+
+    def get_content_for_assistant(self) -> str:
+        return self.text
+
+    def to_json(self) -> dict:
+        return {
+            "type": "llm_run_command_output",
+            "text": self.text,
+            "timestamp": self.timestamp.isoformat(),
+            "name": self.name
+        }
+
+    @staticmethod
+    def from_json(json_data: dict) -> "LLMRunCommandOutput":
+        return LLMRunCommandOutput(
+            text=json_data["text"],
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
+            name=json_data.get("name")
+        )
+
+@dataclass(init=False)
 class UrlMessage(Message):
     """Class for messages that are urls"""
     url: str
@@ -547,6 +580,7 @@ class ThinkingAndResponseGeneratorMessage(Message):
         return msg
 
 DESERIALIZATION_KEYMAP = {
+    "llm_run_command_output": LLMRunCommandOutput.from_json,
     "text": TextMessage.from_json,
     "text_generator": TextGeneratorMessage.from_json,
     "invisible": InvisibleMessage.from_json,

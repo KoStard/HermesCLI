@@ -8,7 +8,7 @@ from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator, iterate_while
-from hermes.message import Message, TextGeneratorMessage, TextMessage, TextualFileMessage
+from hermes.message import LLMRunCommandOutput, Message, TextGeneratorMessage, TextMessage, TextualFileMessage
 from hermes.event import AssistantDoneEvent, FileEditEvent, Event, MessageEvent
 
 logger = logging.getLogger(__name__)
@@ -354,7 +354,7 @@ class LLMControlPanel(ControlPanel):
         
         tree_generator = TreeGenerator()
         tree_string = tree_generator.generate_tree(path, depth)
-        tree_message = TextMessage(author="user", text=tree_string, text_role="CommandOutput", name="Directory Tree")
+        tree_message = LLMRunCommandOutput(text=tree_string, name="Directory Tree")
         yield MessageEvent(tree_message)
 
     def _parse_done_command(self, peekable_generator: PeekableGenerator) -> Generator[Event, None, None]:
@@ -383,11 +383,8 @@ class LLMControlPanel(ControlPanel):
         # If we reach here without finding ///end_report, yield what we have
         if report_content:
             yield AssistantDoneEvent()
-            yield MessageEvent(TextMessage(
-                author="assistant",
-                text="\n".join(report_content),
-                text_role="AgentReport",
-                name="Task Completion Report"
+            yield MessageEvent(LLMRunCommandOutput(
+                text="\n".join(report_content)
             ))
 
     def _parse_open_file_command(self, content: str) -> Generator[Event, None, None]:
@@ -404,16 +401,16 @@ class LLMControlPanel(ControlPanel):
         parts = shlex.split(content)
         
         if not parts:
-            yield MessageEvent(TextMessage(author="user", text="Error: No file path provided", text_role="CommandOutput"))
+            yield MessageEvent(LLMRunCommandOutput(text="Error: No file path provided", name="File Error"))
             return
             
         file_path = remove_quotes(parts[0])
         normalized_path = _escape_filepath(file_path)
         
         if not os.path.exists(normalized_path):
-            yield MessageEvent(TextMessage(author="user", text=f"Error: File not found at {normalized_path}"), text_role="CommandOutput")
+            yield MessageEvent(LLMRunCommandOutput(text=f"Error: File not found at {normalized_path}", name="File Error"))
         elif not os.access(normalized_path, os.R_OK):
-            yield MessageEvent(TextMessage(author="user", text=f"Error: Permission denied reading {normalized_path}"), text_role="CommandOutput")
+            yield MessageEvent(LLMRunCommandOutput(text=f"Error: Permission denied reading {normalized_path}", name="File Error"))
         else:
             yield MessageEvent(TextualFileMessage(author="user", text_filepath=normalized_path, file_role="CommandOutput"))
     

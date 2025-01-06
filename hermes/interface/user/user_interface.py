@@ -51,17 +51,22 @@ class UserInterface(Interface):
                 continue
 
             message = event.get_message()
-            if message.author != last_author:
-                print()
-                last_author = message.author
-                print_colored_text(f"{message.author}: ", CLIColors.YELLOW, end="", flush=True)
+            did_author_change = message.author != last_author
+            last_author = message.author
 
             if isinstance(message, TextMessage):
+                if did_author_change:
+                    self.print_author(message.author)
                 self.markdown_highlighter.process_markdown(iter(message.get_content_for_user()))
             elif isinstance(message, TextGeneratorMessage):
+                if did_author_change:
+                    self.print_author(message.author)
                 self.markdown_highlighter.process_markdown(message.get_content_for_user())
         print()
         yield from []
+    
+    def print_author(self, author: str):
+        print_colored_text(f"\n{author}: ", CLIColors.YELLOW, end="", flush=True)
 
     def get_input(self) -> Generator[Event, None, None]:
         message_source = "terminal"
