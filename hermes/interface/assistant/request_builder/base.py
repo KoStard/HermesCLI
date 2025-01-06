@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, ThinkingAndResponseGeneratorMessage, UrlMessage, VideoMessage
+from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, LLMRunCommandOutput, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, ThinkingAndResponseGeneratorMessage, UrlMessage, VideoMessage
 from hermes.utils.binary_file import is_binary
 
 import logging
@@ -78,11 +79,25 @@ class RequestBuilder(ABC):
             elif isinstance(message, TextualFileMessage):
                 content = message.get_content_for_assistant()
                 if content:
-                    self.handle_textual_file_message(content, message.author, id(message))
+                    self.handle_textual_file_message(
+                        content, 
+                        message.author, 
+                        id(message),
+                        file_role=message.file_role
+                    )
             elif isinstance(message, UrlMessage):
                 content = message.get_content_for_assistant()
                 if content:
                     self.handle_url_message(content, message.author, id(message))
+            elif isinstance(message, LLMRunCommandOutput):
+                content = message.get_content_for_assistant()
+                if content:
+                    self.handle_llm_run_command_output(
+                        text=content,
+                        author=message.author,
+                        message_id=id(message),
+                        name=message.name
+                    )
             else:
                 self.notifications_printer.print_error(f"Unsupported message type: {type(message)}. Discarding message.")
                 continue
@@ -107,8 +122,18 @@ class RequestBuilder(ABC):
     def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
         self.notifications_printer.print_error(f"PDF message not supported by {self.model_tag}. Discarding message.")
 
-    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
+    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int, file_role: Optional[str] = None):
         self.notifications_printer.print_error(f"Textual file message not supported by {self.model_tag}. Discarding message.")
+
+    def handle_llm_run_command_output(self, text: str, author: str, message_id: int, name: Optional[str] = None):
+        """Handle LLM-run command output messages by converting them to text messages with CommandExecutionOutput role"""
+        self.handle_text_message(
+            text=text,
+            author=author,
+            message_id=message_id,
+            name=name,
+            text_role="CommandExecutionOutput"
+        )
 
     def handle_url_message(self, url: str, author: str, message_id: int):
         self.notifications_printer.print_error(f"URL message not supported by {self.model_tag}. Discarding message.")
@@ -178,7 +203,7 @@ class RequestBuilder(ABC):
             self._url_contents[message_id] = None
             return None
 
-    def _default_handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
+    def _default_handle_textual_file_message(self, text_filepath: str, author: str, message_id: int, file_role: Optional[str] = None):
         """
         Read the content of the file, and create a text message with the content of the file
         Then use .handle_text_message with the filepath as name and 'textual_file' as role
@@ -193,7 +218,7 @@ class RequestBuilder(ABC):
                 author=author,
                 message_id=message_id,
                 name=text_filepath,
-                text_role="textual_file"
+                text_role="TextualFile" if not file_role else f"TextualFile with role={file_role}"
             )
         except UnsupportedFormatException as e:
             if not is_binary(text_filepath):
@@ -205,7 +230,7 @@ class RequestBuilder(ABC):
                     author=author,
                     message_id=message_id,
                     name=text_filepath,
-                    text_role="textual_file"
+                    text_role="TextualFile" if not file_role else f"TextualFile with role={file_role}"
                 )
             else:
                 self.notifications_printer.print_error(f"Error reading file {text_filepath}: {e}")

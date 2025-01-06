@@ -1,5 +1,5 @@
 from base64 import b64encode
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.text_messages_aggregator import TextMessagesAggregator
@@ -54,8 +54,8 @@ class OpenAIRequestBuilder(RequestBuilder):
             }
         }, author)
 
-    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int):
-        self._default_handle_textual_file_message(text_filepath, author, message_id)
+    def handle_textual_file_message(self, text_filepath: str, author: str, message_id: int, file_role: Optional[str] = None):
+        self._default_handle_textual_file_message(text_filepath, author, message_id, file_role)
 
     def handle_url_message(self, url: str, author: str, message_id: int):
         self._default_handle_url_message(url, author, message_id)

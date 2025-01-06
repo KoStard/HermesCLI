@@ -71,6 +71,10 @@ class ExitEvent(EngineCommandEvent):
     pass
 
 @dataclass
+class AgentModeEvent(EngineCommandEvent):
+    enabled: bool
+
+@dataclass
 class FileEditEvent(EngineCommandEvent):
     """Event for file operations like create, append or update markdown sections"""
     file_path: str
@@ -78,6 +82,11 @@ class FileEditEvent(EngineCommandEvent):
     mode: str  # 'create', 'append', 'update_markdown_section', 'append_markdown_section'
     submode: str = None  # Optional, only for specific use cases
     section_path: list[str] = None  # For markdown section updates, e.g. ['Introduction', 'Overview', '__preface']
+
+
+@dataclass
+class AssistantDoneEvent(EngineCommandEvent):
+    """Event emitted when the assistant marks a task as done in agent mode"""
 
 """
 Notification events are events that contain a notification and are sent to the next participant.
@@ -89,7 +98,6 @@ class NotificationEvent(Event):
 
     def __init__(self, text: str):
         self.text = text
-
 
 @dataclass
 class RawContentForHistoryEvent(Event):

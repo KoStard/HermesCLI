@@ -10,9 +10,9 @@ from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from hermes.history import History
 
 from hermes.interface.base import Interface
-from hermes.interface.control_panel import UserControlPanel
 from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
+from hermes.interface.user.user_control_panel import UserControlPanel
 from hermes.message import InvisibleMessage, Message, TextGeneratorMessage, TextMessage
 from hermes.event import Event, MessageEvent, NotificationEvent, RawContentForHistoryEvent
 from hermes.interface.helpers import CLINotificationsPrinter, CLIColors, colorize_text, print_colored_text
@@ -51,17 +51,22 @@ class UserInterface(Interface):
                 continue
 
             message = event.get_message()
-            if message.author != last_author:
-                print()
-                last_author = message.author
-                print_colored_text(f"{message.author}: ", CLIColors.YELLOW, end="", flush=True)
+            did_author_change = message.author != last_author
+            last_author = message.author
 
             if isinstance(message, TextMessage):
+                if did_author_change:
+                    self.print_author(message.author)
                 self.markdown_highlighter.process_markdown(iter(message.get_content_for_user()))
             elif isinstance(message, TextGeneratorMessage):
+                if did_author_change:
+                    self.print_author(message.author)
                 self.markdown_highlighter.process_markdown(message.get_content_for_user())
         print()
         yield from []
+    
+    def print_author(self, author: str):
+        print_colored_text(f"\n{author}: ", CLIColors.YELLOW, end="", flush=True)
 
     def get_input(self) -> Generator[Event, None, None]:
         message_source = "terminal"

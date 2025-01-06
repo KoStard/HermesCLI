@@ -7,7 +7,7 @@ class TreeGenerator:
             exclusions = [lambda x: x.startswith("."), lambda x: x == '__pycache__']
         self.exclusions = exclusions
 
-    def generate_tree(self, root_path: str, depth: int = None) -> TextMessage:
+    def generate_tree(self, root_path: str, depth: int = None) -> str:
         """
         Generates a text-based tree representation of a directory structure.
 
@@ -16,10 +16,9 @@ class TreeGenerator:
             depth: The maximum depth of the tree. If None, the tree will be generated to full depth.
 
         Returns:
-            A TextMessage containing the tree representation.
+            A str containing the tree representation.
         """
-        tree_string = self._build_tree(root_path, "", depth, 0)
-        return TextMessage(author="user", text=tree_string)
+        return self._build_tree(root_path, "", depth, 0)
 
     def _build_tree(self, current_path: str, prefix: str, depth: int, current_depth: int) -> str:
         """

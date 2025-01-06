@@ -371,10 +371,12 @@ class EmbeddedPDFMessage(Message):
 class TextualFileMessage(Message):
     """Class for messages that are textual files"""
     text_filepath: str
+    file_role: Optional[str]
 
-    def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None):
+    def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None, file_role: Optional[str] = None):
         super().__init__(author=author, timestamp=timestamp)
         self.text_filepath = self._get_full_filepath(text_filepath)
+        self.file_role = file_role
     
     def _get_full_filepath(self, text_filepath: str) -> str:
         """
@@ -404,7 +406,8 @@ class TextualFileMessage(Message):
             "type": "textual_file",
             "text_filepath": self.text_filepath,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
+            "file_role": self.file_role
         }
 
     @staticmethod
@@ -412,7 +415,41 @@ class TextualFileMessage(Message):
         return TextualFileMessage(
             author=json_data["author"],
             text_filepath=json_data["text_filepath"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
+            file_role=json_data.get("file_role")
+        )
+
+@dataclass(init=False)
+class LLMRunCommandOutput(Message):
+    """Class for messages that represent the output of LLM-run commands"""
+    text: str
+    name: Optional[str]
+
+    def __init__(self, *, text: str, timestamp: Optional[datetime] = None, name: Optional[str] = None):
+        super().__init__(author="user", timestamp=timestamp)
+        self.text = text
+        self.name = name
+    
+    def get_content_for_user(self) -> str:
+        return f"LLM Run Command Output: {self.text}"
+
+    def get_content_for_assistant(self) -> str:
+        return self.text
+
+    def to_json(self) -> dict:
+        return {
+            "type": "llm_run_command_output",
+            "text": self.text,
+            "timestamp": self.timestamp.isoformat(),
+            "name": self.name
+        }
+
+    @staticmethod
+    def from_json(json_data: dict) -> "LLMRunCommandOutput":
+        return LLMRunCommandOutput(
+            text=json_data["text"],
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
+            name=json_data.get("name")
         )
 
 @dataclass(init=False)
@@ -543,6 +580,7 @@ class ThinkingAndResponseGeneratorMessage(Message):
         return msg
 
 DESERIALIZATION_KEYMAP = {
+    "llm_run_command_output": LLMRunCommandOutput.from_json,
     "text": TextMessage.from_json,
     "text_generator": TextGeneratorMessage.from_json,
     "invisible": InvisibleMessage.from_json,
