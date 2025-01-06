@@ -47,10 +47,24 @@ class LLMControlPanel(ControlPanel):
             Use them **only** if the user directly asks for them. 
             Understand that they can cause the user frustration and lose trust if used incorrectly. 
             The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. 
-            You don't have access to tools other than these. 
+            You don't have access to tools other than these. Know that the user doesn't have access to your tools.
             If the content doesn't match these instructions, they will be ignored. 
             The command syntax should be used literally, symbol-by-symbol correctly.
+            
+            **Using Commands for Examples**
+            When the user asks for an example of how to use a command (e.g., "how would you create a file?" or "show me an example of creating a file"), 
+            you **MUST** prefix the command with `#` to indicate that it is an example and should not be executed.
+            Make sure to make the corresponding closing tag marked with `#` as well.
+            For instance:
+            - If the user asks, "How would you create a file?", respond with:
 
+            #///create_file example.txt
+            This is an example file content.
+            #///end_file
+
+            (Note the `#` prefix, which ensures the command is treated as an example and not executed.)
+
+            **Getting the output of the commands**
             You'll see the results of the command after you send your final message.
             """))
             
