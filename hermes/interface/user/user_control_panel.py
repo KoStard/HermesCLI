@@ -257,8 +257,6 @@ class UserControlPanel(ControlPanel):
                 command_parser = self.commands[matching_command].parser
                 command_content = self._extract_command_content_in_line(matching_command, line)
 
-                self.notifications_printer.print_notification(f"Command {matching_command} received")
-
                 try:
                     parsed_command_event = command_parser(command_content)
                 except Exception as e:
