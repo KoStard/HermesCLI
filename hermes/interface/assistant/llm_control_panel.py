@@ -43,7 +43,7 @@ class LLMControlPanel(ControlPanel):
         """Add initial help content about command usage"""
         self._add_help_content(textwrap.dedent(
             """
-            You are allowed to use the following commands. 
+            You are allowed to use the following commands.
             Use them **only** if the user directly asks for them. 
             Understand that they can cause the user frustration and lose trust if used incorrectly. 
             The commands will be programmatically parsed, make sure to follow the instructions precisely when using them. 
@@ -285,6 +285,20 @@ class LLMControlPanel(ControlPanel):
 
     def _register_agent_commands(self):
         """Register commands that are only available in agent mode"""
+        self._add_help_content(textwrap.dedent(
+            """
+            **Agent Mode Enabled**
+            You are now in the agent mode.
+            The difference here is that you don't have to finish the task in one reply.
+            If the task is too big, you can finish it with multiple messages.
+            When you send a message without ///done command, you'll be able to continue with sending your next message, the turn will not move to the user.
+            If the task requires information that you don't yet have, or want to check something, you can use the commands, finish your message, 
+            the engine will run the commands and you'll see the results, which will allow you to continue with the task in next messages.
+
+            Then after you have confirmed that you finished the task, and you want to show your results to the user, you can add the ///done command.
+            """
+        ), is_agent_only=True)
+
         self._register_command(ControlPanelCommand(
             command_id="done",
             command_label="///done",
@@ -312,7 +326,7 @@ class LLMControlPanel(ControlPanel):
 
     def render(self) -> str:
         content = []
-        content.append(self._render_help_content())
+        content.append(self._render_help_content(is_agent_mode=self._agent_mode))
         for command_label in self.commands:
             command = self.commands[command_label]
             # Only show agent commands when in agent mode
