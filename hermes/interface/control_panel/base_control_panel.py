@@ -45,11 +45,15 @@ class ControlPanel(ABC):
         """
         self.commands[command.command_label] = command
 
-    def _add_help_content(self, content: str):
-        self.help_contents.append(content)
+    def _add_help_content(self, content: str, is_agent_only: bool = False):
+        self.help_contents.append((content, is_agent_only))
     
-    def _render_help_content(self) -> str:
-        return "\n".join(self.help_contents)
+    def _render_help_content(self, is_agent_mode: bool = False) -> str:
+        filtered_contents = [
+            content for content, agent_only in self.help_contents
+            if not agent_only or is_agent_mode
+        ]
+        return "\n".join(filtered_contents)
 
     def _render_command_in_control_panel(self, command_label: str) -> str:
         return f"{command_label} - {self.commands[command_label].description}"
