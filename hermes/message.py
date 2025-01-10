@@ -364,7 +364,7 @@ class EmbeddedPDFMessage(Message):
                     pages.append(int(page_or_range))
         else:
             pdf_filepath = raw_line
-            pages = None
+            pages = []
         return EmbeddedPDFMessage(author=author, pdf_filepath=pdf_filepath, pages=pages)
 
 @dataclass(init=False)
