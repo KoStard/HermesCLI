@@ -27,6 +27,18 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
     chat_parser.add_argument("--model", type=str, help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.get_provider_model_pairs())})")
     chat_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
     
+    # Utils command
+    utils_parser = subparsers.add_parser("utils", help="Utility commands")
+    utils_subparsers = utils_parser.add_subparsers(dest="utils_command", required=True)
+    
+    # Extract PDF pages command
+    extract_pdf_parser = utils_subparsers.add_parser(
+        "extract_pdf_pages",
+        help="Extract pages from a PDF file. Will be saved as original_path/original_name_extracted.pdf"
+    )
+    extract_pdf_parser.add_argument("filepath", type=str, help="Path to the PDF file")
+    extract_pdf_parser.add_argument("pages", type=str, help="Pages to extract (e.g. {1,4:5})")
+
     # Info command
     info_parser = subparsers.add_parser("info", help="Get command information")
     info_subparsers = info_parser.add_subparsers(dest="info_command", required=True)
@@ -64,6 +76,9 @@ def main():
     
     if cli_args.execution_mode == "info":
         execute_info_command(cli_args, user_control_panel.get_commands(), llm_control_panel.get_commands())
+        return
+    elif cli_args.execution_mode == "utils":
+        execute_utils_command(cli_args)
         return
     user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(cli_arguments_parser, cli_args)
     stt_input_handler_optional = get_stt_input_handler(cli_args, config)
@@ -132,6 +147,32 @@ def execute_info_command(cli_args, user_commands, llm_commands):
         lister.print_commands(llm_commands)
     elif cli_args.info_command == "list-user-commands":
         lister.print_commands(user_commands)
+
+def execute_utils_command(cli_args):
+    if cli_args.utils_command == "extract_pdf_pages":
+        pages = []
+        pages_str = cli_args.pages.strip('{}')
+        for part in pages_str.split(','):
+            if ':' in part:
+                start, end = map(int, part.split(':'))
+                pages.extend(range(start, end + 1))
+            else:
+                pages.append(int(part))
+        
+        from PyPDF2 import PdfReader, PdfWriter
+        import os
+        
+        reader = PdfReader(cli_args.filepath)
+        writer = PdfWriter()
+        
+        for page_num in pages:
+            if 1 <= page_num <= len(reader.pages):
+                writer.add_page(reader.pages[page_num - 1])
+        
+        output_path = f"{os.path.splitext(cli_args.filepath)[0]}_extracted.pdf"
+        with open(output_path, 'wb') as output_file:
+            writer.write(output_file)
+        print(f"Extracted pages saved to: {output_path}")
 
 
 def load_config():
