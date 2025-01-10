@@ -4,8 +4,8 @@ from typing import Generator, Optional
 
 from hermes.exa_client import ExaClient
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
-from ..helpers.peekable_generator import PeekableGenerator, iterate_while
-from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
+from ..helpers.peekable_generator import PeekableGenerator
+from hermes.message import ImageUrlMessage, Message, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
 from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent, AgentModeEvent
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.utils.tree_generator import TreeGenerator
