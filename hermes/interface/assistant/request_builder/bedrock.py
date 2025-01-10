@@ -9,6 +9,7 @@ class BedrockRequestBuilder(RequestBuilder):
     def initialize_request(self):
         self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
+        self._extracted_pdfs = {}
 
     def _add_content(self, content: dict, author: str):
         self.all_messages_aggregator.add_message(content, author)
@@ -45,12 +46,23 @@ class BedrockRequestBuilder(RequestBuilder):
             return "user"
         return "assistant"
 
-    def handle_embedded_pdf_message(self, pdf_path: str, author: str, message_id: int):
+    def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
+        extracted_pdf_key = (pdf_path, tuple(pages))
+        # Extract specified pages if pages are provided
+        if extracted_pdf_key in self._extracted_pdfs:
+            final_pdf_path = self._extracted_pdfs[extracted_pdf_key]
+        else:
+            if pages:
+                final_pdf_path = self._extract_pages_from_pdf(pdf_path, pages)
+            else:
+                final_pdf_path = pdf_path
+            self._extracted_pdfs[extracted_pdf_key] = final_pdf_path
+        
         self._add_content({"document": {
                 "format": "pdf",
-                "name": self._get_file_name(pdf_path),
+                "name": self._get_file_name(pdf_path),  # Using original name for PDF file
                 "source": {
-                    "bytes": self._get_file_bytes(pdf_path)
+                    "bytes": self._get_file_bytes(final_pdf_path)  # Using the extracted document
                 }
             }}, author)
         
