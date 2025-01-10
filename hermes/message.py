@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
 from hermes.interface.helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.utils.file_extension import remove_quotes
+from hermes.utils.filepath import prepare_filepath
 from hermes.interface.assistant.llm_response_types import BaseLLMResponse, ThinkingLLMResponse
 import os
 
@@ -210,7 +211,7 @@ class ImageMessage(Message):
 
     def __init__(self, *, author: str, image_path: str, timestamp: Optional[datetime] = None):
         super().__init__(author=author, timestamp=timestamp)
-        self.image_path = image_path
+        self.image_path = prepare_filepath(image_path)
     
     def get_content_for_user(self) -> str:
         return f"Image: {self.image_path}"
@@ -242,7 +243,7 @@ class AudioFileMessage(Message):
 
     def __init__(self, *, author: str, audio_filepath: str, timestamp: Optional[datetime] = None):
         super().__init__(author=author, timestamp=timestamp)
-        self.audio_filepath = audio_filepath
+        self.audio_filepath = prepare_filepath(audio_filepath)
     
     def get_content_for_user(self) -> str:
         return f"Audio: {self.audio_filepath}"
@@ -273,7 +274,7 @@ class VideoMessage(Message):
 
     def __init__(self, *, author: str, video_filepath: str, timestamp: Optional[datetime] = None):
         super().__init__(author=author, timestamp=timestamp)
-        self.video_filepath = video_filepath
+        self.video_filepath = prepare_filepath(video_filepath)
 
     def get_content_for_user(self) -> str:
         return f"Video: {self.video_filepath}"
@@ -306,7 +307,7 @@ class EmbeddedPDFMessage(Message):
 
     def __init__(self, *, author: str, pdf_filepath: str, timestamp: Optional[datetime] = None, pages: Optional[list[int]] = None):
         super().__init__(author=author, timestamp=timestamp)
-        self.pdf_filepath = pdf_filepath
+        self.pdf_filepath = prepare_filepath(pdf_filepath)
         self.pages = pages
 
     def get_content_for_user(self) -> str:
@@ -378,22 +379,10 @@ class TextualFileMessage(Message):
         self.text_filepath = self._get_full_filepath(text_filepath)
         self.file_role = file_role
     
-    def _get_full_filepath(self, text_filepath: str) -> str:
-        """
-        Convert a relative filepath to an absolute filepath.
-        """
-        # Expand user directory (~)
-        text_filepath = remove_quotes(text_filepath)
-        expanded_path = os.path.expanduser(text_filepath)
-
-        # Convert to absolute path if relative
-        if not os.path.isabs(expanded_path):
-            expanded_path = os.path.abspath(expanded_path)
-
-        # Normalize the path (resolve .. and . components)
-        normalized_path = os.path.normpath(expanded_path)
-
-        return normalized_path
+    def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None, file_role: Optional[str] = None):
+        super().__init__(author=author, timestamp=timestamp)
+        self.text_filepath = prepare_filepath(remove_quotes(text_filepath))
+        self.file_role = file_role
 
     def get_content_for_user(self) -> str:
         return f"Text file: {self.text_filepath}"

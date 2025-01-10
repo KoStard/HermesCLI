@@ -413,7 +413,7 @@ class LLMControlPanel(ControlPanel):
             return
             
         file_path = remove_quotes(parts[0])
-        normalized_path = _escape_filepath(file_path)
+        normalized_path = prepare_filepath(file_path)
         
         if not os.path.exists(normalized_path):
             yield MessageEvent(LLMRunCommandOutput(text=f"Error: File not found at {normalized_path}", name="File Error"))
@@ -443,7 +443,7 @@ class FileEditCommandHandler:
         # The content contains just the path after the command
         raw_path = content.strip()
         unquoted_path = remove_quotes(raw_path)
-        self.file_path = _escape_filepath(unquoted_path)
+        self.file_path = prepare_filepath(unquoted_path)
 
         self._content = []
 
@@ -481,7 +481,7 @@ class MarkdownSectionCommandHandler:
             logger.warning("shlex.split() failed, falling back to basic split, spaces won't work", e)
             file_path, section_path_raw = content.split(" ", 1)  # Split into [file_path, section_path]
             
-        self.file_path = _escape_filepath(remove_quotes(file_path.strip()))
+        self.file_path = prepare_filepath(remove_quotes(file_path.strip()))
         self.section_path = [s.strip() for s in section_path_raw.split(">")]
         self._content = []
         self.mode = mode
@@ -506,29 +506,4 @@ class MarkdownSectionCommandHandler:
             section_path=self.section_path
         )
 
-def _escape_filepath(filepath_expression: str) -> str:
-    """
-    Convert various filepath formats to a normalized absolute path.
-    
-    Args:
-        filepath_expression: Input path that can be:
-            - filename.extension
-            - ./relative/path/filename.extension
-            - ../../relative/path/filename.extension
-            - /absolute/path/filename.extension
-            - ~/absolute/path/filename.extension
-            
-    Returns:
-        Normalized absolute path
-    """
-    # Expand user directory (~)
-    expanded_path = os.path.expanduser(filepath_expression)
-    
-    # Convert to absolute path if relative
-    if not os.path.isabs(expanded_path):
-        expanded_path = os.path.abspath(expanded_path)
-        
-    # Normalize the path (resolve .. and . components)
-    normalized_path = os.path.normpath(expanded_path)
-    
-    return normalized_path
+from hermes.utils.filepath import prepare_filepath
