@@ -6,7 +6,7 @@ from hermes.exa_client import ExaClient
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator
 from hermes.message import ImageUrlMessage, Message, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
-from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent, AgentModeEvent
+from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent, AgentModeEvent, LLMCommandsExecutionEvent
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.utils.tree_generator import TreeGenerator
 from hermes.utils.file_extension import remove_quotes
@@ -225,6 +225,15 @@ class UserControlPanel(ControlPanel):
 
     def _register_utility_commands(self):
         """Register utility commands like directory tree generation"""
+        self._register_command(
+            ControlPanelCommand(
+                command_id="llm_commands_execution",
+                command_label="/llm_commands_execution",
+                description="Enable or disable execution of LLM commands (on/off)",
+                short_description="Toggle LLM command execution",
+                parser=lambda line: LLMCommandsExecutionEvent(enabled=line.strip().lower() == "on")
+            )
+        )
         self._register_command(
             ControlPanelCommand(
                 command_id="tree",

@@ -18,6 +18,7 @@ class LLMControlPanel(ControlPanel):
         super().__init__()
         self.notifications_printer = notifications_printer
         self._agent_mode = False
+        self._commands_parsing_status = True
         
         # Add help content
         self._add_initial_help_content()
@@ -337,6 +338,10 @@ class LLMControlPanel(ControlPanel):
     def break_down_and_execute_message(self, message: Message) -> Generator[Event, None, None]:
         peekable_generator = PeekableGenerator(self._lines_from_message(message))
 
+        if not self._commands_parsing_status:
+            yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=peekable_generator, is_directly_entered=True))
+            return
+
         while True:
             try:
                 full_line = peekable_generator.peek()
@@ -442,6 +447,9 @@ class LLMControlPanel(ControlPanel):
     def disable_agent_mode(self):
         self._agent_mode = False
         # TODO: Inform the assistant that the agent mode was disabled and it might have lost access to some commands
+
+    def set_commands_parsing_status(self, status):
+        self._commands_parsing_status = status
 
 class FileEditCommandHandler:
     def __init__(self, content: str, mode: str):

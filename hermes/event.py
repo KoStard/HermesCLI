@@ -88,6 +88,11 @@ class FileEditEvent(EngineCommandEvent):
 class AssistantDoneEvent(EngineCommandEvent):
     """Event emitted when the assistant marks a task as done in agent mode"""
 
+@dataclass
+class LLMCommandsExecutionEvent(EngineCommandEvent):
+    """Event for toggling LLM command execution"""
+    enabled: bool
+
 """
 Notification events are events that contain a notification and are sent to the next participant.
 """
