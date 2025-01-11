@@ -2,7 +2,7 @@ from asyncio import Event
 import os
 import logging
 from typing import Generator
-from hermes.event import AssistantDoneEvent, ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent, AgentModeEvent
+from hermes.event import AssistantDoneEvent, ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent, AgentModeEvent, LLMCommandsExecutionEvent
 from hermes.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter, CLIColors
 from hermes.message import TextMessage
@@ -141,6 +141,10 @@ class Engine:
                     self.notifications_printer.print_notification("Assistant marked task as done")
                     self._received_assistant_done_event = True
                     # TODO: Handle the completion report and any cleanup
+                elif isinstance(event, LLMCommandsExecutionEvent):
+                    self.assistant_participant.interface.control_panel.set_commands_parsing_status(event.enabled)
+                    status = "enabled" if event.enabled else "disabled"
+                    self.notifications_printer.print_notification(f"LLM command execution {status}")
                 elif isinstance(event, FileEditEvent):
                     if event.mode == 'create':
                         if not self._confirm_file_creation(event.file_path):
