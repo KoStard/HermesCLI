@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Optional
+import os
 
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
+from hermes.interface.assistant.request_builder.notebook_converter import convert_notebook_custom
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.message import AudioFileMessage, EmbeddedPDFMessage, ImageMessage, ImageUrlMessage, InvisibleMessage, LLMRunCommandOutput, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, ThinkingAndResponseGeneratorMessage, UrlMessage, VideoMessage
 from hermes.utils.binary_file import is_binary
@@ -208,6 +210,22 @@ class RequestBuilder(ABC):
         Read the content of the file, and create a text message with the content of the file
         Then use .handle_text_message with the filepath as name and 'textual_file' as role
         """
+        # Check if file is a Jupyter notebook
+        if text_filepath.endswith('.ipynb'):
+            try:
+                file_content = convert_notebook_custom(text_filepath)
+                self.handle_text_message(
+                    text=file_content,
+                    author=author,
+                    message_id=message_id,
+                    name=text_filepath,
+                    text_role="JupyterNotebook" if not file_role else f"JupyterNotebook with role={file_role}"
+                )
+                return
+            except Exception as e:
+                self.notifications_printer.print_error(f"Error converting notebook {text_filepath}: {e}")
+                # Fall through to regular file handling
+        
         from markitdown import MarkItDown, UnsupportedFormatException
         try:
             markitdown = MarkItDown()
