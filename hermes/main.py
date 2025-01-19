@@ -24,7 +24,7 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
     chat_parser = subparsers.add_parser("chat", help="Get command information")
 
     chat_parser.add_argument("--debug", action="store_true")
-    chat_parser.add_argument("--model", type=str, help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.provider_and_model_tag_pairs)})")
+    chat_parser.add_argument("--model", type=str, help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.get_provider_model_pairs())})")
     chat_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
     
     # Info command
