@@ -51,19 +51,24 @@ class LLMControlPanel(ControlPanel):
             If the content doesn't match these instructions, they will be ignored. 
             The command syntax should be used literally, symbol-by-symbol correctly.
             
-            **Using Commands for Examples**
-            When the user asks for an example of how to use a command (e.g., "how would you create a file?" or "show me an example of creating a file"), 
-            you **MUST** prefix the command with `#` to indicate that it is an example and should not be executed.
-            Make sure to make the corresponding closing tag marked with `#` as well.
-            For instance:
-            - If the user asks, "How would you create a file?", respond with:
-
-            #///create_file example.txt
-            This is an example file content.
-            #///end_file
-
-            (Note the `#` prefix, which ensures the command is treated as an example and not executed.)
-
+            1. **Direct Commands**:
+                - When the user directly asks for a file to be created (e.g., "create a file", "make a file"), use the command syntax **without** the `#` prefix. Example:
+                    ```
+                    ///create_file example.txt
+                    This is the file content.
+                    ///end_file
+                    ```
+                
+            2. **Example Commands**:
+                - When the user asks for an **example** of how to use a command (e.g., "how would you create a file?"), use the `#` prefix to indicate it is an example. Example:
+                    ```
+                    #///create_file example.txt
+                    This is an example file content.
+                    #///end_file
+                    ```
+            
+            Note that below, you'll have only the "direct commands" listed, but if you are making an example, you can use the example syntax.
+            
             **Getting the output of the commands**
             You'll see the results of the command after you send your final message.
             """))
