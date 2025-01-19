@@ -11,6 +11,7 @@ requires-python = ">=3.10"
 dependencies = [
     "anthropic>=0.40.0",
     "boto3>=1.35.81",
+    "google-genai>=0.5.0",
     "google-generativeai>=0.8.3",
     "groq>=0.13.1",
     "markitdown>=0.0.1a2",
@@ -27,3 +28,8 @@ dependencies = [
 
 [project.scripts]
 hermes = "hermes.main:main"
+
+[dependency-groups]
+dev = [
+    "ipython>=8.31.0",
+]

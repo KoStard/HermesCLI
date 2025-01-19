@@ -4,6 +4,7 @@ from hermes.interface.assistant.chat_models.bedrock import BedrockModel
 from hermes.interface.assistant.chat_models.openai import OpenAIModel
 from hermes.interface.assistant.chat_models.claude import ClaudeModel
 from hermes.interface.assistant.chat_models.gemini import GeminiModel
+from hermes.interface.assistant.chat_models.gemini2 import Gemini2Model
 from hermes.interface.assistant.chat_models.groq import GroqModel
 from hermes.interface.assistant.chat_models.deepseek import DeepSeekModel
 from hermes.interface.assistant.chat_models.sambanova import SambanovaModel
@@ -15,7 +16,7 @@ from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 class ModelFactory:
     def __init__(self, notifications_printer: CLINotificationsPrinter):
         self.notifications_printer = notifications_printer
-        self.model_classes: List[Type[ChatModel]] = [OpenAIModel, ClaudeModel, GeminiModel, GroqModel, DeepSeekModel, SambanovaModel, OpenRouterModel, BedrockModel, XAIModel]
+        self.model_classes: List[Type[ChatModel]] = [OpenAIModel, ClaudeModel, GeminiModel, Gemini2Model, GroqModel, DeepSeekModel, SambanovaModel, OpenRouterModel, BedrockModel, XAIModel]
         
         # Create mapping of (provider, model_tag) -> model_class
         self.provider_model_map = {}
