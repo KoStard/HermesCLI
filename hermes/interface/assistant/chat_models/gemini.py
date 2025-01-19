@@ -93,8 +93,6 @@ class GeminiModel(ChatModel):
             'gemini-1.5-flash-002',
             'gemini-exp-1114',
             'gemini-1.5-pro-002/grounded',
-            'gemini-2.0-flash-exp',
-            'gemini-2.0-flash-thinking-exp-1219',
         ]
         return models
 

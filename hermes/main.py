@@ -117,7 +117,8 @@ def main():
     except EOFError:
         print("\nExiting gracefully...")
     except ValueError as e:
-        print("Error occured:", e)
+        print("Error occured:")
+        raise e
     finally:
         # Cleanup debug interface if it exists
         if debug_participant is not None:
