@@ -11,7 +11,6 @@ class OpenAIRequestBuilder(RequestBuilder):
     def initialize_request(self):
         self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
-        self.temperature = 0.7  # Default temperature
 
     def _add_content(self, content: dict, author: str):
         self.all_messages_aggregator.add_message(content, author)
@@ -74,5 +73,4 @@ class OpenAIRequestBuilder(RequestBuilder):
             "model": self.model_tag,
             "messages": final_messages,
             "stream": True,
-            "temperature": self.temperature,
         }
