@@ -43,25 +43,42 @@ class HistoryItem:
 
 
 class History:
-    _items: List[HistoryItem]
+    _committed_items: List[HistoryItem]
+    _uncommitted_items: List[HistoryItem]
+    
     def __init__(self):
-        self._items = []
+        self._committed_items = []
+        self._uncommitted_items = []
 
     def add_message(self, message: Message):
-        self._items.append(HistoryItem(message=message))
+        self._uncommitted_items.append(HistoryItem(message=message))
     
     def add_raw_content(self, raw_content: RawContentForHistoryEvent):
-        self._items.append(HistoryItem(raw_content=raw_content))
+        self._uncommitted_items.append(HistoryItem(raw_content=raw_content))
+
+    def commit(self):
+        """Move uncommitted items to committed"""
+        self._committed_items.extend(self._uncommitted_items)
+        self._uncommitted_items = []
+
+    def reset_uncommitted(self):
+        """Clear uncommitted items without committing"""
+        had_changes = bool(self._uncommitted_items)
+        self._uncommitted_items = []
+        return had_changes
 
     def get_messages(self) -> List[Message]:
-        return [item.message for item in self._items if item.message]
+        all_items = self._committed_items + self._uncommitted_items
+        return [item.message for item in all_items if item.message]
     
     def get_messages_as_events(self) -> List[Event]:
-        return [MessageEvent(item.message) for item in self._items if item.message]
+        all_items = self._committed_items + self._uncommitted_items
+        return [MessageEvent(item.message) for item in all_items if item.message]
     
     def get_history_for(self, author: str) -> List[Message]:
         results = []
-        for item in self._items:
+        all_items = self._committed_items + self._uncommitted_items
+        for item in all_items:
             # Not including the text that is directly entered, which means is directly extracted from the raw content, which is included as well
             if item.message:
                 if item.message.author != author:
@@ -75,7 +92,8 @@ class History:
         return results
 
     def clear(self):
-        self._items = []
+        self._committed_items = []
+        self._uncommitted_items = []
     
     def save(self, filename: str):
         """

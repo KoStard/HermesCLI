@@ -27,11 +27,13 @@ class Engine:
         while True:
             try:
                 self._run_cycle()
+            except KeyboardInterrupt:
+                if self.history.reset_uncommitted():
+                    self.notifications_printer.print_notification("Reset uncommitted changes from interrupted operation", CLIColors.YELLOW)
+                continue
+            except EOFError:
+                return
             except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    continue
-                if isinstance(e, EOFError):
-                    return
                 self._handle_save_history_event(SaveHistoryEvent())
                 raise e
         
@@ -45,6 +47,8 @@ class Engine:
         """Handle user events and engine commands"""
         history_snapshot = self.history.get_history_for(self.user_participant.get_name())
         consumption_events = self.user_participant.consume_events(history_snapshot, self._save_to_history(assistant_events))
+        
+        self.history.commit()
 
         action_events_stream = self.user_participant.act()
         events_stream = chain(consumption_events, action_events_stream)
@@ -56,7 +60,8 @@ class Engine:
         
         # As user events don't come async, and we can't make the LLM request before finishing the user side
         # Converting to list is also important as user events can impact the past history
-        return list(self._handle_engine_commands_from_stream(events_stream))
+        user_events = list(self._handle_engine_commands_from_stream(events_stream))
+        return user_events
 
     def _run_assistant(self, user_events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """Handle assistant events and agent mode continuation"""
