@@ -1,5 +1,6 @@
 from typing import Generator
 
+from hermes.interface.assistant.llm_response_types import TextLLMResponse, ThinkingLLMResponse
 from hermes.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.openai import OpenAIRequestBuilder
@@ -27,8 +28,10 @@ class OpenAIModel(ChatModel):
         except openai.AuthenticationError as e:
             raise Exception("Authentication failed. Please check your API key.", e)
         for chunk in stream:
+            if hasattr(chunk.choices[0].delta, 'reasoning_content') and chunk.choices[0].delta.reasoning_content is not None:
+                yield ThinkingLLMResponse(chunk.choices[0].delta.reasoning_content)
             if chunk.choices[0].delta.content is not None:
-                yield chunk.choices[0].delta.content
+                yield TextLLMResponse(chunk.choices[0].delta.content)
 
     @staticmethod
     def get_provider() -> str:
