@@ -374,6 +374,20 @@ wheels = [
 ]
 
 [[package]]
+name = "exa-py"
+version = "1.7.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "openai" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f5/d4/15e7bab8704b52ffbf854800fa209fb083e5f63e25245da982b5b93f5a88/exa_py-1.7.3.tar.gz", hash = "sha256:2b9ce125911e1fa82778e4ea4a5ed8bedc54daab375420b7e7aacf9690c24c0d", size = 9362 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/36/43625aa0246ada7886a49454ed685bfd820cfa2891de5c785a8adfd333ab/exa_py-1.7.3-py3-none-any.whl", hash = "sha256:eb4e4b663f7037b7e683673295d9c1909392af569480ba091074eb19005c107d", size = 9871 },
+]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -608,6 +622,7 @@ source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
     { name = "boto3" },
+    { name = "exa-py" },
     { name = "google-genai" },
     { name = "google-generativeai" },
     { name = "groq" },
@@ -632,6 +647,7 @@ dev = [
 requires-dist = [
     { name = "anthropic", specifier = ">=0.40.0" },
     { name = "boto3", specifier = ">=1.35.81" },
+    { name = "exa-py", specifier = ">=1.7.3" },
     { name = "google-genai", specifier = ">=0.5.0" },
     { name = "google-generativeai", specifier = ">=0.8.3" },
     { name = "groq", specifier = ">=0.13.1" },
