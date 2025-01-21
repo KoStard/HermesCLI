@@ -1,3 +1,5 @@
+import configparser
+from datetime import datetime, timezone
 import shlex
 from argparse import ArgumentParser, Namespace
 from typing import Generator, Optional
@@ -15,7 +17,7 @@ import os
 class UserControlPanel(ControlPanel):
     def __init__(self, *, notifications_printer: CLINotificationsPrinter, 
                  extra_commands: list[ControlPanelCommand] = None,
-                 exa_client: Optional['ExaClient'] = None):  # noqa: F821
+                 exa_client: Optional[ExaClient] = None):
         super().__init__()
         self.tree_generator = TreeGenerator()
         self._cli_arguments = set()  # Track which arguments were added to CLI
@@ -325,20 +327,26 @@ class UserControlPanel(ControlPanel):
     def _parse_exa_url_command(self, content: str) -> MessageEvent:
         """Parse and execute the /exa_url command"""
         if not self.exa_client:
-            raise ValueError("Exa client not configured. Add EXA_API_KEY to config.")
-
+            raise ValueError("Exa integration not configured - missing EXA_API_KEY in config")
+            
         url = content.strip()
-        result = self.exa_client.get_contents(url)
+        result = self.exa_client.get_contents(url)[0]
+        result_text = result.text
+        result_title = result.title
+        content_age = (datetime.now(timezone.utc) - datetime.fromisoformat(result.published_date).astimezone(timezone.utc)).days
         
-        if not result.results:
+        if not result_text:
             raise ValueError(f"No content found for URL: {url}")
         
-        first_result = result.results[0]
+        if content_age > 7:
+            result_text += f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, it might not be fully up to date"
+        
         return MessageEvent(
             TextMessage(
                 author="user",
-                text=f"URL: {first_result.url}\nContent: {first_result.text}",
-                is_directly_entered=True
+                name=result_title,
+                text_role="url_content",
+                text=result_text
             )
         )
 
