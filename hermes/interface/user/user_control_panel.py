@@ -10,15 +10,6 @@ from hermes.utils.tree_generator import TreeGenerator
 from hermes.utils.file_extension import remove_quotes
 import os
 
-from argparse import ArgumentParser, Namespace
-from typing import Generator
-from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
-from ..helpers.peekable_generator import PeekableGenerator, iterate_while
-from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
-from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, SaveHistoryEvent
-from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.utils.tree_generator import TreeGenerator
-
 class UserControlPanel(ControlPanel):
     def __init__(self, *, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
         super().__init__()
