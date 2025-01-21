@@ -1,6 +1,8 @@
 import shlex
 from argparse import ArgumentParser, Namespace
-from typing import Generator
+from typing import Generator, Optional
+
+from hermes.exa_client import ExaClient
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import ImageUrlMessage, Message, TextGeneratorMessage, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
@@ -11,11 +13,14 @@ from hermes.utils.file_extension import remove_quotes
 import os
 
 class UserControlPanel(ControlPanel):
-    def __init__(self, *, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
+    def __init__(self, *, notifications_printer: CLINotificationsPrinter, 
+                 extra_commands: list[ControlPanelCommand] = None,
+                 exa_client: Optional['ExaClient'] = None):  # noqa: F821
         super().__init__()
         self.tree_generator = TreeGenerator()
         self._cli_arguments = set()  # Track which arguments were added to CLI
         self.notifications_printer = notifications_printer
+        self.exa_client = exa_client
         
         # Register core commands
         self._register_core_commands()
@@ -171,6 +176,17 @@ class UserControlPanel(ControlPanel):
             )
         )
 
+        self._register_command(
+            ControlPanelCommand(
+                command_id="exa_url",
+                command_label="/exa_url",
+                description="Fetch and add content from a URL using Exa",
+                short_description="Fetch URL content with Exa",
+                parser=self._parse_exa_url_command,
+                visible_from_cli=True
+            )
+        )
+
     def _register_history_commands(self):
         """Register commands for managing conversation history"""
         self._register_command(
@@ -297,6 +313,26 @@ class UserControlPanel(ControlPanel):
                         lines.append(v)
         return "\n".join(lines)
     
+    def _parse_exa_url_command(self, content: str) -> MessageEvent:
+        """Parse and execute the /exa_url command"""
+        if not self.exa_client:
+            raise ValueError("Exa client not configured. Add EXA_API_KEY to config.")
+
+        url = content.strip()
+        result = self.exa_client.get_contents(url)
+        
+        if not result.results:
+            raise ValueError(f"No content found for URL: {url}")
+        
+        first_result = result.results[0]
+        return MessageEvent(
+            TextMessage(
+                author="user",
+                text=f"URL: {first_result.url}\nContent: {first_result.text}",
+                is_directly_entered=True
+            )
+        )
+
     def _parse_tree_command(self, content: str) -> MessageEvent:
         """
         Parse the /tree command and generate a directory tree.
