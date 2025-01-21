@@ -14,6 +14,7 @@ from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
 from hermes.interface.user.user_control_panel import UserControlPanel
 from hermes.interface.user.user_interface import UserInterface
+from hermes.exa_client import ExaClient
 from hermes.participants import DebugParticipant, LLMParticipant, UserParticipant
 import configparser
 import os
@@ -85,7 +86,16 @@ def main():
 
     model_factory = ModelFactory(notifications_printer)
 
-    user_control_panel = UserControlPanel(notifications_printer=notifications_printer, extra_commands=user_extra_commands)
+    # Initialize Exa client if configured
+    exa_client = None
+    if 'EXA' in config and 'api_key' in config['EXA']:
+        exa_client = ExaClient(config['EXA']['api_key'])
+    
+    user_control_panel = UserControlPanel(
+        notifications_printer=notifications_printer,
+        extra_commands=user_extra_commands,
+        exa_client=exa_client
+    )
     llm_control_panel = LLMControlPanel(notifications_printer=notifications_printer, extra_commands=llm_extra_commands)
     cli_arguments_parser = build_cli_interface(user_control_panel, model_factory)
     cli_args = cli_arguments_parser.parse_args()
@@ -210,20 +220,16 @@ def execute_utils_command(cli_args, config):
         print(f"\n# URL Content: {cli_args.url}\n")
         print(markdown_content)
     elif cli_args.utils_command == "get_url_exa":
-        from hermes.exa_client import ExaClient
-        from urllib.parse import urlparse
-        
-        if 'EXA' not in config or 'api_key' not in config['EXA']:
-            raise ValueError("EXA_API_KEY must be set in config for Exa integration")
-            
-        client = ExaClient(config['EXA']['api_key'])
+        client = ExaClient(config['EXA']['api_key'])  # Will fail naturally if config is missing
         result = client.get_contents(cli_args.url)
         
         if not result:
             raise ValueError(f"No content found for URL: {cli_args.url}")
 
         print(f"\n# Exa AI Summary: {cli_args.url}\n")
+        print(result[0].title)
         print(result[0].text)
+        print("Last updated:", result[0].published_date)
 
 
 def load_config():
