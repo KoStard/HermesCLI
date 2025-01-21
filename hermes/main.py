@@ -39,6 +39,22 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
     extract_pdf_parser.add_argument("filepath", type=str, help="Path to the PDF file")
     extract_pdf_parser.add_argument("pages", type=str, help="Pages to extract (e.g. {1,4:5})")
 
+    # Get URL content command
+    get_url_parser = utils_subparsers.add_parser(
+        "get_url",
+        help="Get raw content from a URL using standard HTTP"
+    )
+    get_url_parser.add_argument("url", type=str, help="URL to fetch content from")
+    get_url_parser.add_argument("--output", type=str, help="Output file path (default: url_hostname.txt)", default=None)
+
+    # Get URL content via Exa command
+    get_url_exa_parser = utils_subparsers.add_parser(
+        "get_url_exa",
+        help="Get enhanced content from a URL using Exa API"
+    )
+    get_url_exa_parser.add_argument("url", type=str, help="URL to fetch content from") 
+    get_url_exa_parser.add_argument("--output", type=str, help="Output file path (default: url_hostname.txt)", default=None)
+
     # Info command
     info_parser = subparsers.add_parser("info", help="Get command information")
     info_subparsers = info_parser.add_subparsers(dest="info_command", required=True)
@@ -78,7 +94,7 @@ def main():
         execute_info_command(cli_args, user_control_panel.get_commands(), llm_control_panel.get_commands())
         return
     elif cli_args.execution_mode == "utils":
-        execute_utils_command(cli_args)
+        execute_utils_command(cli_args, config)
         return
     user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(cli_arguments_parser, cli_args)
     stt_input_handler_optional = get_stt_input_handler(cli_args, config)
@@ -148,7 +164,7 @@ def execute_info_command(cli_args, user_commands, llm_commands):
     elif cli_args.info_command == "list-user-commands":
         lister.print_commands(user_commands)
 
-def execute_utils_command(cli_args):
+def execute_utils_command(cli_args, config):
     if cli_args.utils_command == "extract_pdf_pages":
         pages = []
         pages_str = cli_args.pages.strip('{}')
@@ -173,6 +189,41 @@ def execute_utils_command(cli_args):
         with open(output_path, 'wb') as output_file:
             writer.write(output_file)
         print(f"Extracted pages saved to: {output_path}")
+    elif cli_args.utils_command == "get_url":
+        from markitdown import MarkItDown
+        import requests
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1'
+        }
+        response = requests.get(cli_args.url, headers=headers)
+        response.raise_for_status()
+        markitdown = MarkItDown()
+        conversion_result = markitdown.convert(response)
+        markdown_content = conversion_result.text_content
+        print(f"\n# URL Content: {cli_args.url}\n")
+        print(markdown_content)
+    elif cli_args.utils_command == "get_url_exa":
+        from hermes.exa_client import ExaClient
+        from urllib.parse import urlparse
+        
+        if 'EXA' not in config or 'api_key' not in config['EXA']:
+            raise ValueError("EXA_API_KEY must be set in config for Exa integration")
+            
+        client = ExaClient(config['EXA']['api_key'])
+        result = client.get_contents(cli_args.url)
+        
+        if not result:
+            raise ValueError(f"No content found for URL: {cli_args.url}")
+
+        print(f"\n# Exa AI Summary: {cli_args.url}\n")
+        print(result[0].text)
 
 
 def load_config():

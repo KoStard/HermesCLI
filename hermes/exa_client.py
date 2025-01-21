@@ -18,7 +18,7 @@ class ExaClient:
     
     def get_contents(self, url: str, text: bool = True) -> List[ExaContentResult]:
         """Get contents of a URL with error handling and validation"""
-        response = self.client.get_contents([url], text=text, use_autoprompt=True)
+        response = self.client.get_contents([url], text=text)
         return [
             ExaContentResult(
                 url=result.url,
