@@ -105,7 +105,7 @@ class History:
         history_data = {
             "messages": [
                 item.to_json()
-                for item in self._items
+                for item in self._committed_items
             ]
         }
         
@@ -130,4 +130,4 @@ class History:
         self.clear()
         
         for history_item in history_data["messages"]:
-            self._items.append(HistoryItem.from_json(history_item))
+            self._committed_items.append(HistoryItem.from_json(history_item))
