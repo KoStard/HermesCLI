@@ -1,5 +1,7 @@
+import time
 from typing import Generator
 
+from botocore.exceptions import ClientError
 from hermes.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.bedrock import BedrockRequestBuilder
@@ -15,16 +17,34 @@ class BedrockModel(ChatModel):
         self.client = boto3.client('bedrock-runtime', region_name=aws_region)
     
     def send_request(self, request: any) -> Generator[str, None, None]:
-        response = self.client.converse_stream(
-            **request
-        )
+        backoff = 4
+        max_retries = 5
+        attempt = 0
 
-        for event in response['stream']:
-            if 'contentBlockDelta' in event:
-                content = event['contentBlockDelta']['delta'].get('text', '')
-                yield content
-            elif 'messageStop' in event:
-                break
+        while attempt < max_retries:
+            try:
+                response = self.client.converse_stream(
+                    **request
+                )
+
+                for event in response['stream']:
+                    if 'contentBlockDelta' in event:
+                        content = event['contentBlockDelta']['delta'].get('text', '')
+                        yield content
+                    elif 'messageStop' in event:
+                        break
+                return  # Success - exit the retry loop
+                
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'ThrottlingException':
+                    if attempt == max_retries - 1:
+                        raise  # Re-raise on last attempt
+                    
+                    time.sleep(backoff)
+                    backoff *= 2  # Exponential backoff
+                    attempt += 1
+                else:
+                    raise  # Re-raise if it's not a ThrottlingException
     
     def get_request_builder(self) -> RequestBuilder:
         return self.request_builder
