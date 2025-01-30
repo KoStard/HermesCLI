@@ -84,7 +84,7 @@ class BedrockRequestBuilder(RequestBuilder):
                     "bytes": image_content
                 }
             }
-        })
+        }, author)
     
     def _get_image_format(self, image_path: str) -> str:
         import os
