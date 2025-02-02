@@ -34,7 +34,8 @@ class Gemini2Model(ChatModel):
             )
         )
         
-        has_finished_thinking = False if self._supports_thinking else True
+        # has_finished_thinking = False if self._supports_thinking else True
+        has_finished_thinking = True # The implementation with google api is not good
         
         for part in response.candidates[0].content.parts:
             yield from self._convert_to_llm_response(
@@ -81,6 +82,7 @@ class Gemini2Model(ChatModel):
             'gemini-2.0-flash-exp',
             'gemini-2.0-flash-exp/grounded',
             'gemini-2.0-flash-thinking-exp-1219',
+            'gemini-2.0-flash-thinking-exp-01-21',
         ]
         return models
 

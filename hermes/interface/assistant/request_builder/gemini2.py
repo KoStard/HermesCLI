@@ -48,10 +48,14 @@ class Gemini2RequestBuilder(RequestBuilder):
             role = "user" if author == "user" else "model"
             final_messages.append(Content(role=role, parts=parts))
         
+        tools = []
+        if self.grounded:
+            tools.append(self.google_search_tool)
+        
         return {
             "model_name": self.model_tag,
             "contents": final_messages,
-            "tools": [self.google_search_tool],
+            "tools": tools,
             "config": {
                 "response_modalities": ["TEXT"]
             }
