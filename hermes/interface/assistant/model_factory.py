@@ -66,7 +66,7 @@ class ModelFactory:
             raise ValueError(f"Unsupported model provider: {provider}, supported providers: {list(set(m.get_provider().upper() for m in self.model_classes))}")
             
         if len(matching_classes) > 1:
-            self.notifications_printer.print_warning(
+            self.notifications_printer.print_notification(
                 f"Multiple model implementations found for provider '{provider}' "
                 f"and unknown model tag '{model_tag}'. Using first implementation: "
                 f"{matching_classes[0].__name__}"
