@@ -207,8 +207,28 @@ class RequestBuilder(ABC):
 
     def _default_handle_textual_file_message(self, text_filepath: str, author: str, message_id: int, file_role: Optional[str] = None):
         """
-        Read the content of the file, and create a text message with the content of the file
-        Then use .handle_text_message with the filepath as name and 'textual_file' as role
+        Read the content of the file or traverse directory, and create text messages with the content.
+        For files, use filepath as name and 'textual_file' as role.
+        For directories, process each file recursively.
+        """
+        if os.path.isdir(text_filepath):
+            for root, _, files in os.walk(text_filepath):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    try:
+                        # Skip binary files and hidden files
+                        if not is_binary(full_path) and not file.startswith('.'):
+                            self._process_single_file(full_path, author, id(full_path), file_role)
+                    except Exception as e:
+                        self.notifications_printer.print_error(f"Error processing file {full_path}: {e}")
+            return
+
+        # If it's a single file, process it directly
+        self._process_single_file(text_filepath, author, message_id, file_role)
+
+    def _process_single_file(self, text_filepath: str, author: str, message_id: int, file_role: Optional[str] = None):
+        """
+        Process a single file and send its content as a message.
         """
         # Check if file is a Jupyter notebook
         if text_filepath.endswith('.ipynb'):

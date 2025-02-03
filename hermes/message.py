@@ -373,11 +373,6 @@ class TextualFileMessage(Message):
     """Class for messages that are textual files"""
     text_filepath: str
     file_role: Optional[str]
-
-    def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None, file_role: Optional[str] = None):
-        super().__init__(author=author, timestamp=timestamp)
-        self.text_filepath = self._get_full_filepath(text_filepath)
-        self.file_role = file_role
     
     def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None, file_role: Optional[str] = None):
         super().__init__(author=author, timestamp=timestamp)
@@ -385,6 +380,8 @@ class TextualFileMessage(Message):
         self.file_role = file_role
 
     def get_content_for_user(self) -> str:
+        if os.path.isdir(self.text_filepath):
+            return f"Directory: {self.text_filepath}"
         return f"Text file: {self.text_filepath}"
 
     def get_content_for_assistant(self) -> str:
