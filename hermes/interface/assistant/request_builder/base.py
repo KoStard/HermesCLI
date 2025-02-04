@@ -216,9 +216,9 @@ class RequestBuilder(ABC):
                 for file in files:
                     full_path = os.path.join(root, file)
                     try:
-                        # Skip binary files and hidden files
-                        if not is_binary(full_path) and not file.startswith('.'):
-                            self._process_single_file(full_path, author, id(full_path), file_role)
+                        # Skip hidden files
+                        if not file.startswith('.'):
+                            self._process_single_file(full_path, author, message_id, file_role)
                     except Exception as e:
                         self.notifications_printer.print_error(f"Error processing file {full_path}: {e}")
             return
