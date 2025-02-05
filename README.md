@@ -179,6 +179,28 @@ def get_llm_extra_commands():
     For more details check the hermes/interface/control_panel/llm_control_panel.py
     """
     return []
+
+def get_utils_builders():
+    """
+    These are utility commands that will be available through the CLI.
+    Each builder function should take an ArgumentParser._SubParsersAction as input
+    and return a visitor function that will be called with the parsed arguments.
+    """
+    def setup_example_util(subparsers):
+        parser = subparsers.add_parser(
+            "example-util",
+            help="An example utility command"
+        )
+        parser.add_argument("arg1", help="First argument")
+        
+        def visitor(cli_args, config):
+            if cli_args.utils_command != "example-util":
+                return
+            print(f"Running example util with arg: {cli_args.arg1}")
+        
+        return visitor
+
+    return [setup_example_util]
 ```
 
 ## Listing the available commands
@@ -235,6 +257,46 @@ prepend_file            | Add to file beginning
 ```
 
 These commands provide a comprehensive list of all available commands with their descriptions, helping users and LLMs understand the available functionality.
+
+### Adding Utility Commands
+
+Extensions can also provide utility commands that are accessible through the CLI. These commands are different from chat commands as they are executed directly from the command line using `hermes utils <command>`.
+
+To add utility commands in your extension, implement the `get_utils_builders()` function:
+
+```python
+def get_utils_builders():
+    """Return a list of utility builder functions"""
+    def setup_my_util(subparsers):
+        # Add a new subparser for your utility
+        parser = subparsers.add_parser(
+            "my-util",
+            help="Description of your utility"
+        )
+        # Add arguments
+        parser.add_argument("arg1", help="First argument")
+        
+        # Define the visitor function that will be called with parsed arguments
+        def visitor(cli_args, config):
+            if cli_args.utils_command != "my-util":
+                return
+            # Your utility logic here
+            print(f"Running my util with arg: {cli_args.arg1}")
+        
+        return visitor
+
+    return [setup_my_util]
+```
+
+Each utility builder function should:
+1. Take an `ArgumentParser._SubParsersAction` as input
+2. Add a new subparser with arguments
+3. Return a visitor function that will be called with the parsed arguments and config
+
+Your utilities will then be available through:
+```bash
+hermes utils my-util <args>
+```
 
 ## Contributing
 

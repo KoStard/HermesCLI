@@ -82,7 +82,7 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
 
     user_control_panel.build_cli_arguments(chat_parser)
 
-    return parser
+    return parser, utils_subparsers
 
 
 def main():
@@ -90,7 +90,7 @@ def main():
 
     notifications_printer = CLINotificationsPrinter()
 
-    user_extra_commands, llm_extra_commands = load_extensions()
+    user_extra_commands, llm_extra_commands, extension_utils_builders = load_extensions()
 
     model_factory = ModelFactory(notifications_printer)
 
@@ -110,13 +110,20 @@ def main():
         exa_client=exa_client
     )
     cli_arguments_parser = build_cli_interface(user_control_panel, model_factory)
+
+    extension_utils_visitors = []
+    
+    # Register extension utils
+    for extension_utils_builder in extension_utils_builders:
+        extension_utils_visitors.append(extension_utils_builder(utils_subparsers))
+    
     cli_args = cli_arguments_parser.parse_args()
     
     if cli_args.execution_mode == "info":
         execute_info_command(cli_args, user_control_panel.get_commands(), llm_control_panel.get_commands())
         return
     elif cli_args.execution_mode == "utils":
-        execute_utils_command(cli_args, config)
+        execute_utils_command(cli_args, config, extension_utils_visitors)
         return
     user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(cli_arguments_parser, cli_args)
     stt_input_handler_optional = get_stt_input_handler(cli_args, config)
@@ -186,7 +193,7 @@ def execute_info_command(cli_args, user_commands, llm_commands):
     elif cli_args.info_command == "list-user-commands":
         lister.print_commands(user_commands)
 
-def execute_utils_command(cli_args, config):
+def execute_utils_command(cli_args, config, extension_utils_visitors):
     if cli_args.utils_command == "extract_pdf_pages":
         pages = []
         pages_str = cli_args.pages.strip('{}')
@@ -260,6 +267,9 @@ def execute_utils_command(cli_args, config):
             if result.published_date:
                 print(f"  Published: {result.published_date}")
             print()
+    else:
+        for extension_util_visitor in extension_utils_visitors:
+            extension_util_visitor(cli_args, config)
 
 
 def load_config():
