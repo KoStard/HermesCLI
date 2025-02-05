@@ -49,13 +49,14 @@ def get_extension_commands(module: object, function_name: str) -> List[ControlPa
         logging.warning(f"Failed to get commands from {function_name}: {str(e)}")
     return []
 
-def load_extensions() -> tuple[List[ControlPanelCommand], List[ControlPanelCommand]]:
+def load_extensions() -> tuple[List[ControlPanelCommand], List[ControlPanelCommand], List[callable]]:
     """
-    Load all extensions and return their commands
-    Returns: (user_commands, llm_commands)
+    Load all extensions and return their commands and utils
+    Returns: (user_commands, llm_commands, utils_builders)
     """
     user_commands = []
     llm_commands = []
+    utils_builders = []
     
     extensions_dir = get_extensions_dir()
     if not extensions_dir.exists():
@@ -75,8 +76,17 @@ def load_extensions() -> tuple[List[ControlPanelCommand], List[ControlPanelComma
         if module is None:
             continue
 
-        # Get commands from the extension
+        # Get commands and utils from the extension
         user_commands.extend(get_extension_commands(module, "get_user_extra_commands"))
         llm_commands.extend(get_extension_commands(module, "get_llm_extra_commands"))
+        
+        # Get utils builders if available
+        if hasattr(module, "get_utils_builders"):
+            try:
+                utils = module.get_utils_builders()
+                if isinstance(utils, list):
+                    utils_builders.extend(utils)
+            except Exception as e:
+                logging.warning(f"Failed to get utils builders: {str(e)}")
 
-    return user_commands, llm_commands
+    return user_commands, llm_commands, utils_builders
