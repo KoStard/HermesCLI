@@ -12,6 +12,13 @@ class ExaContentResult:
     published_date: Optional[str]
     image: Optional[str]
 
+@dataclass
+class ExaSearchResult:
+    url: str
+    title: str
+    author: Optional[str]
+    published_date: Optional[str]
+
 class ExaClient:
     def __init__(self, api_key: str):
         self.client = Exa(api_key=api_key)
@@ -28,5 +35,17 @@ class ExaClient:
                 author=result.author,
                 published_date=result.published_date,
                 image=result.image
+            ) for result in response.results
+        ]
+
+    def search(self, query: str, num_results: int = 10) -> List[ExaContentResult]:
+        """Search for a query and return the results"""
+        response = self.client.search(query, num_results=num_results)
+        return [
+            ExaSearchResult(
+                url=result.url,
+                title=result.title,
+                author=result.author,
+                published_date=result.published_date
             ) for result in response.results
         ]
