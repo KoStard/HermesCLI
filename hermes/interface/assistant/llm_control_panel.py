@@ -14,9 +14,10 @@ from hermes.event import AssistantDoneEvent, FileEditEvent, Event, MessageEvent
 logger = logging.getLogger(__name__)
 
 class LLMControlPanel(ControlPanel):
-    def __init__(self, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None):
+    def __init__(self, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None, exa_client=None):
         super().__init__()
         self.notifications_printer = notifications_printer
+        self.exa_client = exa_client
         self._agent_mode = False
         self._commands_parsing_status = True
         
@@ -290,6 +291,13 @@ class LLMControlPanel(ControlPanel):
             """
             **Agent Mode Enabled**
             You are now in the agent mode.
+            
+            **Web Search Command**
+            You can perform web searches using the Exa API with:
+            ///web_search <query>
+            This will return up to 10 relevant results from the web.
+            Example:
+            ///web_search latest AI research papers
             The difference here is that you don't have to finish the task in one reply.
             If the task is too big, you can finish it with multiple messages.
             When you send a message without ///done command, you'll be able to continue with sending your next message, the turn will not move to the user.
@@ -324,6 +332,81 @@ class LLMControlPanel(ControlPanel):
             parser=lambda line, peekable_generator: self._parse_done_command(peekable_generator),
             is_agent_command=True
         ))
+
+        self._register_command(ControlPanelCommand(
+            command_id="web_search",
+            command_label="///web_search",
+            short_description="Perform a web search",
+            description=textwrap.dedent(
+            """
+            Perform a web search using Exa API. Syntax: `///web_search <query>`
+            Returns up to 10 relevant results.
+            
+            Example:
+            ///web_search latest AI research papers
+            """),
+            parser=lambda line, peekable_generator: self._parse_web_search_command(line),
+            is_agent_command=True
+        ))
+
+    def _parse_web_search_command(self, content: str) -> Generator[Event, None, None]:
+        """
+        Parse the ///web_search command and perform a web search.
+        
+        Args:
+            content: The search query
+            
+        Returns:
+            Generator yielding MessageEvent with search results
+        """
+        if not content.strip():
+            yield MessageEvent(LLMRunCommandOutput(
+                text="Error: No search query provided",
+                name="Web Search Error"
+            ))
+            return
+            
+        query = content.strip()
+        try:
+            if not hasattr(self, 'exa_client'):
+                yield MessageEvent(LLMRunCommandOutput(
+                    text="Error: Exa client not configured",
+                    name="Web Search Error"
+                ))
+                return
+                
+            results = self.exa_client.search(query, num_results=10)
+            
+            if not results:
+                yield MessageEvent(LLMRunCommandOutput(
+                    text=f"No results found for: {query}",
+                    name=f"Web Search: {query}"
+                ))
+                return
+                
+            result_text = [f"# Web Search Results for: {query}\n"]
+            for i, result in enumerate(results, 1):
+                result_text.append(f"Result {i}:")
+                result_text.append(f"  Title: {result.title}")
+                result_text.append(f"  URL: {result.url}")
+                if result.author:
+                    result_text.append(f"  Author: {result.author}")
+                if result.published_date:
+                    result_text.append(f"  Published: {result.published_date}")
+                result_text.append("")
+                
+            yield MessageEvent(TextMessage(
+                author="assistant",
+                text="\n".join(result_text),
+                text_role="WebSearchResults",
+                name=f"Web Search: {query}"
+            ))
+            
+        except Exception as e:
+            yield MessageEvent(LLMRunCommandOutput(
+                text=f"Error performing web search: {str(e)}",
+                name="Web Search Error"
+            ))
 
     def render(self) -> str:
         content = []
