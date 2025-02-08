@@ -56,6 +56,14 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
     get_url_exa_parser.add_argument("url", type=str, help="URL to fetch content from") 
     get_url_exa_parser.add_argument("--output", type=str, help="Output file path (default: url_hostname.txt)", default=None)
 
+    # Exa search command
+    exa_search_parser = utils_subparsers.add_parser(
+        "exa_search",
+        help="Search the web using Exa API"
+    )
+    exa_search_parser.add_argument("query", type=str, help="Search query")
+    exa_search_parser.add_argument("--num_results", type=int, help="Number of results to return (default: 5)", default=5)
+
     # Info command
     info_parser = subparsers.add_parser("info", help="Get command information")
     info_subparsers = info_parser.add_subparsers(dest="info_command", required=True)
@@ -96,7 +104,11 @@ def main():
         extra_commands=user_extra_commands,
         exa_client=exa_client
     )
-    llm_control_panel = LLMControlPanel(notifications_printer=notifications_printer, extra_commands=llm_extra_commands)
+    llm_control_panel = LLMControlPanel(
+        notifications_printer=notifications_printer, 
+        extra_commands=llm_extra_commands,
+        exa_client=exa_client
+    )
     cli_arguments_parser = build_cli_interface(user_control_panel, model_factory)
     cli_args = cli_arguments_parser.parse_args()
     
@@ -230,6 +242,24 @@ def execute_utils_command(cli_args, config):
         print(result[0].title)
         print(result[0].text)
         print("Last updated:", result[0].published_date)
+    elif cli_args.utils_command == "exa_search":
+        client = ExaClient(config['EXA']['api_key'])  # Will fail naturally if config is missing
+        results = client.search(cli_args.query, cli_args.num_results)
+        
+        if not results:
+            print("No results found")
+            return
+            
+        print(f"\n# Exa Search Results for: {cli_args.query}\n")
+        for i, result in enumerate(results, 1):
+            print(f"Result {i}:")
+            print(f"  Title: {result.title}")
+            print(f"  URL: {result.url}")
+            if result.author:
+                print(f"  Author: {result.author}")
+            if result.published_date:
+                print(f"  Published: {result.published_date}")
+            print()
 
 
 def load_config():
