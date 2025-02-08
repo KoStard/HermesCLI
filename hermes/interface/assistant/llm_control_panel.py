@@ -3,12 +3,12 @@ import os
 import textwrap
 from typing import Generator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
-
+from hermes.utils.filepath import prepare_filepath
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator, iterate_while
-from hermes.message import LLMRunCommandOutput, Message, TextGeneratorMessage, TextMessage, TextualFileMessage
+from hermes.message import LLMRunCommandOutput, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, UrlMessage
 from hermes.event import AssistantDoneEvent, FileEditEvent, Event, MessageEvent
 
 logger = logging.getLogger(__name__)
@@ -340,12 +340,32 @@ class LLMControlPanel(ControlPanel):
             description=textwrap.dedent(
             """
             Perform a web search using Exa API. Syntax: `///web_search <query>`
+            This API costs the user money, use it only when directly asked to do so.
             Returns up to 10 relevant results.
             
             Example:
             ///web_search latest AI research papers
             """),
             parser=lambda line, peekable_generator: self._parse_web_search_command(line),
+            is_agent_command=True
+        ))
+        
+        self._register_command(ControlPanelCommand(
+            command_id="open_url",
+            command_label="///open_url",
+            short_description="Read URL contents",
+            description=textwrap.dedent(
+            f"""
+            Read and return the contents of a URL. Syntax: `///open_url <url>`
+            - url: The URL to fetch content from
+            - Uses Exa API to get enhanced content if configured
+            
+            Use after search, or if you were provided a specific URL by the user or in other attachments.
+            
+            Examples:
+            ///open_url https://example.com
+            """),
+            parser=lambda line, peekable_generator: self._parse_open_url_command(line),
             is_agent_command=True
         ))
 
@@ -497,6 +517,31 @@ class LLMControlPanel(ControlPanel):
                 text="\n".join(report_content)
             ))
 
+    def _parse_open_url_command(self, content: str) -> Generator[Event, None, None]:
+        """
+        Parse the ///open_url command and fetch URL contents.
+        
+        Args:
+            content: The command content after the label
+            
+        Returns:
+            Generator yielding MessageEvent with URL contents
+        """
+        url = content.strip()
+        if not url:
+            yield MessageEvent(LLMRunCommandOutput(
+                text="Error: No URL provided",
+                name="URL Error"
+            ))
+            return
+        
+        yield MessageEvent(
+            UrlMessage(
+                author="user",
+                url=url
+            )
+        )
+
     def _parse_open_file_command(self, content: str) -> Generator[Event, None, None]:
         """
         Parse the ///open_file command and return a TextualFileMessage.
@@ -610,5 +655,3 @@ class MarkdownSectionCommandHandler:
             submode=self.mode,
             section_path=self.section_path
         )
-
-from hermes.utils.filepath import prepare_filepath
