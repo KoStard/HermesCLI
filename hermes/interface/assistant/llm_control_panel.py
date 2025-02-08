@@ -305,6 +305,11 @@ class LLMControlPanel(ControlPanel):
             the engine will run the commands and you'll see the results, which will allow you to continue with the task in next messages.
 
             Then after you have confirmed that you finished the task, and you want to show your results to the user, you can add the ///done command.
+            
+            You should aim to minimize user interventions until you achieve your task.
+            But if it is the case that you lack some important information, don't make assumptions.
+            Compile clear, good questions, then use ///ask_the_user command to get that information from the user.
+            The user will be informed about your command, but preferrably run it early in the process, while they are at the computer.
             """
         ), is_agent_only=True)
 
@@ -330,6 +335,29 @@ class LLMControlPanel(ControlPanel):
             ///end_report
             """),
             parser=lambda line, peekable_generator: self._parse_done_command(peekable_generator),
+            is_agent_command=True
+        ))
+
+        self._register_command(ControlPanelCommand(
+            command_id="ask_the_user",
+            command_label="///ask_the_user",
+            short_description="Ask the user for clarification or information",
+            description=textwrap.dedent(
+            """
+            Ask the user for clarification or information needed to complete the task.
+            Syntax: `///ask_the_user`, followed by your question on subsequent lines,
+            ending with `///end_question` on a new line.
+            
+            Example:
+            ///ask_the_user
+            I need to know:
+            - What is your preferred color scheme?
+            - Should I use light or dark mode?
+            ///end_question
+            
+            Use this when you need specific information from the user to proceed.
+            """),
+            parser=lambda line, peekable_generator: self._parse_ask_the_user_command(peekable_generator),
             is_agent_command=True
         ))
 
@@ -515,6 +543,39 @@ class LLMControlPanel(ControlPanel):
             yield AssistantDoneEvent()
             yield MessageEvent(LLMRunCommandOutput(
                 text="\n".join(report_content)
+            ))
+
+    def _parse_ask_the_user_command(self, peekable_generator: PeekableGenerator) -> Generator[Event, None, None]:
+        """
+        Parse the ///ask_the_user command and collect the question content.
+        
+        Args:
+            peekable_generator: The generator of message lines
+            
+        Returns:
+            Generator yielding MessageEvent with the question
+        """
+        question_content = []
+        for line in peekable_generator:
+            if line.strip() == "///end_question":
+                yield AssistantDoneEvent()
+                yield MessageEvent(TextMessage(
+                    author="assistant",
+                    text="\n".join(question_content),
+                    text_role="AgentQuestion",
+                    name="Task Related Question"
+                ))
+                return
+            question_content.append(line)
+        
+        # If we reach here without finding ///end_question, yield what we have
+        if question_content:
+            yield AssistantDoneEvent()
+            yield MessageEvent(TextMessage(
+                author="assistant",
+                text="\n".join(question_content),
+                text_role="AgentQuestion",
+                name="Task Related Question"
             ))
 
     def _parse_open_url_command(self, content: str) -> Generator[Event, None, None]:
