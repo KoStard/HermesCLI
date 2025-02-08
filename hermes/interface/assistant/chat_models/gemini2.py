@@ -10,14 +10,15 @@ from .base import ChatModel
 class Gemini2Model(ChatModel):
     def initialize(self):
         from google import genai
-        
-        self.request_builder = Gemini2RequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
 
         api_key = self.config.get("api_key")
         if not api_key:
             raise ValueError("API key is required for Gemini model")
         
         self.client = genai.Client(api_key=api_key, http_options={'api_version': 'v1alpha'})
+        
+        self.request_builder = Gemini2RequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory(), self.client)
+        
         self.google_search_tool = Tool(google_search=GoogleSearch())
 
     @property

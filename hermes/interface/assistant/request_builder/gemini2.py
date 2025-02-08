@@ -1,6 +1,7 @@
 from base64 import b64encode
 import time
 from typing import Optional
+from google.genai import Client
 from google.genai.types import Part, Content, Tool, GoogleSearch
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.assistant.request_builder.all_messages_aggregator import AllMessagesAggregator
@@ -10,7 +11,7 @@ from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.utils.file_extension import get_file_extension
 
 class Gemini2RequestBuilder(RequestBuilder):
-    def __init__(self, model_tag: str, notifications_printer: CLINotificationsPrinter, prompt_builder_factory: PromptBuilderFactory):
+    def __init__(self, model_tag: str, notifications_printer: CLINotificationsPrinter, prompt_builder_factory: PromptBuilderFactory, google_client: Client):
         super().__init__(model_tag, notifications_printer, prompt_builder_factory)
         if model_tag.endswith("/grounded"):
             self.grounded = True
@@ -19,7 +20,9 @@ class Gemini2RequestBuilder(RequestBuilder):
             self.grounded = False
         
         self.uploaded_files = {}
+        self.extracted_pdfs = {}
         self.google_search_tool = Tool(google_search=GoogleSearch())
+        self.google_client = google_client
 
     def initialize_request(self):
         self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
@@ -40,7 +43,7 @@ class Gemini2RequestBuilder(RequestBuilder):
         self.text_messages_aggregator.add_message(message=text, author=author, message_id=message_id, name=name, text_role=text_role)
     
     def compile_request(self) -> any:
-        self._wait_for_uploaded_files()
+        # self._wait_for_uploaded_files()
         self._flush_text_messages()
 
         final_messages = []
@@ -69,6 +72,7 @@ class Gemini2RequestBuilder(RequestBuilder):
 
     def handle_image_message(self, image_path: str, author: str, message_id: int):
         uploaded_file = self._upload_file(image_path)
+        uploaded_file = Part.from_uri(uploaded_file.uri, uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
     def _get_base64_image(self, image_path: str) -> str:
@@ -91,40 +95,40 @@ class Gemini2RequestBuilder(RequestBuilder):
         return hashlib.md5(open(file_path, "rb").read()).hexdigest()
     
     def _upload_file(self, file_path: str):
-        # from google.genai.files import AsyncFiles
-        # file_hash = self._get_file_hash(file_path)
-        # if file_path in self.uploaded_files:
-        #     if self.uploaded_files[file_path]["hash"] == file_hash:
-        #         return self.uploaded_files[file_path]["uploaded_file"]
+        file_hash = self._get_file_hash(file_path)
+        if file_path in self.uploaded_files:
+            if self.uploaded_files[file_path]["hash"] == file_hash:
+                return self.uploaded_files[file_path]["uploaded_file"]
         
-        # uploaded_file = AsyncFiles(CLIENT?).upload(path=file_path)
-        # self.uploaded_files[file_path] = {
-        #     "uploaded_file": uploaded_file,
-        #     "hash": file_hash
-        # }
-        # return uploaded_file
-        raise Exception("Uploading files isn't supported yet in the Gemini2.0 client integration")
+        uploaded_file = self.google_client.files.upload(path=file_path)
+        self.uploaded_files[file_path] = {
+            "uploaded_file": uploaded_file,
+            "hash": file_hash
+        }
+        return uploaded_file
+
     
-    def _get_uploaded_file_status(self, uploaded_file):
-        from google import genai
-        recent_file = genai.files.get(name=uploaded_file.name)
-        return recent_file.state
+    # def _get_uploaded_file_status(self, uploaded_file):
+    #     recent_file = self.google_client.files.get(name=uploaded_file.name)
+    #     return recent_file.state
     
-    def _wait_for_uploaded_files(self):
-        for file_path, uploaded_file_details in self.uploaded_files.items():
-            current_status = self._get_uploaded_file_status(uploaded_file_details["uploaded_file"])
-            while current_status == 'PROCESSING':
-                self.notifications_printer.print_info(f"Waiting for file {file_path} to be processed...")
-                time.sleep(0.5)
-                current_status = self._get_uploaded_file_status(uploaded_file_details["uploaded_file"])
-            print(f"File {file_path} processed, status: {current_status}")
+    # def _wait_for_uploaded_files(self):
+    #     for file_path, uploaded_file_details in self.uploaded_files.items():
+    #         current_status = self._get_uploaded_file_status(uploaded_file_details["uploaded_file"])
+    #         while current_status == 'PROCESSING':
+    #             self.notifications_printer.print_info(f"Waiting for file {file_path} to be processed...")
+    #             time.sleep(0.5)
+    #             current_status = self._get_uploaded_file_status(uploaded_file_details["uploaded_file"])
+    #         print(f"File {file_path} processed, status: {current_status}")
 
     def handle_audio_file_message(self, audio_path: str, author: str, message_id: int):
         uploaded_file = self._upload_file(audio_path)
+        uploaded_file = Part.from_uri(uploaded_file.uri, uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
     
     def handle_video_message(self, video_path: str, author: str, message_id: int):
         uploaded_file = self._upload_file(video_path)
+        uploaded_file = Part.from_uri(uploaded_file.uri, uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
     def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
@@ -138,5 +142,6 @@ class Gemini2RequestBuilder(RequestBuilder):
             self.extracted_pdfs[extracted_pdf_key] = pdf_path
             
         uploaded_file = self._upload_file(pdf_path)
+        uploaded_file = Part.from_uri(uploaded_file.uri, uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
