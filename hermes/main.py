@@ -109,7 +109,7 @@ def main():
         extra_commands=llm_extra_commands,
         exa_client=exa_client
     )
-    cli_arguments_parser = build_cli_interface(user_control_panel, model_factory)
+    cli_arguments_parser, utils_subparsers = build_cli_interface(user_control_panel, model_factory)
 
     extension_utils_visitors = []
     
