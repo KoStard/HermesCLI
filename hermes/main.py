@@ -87,6 +87,20 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
 
 def main():
     config = load_config()
+    
+    # Read command status overrides from config
+    command_status_overrides = {}
+    if 'BASE' in config and 'llm_command_status_overrides' in config['BASE']:
+        try:
+            # Parse the overrides string into a dict
+            raw_overrides = config['BASE']['llm_command_status_overrides'].strip()
+            if raw_overrides:
+                # Format should be: command_id:status,command_id2:status2
+                for override in raw_overrides.split(','):
+                    command_id, status = override.split(':')
+                    command_status_overrides[command_id.strip()] = status.strip().upper()
+        except Exception as e:
+            print(f"Warning: Failed to parse llm_command_status_overrides from config: {e}")
 
     notifications_printer = CLINotificationsPrinter()
 
@@ -107,7 +121,8 @@ def main():
     llm_control_panel = LLMControlPanel(
         notifications_printer=notifications_printer, 
         extra_commands=llm_extra_commands,
-        exa_client=exa_client
+        exa_client=exa_client,
+        command_status_overrides=command_status_overrides
     )
     cli_arguments_parser, utils_subparsers = build_cli_interface(user_control_panel, model_factory)
 
