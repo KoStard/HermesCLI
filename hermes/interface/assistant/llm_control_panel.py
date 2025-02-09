@@ -14,12 +14,13 @@ from hermes.event import AssistantDoneEvent, FileEditEvent, Event, MessageEvent
 logger = logging.getLogger(__name__)
 
 class LLMControlPanel(ControlPanel):
-    def __init__(self, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None, exa_client=None):
+    def __init__(self, notifications_printer: CLINotificationsPrinter, extra_commands: list[ControlPanelCommand] = None, exa_client=None, command_status_overrides: dict = None):
         super().__init__()
         self.notifications_printer = notifications_printer
         self.exa_client = exa_client
         self._agent_mode = False
         self._commands_parsing_status = True
+        self._command_status_overrides = command_status_overrides if command_status_overrides is not None else {}
         
         # Add help content
         self._add_initial_help_content()
