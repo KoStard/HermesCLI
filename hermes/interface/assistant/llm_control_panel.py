@@ -3,6 +3,7 @@ import os
 import textwrap
 from typing import Generator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.interface.helpers.terminal_coloring import CLIColors
 from hermes.utils.filepath import prepare_filepath
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
@@ -20,7 +21,6 @@ class LLMControlPanel(ControlPanel):
         self.exa_client = exa_client
         self._agent_mode = False
         self._commands_parsing_status = True
-        self._command_status_overrides = command_status_overrides if command_status_overrides is not None else {}
         
         # Add help content
         self._add_initial_help_content()
@@ -44,7 +44,7 @@ class LLMControlPanel(ControlPanel):
                 
         # Map of command ID to command status override
         # Possible status values: ON, OFF, AGENT_ONLY
-        self._command_status_overrides = {}
+        self._command_status_overrides = command_status_overrides if command_status_overrides is not None else {}
 
     def _add_initial_help_content(self):
         """Add initial help content about command usage"""
@@ -517,6 +517,42 @@ class LLMControlPanel(ControlPanel):
                 # Maybe we shouldn't have the text generator message andjust generate text messages.
                 # We need a kind of lock otherwise.
                 yield MessageEvent(TextGeneratorMessage(author="assistant", text_generator=iterate_while(peekable_generator, lambda line: not self._line_command_match(line)), is_directly_entered=True)) 
+
+    def set_command_override_status(self, command_id: str, status: str) -> None:
+        """
+        Set the override status for a command.
+        
+        Args:
+            command_id: The unique ID of the command to override
+            status: The override status (ON, OFF, or AGENT_ONLY)
+        """
+        valid_statuses = ["ON", "OFF", "AGENT_ONLY"]
+        status = status.upper()
+        
+        if status not in valid_statuses:
+            self.notifications_printer.print_notification(
+                f"Invalid status '{status}'. Must be one of: {', '.join(valid_statuses)}",
+                CLIColors.RED
+            )
+            return
+            
+        if command_id not in [cmd.command_id for cmd in self.commands.values()]:
+            self.notifications_printer.print_notification(
+                f"Unknown command ID: {command_id}",
+                CLIColors.RED
+            )
+            return
+            
+        self._command_status_overrides[command_id] = status
+
+    def get_command_override_statuses(self) -> dict:
+        """
+        Get all command override statuses.
+        
+        Returns:
+            dict: Mapping of command IDs to their override status (ON, OFF, or AGENT_ONLY)
+        """
+        return self._command_status_overrides.copy()
 
     def _parse_tree_command(self, content: str) -> Generator[Event, None, None]:
         """

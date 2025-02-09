@@ -5,6 +5,7 @@ from argparse import ArgumentParser, Namespace
 from typing import Generator, Optional
 
 from hermes.exa_client import ExaClient
+from hermes.interface.helpers.terminal_coloring import CLIColors
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator
 from hermes.message import ImageUrlMessage, Message, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
@@ -17,9 +18,11 @@ import os
 class UserControlPanel(ControlPanel):
     def __init__(self, *, notifications_printer: CLINotificationsPrinter, 
                  extra_commands: list[ControlPanelCommand] = None,
-                 exa_client: Optional[ExaClient] = None):
+                 exa_client: Optional[ExaClient] = None,
+                 llm_control_panel = None):
         super().__init__()
         self.tree_generator = TreeGenerator()
+        self.llm_control_panel = llm_control_panel
         self._cli_arguments = set()  # Track which arguments were added to CLI
         self.notifications_printer = notifications_printer
         self.exa_client = exa_client
@@ -255,7 +258,71 @@ class UserControlPanel(ControlPanel):
                 parser=lambda line: AgentModeEvent(enabled=line.strip().lower() == "on")
             )
         )
-
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="list_assistant_commands",
+                command_label="/list_assistant_commands",
+                description="List all assistant commands and their current status",
+                short_description="Show assistant commands",
+                parser=self._parse_list_assistant_commands
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="set_assistant_command_status",
+                command_label="/set_assistant_command_status",
+                description="Set the status of an assistant command (ON/OFF/AGENT_ONLY)",
+                short_description="Set assistant command status",
+                parser=self._parse_set_assistant_command_status
+            )
+        )
+        
+    def _parse_set_assistant_command_status(self, content: str) -> None:
+        """Set the status of an assistant command"""
+        if not self.llm_control_panel:
+            self.notifications_printer.print_notification(
+                "Error: LLM control panel not available",
+                CLIColors.RED
+            )
+            return None
+            
+        try:
+            command_id, status = content.strip().split()
+            self.llm_control_panel.set_command_override_status(command_id, status)
+        except ValueError:
+            self.notifications_printer.print_notification(
+                "Error: Invalid format. Use: /set_assistant_command_status <command_id> <status>",
+                CLIColors.RED
+            )
+        return None
+        
+    def _parse_list_assistant_commands(self, _: str) -> None:
+        """List all assistant commands with their current status"""
+        if not self.llm_control_panel:
+            self.notifications_printer.print_notification(
+                "Error: LLM control panel not available",
+                CLIColors.RED
+            )
+            return None
+            
+        overrides = self.llm_control_panel.get_command_override_statuses()
+        commands = self.llm_control_panel.get_commands()
+        
+        output = ["Assistant Commands:"]
+        for cmd in commands:
+            overridden_message = ""
+            status = "ON" if not cmd.is_agent_command else "AGENT_ONLY"
+            if cmd.command_id in overrides:
+                status = overrides[cmd.command_id]
+                overridden_message = " (Overridden)"
+            output.append(f"- {cmd.command_id}: {status}{overridden_message}")
+            
+        self.notifications_printer.print_notification("\n".join(output))
+            
+        return None
+        
     def render(self):
         return "\n".join(self._render_command_in_control_panel(command) for command in self.commands)
 
@@ -279,6 +346,9 @@ class UserControlPanel(ControlPanel):
                     parsed_command_event = command_parser(command_content)
                 except Exception as e:
                     self.notifications_printer.print_error(f"Command {matching_command} failed: {e}")
+                    continue
+                
+                if parsed_command_event is None:
                     continue
 
                 if not isinstance(parsed_command_event, Event):

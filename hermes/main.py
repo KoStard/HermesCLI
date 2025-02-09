@@ -113,17 +113,19 @@ def main():
     if 'EXA' in config and 'api_key' in config['EXA']:
         exa_client = ExaClient(config['EXA']['api_key'])
     
-    user_control_panel = UserControlPanel(
-        notifications_printer=notifications_printer,
-        extra_commands=user_extra_commands,
-        exa_client=exa_client
-    )
     llm_control_panel = LLMControlPanel(
         notifications_printer=notifications_printer, 
         extra_commands=llm_extra_commands,
         exa_client=exa_client,
         command_status_overrides=command_status_overrides
     )
+    user_control_panel = UserControlPanel(
+        notifications_printer=notifications_printer,
+        extra_commands=user_extra_commands,
+        exa_client=exa_client,
+        llm_control_panel=llm_control_panel
+    )
+    
     cli_arguments_parser, utils_subparsers = build_cli_interface(user_control_panel, model_factory)
 
     extension_utils_visitors = []
