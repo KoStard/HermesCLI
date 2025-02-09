@@ -40,6 +40,10 @@ class LLMControlPanel(ControlPanel):
         if extra_commands:
             for command in extra_commands:
                 self._register_command(command)
+                
+        # Map of command ID to command status override
+        # Possible status values: ON, OFF, AGENT_ONLY
+        self._command_status_overrides = {}
 
     def _add_initial_help_content(self):
         """Add initial help content about command usage"""
@@ -459,10 +463,30 @@ class LLMControlPanel(ControlPanel):
     def render(self) -> str:
         content = []
         content.append(self._render_help_content(is_agent_mode=self._agent_mode))
+        
         for command_label in self.commands:
             command = self.commands[command_label]
-            # Only show agent commands when in agent mode
-            if not command.is_agent_command or self._agent_mode:
+            command_id = command.command_id
+            command_status_override = self._command_status_overrides.get(command_id)
+            
+            # Determine if command should be enabled based on:
+            # 1. Status override if present
+            # 2. Agent mode requirements
+            is_enabled = False
+            
+            if command_status_override == "OFF":
+                is_enabled = False
+            elif command_status_override == "ON":
+                is_enabled = True
+            elif command_status_override == "AGENT_ONLY":
+                is_enabled = self._agent_mode
+            else:
+                if not command.is_agent_command:
+                    is_enabled = True
+                elif self._agent_mode:
+                    is_enabled = True
+            
+            if is_enabled:
                 content.append(self._render_command_in_control_panel(command_label))
         return "\n".join(content)
 
