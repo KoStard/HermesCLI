@@ -57,6 +57,7 @@ class LLMControlPanel(ControlPanel):
             You don't have access to tools other than these. Know that the user doesn't have access to your tools.
             If the content doesn't match these instructions, they will be ignored. 
             The command syntax should be used literally, symbol-by-symbol correctly.
+            The commands will be parsed and executed only after you send the full message. You'll receive the responses in the next message.
             
             1. **Direct Commands**:
                 - When the user directly asks for a file to be created (e.g., "create a file", "make a file"), use the command syntax **without** the `#` prefix. Example:
@@ -297,12 +298,6 @@ class LLMControlPanel(ControlPanel):
             **Agent Mode Enabled**
             You are now in the agent mode.
             
-            **Web Search Command**
-            You can perform web searches using the Exa API with:
-            ///web_search <query>
-            This will return up to 10 relevant results from the web.
-            Example:
-            ///web_search latest AI research papers
             The difference here is that you don't have to finish the task in one reply.
             If the task is too big, you can finish it with multiple messages.
             When you send a message without ///done command, you'll be able to continue with sending your next message, the turn will not move to the user.
@@ -315,6 +310,25 @@ class LLMControlPanel(ControlPanel):
             But if it is the case that you lack some important information, don't make assumptions.
             Compile clear, good questions, then use ///ask_the_user command to get that information from the user.
             The user will be informed about your command, but preferrably run it early in the process, while they are at the computer.
+            
+            *Don't see response of command you are executed?*
+            You won't receive the response of the commands you use immediately. You need to finish your message, without having the response, to allow the engine to run your commands.
+            When you finish your turn, you'll receive a response with the results of the command execution.
+            
+            CORRECT workflow:
+            1. Write your complete message including all needed commands
+            2. Finish your message
+            3. Wait for response
+            4. Process the response in your next message
+
+            INCORRECT workflow:
+            ❌ Run command
+            ❌ Look for immediate results
+            ❌ Run another command
+            ❌ Make conclusions before message completion
+            
+            ⚠️ IMPORTANT: Commands are executed ONLY AFTER your complete message is sent.
+            Do NOT expect immediate results while writing your message.
             """
         ), is_agent_only=True)
 
@@ -372,6 +386,13 @@ class LLMControlPanel(ControlPanel):
             short_description="Perform a web search",
             description=textwrap.dedent(
             """
+            **Web Search Command**
+            You can perform web searches using the Exa API with:
+            ///web_search <query>
+            This will return up to 10 relevant results from the web.
+            Example:
+            ///web_search latest AI research papers
+            
             Perform a web search using Exa API. Syntax: `///web_search <query>`
             This API costs the user money, use it only when directly asked to do so.
             Returns up to 10 relevant results.
