@@ -60,7 +60,7 @@ def load_extensions() -> tuple[List[ControlPanelCommand], List[ControlPanelComma
     
     extensions_dir = get_extensions_dir()
     if not extensions_dir.exists():
-        return [], []
+        return [], [], []
 
     # Scan for extension.py files in subdirectories
     for extension_dir in extensions_dir.iterdir():
