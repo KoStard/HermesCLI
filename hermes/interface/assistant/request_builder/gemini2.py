@@ -33,7 +33,7 @@ class Gemini2RequestBuilder(RequestBuilder):
     
     def _flush_text_messages(self):
         content = self.text_messages_aggregator.compile_request()
-        part = Part.from_text(content)
+        part = Part.from_text(text=content)
         self._add_part(part, self.text_messages_aggregator.get_current_author())
         self.text_messages_aggregator.clear()
 
@@ -72,7 +72,7 @@ class Gemini2RequestBuilder(RequestBuilder):
 
     def handle_image_message(self, image_path: str, author: str, message_id: int):
         uploaded_file = self._upload_file(image_path)
-        uploaded_file = Part.from_uri(uploaded_file.uri, uploaded_file.mime_type)
+        uploaded_file = Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
     def _get_base64_image(self, image_path: str) -> str:
@@ -123,12 +123,12 @@ class Gemini2RequestBuilder(RequestBuilder):
 
     def handle_audio_file_message(self, audio_path: str, author: str, message_id: int):
         uploaded_file = self._upload_file(audio_path)
-        uploaded_file = Part.from_uri(uploaded_file.uri, uploaded_file.mime_type)
+        uploaded_file = Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
     
     def handle_video_message(self, video_path: str, author: str, message_id: int):
         uploaded_file = self._upload_file(video_path)
-        uploaded_file = Part.from_uri(uploaded_file.uri, uploaded_file.mime_type)
+        uploaded_file = Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
     def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
@@ -142,6 +142,6 @@ class Gemini2RequestBuilder(RequestBuilder):
             self.extracted_pdfs[extracted_pdf_key] = pdf_path
             
         uploaded_file = self._upload_file(pdf_path)
-        uploaded_file = Part.from_uri(uploaded_file.uri, uploaded_file.mime_type)
+        uploaded_file = Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
