@@ -9,7 +9,7 @@ from hermes.interface.helpers.terminal_coloring import CLIColors
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator
 from hermes.message import ImageUrlMessage, Message, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
-from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, OnceEvent, SaveHistoryEvent, AgentModeEvent, LLMCommandsExecutionEvent
+from hermes.event import Event, ExitEvent, LoadHistoryEvent, MessageEvent, ClearHistoryEvent, OnceEvent, SaveHistoryEvent, AgentModeEvent, LLMCommandsExecutionEvent, ThinkingLevelEvent
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.utils.tree_generator import TreeGenerator
 from hermes.utils.file_extension import remove_quotes
@@ -279,6 +279,15 @@ class UserControlPanel(ControlPanel):
             )
         )
         
+        self._register_command(
+            ControlPanelCommand(
+                command_id="thinking_level",
+                command_label="/thinking_level",
+                description="Set the thinking level (high/medium/low)",
+                short_description="Set thinking level",
+                parser=lambda line: ThinkingLevelEvent(level=line.strip().lower())
+            )
+        )
         self._register_command(
             ControlPanelCommand(
                 command_id="set_assistant_command_status",
