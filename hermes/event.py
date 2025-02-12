@@ -98,6 +98,10 @@ class OnceEvent(EngineCommandEvent):
     """Event for toggling 'once' mode - exit after completing current cycle"""
     enabled: bool
 
+@dataclass
+class ThinkingLevelEvent(EngineCommandEvent):
+    level: str
+
 """
 Notification events are events that contain a notification and are sent to the next participant.
 """

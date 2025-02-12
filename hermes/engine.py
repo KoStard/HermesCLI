@@ -2,7 +2,7 @@ from asyncio import Event
 import os
 import logging
 from typing import Generator
-from hermes.event import AssistantDoneEvent, ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, OnceEvent, RawContentForHistoryEvent, SaveHistoryEvent, AgentModeEvent, LLMCommandsExecutionEvent
+from hermes.event import AssistantDoneEvent, ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, OnceEvent, RawContentForHistoryEvent, SaveHistoryEvent, AgentModeEvent, LLMCommandsExecutionEvent, ThinkingLevelEvent
 from hermes.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter, CLIColors
 from hermes.message import TextMessage
@@ -169,6 +169,9 @@ class Engine:
                     self._once_mode = event.enabled
                     status = "enabled" if event.enabled else "disabled"
                     self.notifications_printer.print_notification(f"Once mode {status}")
+                elif isinstance(event, ThinkingLevelEvent):
+                    self.assistant_participant.interface.change_thinking_level(event.level)
+                    self.notifications_printer.print_notification(f"Thinking level set to {event.level}")
                 elif isinstance(event, FileEditEvent):
                     if event.mode == 'create':
                         if not self._confirm_file_creation(event.file_path):
