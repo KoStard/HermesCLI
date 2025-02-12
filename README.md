@@ -21,7 +21,7 @@ To install Hermes, you need to have Python 3.10 or later installed on your syste
 ```bash
 pip install --upgrade git+https://github.com/KoStard/HermesCLI.git
 # or with uv
-uv tool install git+https://github.com/KoStard/HermesCLI --upgrade --python 3.10
+uv tool install git+https://github.com/KoStard/HermesCLI --upgrade --python 3.11
 ```
 
 ### Configuration
