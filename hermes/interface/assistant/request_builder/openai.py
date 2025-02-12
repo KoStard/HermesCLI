@@ -8,9 +8,16 @@ from hermes.utils.file_extension import get_file_extension
 
 
 class OpenAIRequestBuilder(RequestBuilder):
+    def __init__(self, model_tag: str, notifications_printer: Any, prompt_builder_factory: Any):
+        super().__init__(model_tag, notifications_printer, prompt_builder_factory)
+        self.reasoning_effort = None
+    
     def initialize_request(self):
         self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
+
+    def set_reasoning_effort(self, level: str):
+        self.reasoning_effort = level
 
     def _add_content(self, content: dict, author: str):
         self.all_messages_aggregator.add_message(content, author)
@@ -69,8 +76,11 @@ class OpenAIRequestBuilder(RequestBuilder):
                 "content": messages if len(messages) > 1 else messages[0]["text"]
             })
 
-        return {
+        request = {
             "model": self.model_tag,
             "messages": final_messages,
             "stream": True,
         }
+        if self.reasoning_effort is not None and (self.model_tag in ["o1", "o3-mini"] or self.model_tag.endswith("/o1") or self.model_tag.endswith("/o3-mini")):
+            request["reasoning_effort"] = self.reasoning_effort
+        return request

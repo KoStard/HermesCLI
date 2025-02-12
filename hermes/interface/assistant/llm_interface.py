@@ -68,5 +68,9 @@ class LLMInterface(Interface):
     def clear(self):
         pass
 
+    def change_thinking_level(self, level: str):
+        if hasattr(self.model, "set_thinking_level"):
+            self.model.set_thinking_level(level)
+
     def _get_help_message(self):
         return self.model.get_request_builder().prompt_builder_factory.get_help_message()

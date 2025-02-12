@@ -93,6 +93,10 @@ class LLMCommandsExecutionEvent(EngineCommandEvent):
     """Event for toggling LLM command execution"""
     enabled: bool
 
+@dataclass
+class ThinkingLevelEvent(EngineCommandEvent):
+    level: str
+
 """
 Notification events are events that contain a notification and are sent to the next participant.
 """
