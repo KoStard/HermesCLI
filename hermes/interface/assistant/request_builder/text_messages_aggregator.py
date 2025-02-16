@@ -1,5 +1,5 @@
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
-
+from datetime import datetime
 
 class TextMessagesAggregator:
     def __init__(self, prompt_builder_factory: PromptBuilderFactory):
@@ -13,6 +13,9 @@ class TextMessagesAggregator:
                 msg["name"] = name
             if text_role:
                 msg["text_role"] = text_role
+            if author == "user":
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                msg["content"] = f"[{current_time}] {msg['content']}"
             self.messages.append(msg)
 
     def get_current_author(self) -> str:
