@@ -4,6 +4,7 @@ import os
 import socket
 import subprocess
 import platform
+import sys
 from typing import Generator
 
 from hermes.interface.assistant.chat_models.base import ChatModel
@@ -23,15 +24,16 @@ class DebugInterface(LLMInterface):
     def _spawn_debug_client(self):
         system = platform.system()
         client_path = os.path.join(os.path.dirname(__file__), 'debug_client.py')
+        python_path = sys.executable
         
         if system == "Darwin":  # macOS
-            cmd = f"""osascript -e 'tell app "Terminal" to do script "python3 {client_path} --port {self.port}"'"""
+            cmd = f"""osascript -e 'tell app "Terminal" to do script "{python_path} {client_path} --port {self.port}"'"""
             subprocess.Popen(cmd, shell=True)
         elif system == "Linux":
             terminals = ["gnome-terminal", "xterm", "konsole"]
             for terminal in terminals:
                 try:
-                    subprocess.Popen([terminal, "--", "python3", client_path, "--port", str(self.port)])
+                    subprocess.Popen([terminal, "--", python_path, client_path, "--port", str(self.port)])
                     break
                 except FileNotFoundError:
                     continue
