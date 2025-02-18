@@ -94,7 +94,7 @@ class Engine:
                 if not is_first_cycle:
                     continuation_msg = TextMessage(
                         author="user",
-                        text="Continue please. When you are done with the task, use the done command to send to the user.",
+                        text="AUTOMATIC RESPONSE: No ///done command found in your repsonse. Please continue, and use ///done command when you finish with the whole task.",
                         is_directly_entered=True
                     )
                     user_events = [MessageEvent(continuation_msg)]

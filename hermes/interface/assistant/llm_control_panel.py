@@ -306,6 +306,8 @@ class LLMControlPanel(ControlPanel):
 
             Then after you have confirmed that you finished the task, and you want to show your results to the user, you can add the ///done command.
             
+            Notice that some commands have closing tags. You have to close one command to be able to start another command. If you don't close the current command, a new command won't be started and the lines with the new command will be considered as part of argument of the current command. Make sure you close the commands.
+            
             You should aim to minimize user interventions until you achieve your task.
             But if it is the case that you lack some important information, don't make assumptions.
             Compile clear, good questions, then use ///ask_the_user command to get that information from the user.
