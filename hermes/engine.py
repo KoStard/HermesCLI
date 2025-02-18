@@ -23,11 +23,14 @@ class Engine:
         self.notifications_printer = CLINotificationsPrinter()
         self._received_assistant_done_event = False
         self._once_mode = False
+        self._once_mode = False
 
     def run(self):
         while True:
             try:
                 self._run_cycle()
+                if self._once_mode:
+                    return
                 if self._once_mode:
                     return
             except KeyboardInterrupt:
@@ -45,7 +48,11 @@ class Engine:
         while True:
             try:
                 is_once_mode_enabled_from_start = self._once_mode
+                is_once_mode_enabled_from_start = self._once_mode
                 user_events = self._run_user(assistant_events)
+                if is_once_mode_enabled_from_start:
+                    list(user_events) # Waiting for user events to finish, if any
+                    return
                 if is_once_mode_enabled_from_start:
                     list(user_events) # Waiting for user events to finish, if any
                     return
@@ -65,6 +72,10 @@ class Engine:
         consumption_events = self.user_participant.consume_events(history_snapshot, self._save_to_history(assistant_events))
         
         self.history.commit()
+        
+        if self._once_mode:
+            list(consumption_events) # Forcing consumption_events to process
+            return []
         
         if self._once_mode:
             list(consumption_events) # Forcing consumption_events to process
