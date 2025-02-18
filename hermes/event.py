@@ -93,6 +93,11 @@ class LLMCommandsExecutionEvent(EngineCommandEvent):
     """Event for toggling LLM command execution"""
     enabled: bool
 
+@dataclass
+class OnceEvent(EngineCommandEvent):
+    """Event for toggling 'once' mode - exit after completing current cycle"""
+    enabled: bool
+
 """
 Notification events are events that contain a notification and are sent to the next participant.
 """
