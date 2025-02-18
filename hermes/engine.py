@@ -40,8 +40,17 @@ class Engine:
     def _run_cycle(self):
         assistant_events = []
         while True:
-            user_events = self._run_user(assistant_events)
-            assistant_events = self._run_assistant(user_events)
+            try:
+                user_events = self._run_user(assistant_events)
+                assistant_events = self._run_assistant(user_events)
+            except KeyboardInterrupt:
+                if self.history.reset_uncommitted():
+                    self.notifications_printer.print_notification("Reset uncommitted changes from interrupted operation", CLIColors.YELLOW)
+                continue
+            except EOFError as e:
+                raise e
+            except Exception as e:
+                self.notifications_printer.print_notification(f"Assistant request failed with {e}", CLIColors.RED)
 
     def _run_user(self, assistant_events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """Handle user events and engine commands"""

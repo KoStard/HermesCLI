@@ -1,6 +1,7 @@
 import time
 from typing import Generator
 
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from hermes.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
 from hermes.interface.assistant.request_builder.base import RequestBuilder
@@ -14,37 +15,19 @@ class BedrockModel(ChatModel):
         import boto3
 
         aws_region = self.config.get("aws_region")
-        self.client = boto3.client('bedrock-runtime', region_name=aws_region)
+        self.client = boto3.client('bedrock-runtime', region_name=aws_region, config=Config(connect_timeout=5, read_timeout=60, retries={'max_attempts': 5, 'mode': 'adaptive'}))
     
     def send_request(self, request: any) -> Generator[str, None, None]:
-        backoff = 4
-        max_retries = 5
-        attempt = 0
+        response = self.client.converse_stream(
+            **request
+        )
 
-        while attempt < max_retries:
-            try:
-                response = self.client.converse_stream(
-                    **request
-                )
-
-                for event in response['stream']:
-                    if 'contentBlockDelta' in event:
-                        content = event['contentBlockDelta']['delta'].get('text', '')
-                        yield content
-                    elif 'messageStop' in event:
-                        break
-                return  # Success - exit the retry loop
-                
-            except ClientError as e:
-                if e.response['Error']['Code'] == 'ThrottlingException':
-                    if attempt == max_retries - 1:
-                        raise  # Re-raise on last attempt
-                    
-                    time.sleep(backoff)
-                    backoff *= 2  # Exponential backoff
-                    attempt += 1
-                else:
-                    raise  # Re-raise if it's not a ThrottlingException
+        for event in response['stream']:
+            if 'contentBlockDelta' in event:
+                content = event['contentBlockDelta']['delta'].get('text', '')
+                yield content
+            elif 'messageStop' in event:
+                break
     
     def get_request_builder(self) -> RequestBuilder:
         return self.request_builder
