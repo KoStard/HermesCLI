@@ -2,7 +2,7 @@ from asyncio import Event
 import os
 import logging
 from typing import Generator
-from hermes.event import AssistantDoneEvent, ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent, AgentModeEvent, LLMCommandsExecutionEvent
+from hermes.event import AssistantDoneEvent, ClearHistoryEvent, FileEditEvent, EngineCommandEvent, ExitEvent, LoadHistoryEvent, MessageEvent, OnceEvent, RawContentForHistoryEvent, SaveHistoryEvent, AgentModeEvent, LLMCommandsExecutionEvent
 from hermes.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter, CLIColors
 from hermes.message import TextMessage
@@ -22,11 +22,14 @@ class Engine:
         self.history = history
         self.notifications_printer = CLINotificationsPrinter()
         self._received_assistant_done_event = False
+        self._once_mode = False
 
     def run(self):
         while True:
             try:
                 self._run_cycle()
+                if self._once_mode:
+                    return
             except KeyboardInterrupt:
                 if self.history.reset_uncommitted():
                     self.notifications_printer.print_notification("Reset uncommitted changes from interrupted operation", CLIColors.YELLOW)
@@ -41,7 +44,11 @@ class Engine:
         assistant_events = []
         while True:
             try:
+                is_once_mode_enabled_from_start = self._once_mode
                 user_events = self._run_user(assistant_events)
+                if is_once_mode_enabled_from_start:
+                    list(user_events) # Waiting for user events to finish, if any
+                    return
                 assistant_events = self._run_assistant(user_events)
             except KeyboardInterrupt:
                 if self.history.reset_uncommitted():
@@ -58,6 +65,10 @@ class Engine:
         consumption_events = self.user_participant.consume_events(history_snapshot, self._save_to_history(assistant_events))
         
         self.history.commit()
+        
+        if self._once_mode:
+            list(consumption_events) # Forcing consumption_events to process
+            return []
 
         action_events_stream = self.user_participant.act()
         events_stream = chain(consumption_events, action_events_stream)
@@ -154,6 +165,10 @@ class Engine:
                     self.assistant_participant.interface.control_panel.set_commands_parsing_status(event.enabled)
                     status = "enabled" if event.enabled else "disabled"
                     self.notifications_printer.print_notification(f"LLM command execution {status}")
+                elif isinstance(event, OnceEvent):
+                    self._once_mode = event.enabled
+                    status = "enabled" if event.enabled else "disabled"
+                    self.notifications_printer.print_notification(f"Once mode {status}")
                 elif isinstance(event, FileEditEvent):
                     if event.mode == 'create':
                         if not self._confirm_file_creation(event.file_path):
