@@ -41,6 +41,7 @@ class BedrockRequestBuilder(RequestBuilder):
                     "budget_tokens": self.reasoning_effort
                 }
             }
+            response['inferenceConfig']['maxTokens'] = self.reasoning_effort * 2
         
         # Using Converse API
         return response
