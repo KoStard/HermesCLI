@@ -6,6 +6,10 @@ from hermes.interface.assistant.request_builder.text_messages_aggregator import 
 
 
 class BedrockRequestBuilder(RequestBuilder):
+    def __init__(self, model_tag, notifications_printer, prompt_builder_factory):
+        super().__init__(model_tag, notifications_printer, prompt_builder_factory)
+        self.reasoning_effort: int = None
+    
     def initialize_request(self):
         self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
@@ -20,9 +24,8 @@ class BedrockRequestBuilder(RequestBuilder):
         final_messages = []
         for messages, author in self.all_messages_aggregator.get_aggregated_messages():
             final_messages.append({"role": self._get_message_role(author), "content": messages})
-
-        # Using Converse API
-        return {
+        
+        response = {
             "modelId": self.model_tag,
             "system": [],
             "inferenceConfig": {},
@@ -30,6 +33,17 @@ class BedrockRequestBuilder(RequestBuilder):
             # "guardrailConfig": {},
             "messages": final_messages
         }
+        
+        if self.reasoning_effort:
+            response['additionalModelRequestFields'] = {
+                "thinking": {
+                    "type": "enabled",
+                    "budget_tokens": self.reasoning_effort
+                }
+            }
+        
+        # Using Converse API
+        return response
     
     def _flush_text_messages(self):
         content = self.text_messages_aggregator.compile_request()
@@ -110,3 +124,6 @@ class BedrockRequestBuilder(RequestBuilder):
 
     def handle_url_message(self, url: str, author: str, message_id: int):
         return self._default_handle_url_message(url, author, message_id)
+
+    def set_reasoning_effort(self, level: int):
+        self.reasoning_effort = level
