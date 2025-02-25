@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "anthropic>=0.40.0",
-    "boto3>=1.35.81",
+    "boto3>=1.37.0",
     "exa-py>=1.7.3",
     "google-genai>=1.1.0",
     "google-generativeai>=0.8.3",
