@@ -24,6 +24,7 @@ class ControlPanelCommand:
     visible_from_cli: bool = True
     default_on_cli: bool = False
     is_agent_command: bool = False
+    with_argument: bool = True
 
 class ControlPanel(ABC):
     def __init__(self):
