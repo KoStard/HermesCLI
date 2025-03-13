@@ -6,6 +6,7 @@ from typing import Generator, Optional
 
 from hermes.exa_client import ExaClient
 from hermes.interface.helpers.terminal_coloring import CLIColors
+from hermes.interface.user.fuzzy_selector import FuzzyFilesSelector
 from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator
 from hermes.message import ImageUrlMessage, Message, TextMessage, ImageMessage, AudioFileMessage, VideoMessage, EmbeddedPDFMessage, TextualFileMessage, UrlMessage
@@ -163,6 +164,17 @@ class UserControlPanel(ControlPanel):
                     )
                 ),
                 default_on_cli=True
+            )
+        )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="fuzzy_select",
+                command_label="/fuzzy_select",
+                description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
+                short_description="Share a text-based document",
+                parser=lambda line: self._parse_fuzzy_select_command(line),
+                with_argument=False
             )
         )
         
@@ -341,7 +353,30 @@ class UserControlPanel(ControlPanel):
         self.notifications_printer.print_notification("\n".join(output))
             
         return None
-        
+    
+    def _parse_fuzzy_select_command(self, content: str) -> Event:
+        """Parse the /fuzzy_select command"""
+        try:
+            fuzzy_selector = FuzzyFilesSelector()
+            absolute_file_paths = fuzzy_selector.select_files(multi=True)
+            result_events = []
+            for absolute_file_path in absolute_file_paths:
+                result_events.append(
+                    MessageEvent(
+                        TextualFileMessage(
+                            author="user",
+                            text_filepath=absolute_file_path
+                        )
+                    )
+                )
+            return result_events
+        except Exception as e:
+            self.notifications_printer.print_notification(
+                f"Error: {e}",
+                CLIColors.RED
+            )
+        return []
+    
     def render(self):
         return "\n".join(self._render_command_in_control_panel(command) for command in self.commands)
 
@@ -362,19 +397,23 @@ class UserControlPanel(ControlPanel):
                 command_content = self._extract_command_content_in_line(matching_command, line)
 
                 try:
-                    parsed_command_event = command_parser(command_content)
+                    parsed_command_events = command_parser(command_content)
                 except Exception as e:
                     self.notifications_printer.print_error(f"Command {matching_command} failed: {e}")
                     continue
                 
-                if parsed_command_event is None:
+                if parsed_command_events is None:
                     continue
+                
+                if not isinstance(parsed_command_events, list):
+                    parsed_command_events = [parsed_command_events]
+                
+                for parsed_command_event in parsed_command_events:
+                    if not isinstance(parsed_command_event, Event):
+                        self.notifications_printer.print_error(f"Command {matching_command} returned a non-event object: {parsed_command_event}")
+                        continue
 
-                if not isinstance(parsed_command_event, Event):
-                    self.notifications_printer.print_error(f"Command {matching_command} returned a non-event object: {parsed_command_event}")
-                    continue
-
-                prioritised_backlog.append((command_priority, parsed_command_event))
+                    prioritised_backlog.append((command_priority, parsed_command_event))
             else:
                 current_message_text += line
 
@@ -391,11 +430,16 @@ class UserControlPanel(ControlPanel):
     def build_cli_arguments(self, parser: ArgumentParser):
         for command_label in self.get_command_labels():
             if self.commands[command_label].visible_from_cli:
-                if self.commands[command_label].default_on_cli:
-                    parser.add_argument(command_label[1:], type=str, nargs='*', help=self.commands[command_label].description)
+                if self.commands[command_label].with_argument:
+                    if self.commands[command_label].default_on_cli:
+                        parser.add_argument(command_label[1:], type=str, nargs='*', help=self.commands[command_label].description)
+                        self._cli_arguments.add(command_label[1:])
+                    parser.add_argument('--' + command_label[1:], type=str, action="append", help=self.commands[command_label].description)
                     self._cli_arguments.add(command_label[1:])
-                parser.add_argument('--' + command_label[1:], type=str, action="append", help=self.commands[command_label].description)
-                self._cli_arguments.add(command_label[1:])
+                else:
+                    # Add flag-only arguments (no values)
+                    parser.add_argument('--' + command_label[1:], action="store_true", help=self.commands[command_label].description)
+                    self._cli_arguments.add(command_label[1:])
         
         parser.add_argument('--prompt', type=str, action="append", help="Prompt for the LLM")
         self._cli_arguments.add('prompt')
@@ -405,6 +449,10 @@ class UserControlPanel(ControlPanel):
         args_dict = vars(args)
         for arg, value in args_dict.items():
             if value is not None and arg in self._cli_arguments:
+                if isinstance(value, bool):
+                    if value:
+                        lines.append(f"/{arg}")
+                    continue
                 if arg != "prompt":
                     for v in value:
                         lines.append(f"/{arg} {v}")
