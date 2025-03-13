@@ -34,6 +34,7 @@ model = OPENAI/gpt-4o ; Or whatever model you want to use. To see the list of su
 
 [OPENAI]
 api_key = YOUR_OPENAI_API_KEY
+; base_url = 'http://localhost:1234/v1'  ; specify URL in case you want to use a different OpenAI compatible URL, e.g. Ollama, LMStudio, others
 
 [GROQ]
 api_key = YOUR_GROQ_API_KEY
