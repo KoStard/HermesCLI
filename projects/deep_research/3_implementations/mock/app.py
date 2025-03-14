@@ -251,6 +251,10 @@ class DeepResearchApp:
         if not self.file_system.current_node or not self.file_system.current_node.parent:
             return
         
+        # Check if report is written before allowing focus_up
+        if not self.file_system.current_node.report:
+            raise Exception("Cannot focus up without writing a report first. Please use the write_report command to document your findings.")
+        
         self.file_system.focus_up()
         # Clear history when changing focus
         self.chat_history.clear()

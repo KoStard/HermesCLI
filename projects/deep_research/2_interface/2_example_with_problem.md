@@ -18,6 +18,8 @@ Note that only the attachments of the current problem are visible. When changing
 
 Important: Only one focus change is allowed in one response. The focus change command should be the last command in your message, as it marks the end of the current session. No further commands should follow a focus change.
 
+Warning: Before writing the 3-page report, please ensure all criteria are met and marked as done, otherwise explain in the report why these criteria are not met. This ensures your report is comprehensive and addresses all required aspects of the problem. Before using `focus_up` you must have a report written, otherwise it won't be clear in the new session why was it left partial.
+
 ## Simple Commands
 - ///add_criteria Your criteria text here
 - ///mark_criteria_as_done criteria_number
@@ -38,7 +40,7 @@ Problem definition goes here
 ```
 <<<<< add_attachment
 ///name
-attachment_name.txt
+attachment_name.md
 ///content
 Content goes here
 >>>>>
@@ -113,13 +115,13 @@ Analyze and compare different experimental techniques for measuring quantum enta
 4. [✓] Discuss how measurement techniques address the loopholes in Bell test experiments
 
 ## Breakdown Structure
-### Bell Test Implementations [1/3 criteria met]
+### Bell Test Implementations [3/3 criteria met]
 Analysis of different experimental implementations of Bell tests, including photonic, atomic, and solid-state systems. Compare the technical requirements, precision, and loophole-closing capabilities of each approach.
 
 #### Criteria:
 1. [✓] Document at least 3 different Bell test experimental setups
-2. [ ] Compare efficiency and precision of different implementations
-3. [ ] Analyze how each implementation addresses specific loopholes
+2. [✓] Compare efficiency and precision of different implementations
+3. [✓] Analyze how each implementation addresses specific loopholes
 
 ### Quantum State Tomography [2/4 criteria met]
 Investigate quantum state tomography as a technique for characterizing entangled states. Analyze the mathematical foundations, experimental requirements, and scaling challenges with increasing system size.
@@ -129,6 +131,33 @@ Investigate quantum state tomography as a technique for characterizing entangled
 2. [✓] Analyze computational complexity scaling with system size
 3. [ ] Compare different tomography protocols and their applications
 4. [ ] Discuss recent advancements in efficient tomography techniques
+
+## Completed Reports
+
+### Child Reports
+#### Bell Test Implementations
+<Report>
+# Bell Test Implementations
+Summarized problem definition: Analysis of different experimental implementations of Bell tests, including photonic, atomic, and solid-state systems.
+
+Q1: What are the main experimental implementations of Bell tests?
+A1: Bell tests have been implemented in three major systems: photonic, atomic, and solid-state. Photonic implementations use entangled photon pairs and are the most common due to their relative simplicity. Atomic implementations use trapped ions or neutral atoms and offer longer coherence times. Solid-state implementations use superconducting circuits or quantum dots and are promising for scalability.
+
+Q1.1: How do photonic Bell tests work?
+A1.1: Photonic Bell tests typically use spontaneous parametric down-conversion (SPDC) to generate entangled photon pairs. These photons are sent to separate measurement stations where their polarization or phase is measured along different axes. The correlation statistics between these measurements are then analyzed to determine if they violate Bell's inequality.
+
+Q2: How do these implementations address experimental loopholes?
+A2: Each implementation addresses loopholes differently. Photonic systems excel at closing the locality loophole through large spatial separation. Atomic systems are better at closing the detection loophole due to high-efficiency measurements. Solid-state systems are working toward closing both simultaneously, with recent experiments achieving this milestone using superconducting qubits.
+
+Conclusion: Bell test implementations have evolved significantly, with each physical platform offering distinct advantages. Recent experiments have successfully closed multiple loopholes simultaneously, providing strong evidence against local hidden variable theories.
+</Report>
+
+#### Quantum State Tomography
+<Report>
+# Quantum State Tomography
+...
+I wasn't able to find answers to satisfy the last two criteria ...
+</Report>
 
 ## Parent chain
 ### L0 Root Problem: Quantum Mechanics Foundations
