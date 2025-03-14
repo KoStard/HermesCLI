@@ -90,11 +90,15 @@ The format will be:
 -- Subproblems/{subproblem title}/ (same structure, iteratively)
 -- Report 3 Pager.md
 
+The file system needs to be updated after every interaction (update the impacted files, create new directories for subproblems with their own structures).
+
 ### If when the process starts the folder already exists
 This means that we are continuing something that was left partial before.
 The assistant might be given with new instructions to modify the requirements, etc.
 
 ## Interface
+
+### Problem defined
 ```
 # Deep Research Interface
 
@@ -102,12 +106,16 @@ The assistant might be given with new instructions to modify the requirements, e
 ; simple commands
 ; block commands
 ; explain hierarchy between problems, what parent problems chain means (or better term, etc)
+; explain how the chat history will be erased with every focus change, as it's a new beginning
+; explain to use the commands symbol by symbol correctly
+; explain that only the attachments of the current problem are visible, so when changing focus the attachments will change as well
 
 ## Simple Commands
 - ///add_criteria Your criteria text here
 - ///mark_criteria_as_done criteria_index
 - ///focus_down Subproblem Title
-- ///focus_up
+- ///focus_up (when done with the subproblem, focus up)
+- ///finish_task (visible only when at the root task)
 
 ## Block Commands
 \```
@@ -154,6 +162,10 @@ The content goes here...
 </attachments>
 
 ======================
+# Instruction
+The user will provide an instruction before the deep research starts. This instruction will always remain visible here.
+
+======================
 # Current Problem: {title}
 
 ## Problem Hierarchy
@@ -184,4 +196,42 @@ The content goes here...
 ## Goal
 ; A comment explaining that the goal is to move forward on the current problem, modify, add subproblems as needed. Should be generic comment, that will be same regardless of what problem currently I work on. The purpose is to have closure of the message reminding what the action should be.
 Your task is to continue investigating the current problem on {title}. Add criteria if needed, create subproblems to structure your investigation, and work toward producing a comprehensive 3-page report. Use the attachments for reference and add new ones as needed. When ready to move to a different focus area, use the focus commands.
+```
+
+### No problem defined
+```
+# Deep Research Interface
+
+; information about the interface
+; explain the standards and best practices for defining a problem
+; explain that this is a temporary state and that this chat will be discarded after defining the problem and the assistant will start working on the problem
+; explain that current attachments will be copied to the root problem after creation and won't be lost
+
+======================
+# Attachments
+; these are the attachments user has included to use while creating the problem
+; these attachments will be copied to the root problem after creation
+
+<attachments>
+<attachment name="http://....">
+The content goes here...
+</attachment>
+...
+</attachments>
+
+======================
+# Instruction
+The user will provide an instruction before the deep research starts. This instruction will always remain visible here.
+
+======================
+# How to define a problem
+Define the problem using this command:
+\```
+<<<<< define_problem
+///title
+title goes here
+///content
+Content of the problem definition.
+>>>>>
+\```
 ```
