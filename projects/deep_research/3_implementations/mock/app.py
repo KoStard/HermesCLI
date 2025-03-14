@@ -144,6 +144,7 @@ class DeepResearchApp:
             "add_attachment": self._handle_add_attachment,
             "write_report": self._handle_write_report,
             "append_to_problem_definition": self._handle_append_to_problem_definition,
+            "add_criteria_to_subproblem": self._handle_add_criteria_to_subproblem,
             "focus_down": self._handle_focus_down,
             "focus_up": self._handle_focus_up,
             "finish_task": self._handle_finish_task,
@@ -253,6 +254,26 @@ class DeepResearchApp:
         self.file_system.focus_up()
         # Clear history when changing focus
         self.chat_history.clear()
+        
+    def _handle_add_criteria_to_subproblem(self, args: dict):
+        """Handle add_criteria_to_subproblem command"""
+        if not self.file_system.current_node:
+            return
+        
+        # Get the subproblem by title
+        title = args["title"]
+        if title not in self.file_system.current_node.subproblems:
+            return
+            
+        subproblem = self.file_system.current_node.subproblems[title]
+        
+        # Add criteria to the subproblem
+        criteria_text = args["criteria"]
+        if criteria_text in subproblem.criteria:
+            return
+            
+        subproblem.add_criteria(criteria_text)
+        self.file_system.update_files()
 
     def _handle_finish_task(self, args: dict):
         """Handle finish_task command"""

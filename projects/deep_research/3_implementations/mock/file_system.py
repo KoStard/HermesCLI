@@ -68,6 +68,14 @@ class Node:
     def get_criteria_total_count(self) -> int:
         """Get the total number of criteria"""
         return len(self.criteria)
+        
+    def get_criteria_status(self) -> str:
+        """Get a string representation of criteria status"""
+        met = self.get_criteria_met_count()
+        total = self.get_criteria_total_count()
+        if total == 0:
+            return "No criteria defined"
+        return f"[{met}/{total} criteria met]"
 
 
 class FileSystem:
