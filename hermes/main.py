@@ -4,6 +4,7 @@ from hermes.engine import Engine
 from argparse import ArgumentParser, Namespace
 from hermes.history import History
 from hermes.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
+from hermes.interface.assistant.deep_research_assistant.interface import DeepResearchAssistantInterface
 from hermes.interface.assistant.model_factory import ModelFactory
 from hermes.interface.user.command_completer import CommandCompleter
 from hermes.interface.control_panel import CommandsLister
@@ -32,6 +33,11 @@ def build_cli_interface(
         "--model",
         type=str,
         help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.get_provider_model_pairs())})",
+    )
+    chat_parser.add_argument(
+        "--deep-research",
+        action="store_true",
+        help="Use the Deep Research Assistant interface",
     )
     chat_parser.add_argument(
         "--stt", action="store_true", help="Use Speech to Text mode for input"
@@ -220,7 +226,17 @@ def main():
             )
             debug_participant = DebugParticipant(debug_interface)
             assistant_participant = debug_participant
-
+        elif cli_args.deep_research:
+            # Use the Deep Research Assistant interface
+            deep_research_interface = DeepResearchAssistantInterface(
+                model=model
+            )
+            deep_research_participant = LLMParticipant(deep_research_interface)
+            assistant_participant = deep_research_participant
+            
+            notifications_printer.print_notification(
+                "Using Deep Research Assistant interface"
+            )
         else:
             llm_interface = ChatAssistantInterface(model, control_panel=llm_control_panel)
             llm_participant = LLMParticipant(llm_interface)
