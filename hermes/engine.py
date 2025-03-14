@@ -17,6 +17,7 @@ from hermes.event import (
     LLMCommandsExecutionEvent,
     ThinkingLevelEvent,
 )
+from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import (
     CLINotificationsPrinter,
@@ -137,10 +138,11 @@ class Engine:
         """Handle assistant events and agent mode continuation"""
         is_first_cycle = True
         is_llm_turn = True
+        is_chat_intarface = isinstance(self.assistant_participant.interface, ChatAssistantInterface)
 
         while is_llm_turn:
             # Add continuation prompt if in agent mode, in all cycles except the first
-            if self.assistant_participant.interface.control_panel._agent_mode:
+            if is_chat_intarface and self.assistant_participant.interface.control_panel._agent_mode:
                 if not is_first_cycle:
                     continuation_msg = TextMessage(
                         author="user",
@@ -168,7 +170,7 @@ class Engine:
             yield from self._handle_engine_commands_from_stream(events_stream)
 
             # Check if we should continue in agent mode
-            if not self.assistant_participant.interface.control_panel._agent_mode:
+            if not is_chat_intarface or not self.assistant_participant.interface.control_panel._agent_mode:
                 is_llm_turn = False
 
             # Check if we received an AssistantDoneEvent
