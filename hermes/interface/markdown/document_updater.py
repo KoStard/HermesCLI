@@ -5,103 +5,118 @@ from typing import List
 from .header import Header
 from .section_path import SectionPath
 
+
 class MarkdownDocumentUpdater:
     """Handles operations for updating markdown document sections."""
-    
-    def __init__(self, file_path: str, backup_dir: str = '/tmp/hermes/backups'):
+
+    def __init__(self, file_path: str, backup_dir: str = "/tmp/hermes/backups"):
         self.file_path = file_path
         self.backup_dir = backup_dir
-        
+
     def _create_if_not_exists(self, section_path: List[str], content: str) -> None:
         """Create a new markdown file with initial section structure."""
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
-        with open(self.file_path, 'w') as f:
+        with open(self.file_path, "w") as f:
             for i, header in enumerate(section_path, 1):
-                f.write('#' * i + ' ' + header + '\n')
+                f.write("#" * i + " " + header + "\n")
             f.write(content)
-            
+
     def _backup_file(self) -> None:
         """Create a backup copy of the file."""
         if not os.path.exists(self.file_path):
             return
-            
+
         os.makedirs(self.backup_dir, exist_ok=True)
         filename = os.path.basename(self.file_path)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_path = os.path.join(self.backup_dir, f"{filename}_{timestamp}.bak")
         shutil.copy2(self.file_path, backup_path)
-        
-    def update_section(self, section_path: List[str], new_content: str, mode: str) -> bool:
+
+    def update_section(
+        self, section_path: List[str], new_content: str, mode: str
+    ) -> bool:
         """
         Update a section in the markdown document.
-        
+
         Args:
             section_path: List of headers leading to target section
             new_content: Content to update/append
             mode: 'append_markdown_section' or 'update_markdown_section'
-            
+
         Returns:
             bool: True if section was found and updated, False otherwise
         """
         if not os.path.exists(self.file_path):
             self._create_if_not_exists(section_path, new_content)
             return True
-            
+
         self._backup_file()
-        if not new_content.endswith('\n'):
-            new_content += '\n'
-        
-        with open(self.file_path, 'r') as f:
+        if not new_content.endswith("\n"):
+            new_content += "\n"
+
+        with open(self.file_path, "r") as f:
             lines = f.readlines()
-        
+
         is_preface = False
-        if section_path[-1] == '__preface':
+        if section_path[-1] == "__preface":
             section_path = section_path[:-1]
             is_preface = True
 
-        updated_lines, section_found = self._process_lines(lines, section_path, new_content, mode, is_preface)
-        
-        with open(self.file_path, 'w') as f:
+        updated_lines, section_found = self._process_lines(
+            lines, section_path, new_content, mode, is_preface
+        )
+
+        with open(self.file_path, "w") as f:
             f.writelines(updated_lines)
-            
+
         return section_found
-            
-    def _process_lines(self, lines: List[str], section_path: List[str], 
-                      new_content: str, mode: str, is_preface: bool) -> tuple[List[str], bool]:
+
+    def _process_lines(
+        self,
+        lines: List[str],
+        section_path: List[str],
+        new_content: str,
+        mode: str,
+        is_preface: bool,
+    ) -> tuple[List[str], bool]:
         """Process document lines and apply the update.
-        
+
         Returns:
             tuple: (updated_lines, section_found) where section_found is True if the section was found
         """
-        if mode not in ['append_markdown_section', 'update_markdown_section']:
+        if mode not in ["append_markdown_section", "update_markdown_section"]:
             raise ValueError(f"Invalid mode: {mode}")
         path_tracker = SectionPath()
         updated_lines = []
         i = 0
         section_found = False
-        
+
         while i < len(lines):
             line = lines[i]
             header = Header.parse(line)
-            
+
             if header:
                 path_tracker.update(header)
                 if path_tracker.matches(section_path):
                     section_found = True
                     if is_preface:
-                        start_of_next_section = self._find_start_of_next_section(lines[i+1:]) + 1
-                        if mode == 'append_markdown_section':
-                            updated_lines.extend(lines[i:i+start_of_next_section])
+                        start_of_next_section = (
+                            self._find_start_of_next_section(lines[i + 1 :]) + 1
+                        )
+                        if mode == "append_markdown_section":
+                            updated_lines.extend(lines[i : i + start_of_next_section])
                             updated_lines.append(new_content)
-                        elif mode == 'update_markdown_section':
+                        elif mode == "update_markdown_section":
                             updated_lines.extend([line, new_content])
                         i += start_of_next_section - 1
-                    elif mode == 'append_markdown_section':
-                        section_end = self._find_section_end(lines[i+1:], header.level) + 1
-                        updated_lines.extend(lines[i:i + section_end])
+                    elif mode == "append_markdown_section":
+                        section_end = (
+                            self._find_section_end(lines[i + 1 :], header.level) + 1
+                        )
+                        updated_lines.extend(lines[i : i + section_end])
                         updated_lines.append(new_content)
                         i += section_end - 1
-                    elif mode == 'update_markdown_section':
+                    elif mode == "update_markdown_section":
                         updated_lines.append(line)
                         updated_lines.append(new_content)
                         i = self._skip_existing_content(lines, i, header.level)
@@ -110,9 +125,9 @@ class MarkdownDocumentUpdater:
             else:
                 updated_lines.append(line)
             i += 1
-                
+
         return updated_lines, section_found
-        
+
     def _find_section_end(self, lines: List[str], current_level: int) -> int:
         """Find the end index of current section."""
         for i, line in enumerate(lines):
@@ -129,9 +144,9 @@ class MarkdownDocumentUpdater:
                 return i
         return len(lines)
 
-        
-    def _skip_existing_content(self, lines: List[str], start_idx: int, 
-                             current_level: int) -> int:
+    def _skip_existing_content(
+        self, lines: List[str], start_idx: int, current_level: int
+    ) -> int:
         """Skip the existing content of a section."""
         i = start_idx + 1
         while i < len(lines):
@@ -141,10 +156,14 @@ class MarkdownDocumentUpdater:
             i += 1
         return i - 1
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='Markdown Document Updater')
-    parser.add_argument('file_path', type=str, help='Path to the markdown file')
+
+    parser = argparse.ArgumentParser(description="Markdown Document Updater")
+    parser.add_argument("file_path", type=str, help="Path to the markdown file")
     args = parser.parse_args()
     updater = MarkdownDocumentUpdater(args.file_path)
-    updater.update_section(['T1'], 'New content for Section 1.1', 'update_markdown_section')
+    updater.update_section(
+        ["T1"], "New content for Section 1.1", "update_markdown_section"
+    )

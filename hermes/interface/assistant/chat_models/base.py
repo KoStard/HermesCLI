@@ -5,8 +5,14 @@ from hermes.interface.assistant.prompt_builder.base import PromptBuilder
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 
+
 class ChatModel(ABC):
-    def __init__(self, config: dict, model_tag: str, notifications_printer: CLINotificationsPrinter):
+    def __init__(
+        self,
+        config: dict,
+        model_tag: str,
+        notifications_printer: CLINotificationsPrinter,
+    ):
         self.config = config
         self.model_tag = model_tag
         self.notifications_printer = notifications_printer

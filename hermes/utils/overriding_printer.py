@@ -1,5 +1,6 @@
 import sys
 
+
 class OverridingPrinter:
     def __init__(self, texts: list[str]):
         self.texts = texts

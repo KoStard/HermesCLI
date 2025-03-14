@@ -1,16 +1,25 @@
 from typing import Generator
 
-from hermes.interface.assistant.chat_assistant.llm_response_types import BaseLLMResponse, TextLLMResponse, ThinkingLLMResponse
-from hermes.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
+from hermes.interface.assistant.chat_assistant.llm_response_types import (
+    BaseLLMResponse,
+    TextLLMResponse,
+    ThinkingLLMResponse,
+)
+from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
+    SimplePromptBuilderFactory,
+)
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.gemini import GeminiRequestBuilder
 from .base import ChatModel
+
 
 class GeminiModel(ChatModel):
     def initialize(self):
         import google.generativeai as genai
 
-        self.request_builder = GeminiRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+        self.request_builder = GeminiRequestBuilder(
+            self.model_tag, self.notifications_printer, SimplePromptBuilderFactory()
+        )
 
         api_key = self.config.get("api_key")
         if not api_key:
@@ -19,29 +28,36 @@ class GeminiModel(ChatModel):
 
     @property
     def _supports_thinking(self) -> bool:
-        return 'thinking' in self.model_tag
+        return "thinking" in self.model_tag
 
     def send_request(self, request: any) -> Generator[str, None, None]:
         import google.generativeai as genai
 
-        model = genai.GenerativeModel(**request['model_kwargs'])
+        model = genai.GenerativeModel(**request["model_kwargs"])
 
-        chat = model.start_chat(history=request['history'])
-        response = chat.send_message(**request['message'])
+        chat = model.start_chat(history=request["history"])
+        response = chat.send_message(**request["message"])
         has_finished_thinking = False if self._supports_thinking else True
         for chunk in response:
             parts = chunk.candidates[0].content.parts
             if not parts:
                 continue
-            yield from self._convert_to_llm_response(self._handle_part(parts[0]), is_thinking=not has_finished_thinking)
+            yield from self._convert_to_llm_response(
+                self._handle_part(parts[0]), is_thinking=not has_finished_thinking
+            )
 
-            if len(response._result.candidates[0].content.parts) == 2 or len(parts) == 2:
+            if (
+                len(response._result.candidates[0].content.parts) == 2
+                or len(parts) == 2
+            ):
                 # Sometimes the len(parts) is 1, but the next chunk is already of the response.
                 has_finished_thinking = True
-            
+
             if len(parts) == 2:
-                yield from self._convert_to_llm_response(self._handle_part(parts[1]), is_thinking=not has_finished_thinking)
-    
+                yield from self._convert_to_llm_response(
+                    self._handle_part(parts[1]), is_thinking=not has_finished_thinking
+                )
+
     def _handle_part(self, part) -> Generator[str, None, None]:
         if "text" in part:
             yield part.text
@@ -71,7 +87,9 @@ class GeminiModel(ChatModel):
             yield "```"
             return
 
-    def _convert_to_llm_response(self, responses: Generator[str, None, None], is_thinking: bool) -> Generator[BaseLLMResponse, None, None]:
+    def _convert_to_llm_response(
+        self, responses: Generator[str, None, None], is_thinking: bool
+    ) -> Generator[BaseLLMResponse, None, None]:
         for response in responses:
             # response += "\n"
             if is_thinking:
@@ -81,18 +99,18 @@ class GeminiModel(ChatModel):
 
     @staticmethod
     def get_provider() -> str:
-        return 'GEMINI'
-    
+        return "GEMINI"
+
     @staticmethod
     def get_model_tags() -> list[str]:
         models = [
-            'gemini-1.5-pro-exp-0801',
-            'gemini-1.5-pro-exp-0827',
-            'gemini-exp-1206',
-            'gemini-1.5-pro-002',
-            'gemini-1.5-flash-002',
-            'gemini-exp-1114',
-            'gemini-1.5-pro-002/grounded',
+            "gemini-1.5-pro-exp-0801",
+            "gemini-1.5-pro-exp-0827",
+            "gemini-exp-1206",
+            "gemini-1.5-pro-002",
+            "gemini-1.5-flash-002",
+            "gemini-exp-1114",
+            "gemini-1.5-pro-002/grounded",
         ]
         return models
 

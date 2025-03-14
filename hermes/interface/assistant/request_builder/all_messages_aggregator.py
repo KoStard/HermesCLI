@@ -3,14 +3,14 @@ class AllMessagesAggregator:
     With add_message(message, author) method, lots of messages are added to the aggregator.
     With get_aggregated_messages() method, [([message, ...], author), ...] is returned, grouping sequential messages by author.
     """
-    
+
     def __init__(self):
         self._message_pairs = []
 
     def add_message(self, message, author):
         """
         Add a message with its author to the aggregator.
-        
+
         Args:
             message: The message content
             author: The author of the message
@@ -22,7 +22,7 @@ class AllMessagesAggregator:
         Returns a list of tuples, where each tuple contains:
         - A list of sequential messages from the same author
         - The author of those messages
-        
+
         Returns:
             List[Tuple[List[Any], str]]: List of (messages, author) tuples
         """
