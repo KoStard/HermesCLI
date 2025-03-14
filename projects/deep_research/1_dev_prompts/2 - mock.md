@@ -19,10 +19,13 @@ I'll have the below operations.
 Given the problem definition, add criteria for the definition of done.
 Maybe we found new information which shows that to mark this task as done we need to have more things answered.
 
+### Add criteria to subproblem
+Add criteria to a specific subproblem by title. This is useful when new information is found that requires revisiting a subproblem with additional requirements.
+
 ### Add subproblems
 Based on new findings we add new subproblems so that we meet the criteria and solve the current problem.
 New subproblem includes a title and a problem definition.
-Breakdown structure is simply the combination of the title + problem definition of all subproblems of the current problem.
+Breakdown structure is simply the combination of the title + problem definition of all subproblems of the current problem, along with the criteria completion status (e.g., "[2/5 criteria met]").
 
 ### Add attachments
 For this we'll have special commands, to open URL, a file, etc, which will be saved into the attachments folder.
@@ -77,6 +80,16 @@ more lines
 >>>>>
 ```
 
+For the add_criteria_to_subproblem command, the format is:
+```
+<<<<< add_criteria_to_subproblem
+///title
+Subproblem Title
+///criteria
+Your criteria text here (should be a single line)
+>>>>>
+```
+
 ## File system
 The file system gets updated in the background, without being shown to the assistant.
 
@@ -116,7 +129,7 @@ The assistant might be given with new instructions to modify the requirements, e
 
 ## Simple Commands
 - ///add_criteria Your criteria text here
-- ///mark_criteria_as_done criteria_number
+- ///mark_criteria_as_done criteria_number ; explain that this works only for the current node
 - ///focus_down Subproblem Title
 - ///focus_up (when done with the subproblem, focus up)
 - ///finish_task (visible only when at the root task)
@@ -126,6 +139,7 @@ The assistant might be given with new instructions to modify the requirements, e
 ; add_attachment multiline block information - name and content - name should have one line
 ; write_report multiline block information - content
 ; append_to_problem_definition multiline block information - content
+; add_criteria_to_subproblem - subtask title, criteria
 ; example:
 ; \```
 ; <<<<< add_subproblem
