@@ -134,6 +134,15 @@ Content to append to the problem definition.
 ```
 This might be needed if the direction needs to be adjusted based on user input.
 
+```
+<<<<< add_criteria_to_subproblem
+///title
+Subproblem Title
+///criteria
+Your criteria text here (should be a single line)
+>>>>>
+```
+
 ======================
 # Attachments Of Current Problem
 
@@ -207,8 +216,17 @@ Your task is to continue investigating the current problem on {current_node.titl
         
         result = ""
         for title, subproblem in node.subproblems.items():
-            result += f"### {title}\n"
+            criteria_status = subproblem.get_criteria_status()
+            result += f"### {title} {criteria_status}\n"
             result += f"{subproblem.problem_definition}\n\n"
+            
+            # Add criteria for this subproblem if any exist
+            if subproblem.criteria:
+                result += "#### Criteria:\n"
+                for i, (criterion, done) in enumerate(zip(subproblem.criteria, subproblem.criteria_done)):
+                    status = "[✓]" if done else "[ ]"
+                    result += f"{i+1}. {status} {criterion}\n"
+                result += "\n"
         return result.strip()
 
     def _format_parent_chain(self) -> str:
