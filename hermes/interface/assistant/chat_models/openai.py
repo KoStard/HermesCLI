@@ -1,14 +1,22 @@
 from typing import Generator
 
-from hermes.interface.assistant.chat_assistant.llm_response_types import TextLLMResponse, ThinkingLLMResponse
-from hermes.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
+from hermes.interface.assistant.chat_assistant.llm_response_types import (
+    TextLLMResponse,
+    ThinkingLLMResponse,
+)
+from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
+    SimplePromptBuilderFactory,
+)
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.openai import OpenAIRequestBuilder
 from .base import ChatModel
 
+
 class OpenAIModel(ChatModel):
     def initialize(self):
-        self.request_builder = OpenAIRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
+        self.request_builder = OpenAIRequestBuilder(
+            self.model_tag, self.notifications_printer, SimplePromptBuilderFactory()
+        )
 
         import openai
 
@@ -21,26 +29,28 @@ class OpenAIModel(ChatModel):
 
     def send_request(self, request: any) -> Generator[str, None, None]:
         import openai
+
         try:
-            stream = self.client.chat.completions.create(
-                **request
-            )
+            stream = self.client.chat.completions.create(**request)
         except openai.AuthenticationError as e:
             raise Exception("Authentication failed. Please check your API key.", e)
         for chunk in stream:
-            if hasattr(chunk.choices[0].delta, 'reasoning_content') and chunk.choices[0].delta.reasoning_content is not None:
+            if (
+                hasattr(chunk.choices[0].delta, "reasoning_content")
+                and chunk.choices[0].delta.reasoning_content is not None
+            ):
                 yield ThinkingLLMResponse(chunk.choices[0].delta.reasoning_content)
             if chunk.choices[0].delta.content is not None:
                 yield TextLLMResponse(chunk.choices[0].delta.content)
 
     @staticmethod
     def get_provider() -> str:
-        return 'OPENAI'
-    
+        return "OPENAI"
+
     @staticmethod
     def get_model_tags() -> list[str]:
         return ["gpt-4o"]
-    
+
     def get_request_builder(self) -> RequestBuilder:
         return self.request_builder
 

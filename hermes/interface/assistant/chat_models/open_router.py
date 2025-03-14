@@ -1,5 +1,6 @@
 from .openai import OpenAIModel
 
+
 class OpenRouterModel(OpenAIModel):
     def initialize(self):
         self.config = {
@@ -10,8 +11,11 @@ class OpenRouterModel(OpenAIModel):
 
     @staticmethod
     def get_provider() -> str:
-        return 'OPENROUTER'
-    
+        return "OPENROUTER"
+
     @staticmethod
     def get_model_tags() -> list[str]:
-        return ["perplexity/llama-3.1-sonar-large-128k-online", "openai/o1-mini-2024-09-12"]
+        return [
+            "perplexity/llama-3.1-sonar-large-128k-online",
+            "openai/o1-mini-2024-09-12",
+        ]

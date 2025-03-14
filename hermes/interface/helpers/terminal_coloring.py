@@ -7,6 +7,7 @@ Task:
 
 from enum import Enum
 
+
 class CLIColors(Enum):
     RED = "\033[91m"
     GREEN = "\033[92m"
@@ -20,8 +21,10 @@ class CLIColors(Enum):
 def colorize_text(text: str, color: CLIColors) -> str:
     return f"{color.value}{text}\033[0m"
 
+
 def print_colored_text(text: str, color: CLIColors, **kwargs) -> None:
     print(colorize_text(text, color), **kwargs)
+
 
 if __name__ == "__main__":
     for color in CLIColors:

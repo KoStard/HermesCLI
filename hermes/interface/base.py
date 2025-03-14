@@ -12,9 +12,12 @@ from typing import Generator
 from hermes.event import Event
 from hermes.history import History
 
+
 class Interface(ABC):
     @abstractmethod
-    def render(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def render(
+        self, events: Generator[Event, None, None]
+    ) -> Generator[Event, None, None]:
         """
         Render events to the participant.
         It might yield events for the other participant.

@@ -4,8 +4,6 @@ Some messages are commands, they might not go through to the other participant, 
 Imagine using Telegram or some other messaging app. What you can add and press Send is what a message is. With difference that you can send multiple messages at once.
 """
 
-
-
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Generator, Optional
@@ -15,8 +13,12 @@ from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
 from hermes.interface.helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.filepath import prepare_filepath
-from hermes.interface.assistant.chat_assistant.llm_response_types import BaseLLMResponse, ThinkingLLMResponse
+from hermes.interface.assistant.chat_assistant.llm_response_types import (
+    BaseLLMResponse,
+    ThinkingLLMResponse,
+)
 import os
+
 
 @dataclass(init=False)
 class Message(ABC):
@@ -25,13 +27,14 @@ class Message(ABC):
     A single message might represent only a part of the message
     During one interaction, a single participant might send multiple messages
     """
+
     author: str
     timestamp: datetime
-    
+
     def __init__(self, *, author: str, timestamp: Optional[datetime] = None):
         self.author = author
         self.timestamp = timestamp or datetime.now()
-    
+
     @abstractmethod
     def get_content_for_user(self) -> str:
         pass
@@ -49,28 +52,38 @@ class Message(ABC):
     def from_json(json_data: dict) -> "Message":
         pass
 
+
 @dataclass(init=False)
 class TextMessage(Message):
     """Class for regular text messages"""
-    
+
     text: str
     is_directly_entered: bool
     name: Optional[str]
     text_role: Optional[str]
-    
-    def __init__(self, *, author: str, text: str, timestamp: Optional[datetime] = None, is_directly_entered: bool = False, name: Optional[str] = None, text_role: Optional[str] = None):
+
+    def __init__(
+        self,
+        *,
+        author: str,
+        text: str,
+        timestamp: Optional[datetime] = None,
+        is_directly_entered: bool = False,
+        name: Optional[str] = None,
+        text_role: Optional[str] = None,
+    ):
         super().__init__(author=author, timestamp=timestamp)
         self.text = text
         self.is_directly_entered = is_directly_entered
         self.name = name
         self.text_role = text_role
-    
+
     def get_content_for_user(self) -> str:
         return self.text
 
     def get_content_for_assistant(self) -> str:
         return self.text
-    
+
     def to_json(self) -> dict:
         return {
             "type": "text",
@@ -79,24 +92,25 @@ class TextMessage(Message):
             "timestamp": self.timestamp.isoformat(),
             "is_directly_entered": self.is_directly_entered,
             "name": self.name,
-            "text_role": self.text_role
+            "text_role": self.text_role,
         }
-    
+
     @staticmethod
     def from_json(json_data: dict) -> "TextMessage":
         return TextMessage(
-            author=json_data["author"], 
-            text=json_data["text"], 
-            timestamp=datetime.fromisoformat(json_data["timestamp"]), 
+            author=json_data["author"],
+            text=json_data["text"],
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
             is_directly_entered=json_data["is_directly_entered"],
             name=json_data.get("name"),
-            text_role=json_data.get("text_role")
+            text_role=json_data.get("text_role"),
         )
+
 
 @dataclass(init=False)
 class TextGeneratorMessage(Message):
     """Class for messages that contain a text generator"""
-    
+
     text_generator: Generator[str, None, None]
     text: str
     has_finished: bool
@@ -104,7 +118,16 @@ class TextGeneratorMessage(Message):
     name: Optional[str]
     text_role: Optional[str]
 
-    def __init__(self, *, author: str, text_generator: Generator[str, None, None], timestamp: Optional[datetime] = None, is_directly_entered: bool = False, name: Optional[str] = None, text_role: Optional[str] = None):
+    def __init__(
+        self,
+        *,
+        author: str,
+        text_generator: Generator[str, None, None],
+        timestamp: Optional[datetime] = None,
+        is_directly_entered: bool = False,
+        name: Optional[str] = None,
+        text_role: Optional[str] = None,
+    ):
         super().__init__(author=author, timestamp=timestamp)
         # We should track the output of the generator, and save it to self.text
         self.text_generator = text_generator
@@ -139,7 +162,7 @@ class TextGeneratorMessage(Message):
             "timestamp": self.timestamp.isoformat(),
             "is_directly_entered": self.is_directly_entered,
             "name": self.name,
-            "text_role": self.text_role
+            "text_role": self.text_role,
         }
 
     @staticmethod
@@ -147,34 +170,37 @@ class TextGeneratorMessage(Message):
         # Since we can't serialize a generator, we'll create a simple generator that yields the stored text
         def text_gen():
             yield json_data["text"]
-        
+
         msg = TextGeneratorMessage(
             author=json_data["author"],
             text_generator=text_gen(),
             timestamp=datetime.fromisoformat(json_data["timestamp"]),
             is_directly_entered=json_data.get("is_directly_entered", False),
             name=json_data.get("name"),
-            text_role=json_data.get("text_role")
+            text_role=json_data.get("text_role"),
         )
         msg.text = json_data["text"]
         msg.has_finished = json_data["has_finished"]
         return msg
 
 
-
 @dataclass(init=False)
 class InvisibleMessage(TextMessage):
     """Class for messages that are invisible to the user"""
-    
+
     def get_content_for_user(self) -> str:
         return ""
+
 
 @dataclass(init=False)
 class ImageUrlMessage(Message):
     """Class for messages that are image urls"""
+
     image_url: str
 
-    def __init__(self, *, author: str, image_url: str, timestamp: Optional[datetime] = None):
+    def __init__(
+        self, *, author: str, image_url: str, timestamp: Optional[datetime] = None
+    ):
         super().__init__(author=author, timestamp=timestamp)
         self.image_url = image_url
 
@@ -183,13 +209,13 @@ class ImageUrlMessage(Message):
 
     def get_content_for_assistant(self) -> str:
         return self.image_url
-    
+
     def to_json(self) -> dict:
         return {
             "type": "image_url",
             "image_url": self.image_url,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
     @staticmethod
@@ -197,25 +223,29 @@ class ImageUrlMessage(Message):
         return ImageUrlMessage(
             author=json_data["author"],
             image_url=json_data["image_url"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
         )
+
 
 @dataclass(init=False)
 class ImageMessage(Message):
     """Class for messages that are images"""
+
     image_path: str
 
     IMAGE_EXTENSION_MAP = {
         "jpg": "jpeg",
     }
 
-    def __init__(self, *, author: str, image_path: str, timestamp: Optional[datetime] = None):
+    def __init__(
+        self, *, author: str, image_path: str, timestamp: Optional[datetime] = None
+    ):
         super().__init__(author=author, timestamp=timestamp)
         self.image_path = prepare_filepath(image_path)
-    
+
     def get_content_for_user(self) -> str:
         return f"Image: {self.image_path}"
-    
+
     def get_content_for_assistant(self) -> str:
         return self.image_path
 
@@ -224,7 +254,7 @@ class ImageMessage(Message):
             "type": "image",
             "image_path": self.image_path,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
     @staticmethod
@@ -232,22 +262,25 @@ class ImageMessage(Message):
         return ImageMessage(
             author=json_data["author"],
             image_path=json_data["image_path"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
         )
 
 
 @dataclass(init=False)
 class AudioFileMessage(Message):
     """Class for messages that are audio files"""
+
     audio_filepath: str
 
-    def __init__(self, *, author: str, audio_filepath: str, timestamp: Optional[datetime] = None):
+    def __init__(
+        self, *, author: str, audio_filepath: str, timestamp: Optional[datetime] = None
+    ):
         super().__init__(author=author, timestamp=timestamp)
         self.audio_filepath = prepare_filepath(audio_filepath)
-    
+
     def get_content_for_user(self) -> str:
         return f"Audio: {self.audio_filepath}"
-    
+
     def get_content_for_assistant(self) -> str:
         return self.audio_filepath
 
@@ -256,7 +289,7 @@ class AudioFileMessage(Message):
             "type": "audio",
             "audio_filepath": self.audio_filepath,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
     @staticmethod
@@ -264,21 +297,25 @@ class AudioFileMessage(Message):
         return AudioFileMessage(
             author=json_data["author"],
             audio_filepath=json_data["audio_filepath"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
         )
+
 
 @dataclass(init=False)
 class VideoMessage(Message):
     """Class for messages that are videos"""
+
     video_filepath: str
 
-    def __init__(self, *, author: str, video_filepath: str, timestamp: Optional[datetime] = None):
+    def __init__(
+        self, *, author: str, video_filepath: str, timestamp: Optional[datetime] = None
+    ):
         super().__init__(author=author, timestamp=timestamp)
         self.video_filepath = prepare_filepath(video_filepath)
 
     def get_content_for_user(self) -> str:
         return f"Video: {self.video_filepath}"
-    
+
     def get_content_for_assistant(self) -> str:
         return self.video_filepath
 
@@ -287,7 +324,7 @@ class VideoMessage(Message):
             "type": "video",
             "video_filepath": self.video_filepath,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
     @staticmethod
@@ -295,17 +332,25 @@ class VideoMessage(Message):
         return VideoMessage(
             author=json_data["author"],
             video_filepath=json_data["video_filepath"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
         )
 
 
 @dataclass(init=False)
 class EmbeddedPDFMessage(Message):
     """Class for messages that are embedded PDFs"""
+
     pdf_filepath: str
     pages: Optional[list[int]]
 
-    def __init__(self, *, author: str, pdf_filepath: str, timestamp: Optional[datetime] = None, pages: Optional[list[int]] = None):
+    def __init__(
+        self,
+        *,
+        author: str,
+        pdf_filepath: str,
+        timestamp: Optional[datetime] = None,
+        pages: Optional[list[int]] = None,
+    ):
         super().__init__(author=author, timestamp=timestamp)
         self.pdf_filepath = prepare_filepath(pdf_filepath)
         self.pages = pages
@@ -325,7 +370,7 @@ class EmbeddedPDFMessage(Message):
             "pdf_filepath": self.pdf_filepath,
             "pages": self.pages,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
     @staticmethod
@@ -334,9 +379,9 @@ class EmbeddedPDFMessage(Message):
             author=json_data["author"],
             pdf_filepath=json_data["pdf_filepath"],
             pages=json_data["pages"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
         )
-    
+
     @staticmethod
     def build_from_line(author: str, raw_line: str) -> "EmbeddedPDFMessage":
         """
@@ -368,13 +413,22 @@ class EmbeddedPDFMessage(Message):
             pages = []
         return EmbeddedPDFMessage(author=author, pdf_filepath=pdf_filepath, pages=pages)
 
+
 @dataclass(init=False)
 class TextualFileMessage(Message):
     """Class for messages that are textual files"""
+
     text_filepath: str
     file_role: Optional[str]
-    
-    def __init__(self, *, author: str, text_filepath: str, timestamp: Optional[datetime] = None, file_role: Optional[str] = None):
+
+    def __init__(
+        self,
+        *,
+        author: str,
+        text_filepath: str,
+        timestamp: Optional[datetime] = None,
+        file_role: Optional[str] = None,
+    ):
         super().__init__(author=author, timestamp=timestamp)
         self.text_filepath = prepare_filepath(remove_quotes(text_filepath))
         self.file_role = file_role
@@ -393,7 +447,7 @@ class TextualFileMessage(Message):
             "text_filepath": self.text_filepath,
             "author": self.author,
             "timestamp": self.timestamp.isoformat(),
-            "file_role": self.file_role
+            "file_role": self.file_role,
         }
 
     @staticmethod
@@ -402,20 +456,28 @@ class TextualFileMessage(Message):
             author=json_data["author"],
             text_filepath=json_data["text_filepath"],
             timestamp=datetime.fromisoformat(json_data["timestamp"]),
-            file_role=json_data.get("file_role")
+            file_role=json_data.get("file_role"),
         )
+
 
 @dataclass(init=False)
 class LLMRunCommandOutput(Message):
     """Class for messages that represent the output of LLM-run commands"""
+
     text: str
     name: Optional[str]
 
-    def __init__(self, *, text: str, timestamp: Optional[datetime] = None, name: Optional[str] = None):
+    def __init__(
+        self,
+        *,
+        text: str,
+        timestamp: Optional[datetime] = None,
+        name: Optional[str] = None,
+    ):
         super().__init__(author="user", timestamp=timestamp)
         self.text = text
         self.name = name
-    
+
     def get_content_for_user(self) -> str:
         return f"LLM Run Command Output: {self.text}"
 
@@ -427,7 +489,7 @@ class LLMRunCommandOutput(Message):
             "type": "llm_run_command_output",
             "text": self.text,
             "timestamp": self.timestamp.isoformat(),
-            "name": self.name
+            "name": self.name,
         }
 
     @staticmethod
@@ -435,18 +497,20 @@ class LLMRunCommandOutput(Message):
         return LLMRunCommandOutput(
             text=json_data["text"],
             timestamp=datetime.fromisoformat(json_data["timestamp"]),
-            name=json_data.get("name")
+            name=json_data.get("name"),
         )
+
 
 @dataclass(init=False)
 class UrlMessage(Message):
     """Class for messages that are urls"""
+
     url: str
 
     def __init__(self, *, author: str, url: str, timestamp: Optional[datetime] = None):
         super().__init__(author=author, timestamp=timestamp)
-        self.url = url  
-    
+        self.url = url
+
     def get_content_for_user(self) -> str:
         return f"URL: {self.url}"
 
@@ -458,7 +522,7 @@ class UrlMessage(Message):
             "type": "url",
             "url": self.url,
             "author": self.author,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
     @staticmethod
@@ -466,13 +530,14 @@ class UrlMessage(Message):
         return UrlMessage(
             author=json_data["author"],
             url=json_data["url"],
-            timestamp=datetime.fromisoformat(json_data["timestamp"])
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
         )
+
 
 @dataclass(init=False)
 class ThinkingAndResponseGeneratorMessage(Message):
     """Class for messages that contain both thinking and response generators"""
-    
+
     thinking_and_response_generator: Generator[BaseLLMResponse, None, None]
     thinking_text: str
     response_text: str
@@ -482,9 +547,20 @@ class ThinkingAndResponseGeneratorMessage(Message):
     name: str
     text_role: str
 
-    def __init__(self, *, author: str, thinking_and_response_generator: Generator[BaseLLMResponse, None, None], timestamp: Optional[datetime] = None, is_directly_entered=False, name: str = "", text_role: str = ""):
+    def __init__(
+        self,
+        *,
+        author: str,
+        thinking_and_response_generator: Generator[BaseLLMResponse, None, None],
+        timestamp: Optional[datetime] = None,
+        is_directly_entered=False,
+        name: str = "",
+        text_role: str = "",
+    ):
         super().__init__(author=author, timestamp=timestamp)
-        self.thinking_and_response_generator = PeekableGenerator(thinking_and_response_generator)
+        self.thinking_and_response_generator = PeekableGenerator(
+            thinking_and_response_generator
+        )
         self.thinking_text = ""
         self.response_text = ""
         self.thinking_informed = False
@@ -498,7 +574,13 @@ class ThinkingAndResponseGeneratorMessage(Message):
         if self.thinking_text:
             yield self.thinking_text
         if not self.thinking_finished:
-            for line in chunks_to_lines(chunk.text for chunk in iterate_while(self.thinking_and_response_generator, lambda chunk: isinstance(chunk, ThinkingLLMResponse))):
+            for line in chunks_to_lines(
+                chunk.text
+                for chunk in iterate_while(
+                    self.thinking_and_response_generator,
+                    lambda chunk: isinstance(chunk, ThinkingLLMResponse),
+                )
+            ):
                 if not self.thinking_informed:
                     yield "> Thinking...\n"
                     self.thinking_informed = True
@@ -521,7 +603,10 @@ class ThinkingAndResponseGeneratorMessage(Message):
     def get_content_for_assistant(self) -> str:
         # Process remaining chunks if any
         if not self.thinking_finished:
-            for chunk in iterate_while(self.thinking_and_response_generator, lambda chunk: isinstance(chunk, ThinkingLLMResponse)):
+            for chunk in iterate_while(
+                self.thinking_and_response_generator,
+                lambda chunk: isinstance(chunk, ThinkingLLMResponse),
+            ):
                 self.thinking_text += chunk.text
             self.thinking_finished = True
         if not self.response_finished:
@@ -541,29 +626,31 @@ class ThinkingAndResponseGeneratorMessage(Message):
             "timestamp": self.timestamp.isoformat(),
             "is_directly_entered": self.is_directly_entered,
             "name": self.name,
-            "text_role": self.text_role
+            "text_role": self.text_role,
         }
 
     @staticmethod
     def from_json(json_data: dict) -> "ThinkingAndResponseGeneratorMessage":
         def gen_thinking_and_response():
             yield from []
+
         def gen_response():
             yield from []
-        
+
         msg = ThinkingAndResponseGeneratorMessage(
             author=json_data["author"],
             thinking_and_response_generator=gen_thinking_and_response(),
             timestamp=datetime.fromisoformat(json_data["timestamp"]),
             is_directly_entered=json_data.get("is_directly_entered", False),
             name=json_data.get("name", ""),
-            text_role=json_data.get("text_role", "")
+            text_role=json_data.get("text_role", ""),
         )
         msg.thinking_text = json_data["thinking_text"]
         msg.response_text = json_data["response_text"]
         msg.thinking_finished = True
         msg.response_finished = True
         return msg
+
 
 DESERIALIZATION_KEYMAP = {
     "llm_run_command_output": LLMRunCommandOutput.from_json,

@@ -30,7 +30,9 @@ class MarkdownHighlighter:
         highlighted = highlight(text, lexer, Terminal256Formatter())
         print(highlighted, end="")
 
-    def line_aggregator(self, generator: Generator[str, None, None]) -> Generator[str, None, None]:
+    def line_aggregator(
+        self, generator: Generator[str, None, None]
+    ) -> Generator[str, None, None]:
         buffer = ""
         for chunk in generator:
             buffer += chunk
@@ -42,7 +44,7 @@ class MarkdownHighlighter:
 
     def process_markdown(self, markdown_generator: Generator[str, None, None]):
         ast = mistune.create_markdown(renderer="ast")
-        
+
         def _iter_render(tokens, state):
             """
             Fix to a bug where some characters get serialised:
@@ -52,20 +54,20 @@ class MarkdownHighlighter:
                 `&lt;&gt;!@#$%^&amp;*()-=` < incorrect
             """
             for tok in tokens:
-                if 'children' in tok:
-                    children = _iter_render(tok['children'], state)
-                    tok['children'] = list(children)
-                elif 'text' in tok:
-                    text = tok.pop('text')
-                    tok['children'] = [{'type': 'text', 'raw': text.strip(' \r\n\t\f')}]
+                if "children" in tok:
+                    children = _iter_render(tok["children"], state)
+                    tok["children"] = list(children)
+                elif "text" in tok:
+                    text = tok.pop("text")
+                    tok["children"] = [{"type": "text", "raw": text.strip(" \r\n\t\f")}]
                 yield tok
-        
+
         ast._iter_render = _iter_render
         buffer = ""
         old_parsed = []
         original_text = ""
         output_text = ""
-    
+
         for line in self.line_aggregator(markdown_generator):
             original_text += line
             buffer += line
@@ -85,5 +87,5 @@ class MarkdownHighlighter:
                 rendered = self.render_to_markdown(element)
                 self.print_markdown(rendered, self.get_lexer(element))
                 output_text += rendered
-    
+
         return original_text
