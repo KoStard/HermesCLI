@@ -2,8 +2,8 @@ import logging
 from typing import Generator, List
 
 from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.chat_assistant.llm_control_panel import LLMControlPanel
-from hermes.interface.assistant.chat_assistant.llm_response_types import (
+from hermes.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
+from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
 )
@@ -25,11 +25,11 @@ from hermes.message import (
 logger = logging.getLogger(__name__)
 
 
-class LLMInterface(Interface):
+class ChatAssistantInterface(Interface):
     model: ChatModel
     request: any
 
-    def __init__(self, model: ChatModel, control_panel: LLMControlPanel):
+    def __init__(self, model: ChatModel, control_panel: ChatAssistantControlPanel):
         self.model = model
         self.model.initialize()
         self.control_panel = control_panel

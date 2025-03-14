@@ -8,14 +8,14 @@ import sys
 from typing import Generator
 
 from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.chat_assistant.llm_control_panel import LLMControlPanel
-from hermes.interface.assistant.chat_assistant.llm_interface import LLMInterface
+from hermes.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
+from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.message import Message, TextMessage
 
 
-class DebugInterface(LLMInterface):
+class DebugInterface(ChatAssistantInterface):
     def __init__(
-        self, port=12345, control_panel: LLMControlPanel = None, model: ChatModel = None
+        self, port=12345, control_panel: ChatAssistantControlPanel = None, model: ChatModel = None
     ):
         self.port = port
         self.socket = None
