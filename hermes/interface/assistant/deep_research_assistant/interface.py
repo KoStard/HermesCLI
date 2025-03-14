@@ -85,6 +85,8 @@ class DeepResearchAssistantInterface(Interface):
                 print(response.text, end="", flush=True)
             full_llm_response = "".join(llm_response)
             engine.process_commands(full_llm_response)
+            
+        report = "Report generated"
         
         # Return the report as the response
         yield MessageEvent(
