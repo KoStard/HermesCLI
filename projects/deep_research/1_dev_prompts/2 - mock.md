@@ -103,6 +103,7 @@ The assistant might be given with new instructions to modify the requirements, e
 # Deep Research Interface
 
 ; information about the interface
+; information about errors handling of the commands, to check "Errors report" in the response
 ; simple commands
 ; block commands
 ; explain hierarchy between problems, what parent problems chain means (or better term, etc)
@@ -203,6 +204,7 @@ Your task is to continue investigating the current problem on {title}. Add crite
 # Deep Research Interface
 
 ; information about the interface
+; information about errors handling of the commands, to check "Errors report" in the response
 ; explain the standards and best practices for defining a problem
 ; explain that this is a temporary state and that this chat will be discarded after defining the problem and the assistant will start working on the problem
 ; explain that current attachments will be copied to the root problem after creation and won't be lost
