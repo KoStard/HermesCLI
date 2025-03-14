@@ -178,7 +178,10 @@ Your criteria text here (should be a single line)
 {parent_chain_section}
 
 ## Goal
-Your task is to continue investigating the current problem on {current_node.title}. Add criteria if needed, create subproblems to structure your investigation, and work toward producing a comprehensive 3-page report. Use the attachments for reference and add new ones as needed. When ready to move to a different focus area, use the focus commands."""
+Your goal is to solve the root problem. Stay frugal, don't focus on the unnecessary details that won't benefit the root problem. If you find yourself working on something that's not worth the effort, mark as done, write it in the report and go up.
+Add criteria for the current problem if needed, create subproblems to structure your investigation, and work toward producing a comprehensive 3-page report. Use the attachments for reference and add new ones as needed. When ready to move to a different focus area, use the focus commands.
+Remember, we work backwards from the root problem.
+"""
 
     def _format_attachments(self, attachments: List[str]) -> str:
         """Format attachments for display"""
