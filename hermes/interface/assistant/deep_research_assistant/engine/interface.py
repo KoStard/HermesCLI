@@ -49,12 +49,12 @@ Make sure to include closing tags for multiline blocks, otherwise it will break 
 # How to define a problem
 Define the problem using this command:
 ```
-<<<<< define_problem
+<<< define_problem
 ///title
 title goes here
 ///content
 Content of the problem definition.
->>>>>
+>>>
 ```"""
 
     def render_problem_defined(self) -> str:
@@ -82,13 +82,6 @@ Content of the problem definition.
         # Format problem hierarchy
         problem_hierarchy = self.file_system.get_problem_hierarchy()
 
-        # Check if we're at the root
-        finish_task_command = (
-            "- ///finish_task (when all criteria are met and report is written)\n"
-            if current_node == self.file_system.root_node
-            else ""
-        )
-
         return f"""# Deep Research Interface
 
 This interface helps you conduct thorough research by breaking down complex problems into manageable subproblems. You can use commands to add criteria, create subproblems, attach resources, write reports, and navigate the problem hierarchy.
@@ -111,49 +104,48 @@ Include expectations on the depth of the results. On average be frugal, not maki
 - ///add_criteria Your criteria text here
 - ///mark_criteria_as_done criteria_number
 - ///focus_down Subproblem Title
-- ///focus_up (when done with the subproblem, focus up)
-{finish_task_command}
+- ///focus_up (when done with the subproblem, focus up, if root node, will finish the task)
 ## Block Commands
 ```
-<<<<< add_subproblem
+<<< add_subproblem
 ///title
 Subproblem Title
 ///content
 Problem definition goes here
->>>>>
+>>>
 ```
 
 ```
-<<<<< add_attachment
+<<< add_attachment
 ///name
 attachment_name.md
 ///content
 Content goes here
->>>>>
+>>>
 ```
 
 ```
-<<<<< write_report
+<<< write_report
 ///content
 Report content goes here
->>>>>
+>>>
 ```
 
 ```
-<<<<< append_to_problem_definition
+<<< append_to_problem_definition
 ///content
 Content to append to the problem definition.
->>>>>
+>>>
 ```
 This might be needed if the direction needs to be adjusted based on user input.
 
 ```
-<<<<< add_criteria_to_subproblem
+<<< add_criteria_to_subproblem
 ///title
 Subproblem Title
 ///criteria
 Your criteria text here (should be a single line)
->>>>>
+>>>
 ```
 
 ======================

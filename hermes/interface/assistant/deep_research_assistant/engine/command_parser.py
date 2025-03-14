@@ -30,7 +30,6 @@ class CommandParser:
             "mark_criteria_as_done": self._parse_mark_criteria_as_done,
             "focus_down": self._parse_focus_down,
             "focus_up": self._parse_focus_up,
-            "finish_task": self._parse_finish_task,
         }
 
         self.block_commands = {
@@ -64,7 +63,7 @@ class CommandParser:
             line = lines[i].strip()
 
             # Check for block command start
-            block_match = re.match(r"<<<<<\s+(\w+)", line)
+            block_match = re.match(r"<<<\s+(\w+)", line)
             if block_match:
                 command = block_match.group(1)
                 block_content = []
@@ -72,12 +71,12 @@ class CommandParser:
                 i += 1
 
                 # Collect all lines until the closing tag
-                while i < len(lines) and not re.match(r">>>>>", lines[i].strip()):
+                while i < len(lines) and not re.match(r">>>", lines[i].strip()):
                     block_content.append(lines[i])
                     i += 1
 
                 # Check if we found the closing tag
-                if i < len(lines) and re.match(r">>>>>", lines[i].strip()):
+                if i < len(lines) and re.match(r">>>", lines[i].strip()):
                     # Process the block command
                     result = ParseResult()
                     result.command = command
@@ -150,12 +149,12 @@ class CommandParser:
 
         for i, line in enumerate(lines):
             line = line.strip()
-            if line.startswith("<<<<<"):
+            if line.startswith("<<<"):
                 # Extract command name
                 parts = line.split()
                 command = parts[1] if len(parts) > 1 else "unknown"
                 opening_tags.append((i + 1, command))
-            elif line.startswith(">>>>>"):
+            elif line.startswith(">>>"):
                 closing_tags.append(i + 1)
 
         # Check for unbalanced tags
@@ -166,7 +165,7 @@ class CommandParser:
                 errors.append(
                     CommandError(
                         command=command,
-                        message=f"Missing closing '>>>>>' tag for command block starting at line {line_num}",
+                        message=f"Missing closing '>>>' tag for command block starting at line {line_num}",
                         line_number=line_num,
                         is_syntax_error=True,
                     )
@@ -178,7 +177,7 @@ class CommandParser:
                 errors.append(
                     CommandError(
                         command="unknown",
-                        message=f"Unexpected closing '>>>>>' tag without matching opening tag",
+                        message=f"Unexpected closing '>>>' tag without matching opening tag",
                         line_number=line_num,
                         is_syntax_error=True,
                     )
@@ -277,12 +276,6 @@ class CommandParser:
         self, args: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse focus_up command"""
-        return {}, []
-
-    def _parse_finish_task(
-        self, args: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse finish_task command"""
         return {}, []
 
     def _parse_define_problem(

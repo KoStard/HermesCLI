@@ -63,6 +63,7 @@ class DeepResearchEngine:
         if has_syntax_error:
             auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.\n\n{error_report}'
             self.chat_history.add_message("user", auto_reply)
+            print("Auto Reply: ", auto_reply)
             return False, error_report, execution_status
 
         # Execute commands if there are no syntax errors
@@ -74,7 +75,7 @@ class DeepResearchEngine:
                     self._execute_command(result.command, result.args)
                     execution_status[result.command] = "success"
                     commands_executed = True
-                except Exception as e:
+                except ValueError as e:
                     execution_status[result.command] = f"failed: {str(e)}"
 
         # Add execution status to error report if there were failures
@@ -94,6 +95,7 @@ class DeepResearchEngine:
             if error_report:
                 auto_reply += f"\n\n{error_report}"
             self.chat_history.add_message("user", auto_reply)
+            print("Auto Reply: ", auto_reply)
 
         return commands_executed, error_report, execution_status
 
@@ -118,7 +120,6 @@ class DeepResearchEngine:
             "add_criteria_to_subproblem": self._handle_add_criteria_to_subproblem,
             "focus_down": self._handle_focus_down,
             "focus_up": self._handle_focus_up,
-            "finish_task": self._handle_finish_task,
         }
 
         if command in command_handlers:
@@ -222,15 +223,17 @@ class DeepResearchEngine:
         """Handle focus_up command"""
         if (
             not self.file_system.current_node
-            or not self.file_system.current_node.parent
         ):
             return
 
         # Check if report is written before allowing focus_up
         if not self.file_system.current_node.report:
-            raise Exception(
+            raise ValueError(
                 "Cannot focus up without writing a report first. Please use the write_report command to document your findings."
             )
+        
+        if not self.file_system.current_node.parent:
+            self.finished = True
 
         self.file_system.focus_up()
         # Clear history when changing focus
@@ -256,21 +259,4 @@ class DeepResearchEngine:
         subproblem.add_criteria(criteria_text)
         self.file_system.update_files()
 
-    def _handle_finish_task(self, args: dict):
-        """Handle finish_task command"""
-        if (
-            not self.file_system.current_node
-            or self.file_system.current_node != self.file_system.root_node
-        ):
-            return
-
-        # Check if all criteria are met and report is written
-        node = self.file_system.current_node
-        all_criteria_met = all(node.criteria_done) if node.criteria else False
-        has_report = bool(node.report)
-
-        if not all_criteria_met or not has_report:
-            return
-
-        self.finished = True
 
