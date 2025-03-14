@@ -7,4 +7,4 @@ Some additional instructions for the commands:
 - If there is an entry with such title, don't add it again
 
 # Instructions
-- The assistant can enter multiple commands at once
+- The assistant can enter multiple commands at once, including one line and multiline

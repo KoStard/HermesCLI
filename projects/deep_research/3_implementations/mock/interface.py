@@ -18,6 +18,9 @@ class Interface:
         return f"""# Deep Research Interface
 
 This interface helps you conduct thorough research by breaking down complex problems into manageable subproblems.
+
+If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Please check this section if your commands don't seem to be working as expected.
+
 To begin, you need to define the problem you'll be researching. Please follow these standards and best practices:
 - Make the problem statement clear and specific
 - Include any constraints or requirements
@@ -76,6 +79,8 @@ Content of the problem definition.
         return f"""# Deep Research Interface
 
 This interface helps you conduct thorough research by breaking down complex problems into manageable subproblems. You can use commands to add criteria, create subproblems, attach resources, write reports, and navigate the problem hierarchy.
+
+If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Please check this section if your commands don't seem to be working as expected.
 
 ## Simple Commands
 - ///add_criteria Your criteria text here

@@ -8,6 +8,8 @@ Answer goes below the line:
 
 This interface helps you conduct thorough research by breaking down complex problems into manageable subproblems. You can use commands to add criteria, create subproblems, attach resources, write reports, and navigate the problem hierarchy.
 
+If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Please check this section if your commands don't seem to be working as expected.
+
 ## Simple Commands
 - ///add_criteria Your criteria text here
 - ///mark_criteria_as_done criteria_index
