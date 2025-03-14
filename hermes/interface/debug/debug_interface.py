@@ -8,8 +8,8 @@ import sys
 from typing import Generator
 
 from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.llm_control_panel import LLMControlPanel
-from hermes.interface.assistant.llm_interface import LLMInterface
+from hermes.interface.assistant.chat_assistant.llm_control_panel import LLMControlPanel
+from hermes.interface.assistant.chat_assistant.llm_interface import LLMInterface
 from hermes.message import Message, TextMessage
 
 class DebugInterface(LLMInterface):

@@ -3,7 +3,7 @@ from typing import Generator
 
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from hermes.interface.assistant.llm_response_types import TextLLMResponse, ThinkingLLMResponse
+from hermes.interface.assistant.chat_assistant.llm_response_types import TextLLMResponse, ThinkingLLMResponse
 from hermes.interface.assistant.prompt_builder.simple_prompt_builder import SimplePromptBuilderFactory
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.bedrock import BedrockRequestBuilder

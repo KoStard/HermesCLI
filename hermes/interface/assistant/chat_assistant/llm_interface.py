@@ -2,10 +2,10 @@ import logging
 from typing import Generator, List
 
 from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.llm_control_panel import LLMControlPanel
-from hermes.interface.assistant.llm_response_types import BaseLLMResponse, TextLLMResponse
+from hermes.interface.assistant.chat_assistant.llm_control_panel import LLMControlPanel
+from hermes.interface.assistant.chat_assistant.llm_response_types import BaseLLMResponse, TextLLMResponse
 
-from ..base import Interface
+from hermes.interface.base import Interface
 from hermes.event import Event, MessageEvent, NotificationEvent, RawContentForHistoryEvent
 from hermes.message import Message, TextGeneratorMessage, TextMessage, ThinkingAndResponseGeneratorMessage
 
