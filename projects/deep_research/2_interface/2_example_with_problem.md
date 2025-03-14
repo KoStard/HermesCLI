@@ -45,6 +45,15 @@ Content goes here
 ```
 
 ```
+<<<<< add_criteria_to_subproblem
+///title
+Subproblem Title
+///criteria
+Your criteria text here (should be a single line)
+>>>>>
+```
+
+```
 <<<<< write_report
 ///content
 Report content goes here
@@ -104,43 +113,54 @@ Analyze and compare different experimental techniques for measuring quantum enta
 4. [✓] Discuss how measurement techniques address the loopholes in Bell test experiments
 
 ## Breakdown Structure
-### Bell Test Implementations
+### Bell Test Implementations [1/3 criteria met]
 Analysis of different experimental implementations of Bell tests, including photonic, atomic, and solid-state systems. Compare the technical requirements, precision, and loophole-closing capabilities of each approach.
 
-### Quantum State Tomography
+#### Criteria:
+1. [✓] Document at least 3 different Bell test experimental setups
+2. [ ] Compare efficiency and precision of different implementations
+3. [ ] Analyze how each implementation addresses specific loopholes
+
+### Quantum State Tomography [2/4 criteria met]
 Investigate quantum state tomography as a technique for characterizing entangled states. Analyze the mathematical foundations, experimental requirements, and scaling challenges with increasing system size.
+
+#### Criteria:
+1. [✓] Explain the mathematical foundations of quantum state tomography
+2. [✓] Analyze computational complexity scaling with system size
+3. [ ] Compare different tomography protocols and their applications
+4. [ ] Discuss recent advancements in efficient tomography techniques
 
 ## Parent chain
 ### L0 Root Problem: Quantum Mechanics Foundations
 Conduct a comprehensive analysis of the fundamental concepts, mathematical formalism, and philosophical implications of quantum mechanics. Focus on the core principles that distinguish quantum mechanics from classical physics and their experimental verifications.
 
 #### L0 Problem Breakdown Structure
-##### Mathematical Formalism
+##### Mathematical Formalism [3/5 criteria met]
 Analyze the mathematical structures underlying quantum mechanics, including Hilbert spaces, operators, and the Schrödinger equation. Compare different mathematical representations and their physical interpretations.
 
-##### Quantum Measurement
+##### Quantum Measurement [1/4 criteria met]
 Investigate the measurement problem in quantum mechanics, including the collapse of the wave function, decoherence, and different interpretations of quantum measurement.
 
-##### Quantum Entanglement
+##### Quantum Entanglement [2/4 criteria met]
 Explore quantum entanglement as a fundamental feature of quantum mechanics, including its mathematical description, experimental verification, and philosophical implications.
 
-##### Quantum Interpretations
+##### Quantum Interpretations [0/3 criteria met]
 Compare different interpretations of quantum mechanics, including Copenhagen, Many-Worlds, Bohmian mechanics, and QBism, analyzing their philosophical foundations and experimental implications.
 
 ### L1 Problem Quantum Entanglement
 Analyze quantum entanglement as a fundamental feature of quantum mechanics. Investigate its mathematical formulation, experimental verification, applications in quantum technologies, and philosophical implications for our understanding of reality.
 
 #### L1 Problem Breakdown Structure
-##### Mathematical Description
+##### Mathematical Description [2/3 criteria met]
 Analyze the mathematical formalism used to describe quantum entanglement, including density matrices, entanglement measures, and the Schmidt decomposition.
 
-##### Quantum Entanglement Measurement Techniques
+##### Quantum Entanglement Measurement Techniques [2/4 criteria met]
 Analyze and compare different experimental techniques for measuring quantum entanglement. Focus on the technical challenges, precision limitations, and recent advancements in measurement methodologies.
 
-##### Entanglement in Quantum Computing
+##### Entanglement in Quantum Computing [1/5 criteria met]
 Investigate the role of entanglement as a resource in quantum computing, including its use in quantum algorithms, quantum error correction, and quantum communication protocols.
 
-##### Philosophical Implications
+##### Philosophical Implications [0/2 criteria met]
 Explore the philosophical implications of quantum entanglement, including questions of locality, realism, and the nature of physical reality.
 
 ## Goal

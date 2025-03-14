@@ -60,15 +60,3 @@ title goes here
 Content of the problem definition.
 >>>>>
 ```
-
-======================
-# How to define a problem
-Define the problem using this command:
-```
-<<<<< define_problem
-///title
-title goes here
-///content
-Content of the problem definition.
->>>>>
-```
