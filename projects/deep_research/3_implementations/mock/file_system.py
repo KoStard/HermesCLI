@@ -94,6 +94,124 @@ class FileSystem:
         self._write_node_to_disk(self.root_node)
         
         return self.root_node
+        
+    def load_existing_problem(self) -> Optional[Node]:
+        """Check if a problem already exists and load it"""
+        if not self.root_dir.exists():
+            return None
+            
+        # Check if problem definition file exists
+        problem_def_file = self.root_dir / "Problem Definition.md"
+        if not problem_def_file.exists():
+            return None
+            
+        # Read problem definition
+        with open(problem_def_file, "r") as f:
+            problem_definition = f.read()
+            
+        # Try to determine title from directory name
+        title = self.root_dir.name
+            
+        # Create root node
+        self.root_node = Node(title=title, problem_definition=problem_definition)
+        self.root_node.path = self.root_dir
+        self.current_node = self.root_node
+        
+        # Load criteria if they exist
+        criteria_file = self.root_dir / "Criteria of Definition of Done.md"
+        if criteria_file.exists():
+            with open(criteria_file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and line[0].isdigit():
+                        # Parse criteria line (format: "1. [x] Criterion text")
+                        parts = line.split(". ", 1)
+                        if len(parts) == 2:
+                            criterion_text = parts[1]
+                            # Check if it's marked as done
+                            done = "[x]" in criterion_text or "[X]" in criterion_text
+                            # Remove status marker
+                            criterion_text = criterion_text.split("] ", 1)[1] if "] " in criterion_text else criterion_text
+                            self.root_node.criteria.append(criterion_text)
+                            self.root_node.criteria_done.append(done)
+        
+        # Load report if it exists
+        report_file = self.root_dir / "Report 3 Pager.md"
+        if report_file.exists():
+            with open(report_file, "r") as f:
+                self.root_node.report = f.read()
+        
+        # Load attachments
+        attachments_dir = self.root_dir / "Attachments"
+        if attachments_dir.exists():
+            for attachment_file in attachments_dir.iterdir():
+                if attachment_file.is_file():
+                    with open(attachment_file, "r") as f:
+                        self.root_node.add_attachment(attachment_file.name, f.read())
+        
+        # Load subproblems recursively
+        self._load_subproblems(self.root_node)
+        
+        return self.root_node
+        
+    def _load_subproblems(self, parent_node: Node) -> None:
+        """Recursively load subproblems for a node"""
+        if not parent_node.path:
+            return
+            
+        subproblems_dir = parent_node.path / "Subproblems"
+        if not subproblems_dir.exists():
+            return
+            
+        for subproblem_dir in subproblems_dir.iterdir():
+            if not subproblem_dir.is_dir():
+                continue
+                
+            # Load problem definition
+            problem_def_file = subproblem_dir / "Problem Definition.md"
+            if not problem_def_file.exists():
+                continue
+                
+            with open(problem_def_file, "r") as f:
+                problem_definition = f.read()
+                
+            # Create subproblem node
+            title = subproblem_dir.name
+            subproblem = Node(title=title, problem_definition=problem_definition, parent=parent_node)
+            subproblem.path = subproblem_dir
+            parent_node.subproblems[title] = subproblem
+            
+            # Load criteria
+            criteria_file = subproblem_dir / "Criteria of Definition of Done.md"
+            if criteria_file.exists():
+                with open(criteria_file, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and line[0].isdigit():
+                            parts = line.split(". ", 1)
+                            if len(parts) == 2:
+                                criterion_text = parts[1]
+                                done = "[x]" in criterion_text or "[X]" in criterion_text
+                                criterion_text = criterion_text.split("] ", 1)[1] if "] " in criterion_text else criterion_text
+                                subproblem.criteria.append(criterion_text)
+                                subproblem.criteria_done.append(done)
+            
+            # Load report
+            report_file = subproblem_dir / "Report 3 Pager.md"
+            if report_file.exists():
+                with open(report_file, "r") as f:
+                    subproblem.report = f.read()
+            
+            # Load attachments
+            attachments_dir = subproblem_dir / "Attachments"
+            if attachments_dir.exists():
+                for attachment_file in attachments_dir.iterdir():
+                    if attachment_file.is_file():
+                        with open(attachment_file, "r") as f:
+                            subproblem.add_attachment(attachment_file.name, f.read())
+            
+            # Recursively load subproblems
+            self._load_subproblems(subproblem)
 
     def focus_down(self, title: str) -> Optional[Node]:
         """Focus on a subproblem"""

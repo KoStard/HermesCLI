@@ -38,9 +38,15 @@ class CommandParser:
             content = block_match.group(2)
             
             if command in self.block_commands:
-                return command, self.block_commands[command](content)
+                return command, self._parse_block_command(command, content)
         
         return None, None
+        
+    def _parse_block_command(self, command: str, content: str) -> Optional[Dict]:
+        """Parse a block command directly"""
+        if command in self.block_commands:
+            return self.block_commands[command](content)
+        return None
 
     def _parse_add_criteria(self, args: str) -> Dict:
         """Parse add_criteria command"""
