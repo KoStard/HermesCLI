@@ -30,6 +30,10 @@ Note: This is a temporary state. After defining the problem, this chat will be d
 
 Any attachments provided will be copied to the root problem after creation and won't be lost.
 
+Please note that only one problem definition is allowed. Problem definition is the only action you should take at this point and finish the response message.
+
+Make sure to include closing tags for multiline blocks, otherwise it will break the parsing and cause syntax errors.
+
 ======================
 # Attachments
 
@@ -80,11 +84,19 @@ Content of the problem definition.
 
 This interface helps you conduct thorough research by breaking down complex problems into manageable subproblems. You can use commands to add criteria, create subproblems, attach resources, write reports, and navigate the problem hierarchy.
 
-If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Please check this section if your commands don't seem to be working as expected.
+If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
+
+The chat history will be erased with every focus change, as it represents a new beginning with a different problem focus.
+
+Please use commands exactly as shown, with correct syntax. Closing tags are mandatory for multiline blocks, otherwise parsing will break.
+
+Note that only the attachments of the current problem are visible. When changing focus, the available attachments will change as well.
+
+Important: Only one focus change is allowed in one response. The focus change command should be the last command in your message, as it marks the end of the current session. No further commands should follow a focus change.
 
 ## Simple Commands
 - ///add_criteria Your criteria text here
-- ///mark_criteria_as_done criteria_index
+- ///mark_criteria_as_done criteria_number
 - ///focus_down Subproblem Title
 - ///focus_up (when done with the subproblem, focus up)
 {finish_task_command}

@@ -19,6 +19,10 @@ Note: This is a temporary state. After defining the problem, this chat will be d
 
 Any attachments the user has provided will be copied to the root problem after creation and won't be lost.
 
+Please note that only one problem definition is allowed. Problem definition is the only action you should take at this point and finish the response message.
+
+Make sure to include closing tags for multiline blocks, otherwise it will break the parsing and cause syntax errors.
+
 ======================
 # Attachments
 
@@ -44,6 +48,18 @@ Classical physics, the collection of theories that existed before the advent of 
 ======================
 # Instruction
 Please research and organize the fundamental concepts of quantum mechanics. I need a comprehensive understanding of the core principles that form the foundation of this field.
+
+======================
+# How to define a problem
+Define the problem using this command:
+```
+<<<<< define_problem
+///title
+title goes here
+///content
+Content of the problem definition.
+>>>>>
+```
 
 ======================
 # How to define a problem

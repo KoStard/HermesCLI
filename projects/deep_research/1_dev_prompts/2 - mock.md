@@ -110,47 +110,31 @@ The assistant might be given with new instructions to modify the requirements, e
 ; explain how the chat history will be erased with every focus change, as it's a new beginning
 ; explain to use the commands symbol by symbol correctly
 ; explain that only the attachments of the current problem are visible, so when changing focus the attachments will change as well
+; explain that only one focus change is allowed in one response
+; explain that the focus change command should be the last command in the message, after changing focus there will be new session, so it marks the end of the current session. Terminate the message afterwards.
+; explain that closing tags are mandatory for multiline blocks, otherwise it will break the parsing
 
 ## Simple Commands
 - ///add_criteria Your criteria text here
-- ///mark_criteria_as_done criteria_index
+- ///mark_criteria_as_done criteria_number
 - ///focus_down Subproblem Title
 - ///focus_up (when done with the subproblem, focus up)
 - ///finish_task (visible only when at the root task)
 
 ## Block Commands
-\```
-<<<<< add_subproblem
-///title
-Subproblem Title
-///content
-Problem definition goes here
->>>>>
-\```
-
-\```
-<<<<< add_attachment
-///name
-attachment_name.txt
-///content
-Content goes here
->>>>>
-\```
-
-\```
-<<<<< write_report
-///content
-Report content goes here
->>>>>
-\```
-
-\```
-<<<<< append_to_problem_definition
-///content
-Content to append to the problem definition.
->>>>>
-\```
-This might be needed if the direction needs to be adjusted based on user input.
+; add_subproblem multiline block information - title and content arguments (sanitize title to have only one line, replace \n with space)
+; add_attachment multiline block information - name and content - name should have one line
+; write_report multiline block information - content
+; append_to_problem_definition multiline block information - content
+; example:
+; \```
+; <<<<< add_subproblem
+; ///title
+; Subproblem Title
+; ///content
+; Problem definition goes here
+; >>>>>
+; \```
 
 ======================
 # Attachments Of Current Problem
@@ -178,7 +162,7 @@ The user will provide an instruction before the deep research starts. This instr
 {problem definition}
 
 ## Criteria of Definition of Done
-{list of criteria with their indices}
+{list of criteria with their numbers and completion status (e.g., "[✓]" or "[ ]")}
 
 ## Breakdown Structure
 ### {subproblem title}
@@ -208,6 +192,8 @@ Your task is to continue investigating the current problem on {title}. Add crite
 ; explain the standards and best practices for defining a problem
 ; explain that this is a temporary state and that this chat will be discarded after defining the problem and the assistant will start working on the problem
 ; explain that current attachments will be copied to the root problem after creation and won't be lost
+; explain that only one problem definition is allowed
+; explain that closing tags are mandatory for multiline blocks, otherwise it will break the parsing
 
 ======================
 # Attachments
