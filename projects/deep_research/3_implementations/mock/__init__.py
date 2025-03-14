@@ -5,12 +5,12 @@ from .history import ChatHistory, ChatMessage
 from .interface import Interface
 
 __all__ = [
-    'DeepResearchApp',
-    'CommandParser',
-    'FileSystem',
-    'Node',
-    'Attachment',
-    'ChatHistory',
-    'ChatMessage',
-    'Interface'
+    "DeepResearchApp",
+    "CommandParser",
+    "FileSystem",
+    "Node",
+    "Attachment",
+    "ChatHistory",
+    "ChatMessage",
+    "Interface",
 ]

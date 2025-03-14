@@ -61,27 +61,31 @@ Content of the problem definition.
             return "Error: No current node"
 
         current_node = self.file_system.current_node
-        
+
         # Format attachments
         attachments_section = self._format_attachments_from_node(current_node)
-        
+
         # Format criteria
         criteria_section = self._format_criteria(current_node)
-        
+
         # Format breakdown structure
         breakdown_section = self._format_breakdown_structure(current_node)
-        
+
         # Format completed reports
         completed_reports_section = self._format_completed_reports(current_node)
-        
+
         # Format parent chain
         parent_chain_section = self._format_parent_chain()
-        
+
         # Format problem hierarchy
         problem_hierarchy = self.file_system.get_problem_hierarchy()
-        
+
         # Check if we're at the root
-        finish_task_command = "- ///finish_task (when all criteria are met and report is written)\n" if current_node == self.file_system.root_node else ""
+        finish_task_command = (
+            "- ///finish_task (when all criteria are met and report is written)\n"
+            if current_node == self.file_system.root_node
+            else ""
+        )
 
         return f"""# Deep Research Interface
 
@@ -184,10 +188,10 @@ Your task is to continue investigating the current problem on {current_node.titl
         """Format attachments for display"""
         if not attachments:
             return "<attachments>\nNo attachments available.\n</attachments>"
-        
+
         result = "<attachments>\n"
         for attachment in attachments:
-            result += f"<attachment name=\"{attachment}\">\n"
+            result += f'<attachment name="{attachment}">\n'
             result += "Content would be displayed here...\n"
             result += "</attachment>\n"
         result += "</attachments>"
@@ -197,10 +201,10 @@ Your task is to continue investigating the current problem on {current_node.titl
         """Format attachments from a node for display"""
         if not node.attachments:
             return "<attachments>\nNo attachments available.\n</attachments>"
-        
+
         result = "<attachments>\n"
         for name, attachment in node.attachments.items():
-            result += f"<attachment name=\"{name}\">\n"
+            result += f'<attachment name="{name}">\n'
             result += f"{attachment.content}\n"
             result += "</attachment>\n"
         result += "</attachments>"
@@ -210,7 +214,7 @@ Your task is to continue investigating the current problem on {current_node.titl
         """Format criteria for display"""
         if not node.criteria:
             return "No criteria defined yet."
-        
+
         result = ""
         for i, (criterion, done) in enumerate(zip(node.criteria, node.criteria_done)):
             status = "[✓]" if done else "[ ]"
@@ -221,17 +225,19 @@ Your task is to continue investigating the current problem on {current_node.titl
         """Format breakdown structure for display"""
         if not node.subproblems:
             return "No subproblems defined yet."
-        
+
         result = ""
         for title, subproblem in node.subproblems.items():
             criteria_status = subproblem.get_criteria_status()
             result += f"### {title} {criteria_status}\n"
             result += f"{subproblem.problem_definition}\n\n"
-            
+
             # Add criteria for this subproblem if any exist
             if subproblem.criteria:
                 result += "#### Criteria:\n"
-                for i, (criterion, done) in enumerate(zip(subproblem.criteria, subproblem.criteria_done)):
+                for i, (criterion, done) in enumerate(
+                    zip(subproblem.criteria, subproblem.criteria_done)
+                ):
                     status = "[✓]" if done else "[ ]"
                     result += f"{i+1}. {status} {criterion}\n"
                 result += "\n"
@@ -240,9 +246,11 @@ Your task is to continue investigating the current problem on {current_node.titl
     def _format_completed_reports(self, node: Node) -> str:
         """Format completed reports for display"""
         result = ""
-        
+
         # Add child reports section if there are any subproblems with reports
-        has_child_reports = any(subproblem.report for subproblem in node.subproblems.values())
+        has_child_reports = any(
+            subproblem.report for subproblem in node.subproblems.values()
+        )
         if has_child_reports:
             result += "### Child Reports\n"
             for title, subproblem in node.subproblems.items():
@@ -251,12 +259,12 @@ Your task is to continue investigating the current problem on {current_node.titl
                     result += f"#### {title}\n"
                     result += f"{subproblem.report}\n\n"
                     result += "<\Report>\n"
-        
+
         # Add current report if it exists
         if node.report:
             result += "### Current Report\n"
             result += f"{node.report}\n\n"
-            
+
         return result.strip() if result else "No reports available yet."
 
     def _format_parent_chain(self) -> str:
@@ -264,18 +272,20 @@ Your task is to continue investigating the current problem on {current_node.titl
         chain = self.file_system.get_parent_chain()
         if len(chain) <= 1:
             return ""
-        
+
         result = "## Parent chain\n"
-        
+
         # Skip the current node
         for i, node in enumerate(chain[:-1]):
-            result += f"### L{i} {'Root Problem' if i == 0 else 'Problem'}: {node.title}\n"
+            result += (
+                f"### L{i} {'Root Problem' if i == 0 else 'Problem'}: {node.title}\n"
+            )
             result += f"{node.problem_definition}\n\n"
-            
+
             if node.subproblems:
                 result += f"#### L{i} Problem Breakdown Structure\n"
                 for title, subproblem in node.subproblems.items():
                     result += f"##### {title}\n"
                     result += f"{subproblem.problem_definition}\n\n"
-        
+
         return result.strip()
