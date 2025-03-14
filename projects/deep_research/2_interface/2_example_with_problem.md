@@ -20,6 +20,8 @@ Important: Only one focus change is allowed in one response. The focus change co
 
 Warning: Before writing the 3-page report, please ensure all criteria are met and marked as done, otherwise explain in the report why these criteria are not met. This ensures your report is comprehensive and addresses all required aspects of the problem. Before using `focus_up` you must have a report written, otherwise it won't be clear in the new session why was it left partial.
 
+Include expectations on the depth of the results. On average be frugal, not making the problems scope explode.
+
 ## Simple Commands
 - ///add_criteria Your criteria text here
 - ///mark_criteria_as_done criteria_number

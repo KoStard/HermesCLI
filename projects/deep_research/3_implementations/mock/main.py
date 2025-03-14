@@ -12,7 +12,7 @@
 
 import os
 from pathlib import Path
-from .app import DeepResearchApp
+from .mock_app import DeepResearchMockApp
 
 
 def main():
@@ -28,8 +28,8 @@ def main():
     # Create a research directory in the user's home directory
     research_dir = os.path.join(str(Path.cwd()), "deep_research")
 
-    # Initialize the FileSystem with the research directory
-    app = DeepResearchApp(instruction, initial_attachments, research_dir)
+    # Initialize the mock app with the research directory
+    app = DeepResearchMockApp(instruction, initial_attachments, research_dir)
 
     app.start()
 
