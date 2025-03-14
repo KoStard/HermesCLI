@@ -73,8 +73,6 @@ class Node:
         """Get a string representation of criteria status"""
         met = self.get_criteria_met_count()
         total = self.get_criteria_total_count()
-        if total == 0:
-            return "No criteria defined"
         return f"[{met}/{total} criteria met]"
 
 
@@ -269,7 +267,7 @@ class FileSystem:
                 criteria_met = parent.get_criteria_met_count() if parent else 0
                 criteria_total = parent.get_criteria_total_count() if parent else 0
                 
-                prefix = "     " * i + " └── "
+                prefix = "     " * (i + 1) + " └── "
                 if i == len(path) - 1:
                     result.append(f"{prefix}CURRENT: {node.title}")
                 else:

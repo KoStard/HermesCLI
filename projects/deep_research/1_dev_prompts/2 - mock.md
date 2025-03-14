@@ -34,6 +34,8 @@ For this we'll have special commands, to open URL, a file, etc, which will be sa
 This report is essential part to finish the current problem at focus, as this information will be visible to the parent problem. And from the parent problem we'll be able to use this 3-pager to solve that problem. We should make sure this includes all the important details that are necessary to solve the parent problems. The document should be maximum 3 pages long.
 There should be a structure in the document. It works backwards from the provided problem, asking a question about it, answering, then recursively going deeper and deeper, while also covering breadth (there can be multiple questions about the same topic to answer). This structure is essential to both include all the relevant details, but also to include why these details are relevant.
 
+Before writing the 3-page report, ensure all criteria are met and marked as done. This ensures your report is comprehensive and addresses all required aspects of the problem.
+
 The format should be:
 Summarized problem definition: ...
 Q1: ...
@@ -126,6 +128,7 @@ The assistant might be given with new instructions to modify the requirements, e
 ; explain that only one focus change is allowed in one response
 ; explain that the focus change command should be the last command in the message, after changing focus there will be new session, so it marks the end of the current session. Terminate the message afterwards.
 ; explain that closing tags are mandatory for multiline blocks, otherwise it will break the parsing
+; add warning about resolving criteria before writing 3-pagers
 
 ## Simple Commands
 - ///add_criteria Your criteria text here
@@ -181,6 +184,15 @@ The user will provide an instruction before the deep research starts. This instr
 ## Breakdown Structure
 ### {subproblem title}
 {subproblem definition}
+
+## Completed Reports
+
+### Child Reports
+#### {subproblem title}
+{3-pager report content for completed child subproblems}
+
+### Current Report
+{3-pager report content for current node if it exists}
 
 ## Parent chain
 ### L0 Root Problem: {title}

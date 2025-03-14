@@ -71,6 +71,9 @@ Content of the problem definition.
         # Format breakdown structure
         breakdown_section = self._format_breakdown_structure(current_node)
         
+        # Format completed reports
+        completed_reports_section = self._format_completed_reports(current_node)
+        
         # Format parent chain
         parent_chain_section = self._format_parent_chain()
         
@@ -94,6 +97,8 @@ Note that only the attachments of the current problem are visible. When changing
 
 Important: Only one focus change is allowed in one response. The focus change command should be the last command in your message, as it marks the end of the current session. No further commands should follow a focus change.
 
+Warning: Before writing the 3-page report, please ensure all criteria are met and marked as done, otherwise explain in the report why these criteria are not met. This ensures your report is comprehensive and addresses all required aspects of the problem. Before using `focus_up` you must have a report written, otherwise it won't be clear in the new session why was it left partial.
+
 ## Simple Commands
 - ///add_criteria Your criteria text here
 - ///mark_criteria_as_done criteria_number
@@ -113,7 +118,7 @@ Problem definition goes here
 ```
 <<<<< add_attachment
 ///name
-attachment_name.txt
+attachment_name.md
 ///content
 Content goes here
 >>>>>
@@ -166,6 +171,9 @@ Your criteria text here (should be a single line)
 
 ## Breakdown Structure
 {breakdown_section}
+
+## Completed Reports
+{completed_reports_section}
 
 {parent_chain_section}
 
@@ -228,6 +236,28 @@ Your task is to continue investigating the current problem on {current_node.titl
                     result += f"{i+1}. {status} {criterion}\n"
                 result += "\n"
         return result.strip()
+
+    def _format_completed_reports(self, node: Node) -> str:
+        """Format completed reports for display"""
+        result = ""
+        
+        # Add child reports section if there are any subproblems with reports
+        has_child_reports = any(subproblem.report for subproblem in node.subproblems.values())
+        if has_child_reports:
+            result += "### Child Reports\n"
+            for title, subproblem in node.subproblems.items():
+                if subproblem.report:
+                    result += "<Report>\n"
+                    result += f"#### {title}\n"
+                    result += f"{subproblem.report}\n\n"
+                    result += "<\Report>\n"
+        
+        # Add current report if it exists
+        if node.report:
+            result += "### Current Report\n"
+            result += f"{node.report}\n\n"
+            
+        return result.strip() if result else "No reports available yet."
 
     def _format_parent_chain(self) -> str:
         """Format parent chain for display"""
