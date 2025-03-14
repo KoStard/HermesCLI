@@ -14,3 +14,4 @@ Node:
 - subproblems Node[] (each subproblem has its own criteria for definition of done)
 - report 3-pager (summarizes all the findings, includes all the important details for the parent subproblem)
 - attachments
+- completed reports from child nodes (visible in the interface)
