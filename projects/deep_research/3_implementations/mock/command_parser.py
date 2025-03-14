@@ -430,16 +430,5 @@ class CommandParser:
         has_syntax_error = any(result.has_syntax_error for result in parse_results)
         if has_syntax_error:
             report += "Not executing any commands as there was a syntax issue.\n"
-        
-        # Add information about specific command failures
-        command_failures = []
-        for result in parse_results:
-            if result.command and result.errors:
-                command_failures.append(result.command)
-        
-        if command_failures:
-            report += "\n### Command Status:\n"
-            for cmd in command_failures:
-                report += f"- Command '{cmd}' failed to execute due to errors.\n"
-                
+            
         return report
