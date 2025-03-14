@@ -97,6 +97,8 @@ class Engine:
                 self.notifications_printer.print_notification(
                     f"Assistant request failed with {e}", CLIColors.RED
                 )
+                import traceback
+                print(traceback.format_exc())
 
     def _run_user(
         self, assistant_events: Generator[Event, None, None]
