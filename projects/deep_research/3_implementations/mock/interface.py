@@ -3,7 +3,7 @@ from typing import List, Optional
 from .file_system import FileSystem, Node
 
 
-class Interface:
+class DeepResearcherInterface:
     def __init__(self, file_system: FileSystem, instruction: str):
         self.file_system = file_system
         self.instruction = instruction
