@@ -14,6 +14,8 @@ To begin, you need to define the problem you'll be researching. Please follow th
 - Make the problem statement clear and specific
 - Include any constraints or requirements
 - Consider what a successful outcome would look like
+- Don't expand from the scope of the provided instructions from the user
+- Include expectations on the depth of the results. On average be frugal, not making the problems scope explode.
 
 Note: This is a temporary state. After defining the problem, this chat will be discarded and you'll start working on the problem with a fresh interface.
 

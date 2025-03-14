@@ -1,14 +1,15 @@
 import os
-import sys
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .command_parser import CommandParser, ParseResult
 from .file_system import FileSystem
 from .history import ChatHistory
-from .interface import Interface
+from .interface import DeepResearcherInterface
 
 
-class DeepResearchApp:
+class DeepResearchEngine:
+    """Core engine for Deep Research functionality, independent of UI implementation"""
+    
     def __init__(
         self,
         instruction: str,
@@ -17,7 +18,7 @@ class DeepResearchApp:
     ):
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
-        self.interface = Interface(self.file_system, instruction)
+        self.interface = DeepResearcherInterface(self.file_system, instruction)
         self.command_parser = CommandParser()
         self.initial_attachments = initial_attachments or []
         self.finished = False
@@ -25,62 +26,23 @@ class DeepResearchApp:
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
         self.problem_defined = existing_problem is not None
-
-    def start(self):
-        """Start the application"""
-        self._render_interface()
-
-        while not self.finished:
-            try:
-                user_input = self._get_multiline_input()
-                self._process_input(user_input)
-            except KeyboardInterrupt:
-                print("\nExiting application...")
-                break
-            except Exception as e:
-                print(f"Error: {e}")
-
-    def _render_interface(self):
-        """Render the interface"""
-        os.system("cls" if os.name == "nt" else "clear")
-
-        # First render the interface
+    
+    def get_interface_content(self) -> str:
+        """Get the current interface content as a string"""
         if not self.problem_defined:
-            interface_content = self.interface.render_no_problem_defined(
-                self.initial_attachments
-            )
-            print(interface_content)
+            return self.interface.render_no_problem_defined(self.initial_attachments)
         else:
-            interface_content = self.interface.render_problem_defined()
-            print(interface_content)
-
-        # Always render the chat history regardless of problem definition status
-        if self.chat_history.messages:
-            print("\n" + "=" * 70)
-            print("# CHAT HISTORY")
-            print("=" * 70)
-            print(self.chat_history.get_formatted_history())
-
-    def _get_multiline_input(self) -> str:
-        """Get multiline input from the user"""
-        lines = []
-
-        while True:
-            try:
-                line = input()
-                if line == "\x1b":  # Escape character
-                    break
-                lines.append(line)
-            except EOFError:
-                break
-
-        return "\n".join(lines)
-
-    def _process_input(self, text: str):
-        """Process user input"""
+            return self.interface.render_problem_defined()
+    
+    def process_commands(self, text: str) -> tuple[bool, str, Dict]:
+        """
+        Process commands from text
+        
+        Returns:
+            tuple: (commands_executed, error_report, execution_status)
+        """
         # Add the assistant's message to history
-        # Always add to history regardless of problem definition status
-        self.chat_history.add_message("Assistant", text)
+        self.chat_history.add_message("assistant", text)
 
         # Parse all commands from the text
         parse_results = self.command_parser.parse_text(text)
@@ -100,40 +62,40 @@ class DeepResearchApp:
         # If there are syntax errors, don't execute any commands
         if has_syntax_error:
             auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.\n\n{error_report}'
-            self.chat_history.add_message("User", auto_reply)
-        else:
-            # Execute commands if there are no syntax errors
-            commands_executed = False
+            self.chat_history.add_message("user", auto_reply)
+            return False, error_report, execution_status
 
-            for result in parse_results:
-                if result.command and not result.errors:
-                    try:
-                        self._execute_command(result.command, result.args)
-                        execution_status[result.command] = "success"
-                        commands_executed = True
-                    except Exception as e:
-                        execution_status[result.command] = f"failed: {str(e)}"
+        # Execute commands if there are no syntax errors
+        commands_executed = False
 
-            # Add execution status to error report if there were failures
-            if any(status.startswith("failed") for status in execution_status.values()):
-                if not error_report:
-                    error_report = "### Execution Status Report:\n"
-                else:
-                    error_report += "\n### Execution Status Report:\n"
+        for result in parse_results:
+            if result.command and not result.errors:
+                try:
+                    self._execute_command(result.command, result.args)
+                    execution_status[result.command] = "success"
+                    commands_executed = True
+                except Exception as e:
+                    execution_status[result.command] = f"failed: {str(e)}"
 
-                for cmd, status in execution_status.items():
-                    if status.startswith("failed"):
-                        error_report += f"- Command '{cmd}' {status}\n"
+        # Add execution status to error report if there were failures
+        if any(status.startswith("failed") for status in execution_status.values()):
+            if not error_report:
+                error_report = "### Execution Status Report:\n"
+            else:
+                error_report += "\n### Execution Status Report:\n"
 
-            # If no commands were executed
-            if not commands_executed:
-                auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.'
-                if error_report:
-                    auto_reply += f"\n\n{error_report}"
-                self.chat_history.add_message("User", auto_reply)
+            for cmd, status in execution_status.items():
+                if status.startswith("failed"):
+                    error_report += f"- Command '{cmd}' {status}\n"
 
-        # Re-render the interface after processing commands
-        self._render_interface()
+        # If no commands were executed
+        if not commands_executed:
+            auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.'
+            if error_report:
+                auto_reply += f"\n\n{error_report}"
+            self.chat_history.add_message("user", auto_reply)
+
+        return commands_executed, error_report, execution_status
 
     def _execute_command(self, command: str, args: dict):
         """Execute a command"""
@@ -311,3 +273,4 @@ class DeepResearchApp:
             return
 
         self.finished = True
+

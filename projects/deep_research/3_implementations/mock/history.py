@@ -22,16 +22,3 @@ class ChatHistory:
     def clear(self) -> None:
         """Clear all messages from history"""
         self.messages.clear()
-
-    def get_formatted_history(self) -> str:
-        """Get the formatted history as a string"""
-        if not self.messages:
-            return "No previous messages in this focus level."
-
-        result = []
-        for message in self.messages:
-            result.append(f"## {message.author}")
-            result.append(message.content)
-            result.append("\n" + "-" * 50 + "\n")  # Separator between messages
-
-        return "\n".join(result)
