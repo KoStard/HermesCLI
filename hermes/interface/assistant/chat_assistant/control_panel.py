@@ -25,7 +25,7 @@ from hermes.event import AssistantDoneEvent, FileEditEvent, Event, MessageEvent
 logger = logging.getLogger(__name__)
 
 
-class LLMControlPanel(ControlPanel):
+class ChatAssistantControlPanel(ControlPanel):
     def __init__(
         self,
         notifications_printer: CLINotificationsPrinter,

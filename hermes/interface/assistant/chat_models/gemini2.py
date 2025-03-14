@@ -1,7 +1,7 @@
 from typing import Generator
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch, Part, Content
 
-from hermes.interface.assistant.chat_assistant.llm_response_types import (
+from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
     ThinkingLLMResponse,

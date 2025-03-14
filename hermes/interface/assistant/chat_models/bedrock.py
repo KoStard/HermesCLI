@@ -3,7 +3,7 @@ from typing import Generator
 
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from hermes.interface.assistant.chat_assistant.llm_response_types import (
+from hermes.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
     ThinkingLLMResponse,
 )

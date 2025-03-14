@@ -3,12 +3,12 @@ from hermes.extensions_loader import load_extensions
 from hermes.engine import Engine
 from argparse import ArgumentParser, Namespace
 from hermes.history import History
-from hermes.interface.assistant.chat_assistant.llm_control_panel import LLMControlPanel
+from hermes.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
 from hermes.interface.assistant.model_factory import ModelFactory
 from hermes.interface.user.command_completer import CommandCompleter
 from hermes.interface.control_panel import CommandsLister
 from hermes.interface.debug.debug_interface import DebugInterface
-from hermes.interface.assistant.chat_assistant.llm_interface import LLMInterface
+from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
@@ -143,7 +143,7 @@ def main():
     if "EXA" in config and "api_key" in config["EXA"]:
         exa_client = ExaClient(config["EXA"]["api_key"])
 
-    llm_control_panel = LLMControlPanel(
+    llm_control_panel = ChatAssistantControlPanel(
         notifications_printer=notifications_printer,
         extra_commands=llm_extra_commands,
         exa_client=exa_client,
@@ -222,7 +222,7 @@ def main():
             assistant_participant = debug_participant
 
         else:
-            llm_interface = LLMInterface(model, control_panel=llm_control_panel)
+            llm_interface = ChatAssistantInterface(model, control_panel=llm_control_panel)
             llm_participant = LLMParticipant(llm_interface)
             assistant_participant = llm_participant
 

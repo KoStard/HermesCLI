@@ -13,7 +13,7 @@ from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
 from hermes.interface.helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.filepath import prepare_filepath
-from hermes.interface.assistant.chat_assistant.llm_response_types import (
+from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     ThinkingLLMResponse,
 )
