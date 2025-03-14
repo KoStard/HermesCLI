@@ -37,6 +37,7 @@ class CommandParser:
             "add_attachment": self._parse_add_attachment,
             "write_report": self._parse_write_report,
             "append_to_problem_definition": self._parse_append_to_problem_definition,
+            "add_criteria_to_subproblem": self._parse_add_criteria_to_subproblem,
         }
 
     def parse_text(self, text: str) -> List[ParseResult]:
@@ -407,6 +408,46 @@ class CommandParser:
             ))
         else:
             result["content"] = content_match.group(1).strip()
+            
+        return result, errors
+        
+    def _parse_add_criteria_to_subproblem(self, content: str, line_number: int) -> Tuple[Dict, List[CommandError]]:
+        """Parse add_criteria_to_subproblem command"""
+        errors = []
+        result = {}
+        
+        title_match = re.search(r'///title\s+(.*?)(?=///|\Z)', content, re.DOTALL)
+        criteria_match = re.search(r'///criteria\s+(.*?)(?=///|\Z)', content, re.DOTALL)
+        
+        if not title_match:
+            errors.append(CommandError(
+                command="add_criteria_to_subproblem",
+                message="Missing '///title' section in add_criteria_to_subproblem command",
+                line_number=line_number
+            ))
+        elif not title_match.group(1).strip():
+            errors.append(CommandError(
+                command="add_criteria_to_subproblem",
+                message="Subproblem title cannot be empty",
+                line_number=line_number + content[:title_match.start()].count('\n')
+            ))
+        else:
+            result["title"] = title_match.group(1).strip()
+        
+        if not criteria_match:
+            errors.append(CommandError(
+                command="add_criteria_to_subproblem",
+                message="Missing '///criteria' section in add_criteria_to_subproblem command",
+                line_number=line_number
+            ))
+        elif not criteria_match.group(1).strip():
+            errors.append(CommandError(
+                command="add_criteria_to_subproblem",
+                message="Criteria cannot be empty",
+                line_number=line_number + content[:criteria_match.start()].count('\n')
+            ))
+        else:
+            result["criteria"] = criteria_match.group(1).strip()
             
         return result, errors
         
