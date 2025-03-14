@@ -4,12 +4,14 @@ from typing import List, Optional
 
 from .command_parser import CommandParser
 from .file_system import FileSystem
+from .history import ChatHistory
 from .interface import Interface
 
 
 class DeepResearchApp:
     def __init__(self, instruction: str, initial_attachments: List[str] = None, root_dir: str = "research"):
         self.file_system = FileSystem(root_dir)
+        self.chat_history = ChatHistory()
         self.interface = Interface(self.file_system, instruction)
         self.command_parser = CommandParser()
         self.initial_attachments = initial_attachments or []
@@ -40,10 +42,20 @@ class DeepResearchApp:
         """Render the interface"""
         os.system('cls' if os.name == 'nt' else 'clear')
         
+        # First render the interface
         if not self.problem_defined:
-            print(self.interface.render_no_problem_defined(self.initial_attachments))
+            interface_content = self.interface.render_no_problem_defined(self.initial_attachments)
+            print(interface_content)
         else:
-            print(self.interface.render_problem_defined())
+            interface_content = self.interface.render_problem_defined()
+            print(interface_content)
+            
+        # Then render the chat history if problem is defined
+        if self.problem_defined and self.chat_history.messages:
+            print("\n" + "=" * 70)
+            print("# CHAT HISTORY")
+            print("=" * 70)
+            print(self.chat_history.get_formatted_history())
 
     def _get_multiline_input(self) -> str:
         """Get multiline input from the user"""
@@ -63,6 +75,10 @@ class DeepResearchApp:
 
     def _process_input(self, text: str):
         """Process user input"""
+        # Add the assistant's message to history if problem is defined
+        if self.problem_defined:
+            self.chat_history.add_message("Assistant", text)
+        
         # Split text into potential command blocks
         commands_executed = False
         
@@ -93,7 +109,12 @@ class DeepResearchApp:
                 self._execute_command(command, command_args)
                 commands_executed = True
         
-        if not commands_executed:
+        if not commands_executed and self.problem_defined:
+            # If no commands were executed but we have a defined problem, add automatic reply
+            auto_reply = "Automatic Reply: The status of the research is \"In Progress\". Please continue the research or mark it as done."
+            self.chat_history.add_message("User", auto_reply)
+            print("\n" + auto_reply)
+        elif not commands_executed:
             print("\nNo valid commands detected. Please use one of the available commands.")
         
         # Always prompt for continue after processing all commands
@@ -144,6 +165,9 @@ class DeepResearchApp:
         
         # Ensure file system is fully updated
         self.file_system.update_files()
+        
+        # Clear history as we're starting fresh with a defined problem
+        self.chat_history.clear()
         
         self.problem_defined = True
         print("\nProblem defined successfully!")
@@ -229,6 +253,8 @@ class DeepResearchApp:
         
         result = self.file_system.focus_down(args["title"])
         if result:
+            # Clear history when changing focus
+            self.chat_history.clear()
             print(f"\nFocused down to '{args['title']}'")
         else:
             print(f"\nSubproblem '{args['title']}' not found")
@@ -240,6 +266,8 @@ class DeepResearchApp:
             return
         
         self.file_system.focus_up()
+        # Clear history when changing focus
+        self.chat_history.clear()
         print("\nFocused up to parent problem")
 
     def _handle_finish_task(self, args: dict):
