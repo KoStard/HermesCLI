@@ -13,8 +13,14 @@ class DeepResearchApp:
         self.interface = Interface(self.file_system, instruction)
         self.command_parser = CommandParser()
         self.initial_attachments = initial_attachments or []
-        self.problem_defined = False
         self.finished = False
+        
+        # Check if problem already exists
+        existing_problem = self.file_system.load_existing_problem()
+        self.problem_defined = existing_problem is not None
+        
+        if self.problem_defined:
+            print(f"Loaded existing problem: {self.file_system.current_node.title}")
 
     def start(self):
         """Start the application"""
@@ -57,21 +63,47 @@ class DeepResearchApp:
 
     def _process_input(self, text: str):
         """Process user input"""
-        command, args = self.command_parser.parse(text)
+        # Split text into potential command blocks
+        commands_executed = False
         
-        if command:
-            self._execute_command(command, args)
-        else:
-            print("\nNo command detected. Please use one of the available commands.")
-            input("Press Enter to continue...")
+        # Try to find and execute block commands
+        block_pattern = r'<<<<<\s+(\w+)(.*?)>>>>>'
+        import re
+        block_matches = re.finditer(block_pattern, text, re.DOTALL)
         
+        for match in block_matches:
+            command = match.group(1)
+            content = match.group(2)
+            command_args = self.command_parser._parse_block_command(command, content)
+            
+            if command_args:
+                self._execute_command(command, command_args)
+                commands_executed = True
+        
+        # Try to find and execute simple commands
+        simple_pattern = r'///(?:\s*)(\w+)(?:\s+(.*))?'
+        simple_matches = re.finditer(simple_pattern, text)
+        
+        for match in simple_matches:
+            command = match.group(1)
+            args_text = match.group(2) if match.group(2) else ""
+            
+            if command in self.command_parser.simple_commands:
+                command_args = self.command_parser.simple_commands[command](args_text)
+                self._execute_command(command, command_args)
+                commands_executed = True
+        
+        if not commands_executed:
+            print("\nNo valid commands detected. Please use one of the available commands.")
+        
+        # Always prompt for continue after processing all commands
+        input("\nPress Enter to continue...")
         self._render_interface()
 
     def _execute_command(self, command: str, args: dict):
         """Execute a command"""
         if "error" in args:
             print(f"\nError in command: {args['error']}")
-            input("Press Enter to continue...")
             return
         
         if not self.problem_defined:
@@ -79,7 +111,6 @@ class DeepResearchApp:
                 self._handle_define_problem(args)
             else:
                 print("\nYou need to define a problem first.")
-                input("Press Enter to continue...")
             return
         
         # Commands available when problem is defined
@@ -99,7 +130,6 @@ class DeepResearchApp:
             command_handlers[command](args)
         else:
             print(f"\nUnknown command: {command}")
-            input("Press Enter to continue...")
 
     def _handle_define_problem(self, args: dict):
         """Handle define_problem command"""
@@ -118,17 +148,21 @@ class DeepResearchApp:
         self.problem_defined = True
         print("\nProblem defined successfully!")
         print(f"Files created in directory: {self.file_system.root_dir}")
-        input("Press Enter to continue...")
 
     def _handle_add_criteria(self, args: dict):
         """Handle add_criteria command"""
         if not self.file_system.current_node:
             return
         
-        index = self.file_system.current_node.add_criteria(args["criteria"])
+        # Check if criteria already exists (per requirements in 3 - commands.md)
+        criteria_text = args["criteria"]
+        if criteria_text in self.file_system.current_node.criteria:
+            print(f"\nCriteria '{criteria_text}' already exists")
+            return
+            
+        index = self.file_system.current_node.add_criteria(criteria_text)
         self.file_system.update_files()
         print(f"\nCriteria added with index {index + 1}")
-        input("Press Enter to continue...")
 
     def _handle_mark_criteria_as_done(self, args: dict):
         """Handle mark_criteria_as_done command"""
@@ -141,21 +175,25 @@ class DeepResearchApp:
             print(f"\nCriteria {args['index'] + 1} marked as done")
         else:
             print(f"\nInvalid criteria index: {args['index'] + 1}")
-        input("Press Enter to continue...")
 
     def _handle_add_subproblem(self, args: dict):
         """Handle add_subproblem command"""
         if not self.file_system.current_node:
             return
         
-        subproblem = self.file_system.current_node.add_subproblem(args["title"], args["content"])
+        # Check if subproblem with this title already exists
+        title = args["title"]
+        if title in self.file_system.current_node.subproblems:
+            print(f"\nSubproblem '{title}' already exists")
+            return
+            
+        subproblem = self.file_system.current_node.add_subproblem(title, args["content"])
         # Create directories for the new subproblem
         self.file_system._create_node_directories(subproblem)
         self.file_system.update_files()
-        print(f"\nSubproblem '{args['title']}' added")
+        print(f"\nSubproblem '{title}' added")
         if subproblem.path:
             print(f"Files created in directory: {subproblem.path}")
-        input("Press Enter to continue...")
 
     def _handle_add_attachment(self, args: dict):
         """Handle add_attachment command"""
@@ -165,7 +203,6 @@ class DeepResearchApp:
         self.file_system.current_node.add_attachment(args["name"], args["content"])
         self.file_system.update_files()
         print(f"\nAttachment '{args['name']}' added")
-        input("Press Enter to continue...")
 
     def _handle_write_report(self, args: dict):
         """Handle write_report command"""
@@ -175,7 +212,6 @@ class DeepResearchApp:
         self.file_system.current_node.write_report(args["content"])
         self.file_system.update_files()
         print("\nReport written successfully")
-        input("Press Enter to continue...")
 
     def _handle_append_to_problem_definition(self, args: dict):
         """Handle append_to_problem_definition command"""
@@ -185,7 +221,6 @@ class DeepResearchApp:
         self.file_system.current_node.append_to_problem_definition(args["content"])
         self.file_system.update_files()
         print("\nProblem definition updated")
-        input("Press Enter to continue...")
 
     def _handle_focus_down(self, args: dict):
         """Handle focus_down command"""
@@ -197,18 +232,15 @@ class DeepResearchApp:
             print(f"\nFocused down to '{args['title']}'")
         else:
             print(f"\nSubproblem '{args['title']}' not found")
-        input("Press Enter to continue...")
 
     def _handle_focus_up(self, args: dict):
         """Handle focus_up command"""
         if not self.file_system.current_node or not self.file_system.current_node.parent:
             print("\nAlready at the root problem")
-            input("Press Enter to continue...")
             return
         
         self.file_system.focus_up()
         print("\nFocused up to parent problem")
-        input("Press Enter to continue...")
 
     def _handle_finish_task(self, args: dict):
         """Handle finish_task command"""
