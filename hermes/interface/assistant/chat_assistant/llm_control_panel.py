@@ -7,8 +7,8 @@ from hermes.interface.helpers.terminal_coloring import CLIColors
 from hermes.utils.filepath import prepare_filepath
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
-from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
-from ..helpers.peekable_generator import PeekableGenerator, iterate_while
+from hermes.interface.control_panel.base_control_panel import ControlPanel, ControlPanelCommand
+from hermes.interface.helpers.peekable_generator import PeekableGenerator, iterate_while
 from hermes.message import LLMRunCommandOutput, Message, TextGeneratorMessage, TextMessage, TextualFileMessage, UrlMessage
 from hermes.event import AssistantDoneEvent, FileEditEvent, Event, MessageEvent
 

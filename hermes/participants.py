@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import logging
 from typing import Generator, List
 from hermes.history import History
-from hermes.interface.assistant.llm_interface import LLMInterface
+from hermes.interface.assistant.chat_assistant.llm_interface import LLMInterface
 from hermes.interface.debug.debug_interface import DebugInterface
 from hermes.interface.user.user_interface import UserInterface
 from hermes.message import Message
