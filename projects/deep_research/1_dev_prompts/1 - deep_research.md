@@ -10,7 +10,7 @@ Let's imagine this as a tree structure. The main problem and the subproblems are
 
 Node:
 - problem definition
-- criteria for definition of done (can be appended if more information is found)
+- criteria for definition of done (can be appended if more information is found, each criterion has a status: done or not done)
 - subproblems Node[]
 - report 3-pager (summarizes all the findings, includes all the important details for the parent subproblem)
 - attachments

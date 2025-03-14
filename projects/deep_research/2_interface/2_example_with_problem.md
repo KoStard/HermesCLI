@@ -10,9 +10,17 @@ This interface helps you conduct thorough research by breaking down complex prob
 
 If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
 
+The chat history will be erased with every focus change, as it represents a new beginning with a different problem focus.
+
+Please use commands exactly as shown, with correct syntax. Closing tags are mandatory for multiline blocks, otherwise parsing will break.
+
+Note that only the attachments of the current problem are visible. When changing focus, the available attachments will change as well.
+
+Important: Only one focus change is allowed in one response. The focus change command should be the last command in your message, as it marks the end of the current session. No further commands should follow a focus change.
+
 ## Simple Commands
 - ///add_criteria Your criteria text here
-- ///mark_criteria_as_done criteria_index
+- ///mark_criteria_as_done criteria_number
 - ///focus_down Subproblem Title
 - ///focus_up (when done with the subproblem, focus up)
 - ///finish_task (visible only when at the root task)
@@ -90,10 +98,10 @@ Research quantum mechanics thoroughly, focusing on its mathematical foundations 
 Analyze and compare different experimental techniques for measuring quantum entanglement. Focus on the technical challenges, precision limitations, and recent advancements in measurement methodologies. Include both photonic and matter-based entanglement measurement approaches.
 
 ## Criteria of Definition of Done
-1. Compare at least 3 different measurement techniques with their advantages and limitations
-2. Analyze the role of measurement precision in entanglement verification
-3. Identify the state-of-the-art techniques used in recent (past 5 years) experiments
-4. Discuss how measurement techniques address the loopholes in Bell test experiments
+1. [ ] Compare at least 3 different measurement techniques with their advantages and limitations
+2. [ ] Analyze the role of measurement precision in entanglement verification
+3. [✓] Identify the state-of-the-art techniques used in recent (past 5 years) experiments
+4. [✓] Discuss how measurement techniques address the loopholes in Bell test experiments
 
 ## Breakdown Structure
 ### Bell Test Implementations
