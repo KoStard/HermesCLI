@@ -27,6 +27,7 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
     chat_parser.add_argument("--debug", action="store_true")
     chat_parser.add_argument("--model", type=str, help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.get_provider_model_pairs())})")
     chat_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
+    chat_parser.add_argument("--no-markdown", action="store_true", help="Disable markdown highlighting for output")
     
     # Utils command
     utils_parser = subparsers.add_parser("utils", help="Utility commands")
@@ -144,9 +145,10 @@ def main():
         return
     user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(cli_arguments_parser, cli_args)
     stt_input_handler_optional = get_stt_input_handler(cli_args, config)
+    markdown_highlighter = None if cli_args.no_markdown else MarkdownHighlighter()
     user_interface = UserInterface(control_panel=user_control_panel, 
                                    command_completer=CommandCompleter(user_control_panel.get_command_labels()),
-                                   markdown_highlighter=MarkdownHighlighter(), 
+                                   markdown_highlighter=markdown_highlighter, 
                                    stt_input_handler=stt_input_handler_optional, 
                                    notifications_printer=notifications_printer,
                                    user_input_from_cli=user_input_from_cli)
