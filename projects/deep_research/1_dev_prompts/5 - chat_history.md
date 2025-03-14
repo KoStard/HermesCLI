@@ -15,7 +15,7 @@ author: user
 
 Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.
 
-{optionally, if there were errors, include error report.}
+{optionally, if there were errors, include error report and execution status report.}
 ...
 ## Message N
 author: assistant

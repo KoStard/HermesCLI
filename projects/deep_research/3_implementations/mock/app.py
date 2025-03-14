@@ -2,12 +2,10 @@ import os
 import sys
 from typing import List, Optional
 
-from .command_parser import CommandParser
+from .command_parser import CommandParser, ParseResult
 from .file_system import FileSystem
 from .history import ChatHistory
 from .interface import Interface
-
-
 class DeepResearchApp:
     def __init__(self, instruction: str, initial_attachments: List[str] = None, root_dir: str = "research"):
         self.file_system = FileSystem(root_dir)
@@ -20,9 +18,6 @@ class DeepResearchApp:
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
         self.problem_defined = existing_problem is not None
-        
-        if self.problem_defined:
-            print(f"Loaded existing problem: {self.file_system.current_node.title}")
 
     def start(self):
         """Start the application"""
@@ -50,8 +45,8 @@ class DeepResearchApp:
             interface_content = self.interface.render_problem_defined()
             print(interface_content)
             
-        # Then render the chat history if problem is defined
-        if self.problem_defined and self.chat_history.messages:
+        # Always render the chat history regardless of problem definition status
+        if self.chat_history.messages:
             print("\n" + "=" * 70)
             print("# CHAT HISTORY")
             print("=" * 70)
@@ -59,7 +54,6 @@ class DeepResearchApp:
 
     def _get_multiline_input(self) -> str:
         """Get multiline input from the user"""
-        print("\n--- Enter your response (press Esc+Enter to finish) ---")
         lines = []
         
         while True:
@@ -75,63 +69,71 @@ class DeepResearchApp:
 
     def _process_input(self, text: str):
         """Process user input"""
-        # Add the assistant's message to history if problem is defined
-        if self.problem_defined:
-            self.chat_history.add_message("Assistant", text)
+        # Add the assistant's message to history
+        # Always add to history regardless of problem definition status
+        self.chat_history.add_message("Assistant", text)
         
-        # Split text into potential command blocks
-        commands_executed = False
+        # Parse all commands from the text
+        parse_results = self.command_parser.parse_text(text)
         
-        # Try to find and execute block commands
-        block_pattern = r'<<<<<\s+(\w+)(.*?)>>>>>'
-        import re
-        block_matches = re.finditer(block_pattern, text, re.DOTALL)
+        # Check for errors
+        has_errors = any(result.errors for result in parse_results)
+        has_syntax_error = any(result.has_syntax_error for result in parse_results)
         
-        for match in block_matches:
-            command = match.group(1)
-            content = match.group(2)
-            command_args = self.command_parser._parse_block_command(command, content)
-            
-            if command_args:
-                self._execute_command(command, command_args)
-                commands_executed = True
+        # Track execution status for reporting
+        execution_status = {}
         
-        # Try to find and execute simple commands
-        simple_pattern = r'///(?:\s*)(\w+)(?:\s+(.*))?'
-        simple_matches = re.finditer(simple_pattern, text)
+        # Generate error report if there are errors
+        error_report = ""
+        if has_errors:
+            error_report = self.command_parser.generate_error_report(parse_results)
         
-        for match in simple_matches:
-            command = match.group(1)
-            args_text = match.group(2) if match.group(2) else ""
-            
-            if command in self.command_parser.simple_commands:
-                command_args = self.command_parser.simple_commands[command](args_text)
-                self._execute_command(command, command_args)
-                commands_executed = True
-        
-        if not commands_executed and self.problem_defined:
-            # If no commands were executed but we have a defined problem, add automatic reply
-            auto_reply = "Automatic Reply: The status of the research is \"In Progress\". Please continue the research or mark it as done."
+        # If there are syntax errors, don't execute any commands
+        if has_syntax_error:
+            auto_reply = f"Automatic Reply: The status of the research is \"In Progress\". Please continue the research or mark it as done.\n\n{error_report}"
             self.chat_history.add_message("User", auto_reply)
-            print("\n" + auto_reply)
-        elif not commands_executed:
-            print("\nNo valid commands detected. Please use one of the available commands.")
+        else:
+            # Execute commands if there are no syntax errors
+            commands_executed = False
+            
+            for result in parse_results:
+                if result.command and not result.errors:
+                    try:
+                        self._execute_command(result.command, result.args)
+                        execution_status[result.command] = "success"
+                        commands_executed = True
+                    except Exception as e:
+                        execution_status[result.command] = f"failed: {str(e)}"
+            
+            # Add execution status to error report if there were failures
+            if any(status.startswith("failed") for status in execution_status.values()):
+                if not error_report:
+                    error_report = "### Execution Status Report:\n"
+                else:
+                    error_report += "\n### Execution Status Report:\n"
+                
+                for cmd, status in execution_status.items():
+                    if status.startswith("failed"):
+                        error_report += f"- Command '{cmd}' {status}\n"
+            
+            # If no commands were executed
+            if not commands_executed:
+                auto_reply = f"Automatic Reply: The status of the research is \"In Progress\". Please continue the research or mark it as done."
+                if error_report:
+                    auto_reply += f"\n\n{error_report}"
+                self.chat_history.add_message("User", auto_reply)
         
-        # Always prompt for continue after processing all commands
-        input("\nPress Enter to continue...")
+        # Re-render the interface after processing commands
         self._render_interface()
 
     def _execute_command(self, command: str, args: dict):
         """Execute a command"""
-        if "error" in args:
-            print(f"\nError in command: {args['error']}")
-            return
-        
         if not self.problem_defined:
             if command == "define_problem":
                 self._handle_define_problem(args)
             else:
-                print("\nYou need to define a problem first.")
+                # This error will be captured in the error report
+                pass
             return
         
         # Commands available when problem is defined
@@ -150,7 +152,8 @@ class DeepResearchApp:
         if command in command_handlers:
             command_handlers[command](args)
         else:
-            print(f"\nUnknown command: {command}")
+            # This error will be captured in the error report
+            pass
 
     def _handle_define_problem(self, args: dict):
         """Handle define_problem command"""
@@ -170,8 +173,6 @@ class DeepResearchApp:
         self.chat_history.clear()
         
         self.problem_defined = True
-        print("\nProblem defined successfully!")
-        print(f"Files created in directory: {self.file_system.root_dir}")
 
     def _handle_add_criteria(self, args: dict):
         """Handle add_criteria command"""
@@ -181,12 +182,10 @@ class DeepResearchApp:
         # Check if criteria already exists (per requirements in 3 - commands.md)
         criteria_text = args["criteria"]
         if criteria_text in self.file_system.current_node.criteria:
-            print(f"\nCriteria '{criteria_text}' already exists")
             return
             
         index = self.file_system.current_node.add_criteria(criteria_text)
         self.file_system.update_files()
-        print(f"\nCriteria added with index {index + 1}")
 
     def _handle_mark_criteria_as_done(self, args: dict):
         """Handle mark_criteria_as_done command"""
@@ -196,9 +195,6 @@ class DeepResearchApp:
         success = self.file_system.current_node.mark_criteria_as_done(args["index"])
         if success:
             self.file_system.update_files()
-            print(f"\nCriteria {args['index'] + 1} marked as done")
-        else:
-            print(f"\nInvalid criteria index: {args['index'] + 1}")
 
     def _handle_add_subproblem(self, args: dict):
         """Handle add_subproblem command"""
@@ -208,16 +204,12 @@ class DeepResearchApp:
         # Check if subproblem with this title already exists
         title = args["title"]
         if title in self.file_system.current_node.subproblems:
-            print(f"\nSubproblem '{title}' already exists")
             return
             
         subproblem = self.file_system.current_node.add_subproblem(title, args["content"])
         # Create directories for the new subproblem
         self.file_system._create_node_directories(subproblem)
         self.file_system.update_files()
-        print(f"\nSubproblem '{title}' added")
-        if subproblem.path:
-            print(f"Files created in directory: {subproblem.path}")
 
     def _handle_add_attachment(self, args: dict):
         """Handle add_attachment command"""
@@ -226,7 +218,6 @@ class DeepResearchApp:
         
         self.file_system.current_node.add_attachment(args["name"], args["content"])
         self.file_system.update_files()
-        print(f"\nAttachment '{args['name']}' added")
 
     def _handle_write_report(self, args: dict):
         """Handle write_report command"""
@@ -235,7 +226,6 @@ class DeepResearchApp:
         
         self.file_system.current_node.write_report(args["content"])
         self.file_system.update_files()
-        print("\nReport written successfully")
 
     def _handle_append_to_problem_definition(self, args: dict):
         """Handle append_to_problem_definition command"""
@@ -244,7 +234,6 @@ class DeepResearchApp:
         
         self.file_system.current_node.append_to_problem_definition(args["content"])
         self.file_system.update_files()
-        print("\nProblem definition updated")
 
     def _handle_focus_down(self, args: dict):
         """Handle focus_down command"""
@@ -255,26 +244,19 @@ class DeepResearchApp:
         if result:
             # Clear history when changing focus
             self.chat_history.clear()
-            print(f"\nFocused down to '{args['title']}'")
-        else:
-            print(f"\nSubproblem '{args['title']}' not found")
 
     def _handle_focus_up(self, args: dict):
         """Handle focus_up command"""
         if not self.file_system.current_node or not self.file_system.current_node.parent:
-            print("\nAlready at the root problem")
             return
         
         self.file_system.focus_up()
         # Clear history when changing focus
         self.chat_history.clear()
-        print("\nFocused up to parent problem")
 
     def _handle_finish_task(self, args: dict):
         """Handle finish_task command"""
         if not self.file_system.current_node or self.file_system.current_node != self.file_system.root_node:
-            print("\nYou can only finish the task from the root problem")
-            input("Press Enter to continue...")
             return
         
         # Check if all criteria are met and report is written
@@ -282,18 +264,7 @@ class DeepResearchApp:
         all_criteria_met = all(node.criteria_done) if node.criteria else False
         has_report = bool(node.report)
         
-        if not all_criteria_met:
-            print("\nCannot finish task: Not all criteria are met")
-            input("Press Enter to continue...")
+        if not all_criteria_met or not has_report:
             return
         
-        if not has_report:
-            print("\nCannot finish task: No report has been written")
-            input("Press Enter to continue...")
-            return
-        
-        print("\nTask finished successfully!")
-        print("Thank you for using Deep Research Interface.")
-        print(f"All research files are saved in: {self.file_system.root_dir}")
-        input("Press Enter to exit...")
         self.finished = True

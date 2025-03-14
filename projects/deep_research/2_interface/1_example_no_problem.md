@@ -8,7 +8,7 @@ Answer goes below the line:
 
 Welcome to the Deep Research Interface. This interface is designed to help you conduct thorough investigations into complex topics.
 
-If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Please check this section if your commands don't seem to be working as expected.
+If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
 
 To begin, you need to define the problem you'll be researching. Please follow these standards and best practices:
 - Make the problem statement clear and specific

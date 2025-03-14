@@ -31,7 +31,6 @@ def main():
     # Initialize the FileSystem with the research directory
     app = DeepResearchApp(instruction, initial_attachments, research_dir)
     
-    print(f"Starting Deep Research. Files will be saved to: {research_dir}")
     app.start()
 
 
