@@ -1,7 +1,7 @@
 import os
 from typing import List
 
-from .engine import DeepResearchEngine
+from hermes.interface.assistant.deep_research_assistant.engine.engine import DeepResearchEngine
 
 
 class DeepResearchMockApp:
