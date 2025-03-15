@@ -126,7 +126,7 @@ The assistant might be given with new instructions to modify the requirements, e
 ; escape code: if for whatever reason the tool has issues and you are not able to focus up, finish the task or to navigate, just type SHUT_DOWN_DEEP_RESEARCHER anywhere in your response and the system will stop
 ; explain hierarchy between problems, what parent problems chain means (or better term, etc). discourage too many children.
 ; explain to use the commands symbol by symbol correctly
-; explain that only the attachments of the current problem are visible, so when changing focus the attachments will change as well
+; explain that only the attachments of the current problem and all parents are visible, so when changing focus the attachments will change as well
 ; explain that only one focus change is allowed in one response
 ; explain that the focus change command should be the last command in the message, after changing focus there will be new session, so it marks the end of the current session. Terminate the message afterwards.
 ; add warning about resolving criteria before writing 3-pagers
