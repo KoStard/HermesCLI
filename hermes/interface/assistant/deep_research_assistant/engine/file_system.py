@@ -246,7 +246,7 @@ class FileSystem:
         return None
 
     def get_parent_chain(self) -> List[Node]:
-        """Get the parent chain"""
+        """Get the parent chain including the current node"""
         chain = []
         node = self.current_node
         while node:

@@ -34,7 +34,7 @@ To begin, you need to define the problem you'll be researching. Please follow th
 
 Note: This is a temporary state. After defining the problem, this chat will be discarded and you'll start working on the problem with a fresh interface.
 
-Any attachments provided will be copied to the root problem after creation and won't be lost.
+Any attachments provided will be copied to the root problem after creation and won't be lost. Once the problem is defined, you'll be able to see attachments from the current problem and all its parent problems.
 
 Any context provided to you in the context section will be permanent and accessible in the future while working on the problem, so you can refer to it if needed.
 
@@ -43,7 +43,7 @@ Please note that only one problem definition is allowed. Problem definition is t
 Make sure to include closing tags for command blocks, otherwise it will break the parsing and cause syntax errors.
 
 ======================
-# Attachments
+# Attachments (Initial)
 
 {attachments_section}
 
@@ -110,7 +110,7 @@ Include expectations on the depth of the results in problem definitions. On aver
 
 The chat history will be erased with every focus change, as it represents a new beginning with a different problem focus.
 
-Note that only the attachments of the current problem are visible. When changing focus, the availability of the attachments will change as well.
+Note that attachments from both the current problem and all parent problems are visible. Each attachment shows its owner (the problem it belongs to) at the top. When changing focus, new attachments from that problem will become available.
 
 At most only one focus change is allowed in one response. The focus change command should be the last command in your message, as it marks the end of the current session. No further commands should follow a focus change.
 
@@ -208,7 +208,7 @@ Your criteria text here (should be a single line)
 ```
 
 ======================
-# Attachments Of Current Problem
+# Attachments (Current Problem & Parent Chain)
 
 {attachments_section}
 
@@ -257,13 +257,25 @@ Remember, we work backwards from the root problem.
         return result
 
     def _format_attachments_from_node(self, node: Node) -> str:
-        """Format attachments from a node for display"""
-        if not node.attachments:
+        """Format attachments from a node and its parent chain for display"""
+        # Get all nodes in the parent chain, including current node
+        parent_chain = self.file_system.get_parent_chain()
+        
+        # Collect all attachments with their owner information
+        all_attachments = []
+        for parent_node in parent_chain:
+            for name, attachment in parent_node.attachments.items():
+                all_attachments.append((name, attachment, parent_node.title))
+        
+        if not all_attachments:
             return "<attachments>\nNo attachments available.\n</attachments>"
 
         result = "<attachments>\n"
-        for name, attachment in node.attachments.items():
+        for name, attachment, owner in all_attachments:
             result += f'<attachment name="{name}">\n'
+            result += f"---\n"
+            result += f"owner: {owner}\n"
+            result += f"---\n\n"
             result += f"{attachment.content}\n"
             result += "</attachment>\n"
         result += "</attachments>"
