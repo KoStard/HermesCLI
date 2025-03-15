@@ -22,54 +22,37 @@ Warning: Before writing the 3-page report, please ensure all criteria are met an
 
 Include expectations on the depth of the results. On average be frugal, not making the problems scope explode.
 
-## Simple Commands
-- ///add_criteria Your criteria text here
-- ///mark_criteria_as_done criteria_number
-- ///focus_down Subproblem Title
-- ///focus_up (when done with the subproblem, focus up)
-- ///finish_task (visible only when at the root task)
-
 ## Block Commands
-```
-<<<<< add_subproblem
+<<< add_subproblem
 ///title
 Subproblem Title
 ///content
 Problem definition goes here
->>>>>
-```
+>>>
 
-```
-<<<<< add_attachment
+<<< add_attachment
 ///name
 attachment_name.md
 ///content
 Content goes here
->>>>>
-```
+>>>
 
-```
-<<<<< add_criteria_to_subproblem
+<<< add_criteria_to_subproblem
 ///title
 Subproblem Title
 ///criteria
 Your criteria text here (should be a single line)
->>>>>
-```
+>>>
 
-```
-<<<<< write_report
+<<< write_report
 ///content
 Report content goes here
->>>>>
-```
+>>>
 
-```
-<<<<< append_to_problem_definition
+<<< append_to_problem_definition
 ///content
 Content to append to the problem definition.
->>>>>
-```
+>>>
 This might be needed if the direction needs to be adjusted based on user input.
 
 ======================
