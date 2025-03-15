@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 class DeepResearchAssistantInterface(Interface):
     """Interface for the Deep Research Assistant"""
 
-    def __init__(self, model: ChatModel):
+    def __init__(self, model: ChatModel, research_path: str = None):
         self.model = model
         self.model.initialize()
         self.instruction = None
         self.attachments = []
-        self.research_dir = os.path.join(str(Path.cwd()), "deep_research")
+        self.research_dir = research_path if research_path else str(Path.cwd())
 
     def render(
         self, history_snapshot: List[Message], events: Generator[Event, None, None]
