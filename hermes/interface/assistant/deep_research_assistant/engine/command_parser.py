@@ -25,14 +25,11 @@ class ParseResult:
 
 class CommandParser:
     def __init__(self):
-        self.simple_commands = {
-            "add_criteria": self._parse_add_criteria,
-            "mark_criteria_as_done": self._parse_mark_criteria_as_done,
-            "focus_down": self._parse_focus_down,
-            "focus_up": self._parse_focus_up,
-        }
-
         self.block_commands = {
+            "add_criteria": self._parse_add_criteria_block,
+            "mark_criteria_as_done": self._parse_mark_criteria_as_done_block,
+            "focus_down": self._parse_focus_down_block,
+            "focus_up": self._parse_focus_up_block,
             "define_problem": self._parse_define_problem,
             "add_subproblem": self._parse_add_subproblem,
             "add_attachment": self._parse_add_attachment,
@@ -63,7 +60,7 @@ class CommandParser:
             line = lines[i].strip()
 
             # Check for block command start
-            block_match = re.match(r"<<<\s+(\w+)", line)
+            block_match = re.match(r"<<<\s*(\w+)", line)
             if block_match:
                 command = block_match.group(1)
                 block_content = []
@@ -102,37 +99,6 @@ class CommandParser:
                     # Missing closing tag, but this should be caught by _check_block_command_syntax
                     i += 1
 
-            # Check for simple command
-            elif line.startswith("///"):
-                simple_match = re.match(r"///(?:\s*)(\w+)(?:\s+(.*))?", line)
-                if simple_match:
-                    command = simple_match.group(1)
-                    args_text = simple_match.group(2) if simple_match.group(2) else ""
-
-                    # Skip simple commands that are inside block commands
-                    # We check if this line is part of a section in a block command
-                    if not any(cmd in command for cmd in ["title", "content", "name"]):
-                        result = ParseResult()
-                        result.command = command
-
-                        if command in self.simple_commands:
-                            args, errors = self.simple_commands[command](
-                                args_text, i + 1
-                            )
-                            result.args = args
-                            result.errors = errors
-                        else:
-                            result.errors = [
-                                CommandError(
-                                    command=command,
-                                    message=f"Unknown simple command: '{command}'",
-                                    line_number=i + 1,
-                                )
-                            ]
-
-                        results.append(result)
-
-                i += 1
             else:
                 i += 1
 
@@ -202,41 +168,63 @@ class CommandParser:
 
         return errors
 
-    def _parse_add_criteria(
-        self, args: str, line_number: int
+    def _parse_add_criteria_block(
+        self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
-        """Parse add_criteria command"""
+        """Parse add_criteria block command"""
         errors = []
         result = {}
 
-        if not args.strip():
+        criteria_match = re.search(r"///criteria\s+(.*?)(?=///|\Z)", content, re.DOTALL)
+        
+        if not criteria_match:
+            errors.append(
+                CommandError(
+                    command="add_criteria",
+                    message="Missing '///criteria' section in add_criteria command",
+                    line_number=line_number,
+                )
+            )
+        elif not criteria_match.group(1).strip():
             errors.append(
                 CommandError(
                     command="add_criteria",
                     message="Criteria text cannot be empty",
-                    line_number=line_number,
+                    line_number=line_number + content[:criteria_match.start()].count("\n"),
                 )
             )
         else:
-            result["criteria"] = args.strip()
+            result["criteria"] = criteria_match.group(1).strip()
 
         return result, errors
 
-    def _parse_mark_criteria_as_done(
-        self, args: str, line_number: int
+    def _parse_mark_criteria_as_done_block(
+        self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
-        """Parse mark_criteria_as_done command"""
+        """Parse mark_criteria_as_done block command"""
         errors = []
         result = {}
 
+        number_match = re.search(r"///criteria_number\s+(.*?)(?=///|\Z)", content, re.DOTALL)
+        
+        if not number_match:
+            errors.append(
+                CommandError(
+                    command="mark_criteria_as_done",
+                    message="Missing '///criteria_number' section in mark_criteria_as_done command",
+                    line_number=line_number,
+                )
+            )
+            return result, errors
+
         try:
-            index = int(args.strip()) - 1  # Convert to 0-based index
+            index = int(number_match.group(1).strip()) - 1  # Convert to 0-based index
             if index < 0:
                 errors.append(
                     CommandError(
                         command="mark_criteria_as_done",
                         message=f"Criteria index must be positive, got: {index + 1}",
-                        line_number=line_number,
+                        line_number=line_number + content[:number_match.start()].count("\n"),
                     )
                 )
             else:
@@ -245,37 +233,47 @@ class CommandParser:
             errors.append(
                 CommandError(
                     command="mark_criteria_as_done",
-                    message=f"Invalid criteria index: '{args.strip()}', must be a number",
-                    line_number=line_number,
+                    message=f"Invalid criteria index: '{number_match.group(1).strip()}', must be a number",
+                    line_number=line_number + content[:number_match.start()].count("\n"),
                 )
             )
 
         return result, errors
 
-    def _parse_focus_down(
-        self, args: str, line_number: int
+    def _parse_focus_down_block(
+        self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
-        """Parse focus_down command"""
+        """Parse focus_down block command"""
         errors = []
         result = {}
 
-        if not args.strip():
+        title_match = re.search(r"///title\s+(.*?)(?=///|\Z)", content, re.DOTALL)
+        
+        if not title_match:
+            errors.append(
+                CommandError(
+                    command="focus_down",
+                    message="Missing '///title' section in focus_down command",
+                    line_number=line_number,
+                )
+            )
+        elif not title_match.group(1).strip():
             errors.append(
                 CommandError(
                     command="focus_down",
                     message="Subproblem title cannot be empty",
-                    line_number=line_number,
+                    line_number=line_number + content[:title_match.start()].count("\n"),
                 )
             )
         else:
-            result["title"] = args.strip()
+            result["title"] = title_match.group(1).strip()
 
         return result, errors
 
-    def _parse_focus_up(
-        self, args: str, line_number: int
+    def _parse_focus_up_block(
+        self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
-        """Parse focus_up command"""
+        """Parse focus_up block command (no arguments needed)"""
         return {}, []
 
     def _parse_define_problem(

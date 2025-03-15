@@ -100,46 +100,55 @@ Warning: Before writing the 3-page report, please ensure all criteria are met an
 
 Include expectations on the depth of the results. On average be frugal, not making the problems scope explode.
 
-## Simple Commands
-- ///add_criteria Your criteria text here
-- ///mark_criteria_as_done criteria_number
-- ///focus_down Subproblem Title
-- ///focus_up (when done with the subproblem, focus up, if root node, will finish the task)
-## Block Commands
+Use as few steps as possible to achieve the task. The user will ask for more details if needed.
+
+## Commands
+
 ```
+<<< add_criteria
+///criteria
+Your criteria text here
+>>>
+
+<<< mark_criteria_as_done
+///criteria_number
+N (e.g. 1)
+>>>
+
+<<< focus_down
+///title
+Subproblem Title
+>>>
+
+; when done with the subproblem, focus up, if root node, will finish the task
+<<< focus_up
+>>>
+
 <<< add_subproblem
 ///title
 Subproblem Title
 ///content
 Problem definition goes here
 >>>
-```
 
-```
 <<< add_attachment
 ///name
 attachment_name.md
 ///content
 Content goes here
 >>>
-```
 
-```
 <<< write_report
 ///content
 Report content goes here
 >>>
-```
 
-```
+; This might be needed if the direction needs to be adjusted based on user input.
 <<< append_to_problem_definition
 ///content
 Content to append to the problem definition.
 >>>
-```
-This might be needed if the direction needs to be adjusted based on user input.
 
-```
 <<< add_criteria_to_subproblem
 ///title
 Subproblem Title
