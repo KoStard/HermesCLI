@@ -36,8 +36,9 @@ def build_cli_interface(
     )
     chat_parser.add_argument(
         "--deep-research",
-        action="store_true",
-        help="Use the Deep Research Assistant interface",
+        metavar="PATH",
+        help="Use the Deep Research Assistant interface with path to research folder",
+        type=str,
     )
     chat_parser.add_argument(
         "--stt", action="store_true", help="Use Speech to Text mode for input"
@@ -227,15 +228,17 @@ def main():
             debug_participant = DebugParticipant(debug_interface)
             assistant_participant = debug_participant
         elif cli_args.deep_research:
-            # Use the Deep Research Assistant interface
+            # Use the Deep Research Assistant interface with the specified path
+            research_path = os.path.abspath(cli_args.deep_research)
             deep_research_interface = DeepResearchAssistantInterface(
-                model=model
+                model=model,
+                research_path=research_path
             )
             deep_research_participant = LLMParticipant(deep_research_interface)
             assistant_participant = deep_research_participant
             
             notifications_printer.print_notification(
-                "Using Deep Research Assistant interface"
+                f"Using Deep Research Assistant interface with research directory: {research_path}"
             )
         else:
             llm_interface = ChatAssistantInterface(model, control_panel=llm_control_panel)
