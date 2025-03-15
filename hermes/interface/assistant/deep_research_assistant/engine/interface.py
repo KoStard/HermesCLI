@@ -160,7 +160,8 @@ N (e.g. 1)
 Subproblem Title
 >>>
 
-; when done with the subproblem, focus up, if root node, will finish the task
+; when executed on a subproblem, focus up to its parent problem
+; when executed on the root problem, will finish the whole task (i.e. will move the status from "In Progress" to "Completed")
 <<< focus_up
 >>>
 
