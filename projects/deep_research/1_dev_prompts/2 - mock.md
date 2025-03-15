@@ -69,7 +69,7 @@ If they accept one line argument, the argument can be placed next to it: `///com
 
 If the command accepts multiline arguments, we wrap the command into a command block. Inside it we have sections for the individual arguments, each of which is treated as multiline.
 ```
-<<<<< command_name
+<<< command_name
 ///title
 title goes here
 ///content
@@ -79,17 +79,17 @@ content line 3
 ///some_other_argument
 more content
 more lines
->>>>>
+>>>
 ```
 
 For the add_criteria_to_subproblem command, the format is:
 ```
-<<<<< add_criteria_to_subproblem
+<<< add_criteria_to_subproblem
 ///title
 Subproblem Title
 ///criteria
 Your criteria text here (should be a single line)
->>>>>
+>>>
 ```
 
 ## File system
@@ -117,9 +117,10 @@ The assistant might be given with new instructions to modify the requirements, e
 ```
 # Deep Research Interface
 
+## Introduction
+
 ; information about the interface
 ; information about errors handling of the commands, to check "Errors report" and "Execution Status Report" in the response
-; simple commands
 ; block commands
 ; explain hierarchy between problems, what parent problems chain means (or better term, etc)
 ; explain how the chat history will be erased with every focus change, as it's a new beginning
@@ -129,15 +130,16 @@ The assistant might be given with new instructions to modify the requirements, e
 ; explain that the focus change command should be the last command in the message, after changing focus there will be new session, so it marks the end of the current session. Terminate the message afterwards.
 ; explain that closing tags are mandatory for multiline blocks, otherwise it will break the parsing
 ; add warning about resolving criteria before writing 3-pagers
-
-## Simple Commands
-- ///add_criteria Your criteria text here
-- ///mark_criteria_as_done criteria_number ; explain that this works only for the current node
-- ///focus_down Subproblem Title
-- ///focus_up (when done with the subproblem, focus up)
-- ///finish_task (visible only when at the root task)
+; provide guidelines on how to write a report, expectations on the length
+; explain that the commands should be the first things in the line
+; escape code: if for whatever reason the tool has issues and you are not able to focus up, finish the task or to navigate, just type SHUT_DOWN_DEEP_RESEARCHER anywhere in your response and the system will stop
 
 ## Block Commands
+; add_criteria Your criteria text here
+; mark_criteria_as_done criteria_number ; explain that this works only for the current node
+; focus_down Subproblem Title
+; focus_up (when done with the subproblem, focus up. when in root task, will finish the task)
+; fail_task_and_focus_up (if for some reason the current task can't be resolved at all, and you want to mark it as failed, use this)
 ; add_subproblem multiline block information - title and content arguments (sanitize title to have only one line, replace \n with space)
 ; add_attachment multiline block information - name and content - name should have one line
 ; write_report multiline block information - content
@@ -145,12 +147,12 @@ The assistant might be given with new instructions to modify the requirements, e
 ; add_criteria_to_subproblem - subtask title, criteria
 ; example:
 ; \```
-; <<<<< add_subproblem
+; <<< add_subproblem
 ; ///title
 ; Subproblem Title
 ; ///content
 ; Problem definition goes here
-; >>>>>
+; >>>
 ; \```
 
 ======================
@@ -164,8 +166,18 @@ The content goes here...
 </attachments>
 
 ======================
+# Context
+; before starting the session, the user will provide some context, these can be just text chunks or attachments. These will be permanently present and won't change when changing focus
+<contextAttachments>
+<contextAttachment>
+...
+</contextAttachment>
+...
+</contextAttachments>
+
+======================
 # Instruction
-The user will provide an instruction before the deep research starts. This instruction will always remain visible here.
+; The user will provide an instruction before the deep research starts. This instruction will always remain visible here.
 
 ======================
 # Current Problem: {title}
@@ -235,17 +247,17 @@ The content goes here...
 
 ======================
 # Instruction
-The user will provide an instruction before the deep research starts. This instruction will always remain visible here.
+; The user will provide an instruction before the deep research starts. This instruction will always remain visible here.
 
 ======================
 # How to define a problem
 Define the problem using this command:
 \```
-<<<<< define_problem
+<<< define_problem
 ///title
 title goes here
 ///content
 Content of the problem definition.
->>>>>
+>>>
 \```
 ```
