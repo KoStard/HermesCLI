@@ -41,6 +41,11 @@ class DeepResearchEngine:
         Returns:
             tuple: (commands_executed, error_report, execution_status)
         """
+        # Check for emergency shutdown code
+        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
+            self.finished = True
+            return True, "System shutdown requested and executed.", {"shutdown": "success"}
+            
         # Add the assistant's message to history
         self.chat_history.add_message("assistant", text)
 
@@ -120,6 +125,7 @@ class DeepResearchEngine:
             "add_criteria_to_subproblem": self._handle_add_criteria_to_subproblem,
             "focus_down": self._handle_focus_down,
             "focus_up": self._handle_focus_up,
+            "fail_task_and_focus_up": self._handle_fail_task_and_focus_up,
         }
 
         if command in command_handlers:
@@ -235,6 +241,19 @@ class DeepResearchEngine:
         if not self.file_system.current_node.parent:
             self.finished = True
 
+        self.file_system.focus_up()
+        # Clear history when changing focus
+        self.chat_history.clear()
+        
+    def _handle_fail_task_and_focus_up(self, args: dict):
+        """Handle fail_task_and_focus_up command - similar to focus_up but without report requirement"""
+        if not self.file_system.current_node:
+            return
+            
+        # For now, we'll treat this the same as focus_up but without the report requirement
+        if not self.file_system.current_node.parent:
+            self.finished = True
+            
         self.file_system.focus_up()
         # Clear history when changing focus
         self.chat_history.clear()

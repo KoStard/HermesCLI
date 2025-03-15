@@ -303,7 +303,7 @@ Remember, we work backwards from the root problem.
                     result += "<Report>\n"
                     result += f"#### {title}\n"
                     result += f"{subproblem.report}\n\n"
-                    result += "<\Report>\n"
+                    result += "<\\Report>\n"
 
         # Add current report if it exists
         if node.report:

@@ -30,6 +30,7 @@ class CommandParser:
             "mark_criteria_as_done": self._parse_mark_criteria_as_done_block,
             "focus_down": self._parse_focus_down_block,
             "focus_up": self._parse_focus_up_block,
+            "fail_task_and_focus_up": self._parse_focus_up_block,  # Use same parser as focus_up
             "define_problem": self._parse_define_problem,
             "add_subproblem": self._parse_add_subproblem,
             "add_attachment": self._parse_add_attachment,
