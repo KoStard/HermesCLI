@@ -1,10 +1,12 @@
 import os
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 from .command_parser import CommandParser, ParseResult
 from .file_system import FileSystem
 from .history import ChatHistory
 from .interface import DeepResearcherInterface
+from .logger import DeepResearchLogger
 
 
 class DeepResearchEngine:
@@ -22,10 +24,14 @@ class DeepResearchEngine:
         self.command_parser = CommandParser()
         self.initial_attachments = initial_attachments or []
         self.finished = False
+        self.logger = DeepResearchLogger(Path(root_dir))
 
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
         self.problem_defined = existing_problem is not None
+        
+        # Print initial status
+        self._print_current_status()
     
     def get_interface_content(self) -> str:
         """Get the current interface content as a string"""
@@ -151,6 +157,9 @@ class DeepResearchEngine:
         self.chat_history.clear()
 
         self.problem_defined = True
+        
+        # Print status after problem definition
+        self._print_current_status()
 
     def _handle_add_criteria(self, args: dict):
         """Handle add_criteria command"""
@@ -224,6 +233,9 @@ class DeepResearchEngine:
         if result:
             # Clear history when changing focus
             self.chat_history.clear()
+            
+            # Print updated status after focus change
+            self._print_current_status()
 
     def _handle_focus_up(self, args: dict):
         """Handle focus_up command"""
@@ -245,6 +257,9 @@ class DeepResearchEngine:
         # Clear history when changing focus
         self.chat_history.clear()
         
+        # Print updated status after focus change
+        self._print_current_status()
+        
     def _handle_fail_task_and_focus_up(self, args: dict):
         """Handle fail_task_and_focus_up command - similar to focus_up but without report requirement"""
         if not self.file_system.current_node:
@@ -257,6 +272,9 @@ class DeepResearchEngine:
         self.file_system.focus_up()
         # Clear history when changing focus
         self.chat_history.clear()
+        
+        # Print updated status after focus change
+        self._print_current_status()
 
     def _handle_add_criteria_to_subproblem(self, args: dict):
         """Handle add_criteria_to_subproblem command"""
@@ -277,5 +295,42 @@ class DeepResearchEngine:
 
         subproblem.add_criteria(criteria_text)
         self.file_system.update_files()
+
+    def _print_current_status(self):
+        """Print the current status of the research to STDOUT"""
+        if not self.problem_defined:
+            print("\n=== Deep Research Assistant ===")
+            print("Status: No problem defined yet")
+            return
+            
+        if not self.file_system.current_node:
+            print("\n=== Deep Research Assistant ===")
+            print("Status: No current node")
+            return
+            
+        print("\n" + "="*60)
+        print("=== Deep Research Assistant - Progress Update ===")
+        
+        # Print current problem info
+        current_node = self.file_system.current_node
+        print(f"Current Problem: {current_node.title}")
+        
+        # Print criteria status
+        criteria_met = current_node.get_criteria_met_count()
+        criteria_total = current_node.get_criteria_total_count()
+        print(f"Criteria Status: {criteria_met}/{criteria_total} met")
+        
+        # Print problem hierarchy
+        print("\nProblem Hierarchy:")
+        print(self.file_system.get_problem_hierarchy())
+        
+        # Print subproblems if any
+        if current_node.subproblems:
+            print("\nSubproblems:")
+            for title, subproblem in current_node.subproblems.items():
+                criteria_status = subproblem.get_criteria_status()
+                print(f"- {title} {criteria_status}")
+                
+        print("="*60 + "\n")
 
 

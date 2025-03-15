@@ -1,6 +1,7 @@
 import os
 import logging
-from typing import Generator, List
+import json
+from typing import Generator, List, Dict
 from pathlib import Path
 
 from hermes.interface.assistant.chat_assistant.response_types import BaseLLMResponse, TextLLMResponse
@@ -66,24 +67,54 @@ class DeepResearchAssistantInterface(Interface):
                     TextMessage(author=message.author, text=message.content)
                 )
             
+            # Build the request
             request = request_builder.build_request(rendered_messages)
             
+            # Log the request
+            messages_for_log = [
+                {"author": msg.author, "text": msg.text} 
+                for msg in rendered_messages
+            ]
+            
+            # Get the current node path for logging
+            current_node_path = None
+            if engine.file_system.current_node and engine.file_system.current_node.path:
+                current_node_path = engine.file_system.current_node.path
+                
+            # Log the request
+            engine.logger.log_llm_request(
+                current_node_path,
+                messages_for_log,
+                request
+            )
+            
+            # Process the request
             llm_responses_generator = self._handle_string_output(
                 self.model.send_request(request)
             )
+            
+            # Collect the response
             llm_response = []
             is_thinking = False
             for response in llm_responses_generator:
                 if isinstance(response, TextLLMResponse):
                     if is_thinking:
                         print("Thinking finished")
-                        print("======================")
                     llm_response.append(response.text)
                 else:
                     if not is_thinking:
                         is_thinking = True
-                print(response.text, end="", flush=True)
+                        print("Thinking...", end="", flush=True)
+                    else:
+                        print(".", end="", flush=True)
+            
+            # Join the response parts
             full_llm_response = "".join(llm_response)
+            
+            # Log the response
+            engine.logger.log_llm_response(current_node_path, full_llm_response)
+            
+            # Process the commands in the response
             engine.process_commands(full_llm_response)
             
         report = "Report generated"
