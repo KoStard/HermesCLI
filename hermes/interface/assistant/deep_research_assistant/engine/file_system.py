@@ -317,6 +317,11 @@ class FileSystem:
         subproblems_dir = node.path / "Subproblems"
         if not subproblems_dir.exists():
             subproblems_dir.mkdir(exist_ok=True)
+            
+        # Create logs_and_debug directory
+        logs_dir = node.path / "logs_and_debug"
+        if not logs_dir.exists():
+            logs_dir.mkdir(exist_ok=True)
 
         # Recursively create directories for subproblems
         for subproblem in node.subproblems.values():
