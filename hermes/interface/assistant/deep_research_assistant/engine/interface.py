@@ -116,6 +116,10 @@ At most only one focus change is allowed in one response. The focus change comma
 
 You should go maximum 3 levels deep.
 
+### Attachments
+
+Attachments are your way to capture and collect learnings while you are working on problems. Whenever you find important information that is moving the root problem towards solution, capture in the form of attachment. It will also help the child tasks to have more context to work better.
+
 ### Report
 
 You can proceed to write the 3-pager at any time. If you find some criteria impossible to meet, explain in the 3-pager. Mark the resolver criteria as done. This ensures your report is comprehensive and addresses all required aspects of the problem. Before using `focus_up` you must have a report written, otherwise it won't be clear in the new session why was it left partial.
