@@ -168,76 +168,77 @@ class CommandParser:
 
         return errors
 
+    def _parse_command_sections(
+        self, 
+        content: str,
+        line_number: int,
+        required_sections: List[str],
+        command_name: str
+    ) -> Tuple[Dict, List[CommandError]]:
+        """Helper to parse command sections with /// delimiters"""
+        errors = []
+        result = {}
+        
+        # Find all sections in the content
+        sections = re.findall(r"///(\w+)\s+(.*?)(?=///|\Z)", content, re.DOTALL)
+        found_sections = {section[0]: section[1].strip() for section in sections}
+
+        # Validate required sections
+        for section in required_sections:
+            if section not in found_sections:
+                errors.append(CommandError(
+                    command=command_name,
+                    message=f"Missing '///{section}' section in {command_name} command",
+                    line_number=line_number,
+                ))
+            elif not found_sections[section]:
+                errors.append(CommandError(
+                    command=command_name,
+                    message=f"{section.capitalize()} cannot be empty",
+                    line_number=line_number,
+                ))
+                
+        # Add valid sections to result
+        for section, value in found_sections.items():
+            if value:  # Only add non-empty values
+                result[section] = value
+                
+        return result, errors
+
     def _parse_add_criteria_block(
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse add_criteria block command"""
-        errors = []
-        result = {}
-
-        criteria_match = re.search(r"///criteria\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-        
-        if not criteria_match:
-            errors.append(
-                CommandError(
-                    command="add_criteria",
-                    message="Missing '///criteria' section in add_criteria command",
-                    line_number=line_number,
-                )
-            )
-        elif not criteria_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="add_criteria",
-                    message="Criteria text cannot be empty",
-                    line_number=line_number + content[:criteria_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["criteria"] = criteria_match.group(1).strip()
-
-        return result, errors
+        return self._parse_command_sections(
+            content, line_number, ["criteria"], "add_criteria"
+        )
 
     def _parse_mark_criteria_as_done_block(
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse mark_criteria_as_done block command"""
-        errors = []
-        result = {}
-
-        number_match = re.search(r"///criteria_number\s+(.*?)(?=///|\Z)", content, re.DOTALL)
+        result, errors = self._parse_command_sections(
+            content, line_number, ["criteria_number"], "mark_criteria_as_done"
+        )
         
-        if not number_match:
-            errors.append(
-                CommandError(
-                    command="mark_criteria_as_done",
-                    message="Missing '///criteria_number' section in mark_criteria_as_done command",
-                    line_number=line_number,
-                )
-            )
-            return result, errors
-
-        try:
-            index = int(number_match.group(1).strip()) - 1  # Convert to 0-based index
-            if index < 0:
-                errors.append(
-                    CommandError(
+        if "criteria_number" in result:
+            try:
+                index = int(result["criteria_number"]) - 1  # Convert to 0-based index
+                if index < 0:
+                    errors.append(CommandError(
                         command="mark_criteria_as_done",
                         message=f"Criteria index must be positive, got: {index + 1}",
-                        line_number=line_number + content[:number_match.start()].count("\n"),
-                    )
-                )
-            else:
-                result["index"] = index
-        except ValueError:
-            errors.append(
-                CommandError(
+                        line_number=line_number,
+                    ))
+                else:
+                    result["index"] = index
+            except ValueError:
+                errors.append(CommandError(
                     command="mark_criteria_as_done",
-                    message=f"Invalid criteria index: '{number_match.group(1).strip()}', must be a number",
-                    line_number=line_number + content[:number_match.start()].count("\n"),
-                )
-            )
-
+                    message=f"Invalid criteria index: '{result['criteria_number']}', must be a number",
+                    line_number=line_number,
+                ))
+                
         return result, errors
 
     def _parse_focus_down_block(
@@ -280,261 +281,49 @@ class CommandParser:
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse define_problem command"""
-        errors = []
-        result = {}
-
-        title_match = re.search(r"///title\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-        content_match = re.search(r"///content\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-
-        if not title_match:
-            errors.append(
-                CommandError(
-                    command="define_problem",
-                    message="Missing '///title' section in define_problem command",
-                    line_number=line_number,
-                )
-            )
-        elif not title_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="define_problem",
-                    message="Title cannot be empty",
-                    line_number=line_number
-                    + content[: title_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["title"] = title_match.group(1).strip()
-
-        if not content_match:
-            errors.append(
-                CommandError(
-                    command="define_problem",
-                    message="Missing '///content' section in define_problem command",
-                    line_number=line_number,
-                )
-            )
-        elif not content_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="define_problem",
-                    message="Content cannot be empty",
-                    line_number=line_number
-                    + content[: content_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["content"] = content_match.group(1).strip()
-
-        return result, errors
+        return self._parse_command_sections(
+            content, line_number, ["title", "content"], "define_problem"
+        )
 
     def _parse_add_subproblem(
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse add_subproblem command"""
-        errors = []
-        result = {}
-
-        title_match = re.search(r"///title\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-        content_match = re.search(r"///content\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-
-        if not title_match:
-            errors.append(
-                CommandError(
-                    command="add_subproblem",
-                    message="Missing '///title' section in add_subproblem command",
-                    line_number=line_number,
-                )
-            )
-        elif not title_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="add_subproblem",
-                    message="Title cannot be empty",
-                    line_number=line_number
-                    + content[: title_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["title"] = title_match.group(1).strip()
-
-        if not content_match:
-            errors.append(
-                CommandError(
-                    command="add_subproblem",
-                    message="Missing '///content' section in add_subproblem command",
-                    line_number=line_number,
-                )
-            )
-        elif not content_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="add_subproblem",
-                    message="Content cannot be empty",
-                    line_number=line_number
-                    + content[: content_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["content"] = content_match.group(1).strip()
-
-        return result, errors
+        return self._parse_command_sections(
+            content, line_number, ["title", "content"], "add_subproblem"
+        )
 
     def _parse_add_attachment(
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse add_attachment command"""
-        errors = []
-        result = {}
-
-        name_match = re.search(r"///name\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-        content_match = re.search(r"///content\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-
-        if not name_match:
-            errors.append(
-                CommandError(
-                    command="add_attachment",
-                    message="Missing '///name' section in add_attachment command",
-                    line_number=line_number,
-                )
-            )
-        elif not name_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="add_attachment",
-                    message="Name cannot be empty",
-                    line_number=line_number + content[: name_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["name"] = name_match.group(1).strip()
-
-        if not content_match:
-            errors.append(
-                CommandError(
-                    command="add_attachment",
-                    message="Missing '///content' section in add_attachment command",
-                    line_number=line_number,
-                )
-            )
-        else:
-            result["content"] = content_match.group(1).strip()
-
-        return result, errors
+        return self._parse_command_sections(
+            content, line_number, ["name", "content"], "add_attachment"
+        )
 
     def _parse_write_report(
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse write_report command"""
-        errors = []
-        result = {}
-
-        content_match = re.search(r"///content\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-
-        if not content_match:
-            errors.append(
-                CommandError(
-                    command="write_report",
-                    message="Missing '///content' section in write_report command",
-                    line_number=line_number,
-                )
-            )
-        elif not content_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="write_report",
-                    message="Report content cannot be empty",
-                    line_number=line_number
-                    + content[: content_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["content"] = content_match.group(1).strip()
-
-        return result, errors
+        return self._parse_command_sections(
+            content, line_number, ["content"], "write_report"
+        )
 
     def _parse_append_to_problem_definition(
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse append_to_problem_definition command"""
-        errors = []
-        result = {}
-
-        content_match = re.search(r"///content\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-
-        if not content_match:
-            errors.append(
-                CommandError(
-                    command="append_to_problem_definition",
-                    message="Missing '///content' section in append_to_problem_definition command",
-                    line_number=line_number,
-                )
-            )
-        elif not content_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="append_to_problem_definition",
-                    message="Content cannot be empty",
-                    line_number=line_number
-                    + content[: content_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["content"] = content_match.group(1).strip()
-
-        return result, errors
+        return self._parse_command_sections(
+            content, line_number, ["content"], "append_to_problem_definition"
+        )
 
     def _parse_add_criteria_to_subproblem(
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
         """Parse add_criteria_to_subproblem command"""
-        errors = []
-        result = {}
-
-        title_match = re.search(r"///title\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-        criteria_match = re.search(r"///criteria\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-
-        if not title_match:
-            errors.append(
-                CommandError(
-                    command="add_criteria_to_subproblem",
-                    message="Missing '///title' section in add_criteria_to_subproblem command",
-                    line_number=line_number,
-                )
-            )
-        elif not title_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="add_criteria_to_subproblem",
-                    message="Subproblem title cannot be empty",
-                    line_number=line_number
-                    + content[: title_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["title"] = title_match.group(1).strip()
-
-        if not criteria_match:
-            errors.append(
-                CommandError(
-                    command="add_criteria_to_subproblem",
-                    message="Missing '///criteria' section in add_criteria_to_subproblem command",
-                    line_number=line_number,
-                )
-            )
-        elif not criteria_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="add_criteria_to_subproblem",
-                    message="Criteria cannot be empty",
-                    line_number=line_number
-                    + content[: criteria_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["criteria"] = criteria_match.group(1).strip()
-
-        return result, errors
+        return self._parse_command_sections(
+            content, line_number, ["title", "criteria"], "add_criteria_to_subproblem"
+        )
 
     def generate_error_report(self, parse_results: List[ParseResult]) -> str:
         """Generate an error report from parse results"""
