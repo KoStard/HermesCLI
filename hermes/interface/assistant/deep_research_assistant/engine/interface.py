@@ -29,6 +29,8 @@ To begin, you need to define the problem you'll be researching. Please follow th
 - Consider what a successful outcome would look like
 - Don't expand from the scope of the provided instructions from the user. The smaller the scope of the problem the faster the user will receive the answer.
 - Include expectations on the depth of the results. On average be frugal, not making the problems scope explode.
+- Explicitely describe what should the answer have to be considered as done.
+- For broad topics, provide guidance on how to bring the scope down.
 
 Note: This is a temporary state. After defining the problem, this chat will be discarded and you'll start working on the problem with a fresh interface.
 
@@ -112,6 +114,8 @@ Note that only the attachments of the current problem are visible. When changing
 
 At most only one focus change is allowed in one response. The focus change command should be the last command in your message, as it marks the end of the current session. No further commands should follow a focus change.
 
+You should go maximum 3 levels deep.
+
 ### Report
 
 You can proceed to write the 3-pager at any time. If you find some criteria impossible to meet, explain in the 3-pager. Mark the resolver criteria as done. This ensures your report is comprehensive and addresses all required aspects of the problem. Before using `focus_up` you must have a report written, otherwise it won't be clear in the new session why was it left partial.
@@ -164,7 +168,17 @@ Subproblem Title
 ///title
 Subproblem Title
 ///content
-Problem definition goes here
+Problem definition goes here.
+Explicitely state why is this essential for the root problem. How does it contribute to the root problem? If it's not, don't create the subproblem!
+If we estimate the value we get from this task in the context of the root problem compared to the effort needed to solve this subtask, we should have ±20% effort for ±80% value. If we don't have it, don't create the subtask.
+
+- Make the problem statement clear and specific
+- Include any constraints or requirements
+- Consider what a successful outcome would look like
+- Don't expand from the scope of the provided instructions from the user. The smaller the scope of the problem the faster the user will receive the answer.
+- Include expectations on the depth of the results. On average be frugal, not making the problems scope explode.
+- Explicitely describe what should the answer have to be considered as done.
+- For broad topics, provide guidance on how to bring the scope down.
 >>>
 
 <<< add_attachment
