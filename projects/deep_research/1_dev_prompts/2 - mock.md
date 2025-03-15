@@ -20,7 +20,7 @@ Given the problem definition, add criteria for the definition of done.
 Maybe we found new information which shows that to mark this task as done we need to have more things answered.
 
 ### Add criteria to subproblem
-Add criteria to a specific subproblem by title. This is useful when new information is found that requires revisiting a subproblem with additional requirements.
+Add criteria to a specific **subproblem** by title. This is useful when new information is found that requires revisiting a subproblem with additional requirements.
 
 ### Add subproblems
 Based on new findings we add new subproblems so that we meet the criteria and solve the current problem.
@@ -121,18 +121,16 @@ The assistant might be given with new instructions to modify the requirements, e
 
 ; information about the interface
 ; information about errors handling of the commands, to check "Errors report" and "Execution Status Report" in the response
-; block commands
-; explain hierarchy between problems, what parent problems chain means (or better term, etc)
 ; explain how the chat history will be erased with every focus change, as it's a new beginning
+; explain that the commands should be the first things in the line
+; escape code: if for whatever reason the tool has issues and you are not able to focus up, finish the task or to navigate, just type SHUT_DOWN_DEEP_RESEARCHER anywhere in your response and the system will stop
+; explain hierarchy between problems, what parent problems chain means (or better term, etc). discourage too many children.
 ; explain to use the commands symbol by symbol correctly
 ; explain that only the attachments of the current problem are visible, so when changing focus the attachments will change as well
 ; explain that only one focus change is allowed in one response
 ; explain that the focus change command should be the last command in the message, after changing focus there will be new session, so it marks the end of the current session. Terminate the message afterwards.
-; explain that closing tags are mandatory for multiline blocks, otherwise it will break the parsing
 ; add warning about resolving criteria before writing 3-pagers
 ; provide guidelines on how to write a report, expectations on the length
-; explain that the commands should be the first things in the line
-; escape code: if for whatever reason the tool has issues and you are not able to focus up, finish the task or to navigate, just type SHUT_DOWN_DEEP_RESEARCHER anywhere in your response and the system will stop
 
 ## Block Commands
 ; add_criteria Your criteria text here
@@ -218,7 +216,6 @@ The content goes here...
 
 ## Goal
 ; A comment explaining that the goal is to move forward on the current problem, modify, add subproblems as needed. Should be generic comment, that will be same regardless of what problem currently I work on. The purpose is to have closure of the message reminding what the action should be.
-Your task is to continue investigating the current problem on {title}. Add criteria if needed, create subproblems to structure your investigation, and work toward producing a comprehensive 3-page report. Use the attachments for reference and add new ones as needed. When ready to move to a different focus area, use the focus commands.
 ```
 
 ### No problem defined
@@ -230,8 +227,9 @@ Your task is to continue investigating the current problem on {title}. Add crite
 ; explain the standards and best practices for defining a problem
 ; explain that this is a temporary state and that this chat will be discarded after defining the problem and the assistant will start working on the problem
 ; explain that current attachments will be copied to the root problem after creation and won't be lost
+; explain that there is also some context provided, this will be available in all the upcoming sessions, so you can refer to it if needed
 ; explain that only one problem definition is allowed
-; explain that closing tags are mandatory for multiline blocks, otherwise it will break the parsing
+; explain that closing tags are mandatory for command blocks, otherwise it will break the parsing
 
 ======================
 # Attachments
@@ -244,6 +242,16 @@ The content goes here...
 </attachment>
 ...
 </attachments>
+
+======================
+# Context
+; before starting the session, the user will provide some context, these can be just text chunks or attachments. These will be permanently present and won't change when changing focus
+<contextAttachments>
+<contextAttachment>
+...
+</contextAttachment>
+...
+</contextAttachments>
 
 ======================
 # Instruction
