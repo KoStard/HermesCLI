@@ -74,7 +74,7 @@ class DeepResearchEngine:
         if has_syntax_error:
             auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.\n\n{error_report}'
             self.chat_history.add_message("user", auto_reply)
-            print("Auto Reply: ", auto_reply)
+            print(auto_reply)
             return False, error_report, execution_status
 
         # Execute commands if there are no syntax errors
@@ -106,8 +106,9 @@ class DeepResearchEngine:
             if error_report:
                 auto_reply += f"\n\n{error_report}"
             self.chat_history.add_message("user", auto_reply)
-            print("Auto Reply: ", auto_reply)
-
+            print(auto_reply)
+        
+        self._print_current_status()
         return commands_executed, error_report, execution_status
 
     def _execute_command(self, command: str, args: dict):
@@ -308,8 +309,8 @@ class DeepResearchEngine:
             print("Status: No current node")
             return
             
-        print("\n" + "="*60)
-        print("=== Deep Research Assistant - Progress Update ===")
+        print("\n" + "="*80)
+        print("=== Deep Research Assistant - Comprehensive Progress Report ===")
         
         # Print current problem info
         current_node = self.file_system.current_node
@@ -320,17 +321,52 @@ class DeepResearchEngine:
         criteria_total = current_node.get_criteria_total_count()
         print(f"Criteria Status: {criteria_met}/{criteria_total} met")
         
-        # Print problem hierarchy
-        print("\nProblem Hierarchy:")
-        print(self.file_system.get_problem_hierarchy())
+        # Print report status
+        report_status = "✓ Written" if current_node.report else "✗ Not written"
+        print(f"Report Status: {report_status}")
         
-        # Print subproblems if any
-        if current_node.subproblems:
-            print("\nSubproblems:")
-            for title, subproblem in current_node.subproblems.items():
-                criteria_status = subproblem.get_criteria_status()
-                print(f"- {title} {criteria_status}")
-                
-        print("="*60 + "\n")
+        # Print full problem tree with detailed metadata
+        print("\n=== Full Problem Tree ===")
+        self._print_problem_tree(self.file_system.root_node, "", True, current_node)
+        
+        print("="*80 + "\n")
+    
+    def _print_problem_tree(self, node, prefix, is_last, current_node):
+        """Print a tree representation of the problem hierarchy with metadata"""
+        if not node:
+            return
+            
+        # Determine the branch symbol
+        branch = "└── " if is_last else "├── "
+        
+        # Highlight current node
+        is_current = node == current_node
+        node_marker = "→ " if is_current else ""
+        
+        # Gather metadata
+        criteria_met = node.get_criteria_met_count()
+        criteria_total = node.get_criteria_total_count()
+        report_indicator = "📄" if node.report else "  "
+        attachments_count = len(node.attachments)
+        subproblems_count = len(node.subproblems)
+        
+        # Format the node line with metadata
+        node_info = f"{node_marker}{node.title} [{criteria_met}/{criteria_total}] {report_indicator}"
+        if attachments_count > 0:
+            node_info += f" 📎{attachments_count}"
+        if subproblems_count > 0:
+            node_info += f" 🔍{subproblems_count}"
+            
+        # Print the current node
+        print(f"{prefix}{branch}{node_info}")
+        
+        # Prepare prefix for children
+        new_prefix = prefix + ("    " if is_last else "│   ")
+        
+        # Print all subproblems
+        subproblems = list(node.subproblems.values())
+        for i, subproblem in enumerate(subproblems):
+            is_last_child = i == len(subproblems) - 1
+            self._print_problem_tree(subproblem, new_prefix, is_last_child, current_node)
 
 
