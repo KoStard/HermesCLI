@@ -54,11 +54,11 @@ Please research and organize the fundamental concepts of quantum mechanics. I ne
 ======================
 # How to define a problem
 Define the problem using this command:
-```
-<<<<< define_problem
+<<< define_problem
 ///title
 title goes here
 ///content
 Content of the problem definition.
->>>>>
-```
+>>>
+
+Note: The closing `>>>` tag is mandatory to prevent parsing errors.
