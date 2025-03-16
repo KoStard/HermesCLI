@@ -1,12 +1,11 @@
 import os
 import logging
-import json
-from typing import Generator, List, Dict
+from typing import Generator, List
 from pathlib import Path
 
-from hermes.interface.assistant.chat_assistant.response_types import BaseLLMResponse, TextLLMResponse
 from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.interface.assistant.deep_research_assistant.engine.engine import DeepResearchEngine
+from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import ChatModelLLMInterface
 from hermes.interface.base import Interface
 from hermes.event import Event, MessageEvent
 from hermes.message import Message, TextMessage
@@ -21,7 +20,6 @@ class DeepResearchAssistantInterface(Interface):
 
     def __init__(self, model: ChatModel, research_path: str = None):
         self.model = model
-        self.model.initialize()
         self.instruction = None
         self.attachments = []
         self.research_dir = research_path if research_path else str(Path.cwd())
@@ -50,94 +48,28 @@ class DeepResearchAssistantInterface(Interface):
     def get_input(self) -> Generator[Event, None, None]:
         """Process the instruction and generate a response"""
         logger.debug("Processing instruction in Deep Research Assistant")
-        request_builder = self.model.get_request_builder()
         
-        report = None
+        # Create the LLM interface
+        llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
         
-        engine = DeepResearchEngine(self.instruction, self.attachments, self.research_dir)
+        # Create and execute the engine
+        engine = DeepResearchEngine(
+            self.instruction, 
+            self.attachments, 
+            self.research_dir,
+            llm_interface
+        )
         
-        while not engine.finished:
-            rendered_messages = []
-            
-            # Render the messages
-            rendered_messages.append(TextMessage(author="user", text=engine.get_interface_content()))
-            
-            for message in engine.chat_history.messages:
-                rendered_messages.append(
-                    TextMessage(author=message.author, text=message.content)
-                )
-            
-            # Build the request
-            request = request_builder.build_request(rendered_messages)
-            
-            # Log the request
-            messages_for_log = [
-                {"author": msg.author, "text": msg.text} 
-                for msg in rendered_messages
-            ]
-            
-            # Get the current node path for logging
-            current_node_path = None
-            if engine.file_system.current_node and engine.file_system.current_node.path:
-                current_node_path = engine.file_system.current_node.path
-                
-            # Log the request
-            engine.logger.log_llm_request(
-                current_node_path,
-                messages_for_log,
-                request
-            )
-            
-            # Process the request
-            llm_responses_generator = self._handle_string_output(
-                self.model.send_request(request)
-            )
-            
-            # Collect the response
-            llm_response = []
-            is_thinking = False
-            for response in llm_responses_generator:
-                if isinstance(response, TextLLMResponse):
-                    if is_thinking:
-                        print("Thinking finished")
-                    llm_response.append(response.text)
-                else:
-                    if not is_thinking:
-                        is_thinking = True
-                        print("Thinking...", end="", flush=True)
-                    else:
-                        print(".", end="", flush=True)
-            
-            # Join the response parts
-            full_llm_response = "".join(llm_response)
-            
-            # Log the response
-            engine.logger.log_llm_response(current_node_path, full_llm_response)
-            
-            # Process the commands in the response
-            engine.process_commands(full_llm_response)
-            
-        report = "Report generated"
+        # Execute the engine and yield the results
+        final_report = engine.execute()
         
-        # Return the report as the response
+        # Return the report as an event
         yield MessageEvent(
             TextMessage(
                 author="assistant",
-                text=report
+                text=final_report
             )
         )
-        
-    def _handle_string_output(
-        self, llm_response_generator: Generator[str, None, None]
-    ) -> Generator[BaseLLMResponse, None, None]:
-        """
-        This is implemented for backwards compatibility, as not all models support thinking tokens yet and they currently just return string.
-        """
-        for response in llm_response_generator:
-            if isinstance(response, str):
-                yield TextLLMResponse(response)
-            else:
-                yield response
 
     def clear(self):
         """Clear the interface state"""

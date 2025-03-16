@@ -1,1 +1,2 @@
 from .interface import DeepResearchAssistantInterface
+from .llm_interface_impl import ChatModelLLMInterface
