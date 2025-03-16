@@ -63,30 +63,25 @@ Content of the problem definition.
 >>>
 ```"""
 
-    def render_problem_defined(self) -> str:
+    def render_problem_defined(self, target_node=None) -> str:
         """Render the interface when a problem is defined"""
-        if not self.file_system.current_node:
-            return "Error: No current node"
-
-        current_node = self.file_system.current_node
-
         # Format attachments
-        attachments_section = self._format_attachments_from_node(current_node)
+        attachments_section = self._format_attachments_from_node(target_node)
 
         # Format criteria
-        criteria_section = self._format_criteria(current_node)
+        criteria_section = self._format_criteria(target_node)
 
         # Format breakdown structure
-        breakdown_section = self._format_breakdown_structure(current_node)
+        breakdown_section = self._format_breakdown_structure(target_node)
 
         # Format completed reports
-        completed_reports_section = self._format_completed_reports(current_node)
+        completed_reports_section = self._format_completed_reports(target_node)
 
         # Format parent chain
-        parent_chain_section = self._format_parent_chain()
+        parent_chain_section = self._format_parent_chain(target_node)
 
         # Format problem hierarchy
-        problem_hierarchy = self.file_system.get_problem_hierarchy()
+        problem_hierarchy = self.file_system.get_problem_hierarchy(target_node)
 
         return f"""# Deep Research Interface
 
@@ -222,13 +217,13 @@ Your criteria text here (should be a single line)
 {self.instruction}
 
 ======================
-# Current Problem: {current_node.title}
+# Current Problem: {target_node.title}
 
 ## Problem Hierarchy
 {problem_hierarchy}
 
 ## Problem Definition
-{current_node.problem_definition}
+{target_node.problem_definition}
 
 ## Criteria of Definition of Done
 {criteria_section}
@@ -263,8 +258,11 @@ Remember, we work backwards from the root problem.
 
     def _format_attachments_from_node(self, node: Node) -> str:
         """Format attachments from a node and its parent chain for display"""
+        if not node:
+            return "<attachments>\nNo attachments available.\n</attachments>"
+            
         # Get all nodes in the parent chain, including current node
-        parent_chain = self.file_system.get_parent_chain()
+        parent_chain = self.file_system.get_parent_chain(node)
         
         # Collect all attachments with their owner information
         all_attachments = []
@@ -360,24 +358,27 @@ Remember, we work backwards from the root problem.
 
         return result.strip() if result else "No reports available yet."
 
-    def _format_parent_chain(self) -> str:
+    def _format_parent_chain(self, node: Node) -> str:
         """Format parent chain for display"""
-        chain = self.file_system.get_parent_chain()
+        if not node:
+            return ""
+            
+        chain = self.file_system.get_parent_chain(node)
         if len(chain) <= 1:
             return ""
 
         result = "## Parent chain\n"
 
         # Skip the current node
-        for i, node in enumerate(chain[:-1]):
+        for i, parent_node in enumerate(chain[:-1]):
             result += (
-                f"### L{i} {'Root Problem' if i == 0 else 'Problem'}: {node.title}\n"
+                f"### L{i} {'Root Problem' if i == 0 else 'Problem'}: {parent_node.title}\n"
             )
-            result += f"{node.problem_definition}\n\n"
+            result += f"{parent_node.problem_definition}\n\n"
 
-            if node.subproblems:
+            if parent_node.subproblems:
                 result += f"#### L{i} Problem Breakdown Structure\n"
-                for title, subproblem in node.subproblems.items():
+                for title, subproblem in parent_node.subproblems.items():
                     result += f"##### {title}\n"
                     result += f"{subproblem.problem_definition}\n\n"
 

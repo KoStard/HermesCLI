@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 from typing import Dict, Generator, List, Optional, Tuple
 
@@ -8,6 +9,8 @@ from .history import ChatHistory
 from .interface import DeepResearcherInterface
 from .llm_interface import LLMInterface
 from .logger import DeepResearchLogger
+from .task_executor import TaskExecutor
+from .task_queue import TaskStatus
 
 
 class DeepResearchEngine:
@@ -22,7 +25,6 @@ class DeepResearchEngine:
     ):
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
-        self.interface = DeepResearcherInterface(self.file_system, instruction)
         self.command_parser = CommandParser()
         self.initial_attachments = initial_attachments or []
         self.finished = False
@@ -33,6 +35,14 @@ class DeepResearchEngine:
         existing_problem = self.file_system.load_existing_problem()
         self.problem_defined = existing_problem is not None
         
+        # Initialize task executor
+        self.task_executor = TaskExecutor(self.file_system)
+        
+        # Initialize interface with the file system
+        self.interface = DeepResearcherInterface(self.file_system, instruction)
+        
+        self.current_node = None
+        
         # Print initial status
         self._print_current_status()
     
@@ -41,7 +51,7 @@ class DeepResearchEngine:
         if not self.problem_defined:
             return self.interface.render_no_problem_defined(self.initial_attachments)
         else:
-            return self.interface.render_problem_defined()
+            return self.interface.render_problem_defined(self.current_node)
     
     def process_commands(self, text: str) -> tuple[bool, str, Dict]:
         """
@@ -78,6 +88,7 @@ class DeepResearchEngine:
             auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.\n\n{error_report}'
             self.chat_history.add_message("user", auto_reply)
             print(auto_reply)
+            self._print_current_status()
             return False, error_report, execution_status
 
         # Execute commands if there are no syntax errors
@@ -146,11 +157,11 @@ class DeepResearchEngine:
 
     def _handle_define_problem(self, args: dict):
         """Handle define_problem command"""
-        self.file_system.create_root_problem(args["title"], args["content"])
+        root_node = self.file_system.create_root_problem(args["title"], args["content"])
 
         # Copy initial attachments to the root problem
         for attachment in self.initial_attachments:
-            self.file_system.current_node.add_attachment(
+            root_node.add_attachment(
                 attachment, f"Content of {attachment} would be here..."
             )
 
@@ -162,42 +173,46 @@ class DeepResearchEngine:
 
         self.problem_defined = True
         
-        # Print status after problem definition
-        self._print_current_status()
-
+        # Initialize the task executor with the root node
+        self.task_executor._initialize_root_task()
+        self.current_node = self.task_executor.get_current_node()
+        
     def _handle_add_criteria(self, args: dict):
         """Handle add_criteria command"""
-        if not self.file_system.current_node:
+        current_node = self.current_node
+        if not current_node:
             return
 
         # Check if criteria already exists (per requirements in 3 - commands.md)
         criteria_text = args["criteria"]
-        if criteria_text in self.file_system.current_node.criteria:
+        if criteria_text in current_node.criteria:
             return
 
-        index = self.file_system.current_node.add_criteria(criteria_text)
+        index = current_node.add_criteria(criteria_text)
         self.file_system.update_files()
 
     def _handle_mark_criteria_as_done(self, args: dict):
         """Handle mark_criteria_as_done command"""
-        if not self.file_system.current_node:
+        current_node = self.current_node
+        if not current_node:
             return
 
-        success = self.file_system.current_node.mark_criteria_as_done(args["index"])
+        success = current_node.mark_criteria_as_done(args["index"])
         if success:
             self.file_system.update_files()
 
     def _handle_add_subproblem(self, args: dict):
         """Handle add_subproblem command"""
-        if not self.file_system.current_node:
+        current_node = self.current_node
+        if not current_node:
             return
 
         # Check if subproblem with this title already exists
         title = args["title"]
-        if title in self.file_system.current_node.subproblems:
+        if title in current_node.subproblems:
             return
 
-        subproblem = self.file_system.current_node.add_subproblem(
+        subproblem = current_node.add_subproblem(
             title, args["content"]
         )
         # Create directories for the new subproblem
@@ -206,91 +221,89 @@ class DeepResearchEngine:
 
     def _handle_add_attachment(self, args: dict):
         """Handle add_attachment command"""
-        if not self.file_system.current_node:
+        current_node = self.current_node
+        if not current_node:
             return
 
-        self.file_system.current_node.add_attachment(args["name"], args["content"])
+        current_node.add_attachment(args["name"], args["content"])
         self.file_system.update_files()
 
     def _handle_write_report(self, args: dict):
         """Handle write_report command"""
-        if not self.file_system.current_node:
+        current_node = self.current_node
+        if not current_node:
             return
 
-        self.file_system.current_node.write_report(args["content"])
+        current_node.write_report(args["content"])
         self.file_system.update_files()
 
     def _handle_append_to_problem_definition(self, args: dict):
         """Handle append_to_problem_definition command"""
-        if not self.file_system.current_node:
+        current_node = self.current_node
+        if not current_node:
             return
 
-        self.file_system.current_node.append_to_problem_definition(args["content"])
+        current_node.append_to_problem_definition(args["content"])
         self.file_system.update_files()
 
     def _handle_focus_down(self, args: dict):
         """Handle focus_down command"""
-        if not self.file_system.current_node:
-            return
+        # Request focus down through the task executor
+        title = args["title"]
+        result = self.task_executor.request_focus_down(title)
+        
+        if result:
+            # Clear history when changing focus
+            self.chat_history.clear()
+        else:
+            raise ValueError(
+                f"Failed to focus down to subproblem '{title}'. Make sure the subproblem exists."
+            )
 
-        result = self.file_system.focus_down(args["title"])
+    def _handle_focus_up(self, args: dict):
+        """Handle focus_up command"""
+        # Request focus up through the task executor
+        result = self.task_executor.request_focus_up()
+        
         if result:
             # Clear history when changing focus
             self.chat_history.clear()
             
-            # Print updated status after focus change
-            self._print_current_status()
-
-    def _handle_focus_up(self, args: dict):
-        """Handle focus_up command"""
-        if (
-            not self.file_system.current_node
-        ):
+            # Check if we've finished the root task
+            if not self.current_node:
+                self.finished = True
+        else:
             return
-
-        # Check if report is written before allowing focus_up
-        if not self.file_system.current_node.report:
-            raise ValueError(
-                "Cannot focus up without writing a report first. Please use the write_report command to document your findings."
-            )
-        
-        if not self.file_system.current_node.parent:
-            self.finished = True
-
-        self.file_system.focus_up()
-        # Clear history when changing focus
-        self.chat_history.clear()
-        
-        # Print updated status after focus change
-        self._print_current_status()
         
     def _handle_fail_problem_and_focus_up(self, args: dict):
         """Handle fail_problem_and_focus_up command - similar to focus_up but without report requirement"""
-        if not self.file_system.current_node:
-            return
-            
-        # For now, we'll treat this the same as focus_up but without the report requirement
-        if not self.file_system.current_node.parent:
-            self.finished = True
-            
-        self.file_system.focus_up()
-        # Clear history when changing focus
-        self.chat_history.clear()
+        # Request fail and focus up through the task executor
+        result = self.task_executor.request_fail_and_focus_up()
         
-        # Print updated status after focus change
-        self._print_current_status()
+        if result:
+            # Clear history when changing focus
+            self.chat_history.clear()
+            
+            # Check if we've finished the root task
+            if not self.current_node:
+                self.finished = True
+        else:
+            raise ValueError(
+                "Failed to mark problem as failed and focus up. This should not happen."
+            )
 
     def _handle_add_criteria_to_subproblem(self, args: dict):
         """Handle add_criteria_to_subproblem command"""
-        if not self.file_system.current_node:
+        current_node = self.current_node
+        if not current_node:
             return
 
         # Get the subproblem by title
         title = args["title"]
-        if title not in self.file_system.current_node.subproblems:
+        if title not in current_node.subproblems:
             return
 
-        subproblem = self.file_system.current_node.subproblems[title]
+        subproblem = current_node.subproblems[title]
 
         # Add criteria to the subproblem
         criteria_text = args["criteria"]
@@ -307,7 +320,8 @@ class DeepResearchEngine:
             print("Status: No problem defined yet")
             return
             
-        if not self.file_system.current_node:
+        current_node = self.current_node
+        if not current_node:
             print("\n=== Deep Research Assistant ===")
             print("Status: No current node")
             return
@@ -316,7 +330,6 @@ class DeepResearchEngine:
         print("=== Deep Research Assistant - Comprehensive Progress Report ===")
         
         # Print current problem info
-        current_node = self.file_system.current_node
         print(f"Current Problem: {current_node.title}")
         
         # Print criteria status
@@ -327,6 +340,36 @@ class DeepResearchEngine:
         # Print report status
         report_status = "✓ Written" if current_node.report else "✗ Not written"
         print(f"Report Status: {report_status}")
+        
+        # Print task status information
+        if self.task_executor.current_task_id:
+            current_task = self.task_executor.task_queue.get_task(self.task_executor.current_task_id)
+            if current_task:
+                print(f"Task Status: {current_task.status.value}")
+                
+                # Print pending child tasks if any
+                if self.task_executor.current_task_id in self.task_executor.task_relationships:
+                    child_task_ids = self.task_executor.task_relationships[self.task_executor.current_task_id]
+                    pending_children = 0
+                    running_children = 0
+                    completed_children = 0
+                    failed_children = 0
+                    
+                    for child_id in child_task_ids:
+                        child_task = self.task_executor.task_queue.get_task(child_id)
+                        if child_task:
+                            if child_task.status == TaskStatus.PENDING:
+                                pending_children += 1
+                            elif child_task.status == TaskStatus.RUNNING:
+                                running_children += 1
+                            elif child_task.status == TaskStatus.COMPLETED:
+                                completed_children += 1
+                            elif child_task.status == TaskStatus.FAILED:
+                                failed_children += 1
+                    
+                    if pending_children + running_children + completed_children + failed_children > 0:
+                        print(f"Child Tasks: {pending_children} pending, {running_children} running, "
+                              f"{completed_children} completed, {failed_children} failed")
         
         # Print full problem tree with detailed metadata
         print("\n=== Full Problem Tree ===")
@@ -342,6 +385,8 @@ class DeepResearchEngine:
             str: Final report
         """
         while not self.finished:
+            self.current_node = self.task_executor.get_current_node()
+            
             # Get the interface content
             interface_content = self.get_interface_content()
             
@@ -355,7 +400,7 @@ class DeepResearchEngine:
             request = self.llm_interface.generate_request(interface_content, history_messages)
             
             # Get the current node path for logging
-            current_node_path = self.file_system.current_node.path if self.file_system.current_node else self.file_system.root_dir
+            current_node_path = self.current_node.path if self.current_node else self.file_system.root_dir
                 
             # Log the request
             self.llm_interface.log_request(
@@ -375,6 +420,14 @@ class DeepResearchEngine:
             
             # Process the commands in the response
             self.process_commands(full_llm_response)
+            
+            # If there's no current task, we need to check if we're done or if we need to start another task
+            if not self.task_executor.current_task_id:
+                # Check if there are any pending tasks
+                pending_tasks = self.task_executor.task_queue.get_tasks_by_status(TaskStatus.PENDING)
+                if not pending_tasks:
+                    # No more tasks, we're done
+                    self.finished = True
         
         # Generate the final report
         return self._generate_final_report()
