@@ -221,6 +221,8 @@ class DeepResearchEngine:
         subproblem = current_node.add_subproblem(
             title, args["content"]
         )
+        # Set initial status to NOT_STARTED
+        subproblem.status = ProblemStatus.NOT_STARTED
         # Create directories for the new subproblem
         self.file_system._create_node_directories(subproblem)
         self.file_system.update_files()
@@ -250,10 +252,16 @@ class DeepResearchEngine:
         result = self.task_executor.request_focus_down(title)
         
         if result:
+            # Get the previous node before updating current_node
+            previous_node = self.current_node
+            
+            # Update current_node to the new focus
+            self.current_node = self.task_executor.get_current_node()
+            
             # Update statuses
-            if self.current_node and self.current_node.parent:
-                # Set parent to PENDING
-                self.current_node.parent.status = ProblemStatus.PENDING
+            if previous_node:
+                # Set parent to PENDING (focus moved to child)
+                previous_node.status = ProblemStatus.PENDING
                 
             # Set current node to CURRENT
             self.current_node.status = ProblemStatus.CURRENT
@@ -270,15 +278,21 @@ class DeepResearchEngine:
 
     def _handle_focus_up(self, args: dict):
         """Handle focus_up command"""
+        # Store the current node before focusing up
+        previous_node = self.current_node
+        
         # Mark the current node as FINISHED before focusing up
-        if self.current_node:
-            self.current_node.status = ProblemStatus.FINISHED
+        if previous_node:
+            previous_node.status = ProblemStatus.FINISHED
             self.file_system.update_files()
             
         # Request focus up through the task executor
         result = self.task_executor.request_focus_up()
         
         if result:
+            # Update current_node to the new focus (parent)
+            self.current_node = self.task_executor.get_current_node()
+            
             # Set the new current node to CURRENT
             if self.current_node:
                 self.current_node.status = ProblemStatus.CURRENT
@@ -301,15 +315,21 @@ class DeepResearchEngine:
 
     def _handle_fail_problem_and_focus_up(self, args: dict):
         """Handle fail_problem_and_focus_up command - similar to focus_up but without report requirement"""
+        # Store the current node before focusing up
+        previous_node = self.current_node
+        
         # Mark the current node as FAILED before focusing up
-        if self.current_node:
-            self.current_node.status = ProblemStatus.FAILED
+        if previous_node:
+            previous_node.status = ProblemStatus.FAILED
             self.file_system.update_files()
             
         # Request fail and focus up through the task executor
         result = self.task_executor.request_fail_and_focus_up()
         
         if result:
+            # Update current_node to the new focus (parent)
+            self.current_node = self.task_executor.get_current_node()
+            
             # Set the new current node to CURRENT
             if self.current_node:
                 self.current_node.status = ProblemStatus.CURRENT

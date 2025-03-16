@@ -114,7 +114,8 @@ You should go maximum 3 levels deep.
 ### Problem Status System
 
 Each problem in the hierarchy has a status that indicates its current state:
-- **PENDING**: A problem that has been created but is not currently being worked on
+- **NOT_STARTED**: A problem that has been created but work has not yet begun on it
+- **PENDING**: A problem that is temporarily paused because focus has moved to one of its subproblems
 - **CURRENT**: The problem you are currently focused on and working to solve
 - **FINISHED**: A problem that has been successfully completed
 - **FAILED**: A problem that could not be solved or was determined to be unsolvable

@@ -13,11 +13,12 @@ class Artifact:
 
 
 class ProblemStatus(Enum):
-    PENDING = "PENDING"
-    CURRENT = "CURRENT"
-    FINISHED = "FINISHED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
+    NOT_STARTED = "NOT_STARTED"  # Problem has not been started yet
+    PENDING = "PENDING"          # Problem is temporarily paused (focus moved to child)
+    CURRENT = "CURRENT"          # Problem is currently being worked on
+    FINISHED = "FINISHED"        # Problem has been successfully completed
+    FAILED = "FAILED"            # Problem could not be solved
+    CANCELLED = "CANCELLED"      # Problem was determined to be unnecessary
 
 @dataclass
 class Node:
@@ -29,7 +30,7 @@ class Node:
     subproblems: Dict[str, "Node"] = field(default_factory=dict)
     parent: Optional["Node"] = None
     path: Optional[Path] = None
-    status: ProblemStatus = ProblemStatus.PENDING
+    status: ProblemStatus = ProblemStatus.NOT_STARTED
 
     def add_criteria(self, criteria: str) -> int:
         """Add criteria and return its index"""
@@ -83,13 +84,14 @@ class Node:
     def get_status_emoji(self) -> str:
         """Get an emoji representation of the problem status"""
         status_emojis = {
+            ProblemStatus.NOT_STARTED: "🆕",
             ProblemStatus.PENDING: "⏳",
             ProblemStatus.CURRENT: "🔍",
             ProblemStatus.FINISHED: "✅",
             ProblemStatus.FAILED: "❌",
             ProblemStatus.CANCELLED: "🚫"
         }
-        return status_emojis.get(self.status, "⏳")
+        return status_emojis.get(self.status, "🆕")
         
     def get_status_label(self) -> str:
         """Get a short label for the problem status"""
