@@ -27,7 +27,7 @@ class DeepResearchLogger:
             return
             
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_LLM_Request.txt"
+        filename = f"{timestamp}_LLM_Request.md"
         
         with open(logs_dir / filename, "w") as f:
             f.write("=== LLM REQUEST ===\n\n")
@@ -45,7 +45,7 @@ class DeepResearchLogger:
             return
             
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_LLM_Response.txt"
+        filename = f"{timestamp}_LLM_Response.md"
         
         with open(logs_dir / filename, "w") as f:
             f.write("=== LLM RESPONSE ===\n\n")
