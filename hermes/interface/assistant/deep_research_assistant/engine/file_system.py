@@ -1,4 +1,5 @@
 import os
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -80,7 +81,7 @@ class FileSystem:
     def __init__(self, root_dir: str = "research"):
         self.root_dir = Path(root_dir)
         self.root_node: Optional[Node] = None
-        self.current_node: Optional[Node] = None
+        self.lock = threading.RLock()  # Reentrant lock for thread safety
         
         # Ensure the root directory exists
         os.makedirs(self.root_dir, exist_ok=True)
@@ -94,7 +95,6 @@ class FileSystem:
         # Create node and set its path
         self.root_node = Node(title=title, problem_definition=content)
         self.root_node.path = self.root_dir
-        self.current_node = self.root_node
 
         # Create all necessary directories
         self._create_node_directories(self.root_node)
@@ -124,7 +124,6 @@ class FileSystem:
         # Create root node
         self.root_node = Node(title=title, problem_definition=problem_definition)
         self.root_node.path = self.root_dir
-        self.current_node = self.root_node
 
         # Load criteria if they exist
         criteria_file = self.root_dir / "Criteria of Definition of Done.md"
@@ -234,30 +233,16 @@ class FileSystem:
             # Recursively load subproblems
             self._load_subproblems(subproblem)
 
-    def focus_down(self, title: str) -> Optional[Node]:
-        """Focus on a subproblem"""
-        if self.current_node and title in self.current_node.subproblems:
-            self.current_node = self.current_node.subproblems[title]
-            return self.current_node
-        return None
-
-    def focus_up(self) -> Optional[Node]:
-        """Focus on the parent problem"""
-        if self.current_node and self.current_node.parent:
-            self.current_node = self.current_node.parent
-            return self.current_node
-        return None
-
-    def get_parent_chain(self) -> List[Node]:
-        """Get the parent chain including the current node"""
+    def get_parent_chain(self, node: Node) -> List[Node]:
+        """Get the parent chain including the given node"""
         chain = []
-        node = self.current_node
-        while node:
-            chain.append(node)
-            node = node.parent
+        current = node
+        while current:
+            chain.append(current)
+            current = current.parent
         return list(reversed(chain))
 
-    def get_problem_hierarchy(self) -> str:
+    def get_problem_hierarchy(self, current_node: Optional[Node] = None) -> str:
         """Get the problem hierarchy as a string"""
         if not self.root_node:
             return ""
@@ -268,9 +253,9 @@ class FileSystem:
         result.append(f" └── Root: {self.root_node.title}")
 
         # Build the hierarchy
-        current = self.current_node
-        if current != self.root_node:
+        if current_node and current_node != self.root_node:
             path = []
+            current = current_node
             while current and current != self.root_node:
                 path.append(current)
                 current = current.parent
@@ -372,11 +357,12 @@ class FileSystem:
 
     def update_files(self) -> None:
         """Update all files on disk"""
-        if self.root_node:
-            # First ensure all directories exist
-            self._create_node_directories(self.root_node)
-            # Then write all files
-            self._write_node_to_disk(self.root_node)
+        with self.lock:
+            if self.root_node:
+                # First ensure all directories exist
+                self._create_node_directories(self.root_node)
+                # Then write all files
+                self._write_node_to_disk(self.root_node)
 
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize a filename to be valid on the filesystem"""
