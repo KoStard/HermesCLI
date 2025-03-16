@@ -81,6 +81,9 @@ class FileSystem:
         self.root_dir = Path(root_dir)
         self.root_node: Optional[Node] = None
         self.current_node: Optional[Node] = None
+        
+        # Ensure the root directory exists
+        os.makedirs(self.root_dir, exist_ok=True)
 
     def create_root_problem(self, title: str, content: str) -> Node:
         """Create the root problem"""
