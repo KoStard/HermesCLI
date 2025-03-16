@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 
 
 @dataclass
-class Attachment:
+class Artifact:
     name: str
     content: str
 
@@ -17,9 +17,8 @@ class Node:
     problem_definition: str
     criteria: List[str] = field(default_factory=list)
     criteria_done: List[bool] = field(default_factory=list)
-    attachments: Dict[str, Attachment] = field(default_factory=dict)
+    artifacts: Dict[str, Artifact] = field(default_factory=dict)
     subproblems: Dict[str, "Node"] = field(default_factory=dict)
-    report: Optional[str] = None
     parent: Optional["Node"] = None
     path: Optional[Path] = None
 
@@ -50,13 +49,9 @@ class Node:
         self.subproblems[title] = subproblem
         return subproblem
 
-    def add_attachment(self, name: str, content: str) -> None:
-        """Add an attachment"""
-        self.attachments[name] = Attachment(name=name, content=content)
-
-    def write_report(self, content: str) -> None:
-        """Write a report"""
-        self.report = content
+    def add_artifact(self, name: str, content: str) -> None:
+        """Add an artifact"""
+        self.artifacts[name] = Artifact(name=name, content=content)
 
     def append_to_problem_definition(self, content: str) -> None:
         """Append to the problem definition"""
@@ -147,19 +142,13 @@ class FileSystem:
                             self.root_node.criteria.append(criterion_text)
                             self.root_node.criteria_done.append(done)
 
-        # Load report if it exists
-        report_file = self.root_dir / "Report 3 Pager.md"
-        if report_file.exists():
-            with open(report_file, "r") as f:
-                self.root_node.report = f.read()
-
-        # Load attachments
-        attachments_dir = self.root_dir / "Attachments"
-        if attachments_dir.exists():
-            for attachment_file in attachments_dir.iterdir():
-                if attachment_file.is_file():
-                    with open(attachment_file, "r") as f:
-                        self.root_node.add_attachment(attachment_file.name, f.read())
+        # Load artifacts
+        artifacts_dir = self.root_dir / "Artifacts"
+        if artifacts_dir.exists():
+            for artifact_file in artifacts_dir.iterdir():
+                if artifact_file.is_file():
+                    with open(artifact_file, "r") as f:
+                        self.root_node.add_artifact(artifact_file.name, f.read())
 
         # Load subproblems recursively
         self._load_subproblems(self.root_node)
@@ -216,19 +205,13 @@ class FileSystem:
                                 subproblem.criteria.append(criterion_text)
                                 subproblem.criteria_done.append(done)
 
-            # Load report
-            report_file = subproblem_dir / "Report 3 Pager.md"
-            if report_file.exists():
-                with open(report_file, "r") as f:
-                    subproblem.report = f.read()
-
-            # Load attachments
-            attachments_dir = subproblem_dir / "Attachments"
-            if attachments_dir.exists():
-                for attachment_file in attachments_dir.iterdir():
-                    if attachment_file.is_file():
-                        with open(attachment_file, "r") as f:
-                            subproblem.add_attachment(attachment_file.name, f.read())
+            # Load artifacts
+            artifacts_dir = subproblem_dir / "Artifacts"
+            if artifacts_dir.exists():
+                for artifact_file in artifacts_dir.iterdir():
+                    if artifact_file.is_file():
+                        with open(artifact_file, "r") as f:
+                            subproblem.add_artifact(artifact_file.name, f.read())
 
             # Recursively load subproblems
             self._load_subproblems(subproblem)
@@ -266,13 +249,14 @@ class FileSystem:
                 parent = node.parent
                 criteria_met = parent.get_criteria_met_count() if parent else 0
                 criteria_total = parent.get_criteria_total_count() if parent else 0
+                artifacts_count = len(node.artifacts)
 
                 prefix = "     " * (i + 1) + " └── "
                 if i == len(path) - 1:
-                    result.append(f"{prefix}CURRENT: {node.title}")
+                    result.append(f"{prefix}CURRENT: {node.title} [🗂️ {artifacts_count} artifacts]")
                 else:
                     result.append(
-                        f"{prefix}Level {i+1}: {node.title} [{criteria_met}/{criteria_total} criteria met]"
+                        f"{prefix}Level {i+1}: {node.title} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
                     )
 
         return "\n".join(result)
@@ -296,10 +280,10 @@ class FileSystem:
                 # This shouldn't happen, but just in case
                 return
 
-        # Create attachments directory
-        attachments_dir = node.path / "Attachments"
-        if not attachments_dir.exists():
-            attachments_dir.mkdir(exist_ok=True)
+        # Create artifacts directory
+        artifacts_dir = node.path / "Artifacts"
+        if not artifacts_dir.exists():
+            artifacts_dir.mkdir(exist_ok=True)
 
         # Create subproblems directory
         subproblems_dir = node.path / "Subproblems"
@@ -333,10 +317,6 @@ class FileSystem:
                     status = "[x]" if done else "[ ]"
                     f.write(f"{i+1}. {status} {criterion}\n")
 
-        # Write report (always create the file)
-        with open(node.path / "Report 3 Pager.md", "w") as f:
-            if node.report:
-                f.write(node.report)
 
         # Write breakdown structure (always create the file)
         with open(node.path / "Breakdown Structure.md", "w") as f:
@@ -345,11 +325,11 @@ class FileSystem:
                     f.write(f"## {title}\n\n")
                     f.write(f"{subproblem.problem_definition}\n\n")
 
-        # Write attachments
-        for name, attachment in node.attachments.items():
+        # Write artifacts
+        for name, artifact in node.artifacts.items():
             filename = self._sanitize_filename(name)
-            with open(node.path / "Attachments" / filename, "w") as f:
-                f.write(attachment.content)
+            with open(node.path / "Artifacts" / filename, "w") as f:
+                f.write(artifact.content)
 
         # Recursively write subproblems
         for subproblem in node.subproblems.values():

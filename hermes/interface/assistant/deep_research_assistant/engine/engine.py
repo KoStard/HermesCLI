@@ -142,8 +142,7 @@ class DeepResearchEngine:
             "add_criteria": self._handle_add_criteria,
             "mark_criteria_as_done": self._handle_mark_criteria_as_done,
             "add_subproblem": self._handle_add_subproblem,
-            "add_attachment": self._handle_add_attachment,
-            "write_report": self._handle_write_report,
+            "add_artifact": self._handle_add_artifact,
             "append_to_problem_definition": self._handle_append_to_problem_definition,
             "add_criteria_to_subproblem": self._handle_add_criteria_to_subproblem,
             "focus_down": self._handle_focus_down,
@@ -162,10 +161,10 @@ class DeepResearchEngine:
         """Handle define_problem command"""
         root_node = self.file_system.create_root_problem(args["title"], args["content"])
 
-        # Copy initial attachments to the root problem
-        for attachment in self.initial_attachments:
-            root_node.add_attachment(
-                attachment, f"Content of {attachment} would be here..."
+        # Copy initial artifacts to the root problem
+        for artifact in self.initial_attachments:
+            root_node.add_artifact(
+                artifact, f"Content of {artifact} would be here..."
             )
 
         # Ensure file system is fully updated
@@ -222,22 +221,13 @@ class DeepResearchEngine:
         self.file_system._create_node_directories(subproblem)
         self.file_system.update_files()
 
-    def _handle_add_attachment(self, args: dict):
-        """Handle add_attachment command"""
+    def _handle_add_artifact(self, args: dict):
+        """Handle add_artifact command"""
         current_node = self.current_node
         if not current_node:
             return
 
-        current_node.add_attachment(args["name"], args["content"])
-        self.file_system.update_files()
-
-    def _handle_write_report(self, args: dict):
-        """Handle write_report command"""
-        current_node = self.current_node
-        if not current_node:
-            return
-
-        current_node.write_report(args["content"])
+        current_node.add_artifact(args["name"], args["content"])
         self.file_system.update_files()
 
     def _handle_append_to_problem_definition(self, args: dict):
@@ -346,9 +336,6 @@ class DeepResearchEngine:
         criteria_total = current_node.get_criteria_total_count()
         print(f"Criteria Status: {criteria_met}/{criteria_total} met")
         
-        # Print report status
-        report_status = "✓ Written" if current_node.report else "✗ Not written"
-        print(f"Report Status: {report_status}")
         
         # Print task status information
         if self.task_executor.current_task_id:
@@ -442,17 +429,49 @@ class DeepResearchEngine:
         return self._generate_final_report()
     
     def _generate_final_report(self) -> str:
-        """Generate the final report from the root node"""
-        if not self.file_system.root_node or not self.file_system.root_node.report:
-            return "Research completed, but no final report was generated."
-            
-        return f"""# Deep Research Final Report
+        """Generate a summary of all artifacts created during the research"""
+        if not self.file_system.root_node:
+            return "Research completed, but no artifacts were generated."
+        
+        # Collect all artifacts from the entire problem hierarchy
+        all_artifacts = self.interface.collect_artifacts_recursively(self.file_system.root_node)
+        
+        if not all_artifacts:
+            return "Research completed, but no artifacts were generated."
+        
+        # Group artifacts by problem
+        artifacts_by_problem = {}
+        for owner_title, name, _ in all_artifacts:
+            if owner_title not in artifacts_by_problem:
+                artifacts_by_problem[owner_title] = []
+            artifacts_by_problem[owner_title].append(name)
+        
+        # Generate the report
+        result = f"""# Deep Research Completed
 
 ## Problem: {self.file_system.root_node.title}
 
-{self.file_system.root_node.report}
+## Summary of Generated Artifacts
+
+The research has been completed and the following artifacts have been created:
 
 """
+        
+        # List all artifacts with their filepaths
+        for problem_title, artifact_names in artifacts_by_problem.items():
+            result += f"### {problem_title}\n\n"
+            for name in artifact_names:
+                # Construct the relative filepath
+                filepath = f"Artifacts/{name}"
+                result += f"- `{filepath}`: {name}\n"
+            result += "\n"
+        
+        result += """
+These artifacts contain the valuable outputs of the research process. Each artifact represents
+a concrete piece of knowledge or analysis that contributes to solving the root problem.
+"""
+        
+        return result
     
     def _print_problem_tree(self, node, prefix, is_last, current_node):
         """Print a tree representation of the problem hierarchy with metadata"""
@@ -469,14 +488,13 @@ class DeepResearchEngine:
         # Gather metadata
         criteria_met = node.get_criteria_met_count()
         criteria_total = node.get_criteria_total_count()
-        report_indicator = "📄" if node.report else "  "
-        attachments_count = len(node.attachments)
+        artifacts_count = len(node.artifacts)
         subproblems_count = len(node.subproblems)
         
         # Format the node line with metadata
-        node_info = f"{node_marker}{node.title} [{criteria_met}/{criteria_total}] {report_indicator}"
-        if attachments_count > 0:
-            node_info += f" 📎{attachments_count}"
+        node_info = f"{node_marker}{node.title} [{criteria_met}/{criteria_total}]"
+        if artifacts_count > 0:
+            node_info += f" 🗂️{artifacts_count}"
         if subproblems_count > 0:
             node_info += f" 🔍{subproblems_count}"
             
