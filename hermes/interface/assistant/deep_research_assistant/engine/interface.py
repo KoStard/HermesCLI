@@ -319,27 +319,44 @@ Remember, we work backwards from the root problem.
                 result += "\n"
         return result.strip()
 
+    def _collect_reports_recursively(self, node: Node) -> list:
+        """Recursively collect reports from a node and all its descendants"""
+        reports = []
+        
+        # Add this node's report if it exists
+        if node.report:
+            reports.append((node.title, node.report))
+            
+        # Recursively collect reports from all subproblems
+        for title, subproblem in node.subproblems.items():
+            reports.extend(self._collect_reports_recursively(subproblem))
+            
+        return reports
+
     def _format_completed_reports(self, node: Node) -> str:
         """Format completed reports for display"""
         result = ""
-
-        # Add child reports section if there are any subproblems with reports
-        has_child_reports = any(
-            subproblem.report for subproblem in node.subproblems.values()
-        )
-        if has_child_reports:
-            result += "### Child Reports\n"
-            for title, subproblem in node.subproblems.items():
-                if subproblem.report:
-                    result += "<Report>\n"
-                    result += f"#### {title}\n"
-                    result += f"{subproblem.report}\n\n"
-                    result += "<\\Report>\n"
 
         # Add current report if it exists
         if node.report:
             result += "### Current Report\n"
             result += f"{node.report}\n\n"
+
+        # Collect all descendant reports recursively
+        all_descendant_reports = []
+        for title, subproblem in node.subproblems.items():
+            all_descendant_reports.extend(self._collect_reports_recursively(subproblem))
+            
+        # Add descendant reports section if there are any
+        if all_descendant_reports:
+            result += "### Descendant Reports\n"
+            for owner_title, report in all_descendant_reports:
+                result += "<Report>\n"
+                result += f"---\n"
+                result += f"owner: {owner_title}\n"
+                result += f"---\n\n"
+                result += f"{report}\n\n"
+                result += "</Report>\n"
 
         return result.strip() if result else "No reports available yet."
 
