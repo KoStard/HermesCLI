@@ -37,6 +37,7 @@ class CommandParser:
             "append_to_problem_definition": self._parse_append_to_problem_definition,
             "add_criteria_to_subproblem": self._parse_add_criteria_to_subproblem,
             "add_log_entry": self._parse_add_log_entry,
+            "cancel_subproblem": self._parse_cancel_subproblem,
         }
 
     def parse_text(self, text: str) -> List[ParseResult]:
@@ -324,6 +325,14 @@ class CommandParser:
         """Parse add_criteria_to_subproblem command"""
         return self._parse_command_sections(
             content, line_number, ["title", "criteria"], "add_criteria_to_subproblem"
+        )
+        
+    def _parse_cancel_subproblem(
+        self, content: str, line_number: int
+    ) -> Tuple[Dict, List[CommandError]]:
+        """Parse cancel_subproblem command"""
+        return self._parse_command_sections(
+            content, line_number, ["title"], "cancel_subproblem"
         )
 
     def generate_error_report(self, parse_results: List[ParseResult]) -> str:

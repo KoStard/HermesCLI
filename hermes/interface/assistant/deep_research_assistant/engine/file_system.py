@@ -3,6 +3,7 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
+from enum import Enum
 
 
 @dataclass
@@ -10,6 +11,13 @@ class Artifact:
     name: str
     content: str
 
+
+class ProblemStatus(Enum):
+    PENDING = "PENDING"
+    CURRENT = "CURRENT"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
 
 @dataclass
 class Node:
@@ -21,6 +29,7 @@ class Node:
     subproblems: Dict[str, "Node"] = field(default_factory=dict)
     parent: Optional["Node"] = None
     path: Optional[Path] = None
+    status: ProblemStatus = ProblemStatus.PENDING
 
     def add_criteria(self, criteria: str) -> int:
         """Add criteria and return its index"""
@@ -70,6 +79,21 @@ class Node:
         met = self.get_criteria_met_count()
         total = self.get_criteria_total_count()
         return f"[{met}/{total} criteria met]"
+        
+    def get_status_emoji(self) -> str:
+        """Get an emoji representation of the problem status"""
+        status_emojis = {
+            ProblemStatus.PENDING: "⏳",
+            ProblemStatus.CURRENT: "🔍",
+            ProblemStatus.FINISHED: "✅",
+            ProblemStatus.FAILED: "❌",
+            ProblemStatus.CANCELLED: "🚫"
+        }
+        return status_emojis.get(self.status, "⏳")
+        
+    def get_status_label(self) -> str:
+        """Get a short label for the problem status"""
+        return self.status.value
 
 
 class FileSystem:
