@@ -113,7 +113,7 @@ You should go maximum 3 levels deep.
 
 ### Attachments
 
-Attachments are your way to capture and collect learnings while you are working on problems. Whenever you find important information that is moving the root problem towards solution, capture in the form of attachment. It will also help the subproblems to have more context to work better.
+Attachments are your way to capture and collect learnings while you are working on problems. Whenever you find important information that is moving the root problem towards solution, capture in the form of attachment. It will also help the subproblems to have more context to work better. You see the attachments of the current problem and all the problems in the parent chain.
 
 ### Report
 
