@@ -42,6 +42,8 @@ class DeepResearchEngine:
         self.interface = DeepResearcherInterface(self.file_system, instruction)
         
         self.current_node = None
+        # TODO: Could move to the file system
+        self.permanent_log = []
         
         # Print initial status
         self._print_current_status()
@@ -51,7 +53,7 @@ class DeepResearchEngine:
         if not self.problem_defined:
             return self.interface.render_no_problem_defined(self.initial_attachments)
         else:
-            return self.interface.render_problem_defined(self.current_node)
+            return self.interface.render_problem_defined(self.current_node, self.permanent_log)
     
     def process_commands(self, text: str) -> tuple[bool, str, Dict]:
         """
@@ -147,6 +149,7 @@ class DeepResearchEngine:
             "focus_down": self._handle_focus_down,
             "focus_up": self._handle_focus_up,
             "fail_problem_and_focus_up": self._handle_fail_problem_and_focus_up,
+            "add_log_entry": self._handle_add_log_entry,
         }
 
         if command in command_handlers:
@@ -275,6 +278,12 @@ class DeepResearchEngine:
         else:
             return
         
+    def _handle_add_log_entry(self, args: dict):
+        """Handle add_log_entry command"""
+        content = args.get("content", "")
+        if content:
+            self.permanent_log.append(content)
+
     def _handle_fail_problem_and_focus_up(self, args: dict):
         """Handle fail_problem_and_focus_up command - similar to focus_up but without report requirement"""
         # Request fail and focus up through the task executor

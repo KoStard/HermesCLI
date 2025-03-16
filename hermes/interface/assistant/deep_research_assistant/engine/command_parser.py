@@ -37,6 +37,7 @@ class CommandParser:
             "write_report": self._parse_write_report,
             "append_to_problem_definition": self._parse_append_to_problem_definition,
             "add_criteria_to_subproblem": self._parse_add_criteria_to_subproblem,
+            "add_log_entry": self._parse_add_log_entry,
         }
 
     def parse_text(self, text: str) -> List[ParseResult]:
@@ -316,6 +317,14 @@ class CommandParser:
         """Parse append_to_problem_definition command"""
         return self._parse_command_sections(
             content, line_number, ["content"], "append_to_problem_definition"
+        )
+
+    def _parse_add_log_entry(
+        self, content: str, line_number: int
+    ) -> Tuple[Dict, List[CommandError]]:
+        """Parse add_log_entry command"""
+        return self._parse_command_sections(
+            content, line_number, ["content"], "add_log_entry"
         )
 
     def _parse_add_criteria_to_subproblem(
