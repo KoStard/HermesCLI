@@ -12,7 +12,13 @@ from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.gemini2 import Gemini2RequestBuilder
 from .base import ChatModel
-
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
+from google.genai.errors import ClientError
 
 class Gemini2Model(ChatModel):
     def initialize(self):
@@ -40,18 +46,38 @@ class Gemini2Model(ChatModel):
         return "thinking" in self.model_tag
 
     def send_request(self, request: any) -> Generator[str, None, None]:
-        response = self.client.models.generate_content(
-            model=request["model_name"],
-            contents=request["contents"],
-            config=GenerateContentConfig(
-                response_modalities=["TEXT"],
-                tools=request["tools"],
-            ),
+        @retry(
+            stop=stop_after_attempt(5),
+            wait=wait_exponential(multiplier=1, max=60),
+            retry=retry_if_exception_type(ClientError),
         )
+        def _send_request_with_retry():
+            return self.client.models.generate_content(
+                model=request["model_name"],
+                contents=request["contents"],
+                config=GenerateContentConfig(
+                    response_modalities=["TEXT"],
+                    tools=request["tools"],
+                ),
+            )
+
+        try:
+            response = _send_request_with_retry()
+        except ClientError as e:
+            if e.status == 429:
+                raise RuntimeError(
+                    "Gemini API quota exceeded - try again later or check your Google Cloud quota"
+                ) from e
+            raise
 
         # has_finished_thinking = False if self._supports_thinking else True
         has_finished_thinking = True  # The implementation with google api is not good
 
+        if not response.candidates:
+            print(response)
+            yield from []
+            return
+        
         for part in response.candidates[0].content.parts or []:
             yield from self._convert_to_llm_response(
                 self._handle_part(part), is_thinking=not has_finished_thinking
