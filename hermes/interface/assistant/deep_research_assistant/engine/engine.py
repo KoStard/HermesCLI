@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Generator, List, Optional, Tuple
 
 from .command_parser import CommandParser, ParseResult
 from .file_system import FileSystem
 from .history import ChatHistory
 from .interface import DeepResearcherInterface
+from .llm_interface import LLMInterface
 from .logger import DeepResearchLogger
 
 
@@ -17,6 +18,7 @@ class DeepResearchEngine:
         instruction: str,
         initial_attachments: List[str] = None,
         root_dir: str = "research",
+        llm_interface: LLMInterface = None,
     ):
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
@@ -25,6 +27,7 @@ class DeepResearchEngine:
         self.initial_attachments = initial_attachments or []
         self.finished = False
         self.logger = DeepResearchLogger(Path(root_dir))
+        self.llm_interface = llm_interface
 
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
@@ -330,6 +333,64 @@ class DeepResearchEngine:
         self._print_problem_tree(self.file_system.root_node, "", True, current_node)
         
         print("="*80 + "\n")
+    
+    def execute(self) -> str:
+        """
+        Execute the deep research process and return the final report
+        
+        Returns:
+            str: Final report
+        """
+        while not self.finished:
+            # Get the interface content
+            interface_content = self.get_interface_content()
+            
+            # Convert history messages to dict format for the LLM interface
+            history_messages = [
+                {"author": message.author, "content": message.content}
+                for message in self.chat_history.messages
+            ]
+            
+            # Generate the request
+            request = self.llm_interface.generate_request(interface_content, history_messages)
+            
+            # Get the current node path for logging
+            current_node_path = self.file_system.current_node.path if self.file_system.current_node else self.file_system.root_dir
+                
+            # Log the request
+            self.llm_interface.log_request(
+                current_node_path,
+                [{"author": "user", "text": interface_content}] + history_messages,
+                request
+            )
+            
+            # Process the request and get the response
+            response_generator = self.llm_interface.send_request(request)
+            
+            # Get the full response
+            full_llm_response = next(response_generator)
+            
+            # Log the response
+            self.llm_interface.log_response(current_node_path, full_llm_response)
+            
+            # Process the commands in the response
+            self.process_commands(full_llm_response)
+        
+        # Generate the final report
+        return self._generate_final_report()
+    
+    def _generate_final_report(self) -> str:
+        """Generate the final report from the root node"""
+        if not self.file_system.root_node or not self.file_system.root_node.report:
+            return "Research completed, but no final report was generated."
+            
+        return f"""# Deep Research Final Report
+
+## Problem: {self.file_system.root_node.title}
+
+{self.file_system.root_node.report}
+
+"""
     
     def _print_problem_tree(self, node, prefix, is_last, current_node):
         """Print a tree representation of the problem hierarchy with metadata"""
