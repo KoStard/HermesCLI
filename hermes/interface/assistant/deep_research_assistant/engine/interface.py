@@ -127,7 +127,7 @@ You can see the status of each problem in the breakdown structure. The current p
 
 Artifacts are your primary way to create value while working on problems. They represent the concrete outputs of your research and analysis. Whenever you find important information that moves the root problem towards a solution, capture it in the form of an artifact. High-quality artifacts are the main deliverable of your work.
 
-You'll see artifacts from the current problem, all parent problems, and all descendant problems. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy.
+You'll see artifacts from the current problem, all parent problems, and all descendant problems. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy. So if you don't see an artifact, that means it either doesn't exist, or belongs to a problem not in your parent chain and not in your descendents.
 
 ### Log Management
 
