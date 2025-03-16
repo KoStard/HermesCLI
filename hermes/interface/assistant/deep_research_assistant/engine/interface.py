@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from .file_system import FileSystem, Node
+from .file_system import Artifact, FileSystem, Node
 
 
 class DeepResearcherInterface:
@@ -8,12 +8,12 @@ class DeepResearcherInterface:
         self.file_system = file_system
         self.instruction = instruction
 
-    def render_no_problem_defined(self, attachments: List[str] = None) -> str:
+    def render_no_problem_defined(self, artifacts: List[str] = None) -> str:
         """Render the interface when no problem is defined"""
-        if attachments is None:
-            attachments = []
+        if artifacts is None:
+            artifacts = []
 
-        attachments_section = self._format_attachments(attachments)
+        artifacts_section = self._format_artifacts(artifacts)
 
         return f"""# Deep Research Interface
 
@@ -34,7 +34,7 @@ To begin, you need to define the problem you'll be researching. Please follow th
 
 Note: This is a temporary state. After defining the problem, this chat will be discarded and you'll start working on the problem with a fresh interface.
 
-Any attachments provided will be copied to the root problem after creation and won't be lost. Once the problem is defined, you'll be able to see attachments from the current problem and all its parent problems.
+Any artifacts provided will be copied to the root problem after creation and won't be lost. Once the problem is defined, you'll be able to see artifacts from the current problem, all its parent problems, and all descendant problems.
 
 Any context provided to you in the context section will be permanent and accessible in the future while working on the problem, so you can refer to it if needed.
 
@@ -43,9 +43,9 @@ Please note that only one problem definition is allowed. Problem definition is t
 Make sure to include closing tags for command blocks, otherwise it will break the parsing and cause syntax errors.
 
 ======================
-# Attachments (Initial)
+# Artifacts (Initial)
 
-{attachments_section}
+{artifacts_section}
 
 ======================
 # Instruction
@@ -65,17 +65,14 @@ Content of the problem definition.
 
     def render_problem_defined(self, target_node, permannet_logs) -> str:
         """Render the interface when a problem is defined"""
-        # Format attachments
-        attachments_section = self._format_attachments_from_node(target_node)
+        # Format artifacts from current node, parent chain, and all descendants
+        artifacts_section = self._format_all_artifacts(target_node)
 
         # Format criteria
         criteria_section = self._format_criteria(target_node)
 
         # Format breakdown structure
         breakdown_section = self._format_breakdown_structure(target_node)
-
-        # Format completed reports
-        completed_reports_section = self._format_completed_reports(target_node)
 
         # Format permanent log
         permanent_log_section = self._format_permanent_log(permannet_logs)
@@ -114,9 +111,11 @@ At most only one focus change is allowed in one response. The focus change comma
 
 You should go maximum 3 levels deep.
 
-### Attachments
+### Artifacts
 
-Attachments are your way to capture and collect learnings while you are working on problems. Whenever you find important information that is moving the root problem towards solution, capture in the form of attachment. It will also help the subproblems to have more context to work better. You see the attachments of the current problem and all the problems in the parent chain.
+Artifacts are your primary way to create value while working on problems. They represent the concrete outputs of your research and analysis. Whenever you find important information that moves the root problem towards a solution, capture it in the form of an artifact. High-quality artifacts are the main deliverable of your work.
+
+You'll see artifacts from the current problem, all parent problems, and all descendant problems. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy.
 
 ### Log Management
 
@@ -127,27 +126,6 @@ Make sure to include `add_log_entry` for every single focus change you make. Add
 # Permanent Logs
 {permanent_log_section}
 
-### Report
-
-You can proceed to write the 3-pager at any time. If you find some criteria impossible to meet, explain in the 3-pager. Mark the resolver criteria as done. This ensures your report is comprehensive and addresses all required aspects of the problem. Before using `focus_up` you must have a report written, otherwise it won't be clear in the new session why was it left partial.
-
-This report is essential part to finish the current problem at focus, as this information will be visible to the parent problem. And from the parent problem we'll be able to use this 3-pager to solve that problem. We should make sure this includes all the important details that are necessary to solve the parent problems. The document should be maximum 3 pages long.
-There should be a structure in the document. It works backwards from the provided problem, asking a question about it, answering, then recursively going deeper and deeper, while also covering breadth (there can be multiple questions about the same topic to answer). This structure is essential to both include all the relevant details, but also to include why these details are relevant.
-
-The format should be:
-Summarized problem definition: ...
-Q1: ...
-A1: ...
-Q1.1: ...
-A1.1: ...
-Q1.1.1: ...
-...
-Q1.2: ...
-...
-Q2: ...
-Conclusion: ...
-
-Each of these blocks can be multiline, include as much details as needed, use code blocks, markdown structures, tables, etc.
 
 ## Commands
 
@@ -193,16 +171,11 @@ If we estimate the value we get from this problem in the context of the root pro
 - For broad topics, provide guidance on how to bring the scope down.
 >>>
 
-<<< add_attachment
+<<< add_artifact
 ///name
-attachment_name.md
+artifact_name.md
 ///content
 Content goes here
->>>
-
-<<< write_report
-///content
-Report content goes here
 >>>
 
 ; This might be needed if the direction needs to be adjusted based on user input.
@@ -225,9 +198,9 @@ One-sentence summary of a key action or milestone.
 ```
 
 ======================
-# Attachments (Current Problem & Parent Chain)
+# Artifacts (Current Problem, Parent Chain & Descendants)
 
-{attachments_section}
+{artifacts_section}
 
 ======================
 # Instruction
@@ -248,8 +221,6 @@ One-sentence summary of a key action or milestone.
 ## Breakdown Structure
 {breakdown_section}
 
-## Completed Reports
-{completed_reports_section}
 
 {parent_chain_section}
 
@@ -260,45 +231,54 @@ Add criteria for the current problem if needed, create subproblems to structure 
 Remember, we work backwards from the root problem.
 """
 
-    def _format_attachments(self, attachments: List[str]) -> str:
-        """Format attachments for display"""
-        if not attachments:
-            return "<attachments>\nNo attachments available.\n</attachments>"
+    def _format_artifacts(self, artifacts: List[str]) -> str:
+        """Format artifacts for display"""
+        if not artifacts:
+            return "<artifacts>\nNo artifacts available.\n</artifacts>"
 
-        result = "<attachments>\n"
-        for attachment in attachments:
-            result += f'<attachment name="{attachment}">\n'
+        result = "<artifacts>\n"
+        for artifact in artifacts:
+            result += f'<artifact name="{artifact}">\n'
             result += "Content would be displayed here...\n"
-            result += "</attachment>\n"
-        result += "</attachments>"
+            result += "</artifact>\n"
+        result += "</artifacts>"
         return result
 
-    def _format_attachments_from_node(self, node: Node) -> str:
-        """Format attachments from a node and its parent chain for display"""
+    def _format_all_artifacts(self, node: Node) -> str:
+        """Format artifacts from a node, its parent chain, and all descendants for display"""
         if not node:
-            return "<attachments>\nNo attachments available.\n</attachments>"
+            return "<artifacts>\nNo artifacts available.\n</artifacts>"
             
         # Get all nodes in the parent chain, including current node
         parent_chain = self.file_system.get_parent_chain(node)
         
-        # Collect all attachments with their owner information
-        all_attachments = []
-        for parent_node in parent_chain:
-            for name, attachment in parent_node.attachments.items():
-                all_attachments.append((name, attachment, parent_node.title))
+        # Collect all artifacts with their owner information
+        all_artifacts = []
         
-        if not all_attachments:
-            return "<attachments>\nNo attachments available.\n</attachments>"
+        # Add artifacts from parent chain
+        for parent_node in parent_chain:
+            for name, artifact in parent_node.artifacts.items():
+                all_artifacts.append((name, artifact, parent_node.title, "parent"))
+        
+        # Add artifacts from all descendants
+        descendant_artifacts = self.collect_artifacts_recursively(node)
+        for owner_title, name, content in descendant_artifacts:
+            # Skip artifacts from the current node as they're already included in the parent chain
+            if owner_title != node.title:
+                all_artifacts.append((name, Artifact(name=name, content=content), owner_title, "descendant"))
+        
+        if not all_artifacts:
+            return "<artifacts>\nNo artifacts available.\n</artifacts>"
 
-        result = "<attachments>\n"
-        for name, attachment, owner in all_attachments:
-            result += f'<attachment name="{name}">\n'
+        result = "<artifacts>\n"
+        for name, artifact, owner, relationship in all_artifacts:
+            result += f'<artifact name="{name}">\n'
             result += f"---\n"
-            result += f"owner: {owner}\n"
+            result += f"owner: {owner} ({relationship})\n"
             result += f"---\n\n"
-            result += f"{attachment.content}\n"
-            result += "</attachment>\n"
-        result += "</attachments>"
+            result += f"{artifact.content}\n"
+            result += "</artifact>\n"
+        result += "</artifacts>"
         return result
 
     def _format_criteria(self, node: Node) -> str:
@@ -334,46 +314,20 @@ Remember, we work backwards from the root problem.
                 result += "\n"
         return result.strip()
 
-    def _collect_reports_recursively(self, node: Node) -> list:
-        """Recursively collect reports from a node and all its descendants"""
-        reports = []
+    def collect_artifacts_recursively(self, node: Node) -> list:
+        """Recursively collect artifacts from a node and all its descendants"""
+        artifacts = []
         
-        # Add this node's report if it exists
-        if node.report:
-            reports.append((node.title, node.report))
+        # Add this node's artifacts
+        for name, artifact in node.artifacts.items():
+            artifacts.append((node.title, name, artifact.content))
             
-        # Recursively collect reports from all subproblems
+        # Recursively collect artifacts from all subproblems
         for title, subproblem in node.subproblems.items():
-            reports.extend(self._collect_reports_recursively(subproblem))
+            artifacts.extend(self.collect_artifacts_recursively(subproblem))
             
-        return reports
+        return artifacts
 
-    def _format_completed_reports(self, node: Node) -> str:
-        """Format completed reports for display"""
-        result = ""
-
-        # Add current report if it exists
-        if node.report:
-            result += "### Current Report\n"
-            result += f"{node.report}\n\n"
-
-        # Collect all descendant reports recursively
-        all_descendant_reports = []
-        for title, subproblem in node.subproblems.items():
-            all_descendant_reports.extend(self._collect_reports_recursively(subproblem))
-            
-        # Add descendant reports section if there are any
-        if all_descendant_reports:
-            result += "### Descendant Reports\n"
-            for owner_title, report in all_descendant_reports:
-                result += "<Report>\n"
-                result += f"---\n"
-                result += f"owner: {owner_title}\n"
-                result += f"---\n\n"
-                result += f"{report}\n\n"
-                result += "</Report>\n"
-
-        return result.strip() if result else "No reports available yet."
 
     def _format_permanent_log(self, permannet_logs: list) -> str:
         """Format permanent history for display"""

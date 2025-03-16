@@ -61,13 +61,13 @@ class DeepResearchAssistantInterface(Interface):
         )
         
         # Execute the engine and yield the results
-        final_report = engine.execute()
+        final_summary = engine.execute()
         
-        # Return the report as an event
+        # Return the summary of artifacts as an event
         yield MessageEvent(
             TextMessage(
                 author="assistant",
-                text=final_report
+                text=final_summary
             )
         )
 

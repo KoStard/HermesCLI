@@ -33,8 +33,7 @@ class CommandParser:
             "fail_problem_and_focus_up": self._parse_focus_up_block,  # Use same parser as focus_up
             "define_problem": self._parse_define_problem,
             "add_subproblem": self._parse_add_subproblem,
-            "add_attachment": self._parse_add_attachment,
-            "write_report": self._parse_write_report,
+            "add_artifact": self._parse_add_artifact,
             "append_to_problem_definition": self._parse_append_to_problem_definition,
             "add_criteria_to_subproblem": self._parse_add_criteria_to_subproblem,
             "add_log_entry": self._parse_add_log_entry,
@@ -295,20 +294,12 @@ class CommandParser:
             content, line_number, ["title", "content"], "add_subproblem"
         )
 
-    def _parse_add_attachment(
+    def _parse_add_artifact(
         self, content: str, line_number: int
     ) -> Tuple[Dict, List[CommandError]]:
-        """Parse add_attachment command"""
+        """Parse add_artifact command"""
         return self._parse_command_sections(
-            content, line_number, ["name", "content"], "add_attachment"
-        )
-
-    def _parse_write_report(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse write_report command"""
-        return self._parse_command_sections(
-            content, line_number, ["content"], "write_report"
+            content, line_number, ["name", "content"], "add_artifact"
         )
 
     def _parse_append_to_problem_definition(
