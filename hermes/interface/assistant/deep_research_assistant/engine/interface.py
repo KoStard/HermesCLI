@@ -111,6 +111,17 @@ At most only one focus change is allowed in one response. The focus change comma
 
 You should go maximum 3 levels deep.
 
+### Problem Status System
+
+Each problem in the hierarchy has a status that indicates its current state:
+- **PENDING**: A problem that has been created but is not currently being worked on
+- **CURRENT**: The problem you are currently focused on and working to solve
+- **FINISHED**: A problem that has been successfully completed
+- **FAILED**: A problem that could not be solved or was determined to be unsolvable
+- **CANCELLED**: A problem that was determined to be unnecessary or irrelevant
+
+You can see the status of each problem in the breakdown structure. The current problem is always marked as CURRENT.
+
 ### Artifacts
 
 Artifacts are your primary way to create value while working on problems. They represent the concrete outputs of your research and analysis. Whenever you find important information that moves the root problem towards a solution, capture it in the form of an artifact. High-quality artifacts are the main deliverable of your work.
@@ -152,6 +163,12 @@ Subproblem Title
 
 ; if for some reason the current problem can't be resolved at all, and you want to mark it as failed, use this. Preferrably include some information in the report before moving up, so that the parent session will have information on why.
 <<< fail_problem_and_focus_up
+>>>
+
+; if a subproblem is no longer necessary or relevant, you can cancel it
+<<< cancel_subproblem
+///title
+Subproblem Title
 >>>
 
 <<< add_subproblem
@@ -300,7 +317,8 @@ Remember, we work backwards from the root problem.
         result = ""
         for title, subproblem in node.subproblems.items():
             criteria_status = subproblem.get_criteria_status()
-            result += f"### {title} {criteria_status}\n"
+            status_label = subproblem.get_status_label()
+            result += f"### {title} {criteria_status} [Status: {status_label}]\n"
             result += f"{subproblem.problem_definition}\n\n"
 
             # Add criteria for this subproblem if any exist

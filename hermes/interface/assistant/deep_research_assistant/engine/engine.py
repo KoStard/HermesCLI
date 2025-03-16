@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, Generator, List, Optional, Tuple
 
 from .command_parser import CommandParser, ParseResult
-from .file_system import FileSystem
+from .file_system import FileSystem, ProblemStatus
 from .history import ChatHistory
 from .interface import DeepResearcherInterface
 from .llm_interface import LLMInterface
@@ -148,6 +148,7 @@ class DeepResearchEngine:
             "focus_down": self._handle_focus_down,
             "focus_up": self._handle_focus_up,
             "fail_problem_and_focus_up": self._handle_fail_problem_and_focus_up,
+            "cancel_subproblem": self._handle_cancel_subproblem,
             "add_log_entry": self._handle_add_log_entry,
         }
 
@@ -160,6 +161,9 @@ class DeepResearchEngine:
     def _handle_define_problem(self, args: dict):
         """Handle define_problem command"""
         root_node = self.file_system.create_root_problem(args["title"], args["content"])
+        
+        # Set the root node status to CURRENT
+        root_node.status = ProblemStatus.CURRENT
 
         # Copy initial artifacts to the root problem
         for artifact in self.initial_attachments:
@@ -246,6 +250,17 @@ class DeepResearchEngine:
         result = self.task_executor.request_focus_down(title)
         
         if result:
+            # Update statuses
+            if self.current_node and self.current_node.parent:
+                # Set parent to PENDING
+                self.current_node.parent.status = ProblemStatus.PENDING
+                
+            # Set current node to CURRENT
+            self.current_node.status = ProblemStatus.CURRENT
+            
+            # Update the file system
+            self.file_system.update_files()
+            
             # Clear history when changing focus
             self.chat_history.clear()
         else:
@@ -255,10 +270,20 @@ class DeepResearchEngine:
 
     def _handle_focus_up(self, args: dict):
         """Handle focus_up command"""
+        # Mark the current node as FINISHED before focusing up
+        if self.current_node:
+            self.current_node.status = ProblemStatus.FINISHED
+            self.file_system.update_files()
+            
         # Request focus up through the task executor
         result = self.task_executor.request_focus_up()
         
         if result:
+            # Set the new current node to CURRENT
+            if self.current_node:
+                self.current_node.status = ProblemStatus.CURRENT
+                self.file_system.update_files()
+                
             # Clear history when changing focus
             self.chat_history.clear()
             
@@ -276,10 +301,20 @@ class DeepResearchEngine:
 
     def _handle_fail_problem_and_focus_up(self, args: dict):
         """Handle fail_problem_and_focus_up command - similar to focus_up but without report requirement"""
+        # Mark the current node as FAILED before focusing up
+        if self.current_node:
+            self.current_node.status = ProblemStatus.FAILED
+            self.file_system.update_files()
+            
         # Request fail and focus up through the task executor
         result = self.task_executor.request_fail_and_focus_up()
         
         if result:
+            # Set the new current node to CURRENT
+            if self.current_node:
+                self.current_node.status = ProblemStatus.CURRENT
+                self.file_system.update_files()
+                
             # Clear history when changing focus
             self.chat_history.clear()
             
@@ -290,6 +325,25 @@ class DeepResearchEngine:
             raise ValueError(
                 "Failed to mark problem as failed and focus up. This should not happen."
             )
+            
+    def _handle_cancel_subproblem(self, args: dict):
+        """Handle cancel_subproblem command"""
+        current_node = self.current_node
+        if not current_node:
+            return
+            
+        # Get the subproblem by title
+        title = args["title"]
+        if title not in current_node.subproblems:
+            raise ValueError(f"Subproblem '{title}' not found")
+            
+        subproblem = current_node.subproblems[title]
+        
+        # Mark the subproblem as cancelled
+        subproblem.status = ProblemStatus.CANCELLED
+        
+        # Update the file system
+        self.file_system.update_files()
 
     def _handle_add_criteria_to_subproblem(self, args: dict):
         """Handle add_criteria_to_subproblem command"""
@@ -491,8 +545,11 @@ a concrete piece of knowledge or analysis that contributes to solving the root p
         artifacts_count = len(node.artifacts)
         subproblems_count = len(node.subproblems)
         
+        # Get status emoji
+        status_emoji = node.get_status_emoji()
+        
         # Format the node line with metadata
-        node_info = f"{node_marker}{node.title} [{criteria_met}/{criteria_total}]"
+        node_info = f"{node_marker}{status_emoji} {node.title} [{criteria_met}/{criteria_total}]"
         if artifacts_count > 0:
             node_info += f" 🗂️{artifacts_count}"
         if subproblems_count > 0:
