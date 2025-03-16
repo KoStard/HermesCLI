@@ -85,7 +85,7 @@ class DeepResearchEngine:
 
         # If there are syntax errors, don't execute any commands
         if has_syntax_error:
-            auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.\n\n{error_report}'
+            auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.\n\n{error_report}'
             self.chat_history.add_message("user", auto_reply)
             print(auto_reply)
             self._print_current_status()
@@ -116,7 +116,7 @@ class DeepResearchEngine:
 
         # If no commands were executed
         if not commands_executed:
-            auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done.'
+            auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.'
             if error_report:
                 auto_reply += f"\n\n{error_report}"
             self.chat_history.add_message("user", auto_reply)
