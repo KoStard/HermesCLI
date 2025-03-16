@@ -104,7 +104,7 @@ In case the interface has a bug and you are not able to navigate, you can use an
 
 ### Hierarchy
 
-Your project is solving the root problem (created or updated by the user instructions which are also accessible to you). If the root problem is too big, you create subtasks and solve them before solving the root problem. Recursively you go deeper until you reach to problems that you can confidently solve directly without need for subproblems. Hence the hierarchy of parent/child problems. Don't create subproblems in cases where you confidently can't answer. Create the minimum number of subproblems necessary to solve the current problem.
+Your project is solving the root problem (created or updated by the user instructions which are also accessible to you). If the root problem is too big, you create subproblems and solve them before solving the root problem. Recursively you go deeper until you reach to problems that you can confidently solve directly without need for subproblems. Hence the hierarchy of parent/child problems. Don't create subproblems in cases where you confidently can't answer. Create the minimum number of subproblems necessary to solve the current problem.
 
 Include expectations on the depth of the results in problem definitions. On average be frugal, not making the problems scope explode.
 
@@ -118,7 +118,7 @@ You should go maximum 3 levels deep.
 
 ### Attachments
 
-Attachments are your way to capture and collect learnings while you are working on problems. Whenever you find important information that is moving the root problem towards solution, capture in the form of attachment. It will also help the child tasks to have more context to work better.
+Attachments are your way to capture and collect learnings while you are working on problems. Whenever you find important information that is moving the root problem towards solution, capture in the form of attachment. It will also help the subproblems to have more context to work better.
 
 ### Report
 
@@ -165,8 +165,8 @@ Subproblem Title
 <<< focus_up
 >>>
 
-; if for some reason the current task can't be resolved at all, and you want to mark it as failed, use this. Preferrably include some information in the report before moving up, so that the parent session will have information on why.
-<<< fail_task_and_focus_up
+; if for some reason the current problem can't be resolved at all, and you want to mark it as failed, use this. Preferrably include some information in the report before moving up, so that the parent session will have information on why.
+<<< fail_problem_and_focus_up
 >>>
 
 <<< add_subproblem
@@ -175,7 +175,7 @@ Subproblem Title
 ///content
 Problem definition goes here.
 Explicitely state why is this essential for the root problem. How does it contribute to the root problem? If it's not, don't create the subproblem!
-If we estimate the value we get from this task in the context of the root problem compared to the effort needed to solve this subtask, we should have ±20% effort for ±80% value. If we don't have it, don't create the subtask.
+If we estimate the value we get from this problem in the context of the root problem compared to the effort needed to solve this subproblem, we should have ±20% effort for ±80% value. If we don't have it, don't create the subproblem.
 
 - Make the problem statement clear and specific
 - Include any constraints or requirements
@@ -243,7 +243,7 @@ Your criteria text here (should be a single line)
 
 ## Goal
 Your goal is to solve the root problem. Stay frugal, don't focus on the unnecessary details that won't benefit the root problem. If you find yourself working on something that's not worth the effort, mark as done, write it in the report and go up.
-Your current focus in the current task as provided above.
+Your current focus in the current problem as provided above.
 Add criteria for the current problem if needed, create subproblems to structure your investigation, and work toward producing a comprehensive 3-page report. Use the attachments for reference and add new ones as needed. When ready to move to a different focus area, use the focus commands.
 Remember, we work backwards from the root problem.
 """

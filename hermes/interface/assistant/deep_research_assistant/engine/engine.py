@@ -132,7 +132,7 @@ class DeepResearchEngine:
             "add_criteria_to_subproblem": self._handle_add_criteria_to_subproblem,
             "focus_down": self._handle_focus_down,
             "focus_up": self._handle_focus_up,
-            "fail_task_and_focus_up": self._handle_fail_task_and_focus_up,
+            "fail_problem_and_focus_up": self._handle_fail_problem_and_focus_up,
         }
 
         if command in command_handlers:
@@ -261,8 +261,8 @@ class DeepResearchEngine:
         # Print updated status after focus change
         self._print_current_status()
         
-    def _handle_fail_task_and_focus_up(self, args: dict):
-        """Handle fail_task_and_focus_up command - similar to focus_up but without report requirement"""
+    def _handle_fail_problem_and_focus_up(self, args: dict):
+        """Handle fail_problem_and_focus_up command - similar to focus_up but without report requirement"""
         if not self.file_system.current_node:
             return
             
