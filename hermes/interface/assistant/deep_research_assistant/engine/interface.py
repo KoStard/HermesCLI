@@ -63,7 +63,7 @@ Content of the problem definition.
 >>>
 ```"""
 
-    def render_problem_defined(self, target_node=None) -> str:
+    def render_problem_defined(self, target_node, permannet_logs) -> str:
         """Render the interface when a problem is defined"""
         # Format attachments
         attachments_section = self._format_attachments_from_node(target_node)
@@ -76,6 +76,9 @@ Content of the problem definition.
 
         # Format completed reports
         completed_reports_section = self._format_completed_reports(target_node)
+
+        # Format permanent log
+        permanent_log_section = self._format_permanent_log(permannet_logs)
 
         # Format parent chain
         parent_chain_section = self._format_parent_chain(target_node)
@@ -114,6 +117,15 @@ You should go maximum 3 levels deep.
 ### Attachments
 
 Attachments are your way to capture and collect learnings while you are working on problems. Whenever you find important information that is moving the root problem towards solution, capture in the form of attachment. It will also help the subproblems to have more context to work better. You see the attachments of the current problem and all the problems in the parent chain.
+
+### Log Management
+
+The `add_log_entry` command allows you to log permanent, one-sentence summaries of key actions or milestones in the Permanent Logs section. Its purpose is to maintain a clear, concise record of progress across focus changes, ensuring you don't lose track of what's been done when the chat history resets. This is crucial because it helps you stay aligned with the root problem's goals, avoids redundant work, and provides context for reports or navigation (e.g., confirming all subtasks are finished before focusing up). Use it whenever you take actions - like creating a subtask, adding an artifact, or finishing a problem - to document outcomes that matter to the hierarchy. Add entries right after the action, keeping them specific and brief (e.g., "Subtask 1 artifact created" rather than "Did something"). This keeps the history actionable and relevant.
+Make sure to include `add_log_entry` for every single focus change you make. Add this before making the focus change.
+
+======================
+# Permanent Logs
+{permanent_log_section}
 
 ### Report
 
@@ -204,6 +216,11 @@ Content to append to the problem definition.
 Subproblem Title
 ///criteria
 Your criteria text here (should be a single line)
+>>>
+
+<<< add_log_entry
+///content
+One-sentence summary of a key action or milestone.
 >>>
 ```
 
@@ -357,6 +374,14 @@ Remember, we work backwards from the root problem.
                 result += "</Report>\n"
 
         return result.strip() if result else "No reports available yet."
+
+    def _format_permanent_log(self, permannet_logs: list) -> str:
+        """Format permanent history for display"""
+        if not permannet_logs:
+            return "<permanent_log>\nNo history entries yet.\n</permanent_log>"
+            
+        entries = "\n".join(f"- {entry}" for entry in permannet_logs)
+        return f"<permanent_log>\n{entries}\n</permanent_log>"
 
     def _format_parent_chain(self, node: Node) -> str:
         """Format parent chain for display"""
