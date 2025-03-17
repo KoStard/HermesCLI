@@ -371,7 +371,7 @@ class DeepResearchEngine:
         
         # Group artifacts by problem
         artifacts_by_problem = {}
-        for owner_title, name, _ in all_artifacts:
+        for owner_title, name, content, is_visible in all_artifacts:
             if owner_title not in artifacts_by_problem:
                 artifacts_by_problem[owner_title] = []
             artifacts_by_problem[owner_title].append(name)
