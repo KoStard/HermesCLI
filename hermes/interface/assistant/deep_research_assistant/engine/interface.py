@@ -142,77 +142,7 @@ Make sure to include `add_log_entry` for every single focus change you make. Add
 ## Commands
 
 ```
-<<< add_criteria
-///criteria
-Your criteria text here
->>>
-
-<<< mark_criteria_as_done
-///criteria_number
-N (e.g. 1)
->>>
-
-<<< focus_down
-///title
-Subproblem Title
->>>
-
-; when executed on a subproblem, focus up to its parent problem
-; when executed on the root problem, will finish the whole task (i.e. will move the status from "In Progress" to "Completed")
-<<< focus_up
->>>
-
-; if for some reason the current problem can't be resolved at all, and you want to mark it as failed, use this. Preferrably include some information in the report before moving up, so that the parent session will have information on why.
-<<< fail_problem_and_focus_up
->>>
-
-; if a subproblem is no longer necessary or relevant, you can cancel it
-<<< cancel_subproblem
-///title
-Subproblem Title
->>>
-
-<<< add_subproblem
-///title
-Subproblem Title
-///content
-Problem definition goes here.
-Explicitely state why is this essential for the root problem. How does it contribute to the root problem? If it's not, don't create the subproblem!
-If we estimate the value we get from this problem in the context of the root problem compared to the effort needed to solve this subproblem, we should have ±20% effort for ±80% value. If we don't have it, don't create the subproblem.
-
-- Make the problem statement clear and specific
-- Include any constraints or requirements
-- Consider what a successful outcome would look like
-- Don't expand from the scope of the provided instructions from the user. The smaller the scope of the problem the faster the user will receive the answer.
-- Include expectations on the depth of the results. On average be frugal, not making the problems scope explode.
-- Explicitely describe what should the answer have to be considered as done.
-- For broad topics, provide guidance on how to bring the scope down.
->>>
-
-<<< add_artifact
-///name
-artifact_name.md
-///content
-Content goes here
->>>
-
-; This might be needed if the direction needs to be adjusted based on user input.
-<<< append_to_problem_definition
-///content
-Content to append to the problem definition.
->>>
-
-<<< add_criteria_to_subproblem
-///title
-Subproblem Title
-///criteria
-Your criteria text here (should be a single line)
->>>
-
-<<< add_log_entry
-///content
-One-sentence summary of a key action or milestone.
->>>
+{self._generate_command_help()}
 ```
 
 ======================
@@ -384,3 +314,35 @@ Remember, we work backwards from the root problem.
                     result += f"{subproblem.problem_definition}\n\n"
 
         return result.strip()
+        
+    def _generate_command_help(self) -> str:
+        """Generate help text for all registered commands"""
+        from .command import CommandRegistry
+        
+        # Get all registered commands
+        commands = CommandRegistry().get_all_commands()
+        
+        # Generate command help text
+        result = []
+        for name, cmd in sorted(commands.items()):
+            # Command header with name
+            command_text = f"<<< {name}"
+            
+            # Add sections
+            for section in cmd.sections:
+                command_text += f"\n///{section.name}"
+                if section.help_text:
+                    command_text += f"\n{section.help_text}"
+                else:
+                    command_text += f"\nYour {section.name} here"
+            
+            # Command footer
+            command_text += "\n>>>"
+            
+            # Add help text if available
+            if cmd.help_text:
+                command_text += f"\n; {cmd.help_text}"
+            
+            result.append(command_text)
+        
+        return "\n\n".join(result)

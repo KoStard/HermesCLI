@@ -3,7 +3,10 @@ import time
 from pathlib import Path
 from typing import Dict, Generator, List, Optional, Tuple
 
+from .command import CommandRegistry
 from .command_parser import CommandParser, ParseResult
+# Import commands to ensure they're registered
+from . import commands
 from .file_system import FileSystem, ProblemStatus
 from .history import ChatHistory
 from .interface import DeepResearcherInterface
@@ -97,13 +100,13 @@ class DeepResearchEngine:
         commands_executed = False
 
         for result in parse_results:
-            if result.command and not result.errors:
+            if result.command_name and not result.errors:
                 try:
-                    self._execute_command(result.command, result.args)
-                    execution_status[result.command] = "success"
+                    self._execute_command(result.command_name, result.args)
+                    execution_status[result.command_name] = "success"
                     commands_executed = True
                 except ValueError as e:
-                    execution_status[result.command] = f"failed: {str(e)}"
+                    execution_status[result.command_name] = f"failed: {str(e)}"
 
         # Add execution status to error report if there were failures
         if any(status.startswith("failed") for status in execution_status.values()):
@@ -127,264 +130,22 @@ class DeepResearchEngine:
         self._print_current_status()
         return commands_executed, error_report, execution_status
 
-    def _execute_command(self, command: str, args: dict):
+    def _execute_command(self, command_name: str, args: dict):
         """Execute a command"""
-        if not self.problem_defined:
-            if command == "define_problem":
-                self._handle_define_problem(args)
-            else:
-                # This error will be captured in the error report
-                pass
-            return
-
-        # Commands available when problem is defined
-        command_handlers = {
-            "add_criteria": self._handle_add_criteria,
-            "mark_criteria_as_done": self._handle_mark_criteria_as_done,
-            "add_subproblem": self._handle_add_subproblem,
-            "add_artifact": self._handle_add_artifact,
-            "append_to_problem_definition": self._handle_append_to_problem_definition,
-            "add_criteria_to_subproblem": self._handle_add_criteria_to_subproblem,
-            "focus_down": self._handle_focus_down,
-            "focus_up": self._handle_focus_up,
-            "fail_problem_and_focus_up": self._handle_fail_problem_and_focus_up,
-            "cancel_subproblem": self._handle_cancel_subproblem,
-            "add_log_entry": self._handle_add_log_entry,
-        }
-
-        if command in command_handlers:
-            command_handlers[command](args)
-        else:
+        registry = CommandRegistry()
+        command = registry.get_command(command_name)
+        
+        if not command:
             # This error will be captured in the error report
-            pass
-
-    def _handle_define_problem(self, args: dict):
-        """Handle define_problem command"""
-        root_node = self.file_system.create_root_problem(args["title"], args["content"])
-        
-        # Set the root node status to CURRENT
-        root_node.status = ProblemStatus.CURRENT
-
-        # Copy initial artifacts to the root problem
-        for artifact in self.initial_attachments:
-            root_node.add_artifact(
-                artifact, f"Content of {artifact} would be here..."
-            )
-
-        # Ensure file system is fully updated
-        self.file_system.update_files()
-
-        # Clear history as we're starting fresh with a defined problem
-        self.chat_history.clear()
-
-        self.problem_defined = True
-        
-        # Initialize the task executor with the root node
-        self.task_executor._initialize_root_task()
-        self.current_node = self.task_executor.get_current_node()
-        
-    def _handle_add_criteria(self, args: dict):
-        """Handle add_criteria command"""
-        current_node = self.current_node
-        if not current_node:
-            return
-
-        # Check if criteria already exists (per requirements in 3 - commands.md)
-        criteria_text = args["criteria"]
-        if criteria_text in current_node.criteria:
-            return
-
-        index = current_node.add_criteria(criteria_text)
-        self.file_system.update_files()
-
-    def _handle_mark_criteria_as_done(self, args: dict):
-        """Handle mark_criteria_as_done command"""
-        current_node = self.current_node
-        if not current_node:
-            return
-
-        success = current_node.mark_criteria_as_done(args["index"])
-        if success:
-            self.file_system.update_files()
-
-    def _handle_add_subproblem(self, args: dict):
-        """Handle add_subproblem command"""
-        current_node = self.current_node
-        if not current_node:
-            return
-
-        # Check if subproblem with this title already exists
-        title = args["title"]
-        if title in current_node.subproblems:
-            return
-
-        subproblem = current_node.add_subproblem(
-            title, args["content"]
-        )
-        # Set initial status to NOT_STARTED
-        subproblem.status = ProblemStatus.NOT_STARTED
-        # Create directories for the new subproblem
-        self.file_system._create_node_directories(subproblem)
-        self.file_system.update_files()
-
-    def _handle_add_artifact(self, args: dict):
-        """Handle add_artifact command"""
-        current_node = self.current_node
-        if not current_node:
-            return
-
-        current_node.add_artifact(args["name"], args["content"])
-        self.file_system.update_files()
-
-    def _handle_append_to_problem_definition(self, args: dict):
-        """Handle append_to_problem_definition command"""
-        current_node = self.current_node
-        if not current_node:
-            return
-
-        current_node.append_to_problem_definition(args["content"])
-        self.file_system.update_files()
-
-    def _handle_focus_down(self, args: dict):
-        """Handle focus_down command"""
-        # Request focus down through the task executor
-        title = args["title"]
-        result = self.task_executor.request_focus_down(title)
-        
-        if result:
-            # Get the previous node before updating current_node
-            previous_node = self.current_node
-            
-            # Update current_node to the new focus
-            self.current_node = self.task_executor.get_current_node()
-            
-            # Update statuses
-            if previous_node:
-                # Set parent to PENDING (focus moved to child)
-                previous_node.status = ProblemStatus.PENDING
-                
-            # Set current node to CURRENT
-            self.current_node.status = ProblemStatus.CURRENT
-            
-            # Update the file system
-            self.file_system.update_files()
-            
-            # Clear history when changing focus
-            self.chat_history.clear()
-        else:
-            raise ValueError(
-                f"Failed to focus down to subproblem '{title}'. Make sure the subproblem exists."
-            )
-
-    def _handle_focus_up(self, args: dict):
-        """Handle focus_up command"""
-        # Store the current node before focusing up
-        previous_node = self.current_node
-        
-        # Mark the current node as FINISHED before focusing up
-        if previous_node:
-            previous_node.status = ProblemStatus.FINISHED
-            self.file_system.update_files()
-            
-        # Request focus up through the task executor
-        result = self.task_executor.request_focus_up()
-        
-        if result:
-            # Update current_node to the new focus (parent)
-            self.current_node = self.task_executor.get_current_node()
-            
-            # Set the new current node to CURRENT
-            if self.current_node:
-                self.current_node.status = ProblemStatus.CURRENT
-                self.file_system.update_files()
-                
-            # Clear history when changing focus
-            self.chat_history.clear()
-            
-            # Check if we've finished the root task
-            if not self.current_node:
-                self.finished = True
-        else:
-            return
-        
-    def _handle_add_log_entry(self, args: dict):
-        """Handle add_log_entry command"""
-        content = args.get("content", "")
-        if content:
-            self.permanent_log.append(content)
-
-    def _handle_fail_problem_and_focus_up(self, args: dict):
-        """Handle fail_problem_and_focus_up command - similar to focus_up but without report requirement"""
-        # Store the current node before focusing up
-        previous_node = self.current_node
-        
-        # Mark the current node as FAILED before focusing up
-        if previous_node:
-            previous_node.status = ProblemStatus.FAILED
-            self.file_system.update_files()
-            
-        # Request fail and focus up through the task executor
-        result = self.task_executor.request_fail_and_focus_up()
-        
-        if result:
-            # Update current_node to the new focus (parent)
-            self.current_node = self.task_executor.get_current_node()
-            
-            # Set the new current node to CURRENT
-            if self.current_node:
-                self.current_node.status = ProblemStatus.CURRENT
-                self.file_system.update_files()
-                
-            # Clear history when changing focus
-            self.chat_history.clear()
-            
-            # Check if we've finished the root task
-            if not self.current_node:
-                self.finished = True
-        else:
-            raise ValueError(
-                "Failed to mark problem as failed and focus up. This should not happen."
-            )
-            
-    def _handle_cancel_subproblem(self, args: dict):
-        """Handle cancel_subproblem command"""
-        current_node = self.current_node
-        if not current_node:
             return
             
-        # Get the subproblem by title
-        title = args["title"]
-        if title not in current_node.subproblems:
-            raise ValueError(f"Subproblem '{title}' not found")
+        if not self.problem_defined and command_name != "define_problem":
+            # Only define_problem is allowed when problem is not defined
+            return
             
-        subproblem = current_node.subproblems[title]
-        
-        # Mark the subproblem as cancelled
-        subproblem.status = ProblemStatus.CANCELLED
-        
-        # Update the file system
-        self.file_system.update_files()
+        # Execute the command
+        command.execute(self, args)
 
-    def _handle_add_criteria_to_subproblem(self, args: dict):
-        """Handle add_criteria_to_subproblem command"""
-        current_node = self.current_node
-        if not current_node:
-            return
-
-        # Get the subproblem by title
-        title = args["title"]
-        if title not in current_node.subproblems:
-            return
-
-        subproblem = current_node.subproblems[title]
-
-        # Add criteria to the subproblem
-        criteria_text = args["criteria"]
-        if criteria_text in subproblem.criteria:
-            return
-
-        subproblem.add_criteria(criteria_text)
-        self.file_system.update_files()
 
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
