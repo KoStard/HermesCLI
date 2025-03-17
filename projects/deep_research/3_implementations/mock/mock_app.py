@@ -1,7 +1,9 @@
 import os
 from typing import List
 
+from hermes.extensions_loader import load_extensions
 from hermes.interface.assistant.deep_research_assistant.engine.engine import DeepResearchEngine
+from .mock_llm_interface import MockLLMInterface
 
 
 class DeepResearchMockApp:
@@ -13,70 +15,44 @@ class DeepResearchMockApp:
         initial_attachments: List[str] = None,
         root_dir: str = "research",
     ):
-        self.engine = DeepResearchEngine(instruction, initial_attachments, root_dir)
+        # Load extensions
+        _, _, _, deep_research_commands = load_extensions()
+        
+        # Create the mock LLM interface
+        self.llm_interface = MockLLMInterface(root_dir)
+        
+        # Initialize the engine with the mock LLM interface and extensions
+        self.engine = DeepResearchEngine(
+            instruction, 
+            initial_attachments, 
+            root_dir,
+            self.llm_interface,
+            deep_research_commands
+        )
     
     def start(self):
         """Start the mock application"""
-        self._render_interface()
-
-        while not self.engine.finished:
-            try:
-                user_input = self._get_multiline_input()
-                self._process_input(user_input)
-            except KeyboardInterrupt:
-                print("\nExiting application...")
-                break
-            except Exception as e:
-                print(f"Error: {e}")
-    
-    def _render_interface(self):
-        """Render the interface to the console"""
-        os.system("cls" if os.name == "nt" else "clear")
-
-        # First render the interface
-        interface_content = self.engine.get_interface_content()
-        print(interface_content)
-
-        # Always render the chat history regardless of problem definition status
-        if self.engine.chat_history.messages:
-            print("\n" + "=" * 70)
-            print("# CHAT HISTORY")
-            print("=" * 70)
-            print(self.get_formatted_history(self.engine.chat_history))
-            
-    def get_formatted_history(self, history) -> str:
-        """Get the formatted history as a string"""
-        if not history.messages:
-            return "No previous messages in this focus level."
-
-        result = []
-        for message in history.messages:
-            result.append(f"## {message.author}")
-            result.append(message.content)
-            result.append("\n" + "-" * 50 + "\n")  # Separator between messages
-
-        return "\n".join(result)
-
-    
-    def _get_multiline_input(self) -> str:
-        """Get multiline input from the user"""
-        lines = []
-
-        while True:
-            try:
-                line = input()
-                if line == "\x1b":  # Escape character
-                    break
-                lines.append(line)
-            except EOFError:
-                break
-
-        return "\n".join(lines)
-    
-    def _process_input(self, text: str):
-        """Process user input"""
-        # Process commands using the engine
-        self.engine.process_commands(text)
+        print("\nStarting Deep Research Mock Application...")
+        print("You will play the role of the AI assistant.")
+        print("The system will show you the interface and you'll respond as if you were the AI.")
+        print("Type 'END_RESPONSE' on a new line when you've finished your response.")
         
-        # Re-render the interface after processing commands
-        self._render_interface()
+        # Print information about loaded extensions
+        if self.engine._extension_commands:
+            print(f"\nLoaded {len(self.engine._extension_commands)} extension commands:")
+            for cmd_class in self.engine._extension_commands:
+                print(f"- {cmd_class.__name__}")
+        else:
+            print("\nNo extension commands loaded.")
+            
+        print("\nPress Enter to continue...")
+        input()
+        
+        # Execute the engine, which will use the mock LLM interface
+        final_report = self.engine.execute()
+        
+        # Display the final report
+        print("\n" + "=" * 80)
+        print("DEEP RESEARCH COMPLETED")
+        print("=" * 80)
+        print(final_report)
