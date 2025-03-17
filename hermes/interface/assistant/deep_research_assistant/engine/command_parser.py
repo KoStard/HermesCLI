@@ -1,45 +1,12 @@
 import re
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
-
-@dataclass
-class CommandError:
-    """Represents an error in command parsing"""
-
-    command: str
-    message: str
-    line_number: Optional[int] = None
-    is_syntax_error: bool = False
-
-
-@dataclass
-class ParseResult:
-    """Result of parsing a command"""
-
-    command: Optional[str] = None
-    args: Dict = field(default_factory=dict)
-    errors: List[CommandError] = field(default_factory=list)
-    has_syntax_error: bool = False
-
+from .command import CommandError, CommandRegistry, ParseResult
 
 class CommandParser:
     def __init__(self):
-        self.block_commands = {
-            "add_criteria": self._parse_add_criteria_block,
-            "mark_criteria_as_done": self._parse_mark_criteria_as_done_block,
-            "focus_down": self._parse_focus_down_block,
-            "focus_up": self._parse_focus_up_block,
-            "fail_problem_and_focus_up": self._parse_focus_up_block,  # Use same parser as focus_up
-            "define_problem": self._parse_define_problem,
-            "add_subproblem": self._parse_add_subproblem,
-            "add_artifact": self._parse_add_artifact,
-            "append_to_problem_definition": self._parse_append_to_problem_definition,
-            "add_criteria_to_subproblem": self._parse_add_criteria_to_subproblem,
-            "add_log_entry": self._parse_add_log_entry,
-            "cancel_subproblem": self._parse_cancel_subproblem,
-        }
-
+        self.registry = CommandRegistry()
+    
     def parse_text(self, text: str) -> List[ParseResult]:
         """
         Parse all commands from text and return a list of parse results
@@ -64,7 +31,7 @@ class CommandParser:
             # Check for block command start
             block_match = re.match(r"<<<\s*(\w+)", line)
             if block_match:
-                command = block_match.group(1)
+                command_name = block_match.group(1)
                 block_content = []
                 block_start_line = i
                 i += 1
@@ -78,19 +45,37 @@ class CommandParser:
                 if i < len(lines) and re.match(r">>>", lines[i].strip()):
                     # Process the block command
                     result = ParseResult()
-                    result.command = command
+                    result.command_name = command_name
 
-                    if command in self.block_commands:
-                        args, errors = self.block_commands[command](
-                            "\n".join(block_content), block_start_line + 1
+                    command = self.registry.get_command(command_name)
+                    if command:
+                        args, errors = self._parse_command_sections(
+                            "\n".join(block_content), 
+                            block_start_line + 1,
+                            command.get_required_sections(),
+                            command_name
                         )
+                        
+                        # Apply any transformations to the arguments
+                        args = command.transform_args(args)
+                        
+                        # Validate the arguments
+                        validation_errors = command.validate(args)
+                        if validation_errors:
+                            for error in validation_errors:
+                                errors.append(CommandError(
+                                    command=command_name,
+                                    message=error,
+                                    line_number=block_start_line + 1
+                                ))
+                        
                         result.args = args
                         result.errors = errors
                     else:
                         result.errors = [
                             CommandError(
-                                command=command,
-                                message=f"Unknown block command: '{command}'",
+                                command=command_name,
+                                message=f"Unknown command: '{command_name}'",
                                 line_number=block_start_line + 1,
                             )
                         ]
@@ -207,133 +192,6 @@ class CommandParser:
                 
         return result, errors
 
-    def _parse_add_criteria_block(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse add_criteria block command"""
-        return self._parse_command_sections(
-            content, line_number, ["criteria"], "add_criteria"
-        )
-
-    def _parse_mark_criteria_as_done_block(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse mark_criteria_as_done block command"""
-        result, errors = self._parse_command_sections(
-            content, line_number, ["criteria_number"], "mark_criteria_as_done"
-        )
-        
-        if "criteria_number" in result:
-            try:
-                index = int(result["criteria_number"]) - 1  # Convert to 0-based index
-                if index < 0:
-                    errors.append(CommandError(
-                        command="mark_criteria_as_done",
-                        message=f"Criteria index must be positive, got: {index + 1}",
-                        line_number=line_number,
-                    ))
-                else:
-                    result["index"] = index
-            except ValueError:
-                errors.append(CommandError(
-                    command="mark_criteria_as_done",
-                    message=f"Invalid criteria index: '{result['criteria_number']}', must be a number",
-                    line_number=line_number,
-                ))
-                
-        return result, errors
-
-    def _parse_focus_down_block(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse focus_down block command"""
-        errors = []
-        result = {}
-
-        title_match = re.search(r"///title\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-        
-        if not title_match:
-            errors.append(
-                CommandError(
-                    command="focus_down",
-                    message="Missing '///title' section in focus_down command",
-                    line_number=line_number,
-                )
-            )
-        elif not title_match.group(1).strip():
-            errors.append(
-                CommandError(
-                    command="focus_down",
-                    message="Subproblem title cannot be empty",
-                    line_number=line_number + content[:title_match.start()].count("\n"),
-                )
-            )
-        else:
-            result["title"] = title_match.group(1).strip()
-
-        return result, errors
-
-    def _parse_focus_up_block(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse focus_up block command (no arguments needed)"""
-        return {}, []
-
-    def _parse_define_problem(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse define_problem command"""
-        return self._parse_command_sections(
-            content, line_number, ["title", "content"], "define_problem"
-        )
-
-    def _parse_add_subproblem(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse add_subproblem command"""
-        return self._parse_command_sections(
-            content, line_number, ["title", "content"], "add_subproblem"
-        )
-
-    def _parse_add_artifact(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse add_artifact command"""
-        return self._parse_command_sections(
-            content, line_number, ["name", "content"], "add_artifact"
-        )
-
-    def _parse_append_to_problem_definition(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse append_to_problem_definition command"""
-        return self._parse_command_sections(
-            content, line_number, ["content"], "append_to_problem_definition"
-        )
-
-    def _parse_add_log_entry(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse add_log_entry command"""
-        return self._parse_command_sections(
-            content, line_number, ["content"], "add_log_entry"
-        )
-
-    def _parse_add_criteria_to_subproblem(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse add_criteria_to_subproblem command"""
-        return self._parse_command_sections(
-            content, line_number, ["title", "criteria"], "add_criteria_to_subproblem"
-        )
-        
-    def _parse_cancel_subproblem(
-        self, content: str, line_number: int
-    ) -> Tuple[Dict, List[CommandError]]:
-        """Parse cancel_subproblem command"""
-        return self._parse_command_sections(
-            content, line_number, ["title"], "cancel_subproblem"
-        )
 
     def generate_error_report(self, parse_results: List[ParseResult]) -> str:
         """Generate an error report from parse results"""
