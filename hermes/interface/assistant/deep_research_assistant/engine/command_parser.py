@@ -209,9 +209,17 @@ class CommandParser:
             report += f"Command: {error.command}{line_info}\n"
             report += f"Message: {error.message}\n\n"
 
-        # Add information about command execution status
-        has_syntax_error = any(result.has_syntax_error for result in parse_results)
-        if has_syntax_error:
-            report += "Not executing any commands as there was a syntax issue.\n"
+        # Add information about which commands have syntax errors
+        # Use a list of tuples with (command_name, line_number) to distinguish between multiple instances
+        commands_with_syntax_errors = [
+            (result.command_name, result.errors[0].line_number if result.errors else None) 
+            for result in parse_results if result.has_syntax_error
+        ]
+        if commands_with_syntax_errors:
+            report += "Commands with syntax errors that will not be executed:\n"
+            for cmd, line_num in commands_with_syntax_errors:
+                line_info = f" at line {line_num}" if line_num else ""
+                report += f"- {cmd}{line_info}\n"
+            report += "\nOther valid commands will still be executed.\n"
 
         return report
