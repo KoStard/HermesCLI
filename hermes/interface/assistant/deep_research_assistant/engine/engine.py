@@ -34,10 +34,15 @@ class DeepResearchEngine:
         self.finished = False
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
+        self.current_node = None
 
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
         self.problem_defined = existing_problem is not None
+        
+        # Set current node to root node if problem is already defined
+        if self.problem_defined:
+            self.current_node = existing_problem
         
         # Initialize task executor
         self.task_executor = TaskExecutor(self.file_system)
@@ -52,7 +57,6 @@ class DeepResearchEngine:
         # Initialize interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, instruction)
         
-        self.current_node = None
         # TODO: Could move to the file system
         self.permanent_log = []
         
@@ -262,8 +266,14 @@ class DeepResearchEngine:
         if not self.llm_interface:
             raise ValueError("LLM interface is required for execution")
             
+        # Initialize current node if problem is already defined
+        if self.problem_defined and not self.current_node:
+            self.current_node = self.file_system.root_node
+            
         while not self.finished:
-            self.current_node = self.task_executor.get_current_node()
+            # Only update current node from task executor if it's not already set
+            if not self.current_node:
+                self.current_node = self.task_executor.get_current_node()
             
             # Get the interface content
             interface_content = self.get_interface_content()
