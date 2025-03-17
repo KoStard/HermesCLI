@@ -205,8 +205,8 @@ Remember, we work backwards from the root problem.
         
         # Collect all artifacts from all nodes in the file system
         all_nodes_artifacts = self.collect_all_artifacts(root_node)
-        for owner_title, name, content in all_nodes_artifacts:
-            all_artifacts.append((name, Artifact(name=name, content=content), owner_title, "system"))
+        for owner_title, name, content, is_fully_visible in all_nodes_artifacts:
+            all_artifacts.append((name, Artifact(name=name, content=content, is_fully_visible=is_fully_visible), owner_title, "system"))
         
         if not all_artifacts:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
@@ -217,7 +217,23 @@ Remember, we work backwards from the root problem.
             result += f"---\n"
             result += f"owner: {owner} ({relationship})\n"
             result += f"---\n\n"
-            result += f"{artifact.content}\n"
+            
+            # Show full content or just first 10 lines based on visibility flag
+            if artifact.is_fully_visible:
+                result += f"{artifact.content}\n"
+            else:
+                # Split content into lines and take first 10
+                content_lines = artifact.content.split('\n')
+                preview_lines = content_lines[:10]
+                remaining_count = len(content_lines) - 10
+                
+                # Add preview lines
+                result += '\n'.join(preview_lines)
+                
+                # Add message about hidden content if there are more lines
+                if remaining_count > 0:
+                    result += f"\n\n[...{remaining_count} more lines hidden. Use 'open_artifact' command to view full content...]\n"
+            
             result += "</artifact>\n"
         result += "</artifacts>"
         return result
@@ -262,7 +278,7 @@ Remember, we work backwards from the root problem.
         
         # Add this node's artifacts
         for name, artifact in node.artifacts.items():
-            artifacts.append((node.title, name, artifact.content))
+            artifacts.append((node.title, name, artifact.content, artifact.is_fully_visible))
             
         # Recursively collect artifacts from all subproblems
         for title, subproblem in node.subproblems.items():

@@ -11,6 +11,7 @@ from enum import Enum
 class Artifact:
     name: str
     content: str
+    is_fully_visible: bool = False  # Default to half-closed (not fully visible)
 
 
 class ProblemStatus(Enum):
@@ -62,7 +63,7 @@ class Node:
 
     def add_artifact(self, name: str, content: str) -> None:
         """Add an artifact"""
-        self.artifacts[name] = Artifact(name=name, content=content)
+        self.artifacts[name] = Artifact(name=name, content=content, is_fully_visible=False)
 
     def append_to_problem_definition(self, content: str) -> None:
         """Append to the problem definition"""
@@ -175,7 +176,10 @@ class FileSystem:
             for artifact_file in artifacts_dir.iterdir():
                 if artifact_file.is_file():
                     with open(artifact_file, "r") as f:
-                        self.root_node.add_artifact(artifact_file.name, f.read())
+                        # Load artifacts as half-closed by default
+                        artifact_content = f.read()
+                        artifact = Artifact(name=artifact_file.name, content=artifact_content, is_fully_visible=False)
+                        self.root_node.artifacts[artifact_file.name] = artifact
 
         # Load subproblems recursively
         self._load_subproblems(self.root_node)
@@ -239,7 +243,10 @@ class FileSystem:
                 for artifact_file in artifacts_dir.iterdir():
                     if artifact_file.is_file():
                         with open(artifact_file, "r") as f:
-                            subproblem.add_artifact(artifact_file.name, f.read())
+                            # Load artifacts as half-closed by default
+                            artifact_content = f.read()
+                            artifact = Artifact(name=artifact_file.name, content=artifact_content, is_fully_visible=False)
+                            subproblem.artifacts[artifact_file.name] = artifact
 
             # Recursively load subproblems
             self._load_subproblems(subproblem)
@@ -360,6 +367,9 @@ class FileSystem:
         # Write artifacts
         for name, artifact in node.artifacts.items():
             filename = self._sanitize_filename(name)
+            # Add .md extension if no extension exists
+            if '.' not in filename:
+                filename = filename + ".md"
             with open(node.path / "Artifacts" / filename, "w") as f:
                 f.write(artifact.content)
 
