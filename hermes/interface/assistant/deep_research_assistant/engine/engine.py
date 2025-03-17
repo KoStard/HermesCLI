@@ -298,13 +298,29 @@ class DeepResearchEngine:
             )
             
             # Process the request and get the response
-            response_generator = self.llm_interface.send_request(request)
-            
-            # Get the full response
-            try:
-                full_llm_response = next(response_generator)
-            except StopIteration:
-                full_llm_response = ""
+            while True:
+                try:
+                    response_generator = self.llm_interface.send_request(request)
+                    
+                    # Get the full response
+                    try:
+                        full_llm_response = next(response_generator)
+                        break  # Successfully got a response, exit the retry loop
+                    except StopIteration:
+                        full_llm_response = ""
+                        break  # Empty response but not an error, exit the retry loop
+                except Exception as e:
+                    import traceback
+                    print("\n\n===== LLM INTERFACE ERROR =====")
+                    print(traceback.format_exc())
+                    print("===============================")
+                    print("\nPress Enter to retry or Ctrl+C to exit...")
+                    try:
+                        input()  # Wait for user input
+                        print("Retrying LLM request...")
+                    except KeyboardInterrupt:
+                        print("\nExiting due to user request.")
+                        return "Research terminated due to LLM interface error."
             
             # Log the response
             self.llm_interface.log_response(current_node_path, full_llm_response)
