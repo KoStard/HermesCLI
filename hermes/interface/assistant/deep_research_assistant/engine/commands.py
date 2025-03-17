@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 
 from .command import Command, CommandRegistry, CommandType, register_command
-from .file_system import ProblemStatus, Node
+from .file_system import Artifact, ProblemStatus, Node
 
 
 class DefineCommand(Command):
@@ -157,7 +157,9 @@ class AddArtifactCommand(Command):
         if not current_node:
             return
 
-        current_node.add_artifact(args["name"], args["content"])
+        # Create artifact with default half-closed visibility
+        artifact = Artifact(name=args["name"], content=args["content"], is_fully_visible=False)
+        current_node.artifacts[args["name"]] = artifact
         engine.file_system.update_files()
 
 
@@ -378,3 +380,105 @@ class AddLogEntryCommand(Command):
         content = args.get("content", "")
         if content:
             engine.permanent_log.append(content)
+
+@register_command
+class OpenArtifactCommand(Command):
+    def __init__(self):
+        super().__init__(
+            "open_artifact",
+            "Open an artifact to view its full content",
+        )
+        self.add_section("name", True, "Name of the artifact to open")
+        self.add_section("reason", True, "Reason why you need to see the full content")
+
+    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+        """Execute the command to open an artifact"""
+        artifact_name = args.get("name", "")
+        reason = args.get("reason", "")
+        
+        # Find the artifact in the current node or its ancestors
+        current_node = engine.current_node
+        if not current_node:
+            raise ValueError("No current node")
+            
+        # Check current node's artifacts
+        if artifact_name in current_node.artifacts:
+            current_node.artifacts[artifact_name].is_fully_visible = True
+            engine.add_command_output("open_artifact", args, f"Artifact '{artifact_name}' is now fully visible.")
+            return
+            
+        # Check parent chain
+        parent_chain = engine.file_system.get_parent_chain(current_node)
+        for node in parent_chain:
+            if artifact_name in node.artifacts:
+                node.artifacts[artifact_name].is_fully_visible = True
+                engine.add_command_output("open_artifact", args, f"Artifact '{artifact_name}' is now fully visible.")
+                return
+                
+        # Check all subproblems recursively
+        def search_subproblems(node):
+            for subproblem in node.subproblems.values():
+                if artifact_name in subproblem.artifacts:
+                    subproblem.artifacts[artifact_name].is_fully_visible = True
+                    return True
+                if search_subproblems(subproblem):
+                    return True
+            return False
+            
+        if search_subproblems(engine.file_system.root_node):
+            engine.add_command_output("open_artifact", args, f"Artifact '{artifact_name}' is now fully visible.")
+            return
+            
+        # If we get here, the artifact wasn't found
+        raise ValueError(f"Artifact '{artifact_name}' not found")
+
+@register_command
+class HalfCloseArtifactCommand(Command):
+    def __init__(self):
+        super().__init__(
+            "half_close_artifact",
+            "Half-close an artifact to show only the first 10 lines",
+        )
+        self.add_section("name", True, "Name of the artifact to half-close")
+        self.add_section("reason", True, "Reason why you're half-closing this artifact")
+
+    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+        """Execute the command to half-close an artifact"""
+        artifact_name = args.get("name", "")
+        reason = args.get("reason", "")
+        
+        # Find the artifact in the current node or its ancestors
+        current_node = engine.current_node
+        if not current_node:
+            raise ValueError("No current node")
+            
+        # Check current node's artifacts
+        if artifact_name in current_node.artifacts:
+            current_node.artifacts[artifact_name].is_fully_visible = False
+            engine.add_command_output("half_close_artifact", args, f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).")
+            return
+            
+        # Check parent chain
+        parent_chain = engine.file_system.get_parent_chain(current_node)
+        for node in parent_chain:
+            if artifact_name in node.artifacts:
+                node.artifacts[artifact_name].is_fully_visible = False
+                engine.add_command_output("half_close_artifact", args, f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).")
+                return
+                
+        # Check all subproblems recursively
+        def search_subproblems(node):
+            for subproblem in node.subproblems.values():
+                if artifact_name in subproblem.artifacts:
+                    subproblem.artifacts[artifact_name].is_fully_visible = False
+                    return True
+                if search_subproblems(subproblem):
+                    return True
+            return False
+            
+        if search_subproblems(engine.file_system.root_node):
+            engine.add_command_output("half_close_artifact", args, f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).")
+            return
+            
+        # If we get here, the artifact wasn't found
+        raise ValueError(f"Artifact '{artifact_name}' not found")
