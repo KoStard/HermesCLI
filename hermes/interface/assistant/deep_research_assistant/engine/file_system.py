@@ -1,8 +1,9 @@
 import os
 import threading
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
 
@@ -135,12 +136,12 @@ class FileSystem:
         if not problem_def_file.exists():
             return None
 
-        # Read problem definition
-        with open(problem_def_file, "r") as f:
-            problem_definition = f.read()
-
-        # Try to determine title from directory name
-        title = self.root_dir.name
+        # Read problem definition and extract front-matter
+        title, problem_definition = self._read_problem_definition_with_frontmatter(problem_def_file)
+        
+        # If no title in front-matter, use directory name as fallback
+        if not title:
+            title = self.root_dir.name
 
         # Create root node
         self.root_node = Node(title=title, problem_definition=problem_definition)
@@ -199,11 +200,12 @@ class FileSystem:
             if not problem_def_file.exists():
                 continue
 
-            with open(problem_def_file, "r") as f:
-                problem_definition = f.read()
-
-            # Create subproblem node
-            title = subproblem_dir.name
+            # Read problem definition and extract front-matter
+            title, problem_definition = self._read_problem_definition_with_frontmatter(problem_def_file)
+            
+            # If no title in front-matter, use directory name as fallback
+            if not title:
+                title = subproblem_dir.name
             subproblem = Node(
                 title=title, problem_definition=problem_definition, parent=parent_node
             )
@@ -330,8 +332,12 @@ class FileSystem:
         if not node.path:
             self._create_node_directories(node)
 
-        # Write problem definition
+        # Write problem definition with front-matter
         with open(node.path / "Problem Definition.md", "w") as f:
+            # Add front-matter with title
+            f.write("---\n")
+            f.write(f"title: {node.title}\n")
+            f.write("---\n\n")
             f.write(node.problem_definition)
 
         # Write criteria (always create the file)
@@ -370,6 +376,36 @@ class FileSystem:
                 # Then write all files
                 self._write_node_to_disk(self.root_node)
 
+    def _read_problem_definition_with_frontmatter(self, file_path: Path) -> Tuple[Optional[str], str]:
+        """
+        Read a problem definition file and extract front-matter metadata
+        
+        Returns:
+            Tuple[Optional[str], str]: (title, problem_definition)
+        """
+        if not file_path.exists():
+            return None, ""
+            
+        with open(file_path, "r") as f:
+            content = f.read()
+            
+        # Check for front-matter (between --- markers)
+        frontmatter_match = re.match(r"^---\s*\n(.*?)\n---\s*\n(.*)", content, re.DOTALL)
+        
+        if frontmatter_match:
+            # Extract front-matter and content
+            frontmatter = frontmatter_match.group(1)
+            problem_definition = frontmatter_match.group(2).strip()
+            
+            # Extract title from front-matter
+            title_match = re.search(r"title:\s*(.*?)(\n|$)", frontmatter)
+            title = title_match.group(1).strip() if title_match else None
+            
+            return title, problem_definition
+        else:
+            # No front-matter found, return the entire content as problem definition
+            return None, content
+    
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize a filename to be valid on the filesystem"""
         # Replace invalid characters with underscores
