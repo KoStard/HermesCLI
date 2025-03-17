@@ -1,37 +1,77 @@
 #!/usr/bin/env python3
-# This is the entry point of the program
-# Don't write everything in one file
-# Create multiple files, create classes, proper abstractions making the interface simple, yet directly implementing the requirements
-# Use best practices for the code, keep it well maintainable and flexible in the prompt structures, parsers, etc.
-# Implementation starts below this comment
-# Even though currently we are making a mock, we are mocking only a few pieces, the code should be real and up to the standards for the rest.
-# We are mocking:
-# 1. There is no user, the user input (the instructions) we'll hardcode in the __name__ == __main__ section for now.
-# 2. We don't make actual calls to the LLM, instead we print to the terminal allowing a person to reply to it, playing the role of the LLM
-# ------
+"""
+Deep Research Mock Application
+
+This is a mock implementation of the Deep Research system where:
+1. The user's instructions are hardcoded
+2. A human plays the role of the AI assistant through the terminal
+3. No actual LLM calls are made
+
+The mock uses STDOUT/STDIN to simulate the interaction between the system and the AI.
+"""
 
 import os
+import sys
+import argparse
 from pathlib import Path
 from .mock_app import DeepResearchMockApp
 
 
 def main():
-    # Hardcoded instruction for now
-    instruction = "Please research and organize the fundamental concepts of quantum mechanics. I need a comprehensive understanding of the core principles that form the foundation of this field."
-
-    # Hardcoded initial attachments for now
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Deep Research Mock Application")
+    parser.add_argument(
+        "--instruction", 
+        type=str, 
+        default="Please research and organize the fundamental concepts of quantum mechanics. I need a comprehensive understanding of the core principles that form the foundation of this field.",
+        help="The research instruction"
+    )
+    parser.add_argument(
+        "--research-dir", 
+        type=str, 
+        default=None,
+        help="Directory to store research files (default: ./deep_research)"
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging"
+    )
+    args = parser.parse_args()
+    
+    # Configure logging if verbose mode is enabled
+    if args.verbose:
+        import logging
+        logging.basicConfig(level=logging.DEBUG)
+    
+    # Use provided instruction or default
+    instruction = args.instruction
+    
+    # Set up research directory
+    if args.research_dir:
+        research_dir = args.research_dir
+    else:
+        research_dir = os.path.join(str(Path.cwd()), "deep_research")
+    
+    # Ensure the research directory exists
+    os.makedirs(research_dir, exist_ok=True)
+    
+    # Example initial attachments (these would be mocked in a real scenario)
     initial_attachments = [
         "quantum_mechanics_intro.pdf",
         "https://en.wikipedia.org/wiki/Quantum_mechanics",
     ]
 
-    # Create a research directory in the user's home directory
-    research_dir = os.path.join(str(Path.cwd()), "deep_research")
-
-    # Initialize the mock app with the research directory
+    # Initialize and start the mock app
     app = DeepResearchMockApp(instruction, initial_attachments, research_dir)
-
-    app.start()
+    
+    try:
+        app.start()
+    except KeyboardInterrupt:
+        print("\nExiting application...")
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
