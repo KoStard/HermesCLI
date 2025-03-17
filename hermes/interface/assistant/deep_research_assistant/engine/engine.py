@@ -25,6 +25,7 @@ class DeepResearchEngine:
         initial_attachments: List[str] = None,
         root_dir: str = "research",
         llm_interface: LLMInterface = None,
+        extension_commands: List = None,
     ):
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
@@ -41,12 +42,20 @@ class DeepResearchEngine:
         # Initialize task executor
         self.task_executor = TaskExecutor(self.file_system)
         
+        # Register any extension commands
+        if extension_commands:
+            for command_class in extension_commands:
+                CommandRegistry().register(command_class())
+        
         # Initialize interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, instruction)
         
         self.current_node = None
         # TODO: Could move to the file system
         self.permanent_log = []
+        
+        # Store command outputs for automatic responses
+        self.command_outputs = {}
         
         # Print initial status
         self._print_current_status()
@@ -57,6 +66,23 @@ class DeepResearchEngine:
             return self.interface.render_no_problem_defined(self.initial_attachments)
         else:
             return self.interface.render_problem_defined(self.current_node, self.permanent_log)
+    
+    def add_command_output(self, command_name: str, args: Dict, output: str) -> None:
+        """
+        Add command output to be included in the automatic response
+        
+        Args:
+            command_name: Name of the command
+            args: Arguments passed to the command
+            output: Output text to display
+        """
+        if command_name not in self.command_outputs:
+            self.command_outputs[command_name] = []
+            
+        self.command_outputs[command_name].append({
+            "args": args,
+            "output": output
+        })
     
     def process_commands(self, text: str) -> tuple[bool, str, Dict]:
         """
@@ -124,6 +150,23 @@ class DeepResearchEngine:
             auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.'
             if error_report:
                 auto_reply += f"\n\n{error_report}"
+                
+            # Add command outputs if any
+            if self.command_outputs:
+                auto_reply += "\n\n### Command Outputs\n"
+                for cmd_name, outputs in self.command_outputs.items():
+                    for output_data in outputs:
+                        auto_reply += f"\n#### {cmd_name}\n"
+                        # Format arguments
+                        args_str = ", ".join(f"{k}: {v}" for k, v in output_data["args"].items())
+                        if args_str:
+                            auto_reply += f"Arguments: {args_str}\n\n"
+                        # Add the output
+                        auto_reply += f"```\n{output_data['output']}\n```\n"
+                
+                # Clear command outputs after adding them to the response
+                self.command_outputs = {}
+                
             self.chat_history.add_message("user", auto_reply)
             print(auto_reply)
         

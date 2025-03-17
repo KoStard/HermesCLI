@@ -139,7 +139,7 @@ def main():
 
     notifications_printer = CLINotificationsPrinter()
 
-    user_extra_commands, llm_extra_commands, extension_utils_builders = (
+    user_extra_commands, llm_extra_commands, extension_utils_builders, deep_research_commands = (
         load_extensions()
     )
 
@@ -232,7 +232,8 @@ def main():
             research_path = os.path.abspath(cli_args.deep_research)
             deep_research_interface = DeepResearchAssistantInterface(
                 model=model,
-                research_path=research_path
+                research_path=research_path,
+                extension_commands=deep_research_commands
             )
             deep_research_participant = LLMParticipant(deep_research_interface)
             assistant_participant = deep_research_participant

@@ -8,9 +8,10 @@
 import importlib.util
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Type
 import logging
 from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
+from hermes.interface.assistant.deep_research_assistant.engine.command import Command
 
 
 def get_extensions_dir() -> Path:
@@ -57,19 +58,20 @@ def get_extension_commands(
 
 
 def load_extensions() -> (
-    tuple[List[ControlPanelCommand], List[ControlPanelCommand], List[callable]]
+    tuple[List[ControlPanelCommand], List[ControlPanelCommand], List[callable], List[Type[Command]]]
 ):
     """
     Load all extensions and return their commands and utils
-    Returns: (user_commands, llm_commands, utils_builders)
+    Returns: (user_commands, llm_commands, utils_builders, deep_research_commands)
     """
     user_commands = []
     llm_commands = []
     utils_builders = []
+    deep_research_commands = []
 
     extensions_dir = get_extensions_dir()
     if not extensions_dir.exists():
-        return [], [], []
+        return [], [], [], []
 
     # Scan for extension.py files in subdirectories
     for extension_dir in extensions_dir.iterdir():
@@ -89,6 +91,15 @@ def load_extensions() -> (
         user_commands.extend(get_extension_commands(module, "get_user_extra_commands"))
         llm_commands.extend(get_extension_commands(module, "get_llm_extra_commands"))
 
+        # Get deep research commands if available
+        if hasattr(module, "get_deep_research_commands"):
+            try:
+                commands = module.get_deep_research_commands()
+                if isinstance(commands, list):
+                    deep_research_commands.extend(commands)
+            except Exception as e:
+                logging.warning(f"Failed to get deep research commands: {str(e)}")
+
         # Get utils builders if available
         if hasattr(module, "get_utils_builders"):
             try:
@@ -98,4 +109,4 @@ def load_extensions() -> (
             except Exception as e:
                 logging.warning(f"Failed to get utils builders: {str(e)}")
 
-    return user_commands, llm_commands, utils_builders
+    return user_commands, llm_commands, utils_builders, deep_research_commands

@@ -74,6 +74,10 @@ class Command(ABC):
     def execute(self, engine: Any, args: Dict[str, Any]) -> None:
         """Execute the command with the given arguments"""
         pass
+        
+    def add_output(self, engine: Any, args: Dict[str, Any], output: str) -> None:
+        """Add command output to be included in the automatic response"""
+        engine.add_command_output(self.name, args, output)
     
     def validate(self, args: Dict[str, Any]) -> List[str]:
         """Validate command arguments, return list of error messages"""
