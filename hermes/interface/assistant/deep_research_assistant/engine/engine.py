@@ -110,9 +110,10 @@ class DeepResearchEngine:
 
         # Check for errors
         has_errors = any(result.errors for result in parse_results)
-        has_syntax_error = any(result.has_syntax_error for result in parse_results)
 
         # Track execution status for reporting
+        # Use a dictionary with command names as keys and a list of status entries as values
+        # to handle multiple commands with the same name
         execution_status = {}
 
         # Generate error report if there are errors
@@ -120,36 +121,54 @@ class DeepResearchEngine:
         if has_errors:
             error_report = self.command_parser.generate_error_report(parse_results)
 
-        # If there are syntax errors, don't execute any commands
-        if has_syntax_error:
-            auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.\n\n{error_report}'
-            self.chat_history.add_message("user", auto_reply)
-            print(auto_reply)
-            self._print_current_status()
-            return False, error_report, execution_status
-
-        # Execute commands if there are no syntax errors
+        # Execute commands that don't have syntax errors
         commands_executed = False
 
-        for result in parse_results:
-            if result.command_name and not result.errors:
-                try:
-                    self._execute_command(result.command_name, result.args)
-                    execution_status[result.command_name] = "success"
-                    commands_executed = True
-                except ValueError as e:
-                    execution_status[result.command_name] = f"failed: {str(e)}"
+        for i, result in enumerate(parse_results):
+            if result.command_name and not result.has_syntax_error:
+                # Create a unique key for this command instance
+                cmd_key = f"{result.command_name}_{i}"
+                line_num = result.errors[0].line_number if result.errors else None
+                
+                if not result.errors:
+                    try:
+                        self._execute_command(result.command_name, result.args)
+                        execution_status[cmd_key] = {
+                            "name": result.command_name,
+                            "status": "success",
+                            "line": line_num
+                        }
+                        commands_executed = True
+                    except ValueError as e:
+                        execution_status[cmd_key] = {
+                            "name": result.command_name,
+                            "status": f"failed: {str(e)}",
+                            "line": line_num
+                        }
+                else:
+                    # Command has validation errors but not syntax errors
+                    execution_status[cmd_key] = {
+                        "name": result.command_name,
+                        "status": "failed: validation errors",
+                        "line": line_num
+                    }
 
         # Add execution status to error report if there were failures
-        if any(status.startswith("failed") for status in execution_status.values()):
+        failed_commands = [info for info in execution_status.values() 
+                          if info["status"].startswith("failed")]
+        
+        if failed_commands:
             if not error_report:
                 error_report = "### Execution Status Report:\n"
             else:
                 error_report += "\n### Execution Status Report:\n"
 
-            for cmd, status in execution_status.items():
-                if status.startswith("failed"):
-                    error_report += f"- Command '{cmd}' {status}\n"
+            for info in failed_commands:
+                cmd_name = info["name"]
+                status = info["status"]
+                line_num = info["line"]
+                line_info = f" at line {line_num}" if line_num else ""
+                error_report += f"- Command '{cmd_name}'{line_info} {status}\n"
 
         auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.'
         if error_report:
