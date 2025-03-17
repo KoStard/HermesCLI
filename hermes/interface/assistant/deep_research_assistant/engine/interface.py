@@ -127,7 +127,7 @@ You can see the status of each problem in the breakdown structure. The current p
 
 Artifacts are your primary way to create value while working on problems. They represent the concrete outputs of your research and analysis. Whenever you find important information that moves the root problem towards a solution, capture it in the form of an artifact. High-quality artifacts are the main deliverable of your work.
 
-You'll see artifacts from the current problem, all parent problems, and all descendant problems. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy. So if you don't see an artifact, that means it either doesn't exist, or belongs to a problem not in your parent chain and not in your descendents.
+You'll see artifacts from all problems in the system. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy.
 
 ### Log Management
 
@@ -216,7 +216,7 @@ One-sentence summary of a key action or milestone.
 ```
 
 ======================
-# Artifacts (Current Problem, Parent Chain & Descendants)
+# Artifacts (All Problems)
 
 {artifacts_section}
 
@@ -263,27 +263,20 @@ Remember, we work backwards from the root problem.
         return result
 
     def _format_all_artifacts(self, node: Node) -> str:
-        """Format artifacts from a node, its parent chain, and all descendants for display"""
+        """Format artifacts from all nodes in the file system"""
         if not node:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
             
-        # Get all nodes in the parent chain, including current node
-        parent_chain = self.file_system.get_parent_chain(node)
-        
         # Collect all artifacts with their owner information
         all_artifacts = []
         
-        # Add artifacts from parent chain
-        for parent_node in parent_chain:
-            for name, artifact in parent_node.artifacts.items():
-                all_artifacts.append((name, artifact, parent_node.title, "parent"))
+        # Get the root node
+        root_node = self.file_system.root_node
         
-        # Add artifacts from all descendants
-        descendant_artifacts = self.collect_artifacts_recursively(node)
-        for owner_title, name, content in descendant_artifacts:
-            # Skip artifacts from the current node as they're already included in the parent chain
-            if owner_title != node.title:
-                all_artifacts.append((name, Artifact(name=name, content=content), owner_title, "descendant"))
+        # Collect all artifacts from all nodes in the file system
+        all_nodes_artifacts = self.collect_all_artifacts(root_node)
+        for owner_title, name, content in all_nodes_artifacts:
+            all_artifacts.append((name, Artifact(name=name, content=content), owner_title, "system"))
         
         if not all_artifacts:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
@@ -345,6 +338,16 @@ Remember, we work backwards from the root problem.
         for title, subproblem in node.subproblems.items():
             artifacts.extend(self.collect_artifacts_recursively(subproblem))
             
+        return artifacts
+        
+    def collect_all_artifacts(self, node: Node) -> list:
+        """Collect all artifacts from all nodes in the file system"""
+        if not node:
+            return []
+            
+        # Start with artifacts from this node and its descendants
+        artifacts = self.collect_artifacts_recursively(node)
+        
         return artifacts
 
 
