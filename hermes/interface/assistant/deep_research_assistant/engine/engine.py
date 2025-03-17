@@ -47,6 +47,8 @@ class DeepResearchEngine:
             for command_class in extension_commands:
                 CommandRegistry().register(command_class())
         
+        self._extension_commands = extension_commands
+        
         # Initialize interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, instruction)
         
@@ -145,30 +147,28 @@ class DeepResearchEngine:
                 if status.startswith("failed"):
                     error_report += f"- Command '{cmd}' {status}\n"
 
-        # If no commands were executed
-        if not commands_executed:
-            auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.'
-            if error_report:
-                auto_reply += f"\n\n{error_report}"
-                
-            # Add command outputs if any
-            if self.command_outputs:
-                auto_reply += "\n\n### Command Outputs\n"
-                for cmd_name, outputs in self.command_outputs.items():
-                    for output_data in outputs:
-                        auto_reply += f"\n#### {cmd_name}\n"
-                        # Format arguments
-                        args_str = ", ".join(f"{k}: {v}" for k, v in output_data["args"].items())
-                        if args_str:
-                            auto_reply += f"Arguments: {args_str}\n\n"
-                        # Add the output
-                        auto_reply += f"```\n{output_data['output']}\n```\n"
-                
-                # Clear command outputs after adding them to the response
-                self.command_outputs = {}
-                
-            self.chat_history.add_message("user", auto_reply)
-            print(auto_reply)
+        auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.'
+        if error_report:
+            auto_reply += f"\n\n{error_report}"
+            
+        # Add command outputs if any
+        if self.command_outputs:
+            auto_reply += "\n\n### Command Outputs\n"
+            for cmd_name, outputs in self.command_outputs.items():
+                for output_data in outputs:
+                    auto_reply += f"\n#### {cmd_name}\n"
+                    # Format arguments
+                    args_str = ", ".join(f"{k}: {v}" for k, v in output_data["args"].items())
+                    if args_str:
+                        auto_reply += f"Arguments: {args_str}\n\n"
+                    # Add the output
+                    auto_reply += f"```\n{output_data['output']}\n```\n"
+            
+            # Clear command outputs after adding them to the response
+            self.command_outputs = {}
+            
+        self.chat_history.add_message("user", auto_reply)
+        print(auto_reply)
         
         self._print_current_status()
         return commands_executed, error_report, execution_status
@@ -258,6 +258,10 @@ class DeepResearchEngine:
         Returns:
             str: Final report
         """
+        # Check if LLM interface is available
+        if not self.llm_interface:
+            raise ValueError("LLM interface is required for execution")
+            
         while not self.finished:
             self.current_node = self.task_executor.get_current_node()
             
@@ -287,7 +291,10 @@ class DeepResearchEngine:
             response_generator = self.llm_interface.send_request(request)
             
             # Get the full response
-            full_llm_response = next(response_generator)
+            try:
+                full_llm_response = next(response_generator)
+            except StopIteration:
+                full_llm_response = ""
             
             # Log the response
             self.llm_interface.log_response(current_node_path, full_llm_response)
