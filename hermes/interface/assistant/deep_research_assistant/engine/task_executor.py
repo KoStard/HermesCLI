@@ -4,15 +4,6 @@ from typing import Dict, Optional, Set
 from .file_system import Node
 from .task_queue import Task, TaskQueue, TaskStatus
 
-
-class TaskExecutorStatus(Enum):
-    """Status of the task executor"""
-
-    IDLE = "idle"
-    RUNNING = "running"
-    SHUTDOWN = "shutdown"
-
-
 class TaskExecutor:
     """
     Manages the execution of tasks in the Deep Research system.
@@ -23,7 +14,6 @@ class TaskExecutor:
 
     def __init__(self, root_node: Node):
         self.task_queue = TaskQueue()
-        self.status = TaskExecutorStatus.IDLE
         self.current_task_id: Optional[str] = None
         self.task_relationships: Dict[
             str, Set[str]
@@ -228,7 +218,3 @@ class TaskExecutor:
             return None
 
         return current_task.node
-
-    def shutdown(self) -> None:
-        """Shutdown the task executor"""
-        self.status = TaskExecutorStatus.SHUTDOWN
