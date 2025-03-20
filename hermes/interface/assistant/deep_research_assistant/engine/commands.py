@@ -35,14 +35,11 @@ class DefineProblemCommand(DefineCommand):
         # Ensure file system is fully updated
         engine.file_system.update_files()
 
-        # Clear history as we're starting fresh with a defined problem
-        engine.chat_history.clear()
-
         engine.problem_defined = True
         
         # Initialize the task executor with the root node
         engine.task_executor._initialize_root_task()
-        engine.current_node = engine.task_executor.get_current_node()
+        engine.set_current_node(engine.task_executor.get_current_node())
 
 
 @register_command
@@ -234,7 +231,7 @@ class FocusDownCommand(Command):
             previous_node = engine.current_node
             
             # Update current_node to the new focus
-            engine.current_node = engine.task_executor.get_current_node()
+            engine.set_current_node(engine.task_executor.get_current_node())
             
             # Update statuses
             if previous_node:
@@ -246,9 +243,6 @@ class FocusDownCommand(Command):
             
             # Update the file system
             engine.file_system.update_files()
-            
-            # Clear history when changing focus
-            engine.chat_history.clear()
         else:
             raise ValueError(
                 f"Failed to focus down to subproblem '{title}'. Make sure the subproblem exists."
@@ -279,16 +273,13 @@ class FocusUpCommand(Command):
         
         if result:
             # Update current_node to the new focus (parent)
-            engine.current_node = engine.task_executor.get_current_node()
+            engine.set_current_node(engine.task_executor.get_current_node())
             
             # Set the new current node to CURRENT
             if engine.current_node:
                 engine.current_node.status = ProblemStatus.CURRENT
                 engine.file_system.update_files()
                 
-            # Clear history when changing focus
-            engine.chat_history.clear()
-            
             # Check if we've finished the root task
             if not engine.current_node:
                 engine.finished = True
@@ -318,16 +309,13 @@ class FailProblemAndFocusUpCommand(Command):
         
         if result:
             # Update current_node to the new focus (parent)
-            engine.current_node = engine.task_executor.get_current_node()
+            engine.set_current_node(engine.task_executor.get_current_node())
             
             # Set the new current node to CURRENT
             if engine.current_node:
                 engine.current_node.status = ProblemStatus.CURRENT
                 engine.file_system.update_files()
                 
-            # Clear history when changing focus
-            engine.chat_history.clear()
-            
             # Check if we've finished the root task
             if not engine.current_node:
                 engine.finished = True
