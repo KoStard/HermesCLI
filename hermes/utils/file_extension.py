@@ -13,9 +13,12 @@ def remove_quotes(path: str) -> str:
         Path with quotes removed
     """
     # Remove single quotes, double quotes, and smart quotes
-    quotes = {"'", '"', "“", "”"}
-    result = []
-    for c in path:
-        if c not in quotes:
-            result.append(c)
-    return "".join(result)
+    quotes = {"'", '"', """, """}
+    
+    # Trim quotes from beginning and end of path
+    while path and path[0] in quotes:
+        path = path[1:]
+    while path and path[-1] in quotes:
+        path = path[:-1]
+        
+    return path
