@@ -7,7 +7,7 @@ from .command import CommandRegistry
 from .command_parser import CommandParser, ParseResult
 # Import commands to ensure they're registered
 from . import commands
-from .file_system import FileSystem, ProblemStatus
+from .file_system import FileSystem, Node, ProblemStatus
 from .history import ChatHistory
 from .interface import DeepResearcherInterface
 from .llm_interface import LLMInterface
@@ -42,7 +42,7 @@ class DeepResearchEngine:
         
         # Set current node to root node if problem is already defined
         if self.problem_defined:
-            self.current_node = existing_problem
+            self.set_current_node(existing_problem)
         
         # Initialize task executor
         self.task_executor = TaskExecutor(self.file_system)
@@ -102,7 +102,7 @@ class DeepResearchEngine:
             self.finished = True
             return True, "System shutdown requested and executed.", {"shutdown": "success"}
             
-        # Add the assistant's message to history
+        # Add the assistant's message to history for the current node
         self.chat_history.add_message("assistant", text)
 
         # Parse all commands from the text
@@ -190,6 +190,7 @@ class DeepResearchEngine:
             # Clear command outputs after adding them to the response
             self.command_outputs = {}
             
+        # Add the auto reply to the current node's history
         self.chat_history.add_message("user", auto_reply)
         print(auto_reply)
         
@@ -287,12 +288,12 @@ class DeepResearchEngine:
             
         # Initialize current node if problem is already defined
         if self.problem_defined and not self.current_node:
-            self.current_node = self.file_system.root_node
+            self.set_current_node(self.file_system.root_node)
             
         while not self.finished:
             # Only update current node from task executor if it's not already set
             if not self.current_node:
-                self.current_node = self.task_executor.get_current_node()
+                self.set_current_node(self.task_executor.get_current_node())
             
             # Get the interface content
             interface_content = self.get_interface_content()
@@ -357,6 +358,11 @@ class DeepResearchEngine:
         
         # Generate the final report
         return self._generate_final_report()
+    
+    def set_current_node(self, node: Node) -> None:
+        """Set the current node and update chat history"""
+        self.current_node = node
+        self.chat_history.set_current_node(node.title)
     
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""

@@ -103,7 +103,7 @@ Your project is solving the root problem (created or updated by the user instruc
 
 Include expectations on the depth of the results in problem definitions. On average be frugal, not making the problems scope explode.
 
-The chat history will be erased with every focus change, as it represents a new beginning with a different problem focus.
+The chat history is preserved for each problem node. When you return to a problem you've worked on before, you'll see the previous conversation history for that specific problem. This helps maintain context and continuity as you navigate through the problem hierarchy.
 
 Note that attachments from both the current problem and all parent problems are visible. Each attachment shows its owner (the problem it belongs to) at the top. When changing focus, new attachments from that problem will become available.
 
