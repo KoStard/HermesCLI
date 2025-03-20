@@ -20,7 +20,6 @@ class TaskStatus(Enum):
 class Task:
     """Represents a task in the queue"""
 
-    node: Node
     status: TaskStatus
     parent_task_id: Optional[str] = None
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
