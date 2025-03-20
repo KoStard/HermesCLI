@@ -2,7 +2,9 @@ import logging
 from typing import Generator, List
 
 from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
+from hermes.interface.assistant.chat_assistant.control_panel import (
+    ChatAssistantControlPanel,
+)
 from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
