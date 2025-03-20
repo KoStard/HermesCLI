@@ -26,7 +26,7 @@ class TaskExecutor:
 
     def _initialize_root_task(self, root_node: Node) -> None:
         """Initialize the root task"""
-        root_task = Task(node=root_node, status=TaskStatus.PENDING)
+        root_task = Task(status=TaskStatus.PENDING)
         task_id = self.task_queue.add_task(root_task)
         self.task_node_map[task_id] = root_node
         self._start_next_task()
@@ -44,11 +44,8 @@ class TaskExecutor:
         if not self.current_task_id:
             return False
 
-        current_task = self.task_queue.get_task(self.current_task_id)
-        if not current_task:
-            return False
+        current_node = self.task_node_map[self.current_task_id]
 
-        current_node = current_task.node
         if subproblem_title not in current_node.subproblems:
             return False
 
@@ -57,7 +54,6 @@ class TaskExecutor:
 
         # Create a new task for the subproblem
         subproblem_task = Task(
-            node=subproblem_node,
             status=TaskStatus.PENDING,
             parent_task_id=self.current_task_id,
         )
@@ -195,7 +191,7 @@ class TaskExecutor:
         """Start the next pending task"""
         # If we already have a running task, don't start another one
         if self.current_task_id:
-            return
+            raise Exception("Already have a running task")
 
         # Get all pending tasks
         pending_tasks = self.task_queue.get_tasks_by_status(TaskStatus.PENDING)
@@ -213,8 +209,4 @@ class TaskExecutor:
         if not self.current_task_id:
             return None
 
-        current_task = self.task_queue.get_task(self.current_task_id)
-        if not current_task:
-            return None
-
-        return current_task.node
+        return self.task_node_map[self.current_task_id]
