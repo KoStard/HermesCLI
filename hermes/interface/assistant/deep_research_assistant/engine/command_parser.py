@@ -3,10 +3,11 @@ from typing import Dict, List, Optional, Tuple
 
 from .command import CommandError, CommandRegistry, ParseResult
 
+
 class CommandParser:
     def __init__(self):
         self.registry = CommandRegistry()
-    
+
     def parse_text(self, text: str) -> List[ParseResult]:
         """
         Parse all commands from text and return a list of parse results
@@ -50,25 +51,27 @@ class CommandParser:
                     command = self.registry.get_command(command_name)
                     if command:
                         args, errors = self._parse_command_sections(
-                            "\n".join(block_content), 
+                            "\n".join(block_content),
                             block_start_line + 1,
                             command.get_required_sections(),
-                            command_name
+                            command_name,
                         )
-                        
+
                         # Apply any transformations to the arguments
                         args = command.transform_args(args)
-                        
+
                         # Validate the arguments
                         validation_errors = command.validate(args)
                         if validation_errors:
                             for error in validation_errors:
-                                errors.append(CommandError(
-                                    command=command_name,
-                                    message=error,
-                                    line_number=block_start_line + 1
-                                ))
-                        
+                                errors.append(
+                                    CommandError(
+                                        command=command_name,
+                                        message=error,
+                                        line_number=block_start_line + 1,
+                                    )
+                                )
+
                         result.args = args
                         result.errors = errors
                     else:
@@ -155,17 +158,14 @@ class CommandParser:
 
         return errors
 
+    @staticmethod
     def _parse_command_sections(
-        self, 
-        content: str,
-        line_number: int,
-        required_sections: List[str],
-        command_name: str
+        content: str, line_number: int, required_sections: List[str], command_name: str
     ) -> Tuple[Dict, List[CommandError]]:
         """Helper to parse command sections with /// delimiters"""
         errors = []
         result = {}
-        
+
         # Find all sections in the content
         sections = re.findall(r"///(\w+)\s+(.*?)(?=///|\Z)", content, re.DOTALL)
         found_sections = {section[0]: section[1].strip() for section in sections}
@@ -173,27 +173,31 @@ class CommandParser:
         # Validate required sections
         for section in required_sections:
             if section not in found_sections:
-                errors.append(CommandError(
-                    command=command_name,
-                    message=f"Missing '///{section}' section in {command_name} command",
-                    line_number=line_number,
-                ))
+                errors.append(
+                    CommandError(
+                        command=command_name,
+                        message=f"Missing '///{section}' section in {command_name} command",
+                        line_number=line_number,
+                    )
+                )
             elif not found_sections[section]:
-                errors.append(CommandError(
-                    command=command_name,
-                    message=f"{section.capitalize()} cannot be empty",
-                    line_number=line_number,
-                ))
-                
+                errors.append(
+                    CommandError(
+                        command=command_name,
+                        message=f"{section.capitalize()} cannot be empty",
+                        line_number=line_number,
+                    )
+                )
+
         # Add valid sections to result
         for section, value in found_sections.items():
             if value:  # Only add non-empty values
                 result[section] = value
-                
+
         return result, errors
 
-
-    def generate_error_report(self, parse_results: List[ParseResult]) -> str:
+    @staticmethod
+    def generate_error_report(parse_results: List[ParseResult]) -> str:
         """Generate an error report from parse results"""
         all_errors = []
         for result in parse_results:
@@ -212,8 +216,12 @@ class CommandParser:
         # Add information about which commands have syntax errors
         # Use a list of tuples with (command_name, line_number) to distinguish between multiple instances
         commands_with_syntax_errors = [
-            (result.command_name, result.errors[0].line_number if result.errors else None) 
-            for result in parse_results if result.has_syntax_error
+            (
+                result.command_name,
+                result.errors[0].line_number if result.errors else None,
+            )
+            for result in parse_results
+            if result.has_syntax_error
         ]
         if commands_with_syntax_errors:
             report += "Commands with syntax errors that will not be executed:\n"

@@ -23,11 +23,11 @@ class ChatHistory:
     def set_current_node(self, node_id: str) -> None:
         """Set the current node and load its history"""
         self.current_node_id = node_id
-        
+
         # Initialize history for this node if it doesn't exist
         if node_id not in self.node_histories:
             self.node_histories[node_id] = []
-            
+
         # Point messages to the current node's history
         self.messages = self.node_histories[node_id]
 
@@ -36,10 +36,10 @@ class ChatHistory:
         if not self.current_node_id:
             # If no current node is set, we can't add messages
             return
-            
+
         message = ChatMessage(author, content)
         self.messages.append(message)
-        
+
         # Ensure the node_histories is updated (should be by reference, but being explicit)
         self.node_histories[self.current_node_id] = self.messages
 
@@ -48,7 +48,7 @@ class ChatHistory:
         self.node_histories.clear()
         self.current_node_id = None
         self.messages = []
-        
+
     def clear_current_node_history(self) -> None:
         """Clear only the current node's history"""
         if self.current_node_id:

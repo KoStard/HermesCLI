@@ -196,18 +196,27 @@ Remember, we work backwards from the root problem.
         """Format artifacts from all nodes in the file system"""
         if not node:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
-            
+
         # Collect all artifacts with their owner information
         all_artifacts = []
-        
+
         # Get the root node
         root_node = self.file_system.root_node
-        
+
         # Collect all artifacts from all nodes in the file system
         all_nodes_artifacts = self.collect_all_artifacts(root_node)
         for owner_title, name, content, is_fully_visible in all_nodes_artifacts:
-            all_artifacts.append((name, Artifact(name=name, content=content, is_fully_visible=is_fully_visible), owner_title, "system"))
-        
+            all_artifacts.append(
+                (
+                    name,
+                    Artifact(
+                        name=name, content=content, is_fully_visible=is_fully_visible
+                    ),
+                    owner_title,
+                    "system",
+                )
+            )
+
         if not all_artifacts:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
 
@@ -217,23 +226,23 @@ Remember, we work backwards from the root problem.
             result += f"---\n"
             result += f"owner: {owner} ({relationship})\n"
             result += f"---\n\n"
-            
+
             # Show full content or just first 10 lines based on visibility flag
             if artifact.is_fully_visible:
                 result += f"{artifact.content}\n"
             else:
                 # Split content into lines and take first 10
-                content_lines = artifact.content.split('\n')
+                content_lines = artifact.content.split("\n")
                 preview_lines = content_lines[:10]
                 remaining_count = len(content_lines) - 10
-                
+
                 # Add preview lines
-                result += '\n'.join(preview_lines)
-                
+                result += "\n".join(preview_lines)
+
                 # Add message about hidden content if there are more lines
                 if remaining_count > 0:
                     result += f"\n\n[...{remaining_count} more lines hidden. Use 'open_artifact' command to view full content...]\n"
-            
+
             result += "</artifact>\n"
         result += "</artifacts>"
         return result
@@ -275,33 +284,34 @@ Remember, we work backwards from the root problem.
     def collect_artifacts_recursively(self, node: Node) -> list:
         """Recursively collect artifacts from a node and all its descendants"""
         artifacts = []
-        
+
         # Add this node's artifacts
         for name, artifact in node.artifacts.items():
-            artifacts.append((node.title, name, artifact.content, artifact.is_fully_visible))
-            
+            artifacts.append(
+                (node.title, name, artifact.content, artifact.is_fully_visible)
+            )
+
         # Recursively collect artifacts from all subproblems
         for title, subproblem in node.subproblems.items():
             artifacts.extend(self.collect_artifacts_recursively(subproblem))
-            
+
         return artifacts
-        
+
     def collect_all_artifacts(self, node: Node) -> list:
         """Collect all artifacts from all nodes in the file system"""
         if not node:
             return []
-            
+
         # Start with artifacts from this node and its descendants
         artifacts = self.collect_artifacts_recursively(node)
-        
-        return artifacts
 
+        return artifacts
 
     def _format_permanent_log(self, permannet_logs: list) -> str:
         """Format permanent history for display"""
         if not permannet_logs:
             return "<permanent_log>\nNo history entries yet.\n</permanent_log>"
-            
+
         entries = "\n".join(f"- {entry}" for entry in permannet_logs)
         return f"<permanent_log>\n{entries}\n</permanent_log>"
 
@@ -309,7 +319,7 @@ Remember, we work backwards from the root problem.
         """Format parent chain for display"""
         if not node:
             return ""
-            
+
         chain = self.file_system.get_parent_chain(node)
         if len(chain) <= 1:
             return ""
@@ -318,9 +328,7 @@ Remember, we work backwards from the root problem.
 
         # Skip the current node
         for i, parent_node in enumerate(chain[:-1]):
-            result += (
-                f"### L{i} {'Root Problem' if i == 0 else 'Problem'}: {parent_node.title}\n"
-            )
+            result += f"### L{i} {'Root Problem' if i == 0 else 'Problem'}: {parent_node.title}\n"
             result += f"{parent_node.problem_definition}\n\n"
 
             if parent_node.subproblems:
@@ -330,20 +338,20 @@ Remember, we work backwards from the root problem.
                     result += f"{subproblem.problem_definition}\n\n"
 
         return result.strip()
-        
+
     def _generate_command_help(self) -> str:
         """Generate help text for all registered commands"""
         from .command import CommandRegistry
-        
+
         # Get all registered commands
         commands = CommandRegistry().get_all_commands()
-        
+
         # Generate command help text
         result = []
         for name, cmd in sorted(commands.items()):
             # Command header with name
             command_text = f"<<< {name}"
-            
+
             # Add sections
             for section in cmd.sections:
                 command_text += f"\n///{section.name}"
@@ -351,14 +359,14 @@ Remember, we work backwards from the root problem.
                     command_text += f"\n{section.help_text}"
                 else:
                     command_text += f"\nYour {section.name} here"
-            
+
             # Command footer
             command_text += "\n>>>"
-            
+
             # Add help text if available
             if cmd.help_text:
                 command_text += f"\n; {cmd.help_text}"
-            
+
             result.append(command_text)
-        
+
         return "\n\n".join(result)

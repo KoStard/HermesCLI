@@ -20,6 +20,7 @@ from tenacity import (
 )
 from google.genai.errors import ClientError
 
+
 class Gemini2Model(ChatModel):
     def initialize(self):
         from google import genai
@@ -77,7 +78,7 @@ class Gemini2Model(ChatModel):
             print(response)
             yield from []
             return
-        
+
         for part in response.candidates[0].content.parts or []:
             yield from self._convert_to_llm_response(
                 self._handle_part(part), is_thinking=not has_finished_thinking

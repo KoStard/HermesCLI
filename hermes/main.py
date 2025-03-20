@@ -3,8 +3,12 @@ from hermes.extensions_loader import load_extensions
 from hermes.engine import Engine
 from argparse import ArgumentParser, Namespace
 from hermes.history import History
-from hermes.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
-from hermes.interface.assistant.deep_research_assistant.interface import DeepResearchAssistantInterface
+from hermes.interface.assistant.chat_assistant.control_panel import (
+    ChatAssistantControlPanel,
+)
+from hermes.interface.assistant.deep_research_assistant.interface import (
+    DeepResearchAssistantInterface,
+)
 from hermes.interface.assistant.model_factory import ModelFactory
 from hermes.interface.user.command_completer import CommandCompleter
 from hermes.interface.control_panel import CommandsLister
@@ -139,9 +143,12 @@ def main():
 
     notifications_printer = CLINotificationsPrinter()
 
-    user_extra_commands, llm_extra_commands, extension_utils_builders, deep_research_commands = (
-        load_extensions()
-    )
+    (
+        user_extra_commands,
+        llm_extra_commands,
+        extension_utils_builders,
+        deep_research_commands,
+    ) = load_extensions()
 
     model_factory = ModelFactory(notifications_printer)
 
@@ -233,16 +240,18 @@ def main():
             deep_research_interface = DeepResearchAssistantInterface(
                 model=model,
                 research_path=research_path,
-                extension_commands=deep_research_commands
+                extension_commands=deep_research_commands,
             )
             deep_research_participant = LLMParticipant(deep_research_interface)
             assistant_participant = deep_research_participant
-            
+
             notifications_printer.print_notification(
                 f"Using Deep Research Assistant interface with research directory: {research_path}"
             )
         else:
-            llm_interface = ChatAssistantInterface(model, control_panel=llm_control_panel)
+            llm_interface = ChatAssistantInterface(
+                model, control_panel=llm_control_panel
+            )
             llm_participant = LLMParticipant(llm_interface)
             assistant_participant = llm_participant
 

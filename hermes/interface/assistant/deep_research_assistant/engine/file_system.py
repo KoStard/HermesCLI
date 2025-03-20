@@ -16,11 +16,12 @@ class Artifact:
 
 class ProblemStatus(Enum):
     NOT_STARTED = "NOT_STARTED"  # Problem has not been started yet
-    PENDING = "PENDING"          # Problem is temporarily paused (focus moved to child)
-    CURRENT = "CURRENT"          # Problem is currently being worked on
-    FINISHED = "FINISHED"        # Problem has been successfully completed
-    FAILED = "FAILED"            # Problem could not be solved
-    CANCELLED = "CANCELLED"      # Problem was determined to be unnecessary
+    PENDING = "PENDING"  # Problem is temporarily paused (focus moved to child)
+    CURRENT = "CURRENT"  # Problem is currently being worked on
+    FINISHED = "FINISHED"  # Problem has been successfully completed
+    FAILED = "FAILED"  # Problem could not be solved
+    CANCELLED = "CANCELLED"  # Problem was determined to be unnecessary
+
 
 @dataclass
 class Node:
@@ -63,7 +64,9 @@ class Node:
 
     def add_artifact(self, name: str, content: str) -> None:
         """Add an artifact"""
-        self.artifacts[name] = Artifact(name=name, content=content, is_fully_visible=False)
+        self.artifacts[name] = Artifact(
+            name=name, content=content, is_fully_visible=False
+        )
 
     def append_to_problem_definition(self, content: str) -> None:
         """Append to the problem definition"""
@@ -82,7 +85,7 @@ class Node:
         met = self.get_criteria_met_count()
         total = self.get_criteria_total_count()
         return f"[{met}/{total} criteria met]"
-        
+
     def get_status_emoji(self) -> str:
         """Get an emoji representation of the problem status"""
         status_emojis = {
@@ -91,10 +94,10 @@ class Node:
             ProblemStatus.CURRENT: "🔍",
             ProblemStatus.FINISHED: "✅",
             ProblemStatus.FAILED: "❌",
-            ProblemStatus.CANCELLED: "🚫"
+            ProblemStatus.CANCELLED: "🚫",
         }
         return status_emojis.get(self.status, "🆕")
-        
+
     def get_status_label(self) -> str:
         """Get a short label for the problem status"""
         return self.status.value
@@ -105,7 +108,7 @@ class FileSystem:
         self.root_dir = Path(root_dir)
         self.root_node: Optional[Node] = None
         self.lock = threading.RLock()  # Reentrant lock for thread safety
-        
+
         # Ensure the root directory exists
         os.makedirs(self.root_dir, exist_ok=True)
 
@@ -138,8 +141,10 @@ class FileSystem:
             return None
 
         # Read problem definition and extract front-matter
-        title, problem_definition = self._read_problem_definition_with_frontmatter(problem_def_file)
-        
+        title, problem_definition = self._read_problem_definition_with_frontmatter(
+            problem_def_file
+        )
+
         # If no title in front-matter, use directory name as fallback
         if not title:
             title = self.root_dir.name
@@ -178,7 +183,11 @@ class FileSystem:
                     with open(artifact_file, "r") as f:
                         # Load artifacts as half-closed by default
                         artifact_content = f.read()
-                        artifact = Artifact(name=artifact_file.name, content=artifact_content, is_fully_visible=False)
+                        artifact = Artifact(
+                            name=artifact_file.name,
+                            content=artifact_content,
+                            is_fully_visible=False,
+                        )
                         self.root_node.artifacts[artifact_file.name] = artifact
 
         # Load subproblems recursively
@@ -205,8 +214,10 @@ class FileSystem:
                 continue
 
             # Read problem definition and extract front-matter
-            title, problem_definition = self._read_problem_definition_with_frontmatter(problem_def_file)
-            
+            title, problem_definition = self._read_problem_definition_with_frontmatter(
+                problem_def_file
+            )
+
             # If no title in front-matter, use directory name as fallback
             if not title:
                 title = subproblem_dir.name
@@ -245,7 +256,11 @@ class FileSystem:
                         with open(artifact_file, "r") as f:
                             # Load artifacts as half-closed by default
                             artifact_content = f.read()
-                            artifact = Artifact(name=artifact_file.name, content=artifact_content, is_fully_visible=False)
+                            artifact = Artifact(
+                                name=artifact_file.name,
+                                content=artifact_content,
+                                is_fully_visible=False,
+                            )
                             subproblem.artifacts[artifact_file.name] = artifact
 
             # Recursively load subproblems
@@ -288,7 +303,9 @@ class FileSystem:
 
                 prefix = "     " * (i + 1) + " └── "
                 if i == len(path) - 1:
-                    result.append(f"{prefix}CURRENT: {node.title} [🗂️ {artifacts_count} artifacts]")
+                    result.append(
+                        f"{prefix}CURRENT: {node.title} [🗂️ {artifacts_count} artifacts]"
+                    )
                 else:
                     result.append(
                         f"{prefix}Level {i+1}: {node.title} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
@@ -324,7 +341,7 @@ class FileSystem:
         subproblems_dir = node.path / "Subproblems"
         if not subproblems_dir.exists():
             subproblems_dir.mkdir(exist_ok=True)
-            
+
         # Create logs_and_debug directory
         logs_dir = node.path / "logs_and_debug"
         if not logs_dir.exists():
@@ -356,7 +373,6 @@ class FileSystem:
                     status = "[x]" if done else "[ ]"
                     f.write(f"{i+1}. {status} {criterion}\n")
 
-
         # Write breakdown structure (always create the file)
         with open(node.path / "Breakdown Structure.md", "w") as f:
             if node.subproblems:
@@ -368,7 +384,7 @@ class FileSystem:
         for name, artifact in node.artifacts.items():
             filename = self._sanitize_filename(name)
             # Add .md extension if no extension exists
-            if '.' not in filename:
+            if "." not in filename:
                 filename = filename + ".md"
             with open(node.path / "Artifacts" / filename, "w") as f:
                 f.write(artifact.content)
@@ -386,36 +402,40 @@ class FileSystem:
                 # Then write all files
                 self._write_node_to_disk(self.root_node)
 
-    def _read_problem_definition_with_frontmatter(self, file_path: Path) -> Tuple[Optional[str], str]:
+    def _read_problem_definition_with_frontmatter(
+        self, file_path: Path
+    ) -> Tuple[Optional[str], str]:
         """
         Read a problem definition file and extract front-matter metadata
-        
+
         Returns:
             Tuple[Optional[str], str]: (title, problem_definition)
         """
         if not file_path.exists():
             return None, ""
-            
+
         with open(file_path, "r") as f:
             content = f.read()
-            
+
         # Check for front-matter (between --- markers)
-        frontmatter_match = re.match(r"^---\s*\n(.*?)\n---\s*\n(.*)", content, re.DOTALL)
-        
+        frontmatter_match = re.match(
+            r"^---\s*\n(.*?)\n---\s*\n(.*)", content, re.DOTALL
+        )
+
         if frontmatter_match:
             # Extract front-matter and content
             frontmatter = frontmatter_match.group(1)
             problem_definition = frontmatter_match.group(2).strip()
-            
+
             # Extract title from front-matter
             title_match = re.search(r"title:\s*(.*?)(\n|$)", frontmatter)
             title = title_match.group(1).strip() if title_match else None
-            
+
             return title, problem_definition
         else:
             # No front-matter found, return the entire content as problem definition
             return None, content
-    
+
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize a filename to be valid on the filesystem"""
         # Replace invalid characters with underscores
