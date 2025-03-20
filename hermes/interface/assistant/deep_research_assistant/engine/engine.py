@@ -46,7 +46,7 @@ class DeepResearchEngine:
             self.set_current_node(existing_problem)
 
         # Initialize task executor
-        self.task_executor = TaskExecutor(self.file_system)
+        self.task_executor = TaskExecutor(self.file_system.root_node)
 
         # Register any extension commands
         if extension_commands:
