@@ -1,6 +1,7 @@
 from typing import List
 
-from .file_system import FileSystem, Node
+from .command import CommandRegistry
+from .file_system import FileSystem, Node, Artifact
 
 
 class DeepResearcherInterface:
@@ -346,8 +347,6 @@ Remember, we work backwards from the root problem.
 
     def _generate_command_help(self) -> str:
         """Generate help text for all registered commands"""
-        from .command import CommandRegistry
-
         # Get all registered commands
         commands = CommandRegistry().get_all_commands()
 

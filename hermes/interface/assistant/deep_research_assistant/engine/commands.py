@@ -1,7 +1,10 @@
 from typing import Dict, Any, List, Optional
+from abc import ABC, abstractmethod
+from enum import Enum, auto
 
 from .command import Command, CommandRegistry, CommandType, register_command
 from .file_system import Artifact, ProblemStatus, Node
+from .command_context import CommandContext
 
 
 class DefineCommand(Command):
@@ -20,9 +23,9 @@ class DefineProblemCommand(DefineCommand):
         self.add_section("title", True, "Title of the problem")
         self.add_section("content", True, "Content of the problem definition")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Create the root problem"""
-        root_node = engine.file_system.create_root_problem(
+        root_node = context.file_system.create_root_problem(
             args["title"], args["content"]
         )
 
@@ -30,16 +33,23 @@ class DefineProblemCommand(DefineCommand):
         root_node.status = ProblemStatus.CURRENT
 
         # Copy initial artifacts to the root problem
-        for artifact in engine.initial_attachments:
+        # We need to access engine for this specific property
+        engine = context._engine
+        initial_attachments = []
+        if engine and hasattr(engine, "initial_attachments"):
+            initial_attachments = engine.initial_attachments
+        
+        for artifact in initial_attachments:
             root_node.add_artifact(artifact, f"Content of {artifact} would be here...")
 
         # Ensure file system is fully updated
-        engine.file_system.update_files()
+        context.update_files()
 
-        engine.problem_defined = True
+        # Set problem_defined flag
+        context.set_problem_defined(True)
 
         # Initialize the task executor with the root node
-        engine.activate_node(engine.task_scheduler.get_current_node())
+        context.activate_node(context.task_scheduler.get_current_node())
 
 
 @register_command
@@ -51,9 +61,9 @@ class AddCriteriaCommand(Command):
         )
         self.add_section("criteria", True, "Criteria text")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Add criteria to the current problem"""
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             return
 
@@ -63,7 +73,7 @@ class AddCriteriaCommand(Command):
             return
 
         current_node.add_criteria(criteria_text)
-        engine.file_system.update_files()
+        context.update_files()
 
 
 @register_command
@@ -77,15 +87,15 @@ class MarkCriteriaAsDoneCommand(Command):
             "criteria_number", True, "Number of the criteria to mark as done"
         )
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Mark criteria as done"""
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             return
 
         success = current_node.mark_criteria_as_done(args["index"])
         if success:
-            engine.file_system.update_files()
+            context.update_files()
 
     def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Convert criteria_number to zero-based index"""
@@ -123,9 +133,9 @@ class AddSubproblemCommand(Command):
         self.add_section("title", True, "Title of the subproblem")
         self.add_section("content", True, "Content of the subproblem definition")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Add a subproblem to the current problem"""
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             return
 
@@ -138,8 +148,8 @@ class AddSubproblemCommand(Command):
         # Set initial status to NOT_STARTED
         subproblem.status = ProblemStatus.NOT_STARTED
         # Create directories for the new subproblem
-        engine.file_system._create_node_directories(subproblem)
-        engine.file_system.update_files()
+        context.file_system._create_node_directories(subproblem)
+        context.update_files()
 
 
 @register_command
@@ -152,9 +162,9 @@ class AddArtifactCommand(Command):
         self.add_section("name", True, "Name of the artifact")
         self.add_section("content", True, "Content of the artifact")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Add an artifact to the current problem"""
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             return
 
@@ -163,7 +173,7 @@ class AddArtifactCommand(Command):
             name=args["name"], content=args["content"], is_fully_visible=False
         )
         current_node.artifacts[args["name"]] = artifact
-        engine.file_system.update_files()
+        context.update_files()
 
 
 @register_command
@@ -175,14 +185,14 @@ class AppendToProblemDefinitionCommand(Command):
         )
         self.add_section("content", True, "Content to append")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Append to the problem definition"""
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             return
 
         current_node.append_to_problem_definition(args["content"])
-        engine.file_system.update_files()
+        context.update_files()
 
 
 @register_command
@@ -195,9 +205,9 @@ class AddCriteriaToSubproblemCommand(Command):
         self.add_section("title", True, "Title of the subproblem")
         self.add_section("criteria", True, "Criteria text")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Add criteria to a subproblem"""
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             return
 
@@ -214,7 +224,7 @@ class AddCriteriaToSubproblemCommand(Command):
             return
 
         subproblem.add_criteria(criteria_text)
-        engine.file_system.update_files()
+        context.update_files()
 
 
 @register_command
@@ -226,18 +236,18 @@ class FocusDownCommand(Command):
         )
         self.add_section("title", True, "Title of the subproblem to focus on")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus down to a subproblem"""
         # Request focus down through the task scheduler
         title = args["title"]
-        result = engine.task_scheduler.request_focus_down(title)
+        result = context.task_scheduler.request_focus_down(title)
 
         if result:
             # Get the previous node before updating current_node
-            previous_node = engine.current_node
+            previous_node = context.current_node
 
             # Update current_node to the new focus
-            engine.activate_node(engine.task_scheduler.get_current_node())
+            context.activate_node(context.task_scheduler.get_current_node())
 
             # Update statuses
             if previous_node:
@@ -245,10 +255,10 @@ class FocusDownCommand(Command):
                 previous_node.status = ProblemStatus.PENDING
 
             # Set current node to CURRENT
-            engine.current_node.status = ProblemStatus.CURRENT
+            context.current_node.status = ProblemStatus.CURRENT
 
             # Update the file system
-            engine.file_system.update_files()
+            context.update_files()
         else:
             raise ValueError(
                 f"Failed to focus down to subproblem '{title}'. Make sure the subproblem exists."
@@ -264,31 +274,32 @@ class FocusUpCommand(Command):
             CommandType.SIMPLE,
         )
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus up to the parent problem"""
         # Store the current node before focusing up
-        previous_node = engine.current_node
+        previous_node = context.current_node
 
         # Mark the current node as FINISHED before focusing up
         if previous_node:
             previous_node.status = ProblemStatus.FINISHED
-            engine.file_system.update_files()
+            context.update_files()
 
         # Request focus up through the task scheduler
-        result = engine.task_scheduler.request_focus_up()
+        result = context.task_scheduler.request_focus_up()
 
         if result:
             # Update current_node to the new focus (parent)
-            new_node = engine.task_scheduler.get_current_node()
+            new_node = context.task_scheduler.get_current_node()
             if new_node:
-                engine.activate_node(new_node)
+                context.activate_node(new_node)
                 # Set the new current node to CURRENT
-                engine.current_node.status = ProblemStatus.CURRENT
-                engine.file_system.update_files()
+                context.current_node.status = ProblemStatus.CURRENT
+                context.update_files()
             else:
                 # No more nodes to process, we're done
-                engine.current_node = None
-                engine.finished = True
+                context.set_current_node(None)
+                # Mark as finished
+                context.set_finished(True)
 
 
 @register_command
@@ -300,31 +311,32 @@ class FailProblemAndFocusUpCommand(Command):
             CommandType.SIMPLE,
         )
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Mark problem as failed and focus up"""
         # Store the current node before focusing up
-        previous_node = engine.current_node
+        previous_node = context.current_node
 
         # Mark the current node as FAILED before focusing up
         if previous_node:
             previous_node.status = ProblemStatus.FAILED
-            engine.file_system.update_files()
+            context.update_files()
 
         # Request fail and focus up through the task scheduler
-        result = engine.task_scheduler.request_fail_and_focus_up()
+        result = context.task_scheduler.request_fail_and_focus_up()
 
         if result:
             # Update current_node to the new focus (parent)
-            new_node = engine.task_scheduler.get_current_node()
+            new_node = context.task_scheduler.get_current_node()
             if new_node:
-                engine.activate_node(new_node)
+                context.activate_node(new_node)
                 # Set the new current node to CURRENT
-                engine.current_node.status = ProblemStatus.CURRENT
-                engine.file_system.update_files()
+                context.current_node.status = ProblemStatus.CURRENT
+                context.update_files()
             else:
                 # No more nodes to process, we're done
-                engine.current_node = None
-                engine.finished = True
+                context.set_current_node(None)
+                # Mark as finished
+                context.set_finished(True)
         else:
             raise ValueError(
                 "Failed to mark problem as failed and focus up. This should not happen."
@@ -340,9 +352,9 @@ class CancelSubproblemCommand(Command):
         )
         self.add_section("title", True, "Title of the subproblem to cancel")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Cancel a subproblem"""
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             return
 
@@ -357,7 +369,7 @@ class CancelSubproblemCommand(Command):
         subproblem.status = ProblemStatus.CANCELLED
 
         # Update the file system
-        engine.file_system.update_files()
+        context.update_files()
 
 
 @register_command
@@ -369,11 +381,11 @@ class AddLogEntryCommand(Command):
         )
         self.add_section("content", True, "Content of the log entry")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Add a log entry"""
         content = args.get("content", "")
         if content:
-            engine.permanent_log.append(content)
+            context.add_to_permanent_log(content)
 
 
 @register_command
@@ -386,36 +398,38 @@ class OpenArtifactCommand(Command):
         self.add_section("name", True, "Name of the artifact to open")
         self.add_section("reason", True, "Reason why you need to see the full content")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Execute the command to open an artifact"""
         artifact_name = args.get("name", "")
         reason = args.get("reason", "")
 
         # Find the artifact in the current node or its ancestors
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             raise ValueError("No current node")
 
         # Check current node's artifacts
         if artifact_name in current_node.artifacts:
             current_node.artifacts[artifact_name].is_fully_visible = True
-            engine.add_command_output(
-                "open_artifact",
+            self.add_output(
+                context,
                 args,
                 f"Artifact '{artifact_name}' is now fully visible.",
             )
+            context.update_files()
             return
 
         # Check parent chain
-        parent_chain = engine.file_system.get_parent_chain(current_node)
+        parent_chain = context.file_system.get_parent_chain(current_node)
         for node in parent_chain:
             if artifact_name in node.artifacts:
                 node.artifacts[artifact_name].is_fully_visible = True
-                engine.add_command_output(
-                    "open_artifact",
+                self.add_output(
+                    context,
                     args,
                     f"Artifact '{artifact_name}' is now fully visible.",
                 )
+                context.update_files()
                 return
 
         # Check all subproblems recursively
@@ -428,12 +442,13 @@ class OpenArtifactCommand(Command):
                     return True
             return False
 
-        if search_subproblems(engine.file_system.root_node):
-            engine.add_command_output(
-                "open_artifact",
+        if search_subproblems(context.file_system.root_node):
+            self.add_output(
+                context,
                 args,
                 f"Artifact '{artifact_name}' is now fully visible.",
             )
+            context.update_files()
             return
 
         # If we get here, the artifact wasn't found
@@ -450,36 +465,38 @@ class HalfCloseArtifactCommand(Command):
         self.add_section("name", True, "Name of the artifact to half-close")
         self.add_section("reason", True, "Reason why you're half-closing this artifact")
 
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Execute the command to half-close an artifact"""
         artifact_name = args.get("name", "")
         reason = args.get("reason", "")
 
         # Find the artifact in the current node or its ancestors
-        current_node = engine.current_node
+        current_node = context.current_node
         if not current_node:
             raise ValueError("No current node")
 
         # Check current node's artifacts
         if artifact_name in current_node.artifacts:
             current_node.artifacts[artifact_name].is_fully_visible = False
-            engine.add_command_output(
-                "half_close_artifact",
+            self.add_output(
+                context,
                 args,
                 f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
             )
+            context.update_files()
             return
 
         # Check parent chain
-        parent_chain = engine.file_system.get_parent_chain(current_node)
+        parent_chain = context.file_system.get_parent_chain(current_node)
         for node in parent_chain:
             if artifact_name in node.artifacts:
                 node.artifacts[artifact_name].is_fully_visible = False
-                engine.add_command_output(
-                    "half_close_artifact",
+                self.add_output(
+                    context,
                     args,
                     f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
                 )
+                context.update_files()
                 return
 
         # Check all subproblems recursively
@@ -492,12 +509,13 @@ class HalfCloseArtifactCommand(Command):
                     return True
             return False
 
-        if search_subproblems(engine.file_system.root_node):
-            engine.add_command_output(
-                "half_close_artifact",
+        if search_subproblems(context.file_system.root_node):
+            self.add_output(
+                context,
                 args,
                 f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
             )
+            context.update_files()
             return
 
         # If we get here, the artifact wasn't found
