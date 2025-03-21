@@ -1,9 +1,14 @@
-from typing import List, Optional
+from typing import List
 
-from .file_system import Artifact, FileSystem, Node
+from .file_system import FileSystem, Node
 
 
 class DeepResearcherInterface:
+    """
+    Responsible for rendering interface content as strings.
+    This class handles all string formatting and presentation logic.
+    """
+
     def __init__(self, file_system: FileSystem, instruction: str):
         self.file_system = file_system
         self.instruction = instruction
@@ -63,7 +68,7 @@ Content of the problem definition.
 >>>
 ```"""
 
-    def render_problem_defined(self, target_node, permannet_logs) -> str:
+    def render_problem_defined(self, target_node: Node, permanent_logs: List[str]) -> str:
         """Render the interface when a problem is defined"""
         # Format artifacts from current node, parent chain, and all descendants
         artifacts_section = self._format_all_artifacts(target_node)
@@ -75,7 +80,7 @@ Content of the problem definition.
         breakdown_section = self._format_breakdown_structure(target_node)
 
         # Format permanent log
-        permanent_log_section = self._format_permanent_log(permannet_logs)
+        permanent_log_section = self._format_permanent_log(permanent_logs)
 
         # Format parent chain
         parent_chain_section = self._format_parent_chain(target_node)
@@ -307,12 +312,12 @@ Remember, we work backwards from the root problem.
 
         return artifacts
 
-    def _format_permanent_log(self, permannet_logs: list) -> str:
+    def _format_permanent_log(self, permanent_logs: list) -> str:
         """Format permanent history for display"""
-        if not permannet_logs:
+        if not permanent_logs:
             return "<permanent_log>\nNo history entries yet.\n</permanent_log>"
 
-        entries = "\n".join(f"- {entry}" for entry in permannet_logs)
+        entries = "\n".join(f"- {entry}" for entry in permanent_logs)
         return f"<permanent_log>\n{entries}\n</permanent_log>"
 
     def _format_parent_chain(self, node: Node) -> str:

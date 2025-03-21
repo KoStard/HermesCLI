@@ -12,6 +12,9 @@ from .llm_interface import LLMInterface
 from .logger import DeepResearchLogger
 from .task_scheduler import TaskScheduler
 from .task_queue import TaskStatus
+from .status_printer import StatusPrinter
+from .report_generator import ReportGenerator
+from .auto_reply_generator import AutoReplyGenerator
 
 
 class DeepResearchEngine:
@@ -54,6 +57,9 @@ class DeepResearchEngine:
 
         # Initialize interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, instruction)
+        
+        # Initialize auto reply generator
+        self.auto_reply_generator = AutoReplyGenerator()
 
         # TODO: Could move to the file system
         self.permanent_log = []
@@ -174,27 +180,14 @@ class DeepResearchEngine:
                 line_info = f" at line {line_num}" if line_num else ""
                 error_report += f"- Command '{cmd_name}'{line_info} {status}\n"
 
-        auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.'
-        if error_report:
-            auto_reply += f"\n\n{error_report}"
-
-        # Add command outputs if any
-        if self.command_outputs:
-            auto_reply += "\n\n### Command Outputs\n"
-            for cmd_name, outputs in self.command_outputs.items():
-                for output_data in outputs:
-                    auto_reply += f"\n#### {cmd_name}\n"
-                    # Format arguments
-                    args_str = ", ".join(
-                        f"{k}: {v}" for k, v in output_data["args"].items()
-                    )
-                    if args_str:
-                        auto_reply += f"Arguments: {args_str}\n\n"
-                    # Add the output
-                    auto_reply += f"```\n{output_data['output']}\n```\n"
-
-            # Clear command outputs after adding them to the response
-            self.command_outputs = {}
+        # Generate auto reply
+        auto_reply = self.auto_reply_generator.generate_auto_reply(
+            error_report, 
+            self.command_outputs
+        )
+        
+        # Clear command outputs after adding them to the response
+        self.command_outputs = {}
 
         # Add the auto reply to the current node's history
         self.chat_history.add_message("user", auto_reply)
@@ -221,78 +214,13 @@ class DeepResearchEngine:
 
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
-        if not self.problem_defined:
-            print("\n=== Deep Research Assistant ===")
-            print("Status: No problem defined yet")
-            return
-
-        current_node = self.current_node
-        if not current_node:
-            print("\n=== Deep Research Assistant ===")
-            print("Status: No current node")
-            return
-
-        print("\n" + "=" * 80)
-        print("=== Deep Research Assistant - Comprehensive Progress Report ===")
-
-        # Print current problem info
-        print(f"Current Problem: {current_node.title}")
-
-        # Print criteria status
-        criteria_met = current_node.get_criteria_met_count()
-        criteria_total = current_node.get_criteria_total_count()
-        print(f"Criteria Status: {criteria_met}/{criteria_total} met")
-
-        # Print task status information
-        if self.task_scheduler.current_task_id:
-            current_task = self.task_scheduler.task_queue.get_task(
-                self.task_scheduler.current_task_id
-            )
-            if current_task:
-                print(f"Task Status: {current_task.status.value}")
-
-                # Print pending child tasks if any
-                if (
-                    self.task_scheduler.current_task_id
-                    in self.task_scheduler.task_relationships
-                ):
-                    child_task_ids = self.task_scheduler.task_relationships[
-                        self.task_scheduler.current_task_id
-                    ]
-                    pending_children = 0
-                    running_children = 0
-                    completed_children = 0
-                    failed_children = 0
-
-                    for child_id in child_task_ids:
-                        child_task = self.task_scheduler.task_queue.get_task(child_id)
-                        if child_task:
-                            if child_task.status == TaskStatus.PENDING:
-                                pending_children += 1
-                            elif child_task.status == TaskStatus.RUNNING:
-                                running_children += 1
-                            elif child_task.status == TaskStatus.COMPLETED:
-                                completed_children += 1
-                            elif child_task.status == TaskStatus.FAILED:
-                                failed_children += 1
-
-                    if (
-                        pending_children
-                        + running_children
-                        + completed_children
-                        + failed_children
-                        > 0
-                    ):
-                        print(
-                            f"Child Tasks: {pending_children} pending, {running_children} running, "
-                            f"{completed_children} completed, {failed_children} failed"
-                        )
-
-        # Print full problem tree with detailed metadata
-        print("\n=== Full Problem Tree ===")
-        self._print_problem_tree(self.file_system.root_node, "", True, current_node)
-
-        print("=" * 80 + "\n")
+        status_printer = StatusPrinter()
+        status_printer.print_status(
+            self.problem_defined,
+            self.current_node,
+            self.task_scheduler,
+            self.file_system
+        )
 
     def execute(self) -> str:
         """
@@ -397,89 +325,6 @@ class DeepResearchEngine:
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""
-        if not self.file_system.root_node:
-            return "Research completed, but no artifacts were generated."
+        report_generator = ReportGenerator(self.file_system)
+        return report_generator.generate_final_report(self.interface)
 
-        # Collect all artifacts from the entire problem hierarchy
-        all_artifacts = self.interface.collect_artifacts_recursively(
-            self.file_system.root_node
-        )
-
-        if not all_artifacts:
-            return "Research completed, but no artifacts were generated."
-
-        # Group artifacts by problem
-        artifacts_by_problem = {}
-        for owner_title, name, content, is_visible in all_artifacts:
-            if owner_title not in artifacts_by_problem:
-                artifacts_by_problem[owner_title] = []
-            artifacts_by_problem[owner_title].append(name)
-
-        # Generate the report
-        result = f"""# Deep Research Completed
-
-## Problem: {self.file_system.root_node.title}
-
-## Summary of Generated Artifacts
-
-The research has been completed and the following artifacts have been created:
-
-"""
-
-        # List all artifacts with their filepaths
-        for problem_title, artifact_names in artifacts_by_problem.items():
-            result += f"### {problem_title}\n\n"
-            for name in artifact_names:
-                # Construct the relative filepath
-                filepath = f"Artifacts/{name}"
-                result += f"- `{filepath}`: {name}\n"
-            result += "\n"
-
-        result += """
-These artifacts contain the valuable outputs of the research process. Each artifact represents
-a concrete piece of knowledge or analysis that contributes to solving the root problem.
-"""
-
-        return result
-
-    def _print_problem_tree(self, node, prefix, is_last, current_node):
-        """Print a tree representation of the problem hierarchy with metadata"""
-        if not node:
-            return
-
-        # Determine the branch symbol
-        branch = "└── " if is_last else "├── "
-
-        # Highlight current node
-        is_current = node == current_node
-        node_marker = "→ " if is_current else ""
-
-        # Gather metadata
-        criteria_met = node.get_criteria_met_count()
-        criteria_total = node.get_criteria_total_count()
-        artifacts_count = len(node.artifacts)
-        subproblems_count = len(node.subproblems)
-
-        # Get status emoji
-        status_emoji = node.get_status_emoji()
-
-        # Format the node line with metadata
-        node_info = f"{node_marker}{status_emoji} {node.title} [{criteria_met}/{criteria_total}]"
-        if artifacts_count > 0:
-            node_info += f" 🗂️{artifacts_count}"
-        if subproblems_count > 0:
-            node_info += f" 🔍{subproblems_count}"
-
-        # Print the current node
-        print(f"{prefix}{branch}{node_info}")
-
-        # Prepare prefix for children
-        new_prefix = prefix + ("    " if is_last else "│   ")
-
-        # Print all subproblems
-        subproblems = list(node.subproblems.values())
-        for i, subproblem in enumerate(subproblems):
-            is_last_child = i == len(subproblems) - 1
-            self._print_problem_tree(
-                subproblem, new_prefix, is_last_child, current_node
-            )
