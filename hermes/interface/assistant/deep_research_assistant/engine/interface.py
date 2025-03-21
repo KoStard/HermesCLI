@@ -90,7 +90,7 @@ Content of the problem definition.
         # Format parent chain
         parent_chain_section = self._format_parent_chain(target_node)
 
-        # Format problem hierarchy
+        # Format problem hierarchy - full tree with current node highlighted
         problem_hierarchy = self.file_system.get_problem_hierarchy(target_node)
         
         # Check if the current node is too deep and add a warning if needed

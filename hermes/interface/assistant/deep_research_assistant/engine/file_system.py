@@ -234,38 +234,53 @@ class FileSystem:
             return ""
 
         result = []
-
-        # Add root
-        result.append(f" └── Root: {self.root_node.title}")
-
-        # Build the hierarchy
-        if current_node and current_node != self.root_node:
-            path = []
-            current = current_node
-            while current and current != self.root_node:
-                path.append(current)
-                current = current.parent
-
-            path.reverse()
-
-            for i, node in enumerate(path):
-                parent = node.parent
-                criteria_met = parent.get_criteria_met_count() if parent else 0
-                criteria_total = parent.get_criteria_total_count() if parent else 0
-                artifacts_count = len(node.artifacts)
-
-                prefix = "     " * (i + 1) + " └── "
-                depth_indicator = f"[Depth: {node.depth_from_root}]"
-                if i == len(path) - 1:
-                    result.append(
-                        f"{prefix}CURRENT: {node.title} {depth_indicator} [🗂️ {artifacts_count} artifacts]"
-                    )
-                else:
-                    result.append(
-                        f"{prefix}Level {i+1}: {node.title} {depth_indicator} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
-                    )
-
+        
+        # Build the hierarchy tree recursively starting from root
+        self._build_hierarchy_tree(self.root_node, result, "", current_node)
+        
         return "\n".join(result)
+        
+    def _build_hierarchy_tree(self, node: Node, result: List[str], prefix: str, current_node: Optional[Node] = None) -> None:
+        """
+        Recursively build the hierarchy tree
+        
+        Args:
+            node: The current node to process
+            result: List to append formatted strings to
+            prefix: Prefix string for indentation
+            current_node: The currently active node to highlight
+        """
+        # Format node information
+        artifacts_count = len(node.artifacts)
+        criteria_met = node.get_criteria_met_count()
+        criteria_total = node.get_criteria_total_count()
+        depth_indicator = f"[Depth: {node.depth_from_root}]"
+        status_emoji = node.get_status_emoji()
+        
+        # Check if this is the current node
+        is_current = node == current_node
+        node_title = node.title
+        
+        # Format the node line
+        if node == self.root_node:
+            node_line = f"Root: {node_title}"
+        else:
+            node_line = node_title
+            
+        # Add status indicators
+        if is_current:
+            node_line = f"CURRENT: {node_line}"
+            
+        # Add metrics
+        node_line = f"{status_emoji} {node_line} {depth_indicator} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
+        
+        # Add to result
+        result.append(f"{prefix} └── {node_line}")
+        
+        # Process children with increased indentation
+        child_prefix = prefix + "     "
+        for title, subproblem in node.subproblems.items():
+            self._build_hierarchy_tree(subproblem, result, child_prefix, current_node)
 
     def update_files(self) -> None:
         """Update all files on disk"""
