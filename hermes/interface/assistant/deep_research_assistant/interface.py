@@ -39,6 +39,10 @@ class DeepResearchAssistantInterface(Interface):
 
         instruction = []
 
+        for message in history_snapshot:
+            if message.author == "user":
+                instruction.append(message.get_content_for_assistant())
+
         # TODO: Likely issues here, investigate
         # Extract the instruction from the last user message
         for event in events:
