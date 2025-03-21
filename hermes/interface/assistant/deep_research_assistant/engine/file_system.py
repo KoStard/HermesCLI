@@ -115,8 +115,7 @@ class FileSystem:
     def create_root_problem(self, title: str, content: str) -> Node:
         """Create the root problem"""
         # Create root directory if it doesn't exist
-        if not self.root_dir.exists():
-            self.root_dir.mkdir(parents=True)
+        self.root_dir.mkdir(parents=True)
 
         # Create node and set its path
         self.root_node = Node(title=title, problem_definition=content, path=self.root_dir)
@@ -153,40 +152,13 @@ class FileSystem:
 
         # Load criteria if they exist
         criteria_file = self.root_dir / "Criteria of Definition of Done.md"
-        if criteria_file.exists():
-            with open(criteria_file, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and line[0].isdigit():
-                        # Parse criteria line (format: "1. [x] Criterion text")
-                        parts = line.split(". ", 1)
-                        if len(parts) == 2:
-                            criterion_text = parts[1]
-                            # Check if it's marked as done
-                            done = "[x]" in criterion_text or "[X]" in criterion_text
-                            # Remove status marker
-                            criterion_text = (
-                                criterion_text.split("] ", 1)[1]
-                                if "] " in criterion_text
-                                else criterion_text
-                            )
-                            self.root_node.criteria.append(criterion_text)
-                            self.root_node.criteria_done.append(done)
+        criteria, criteria_done = self._read_criteria_file(criteria_file)
+        self.root_node.criteria.extend(criteria)
+        self.root_node.criteria_done.extend(criteria_done)
 
         # Load artifacts
         artifacts_dir = self.root_dir / "Artifacts"
-        if artifacts_dir.exists():
-            for artifact_file in artifacts_dir.iterdir():
-                if artifact_file.is_file():
-                    with open(artifact_file, "r") as f:
-                        # Load artifacts as half-closed by default
-                        artifact_content = f.read()
-                        artifact = Artifact(
-                            name=artifact_file.name,
-                            content=artifact_content,
-                            is_fully_visible=False,
-                        )
-                        self.root_node.artifacts[artifact_file.name] = artifact
+        self.root_node.artifacts.update(self._read_artifacts(artifacts_dir))
 
         # Load subproblems recursively
         self._load_subproblems(self.root_node)
@@ -226,39 +198,13 @@ class FileSystem:
 
             # Load criteria
             criteria_file = subproblem_dir / "Criteria of Definition of Done.md"
-            if criteria_file.exists():
-                with open(criteria_file, "r") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line and line[0].isdigit():
-                            parts = line.split(". ", 1)
-                            if len(parts) == 2:
-                                criterion_text = parts[1]
-                                done = (
-                                    "[x]" in criterion_text or "[X]" in criterion_text
-                                )
-                                criterion_text = (
-                                    criterion_text.split("] ", 1)[1]
-                                    if "] " in criterion_text
-                                    else criterion_text
-                                )
-                                subproblem.criteria.append(criterion_text)
-                                subproblem.criteria_done.append(done)
+            criteria, criteria_done = self._read_criteria_file(criteria_file)
+            subproblem.criteria.extend(criteria)
+            subproblem.criteria_done.extend(criteria_done)
 
             # Load artifacts
             artifacts_dir = subproblem_dir / "Artifacts"
-            if artifacts_dir.exists():
-                for artifact_file in artifacts_dir.iterdir():
-                    if artifact_file.is_file():
-                        with open(artifact_file, "r") as f:
-                            # Load artifacts as half-closed by default
-                            artifact_content = f.read()
-                            artifact = Artifact(
-                                name=artifact_file.name,
-                                content=artifact_content,
-                                is_fully_visible=False,
-                            )
-                            subproblem.artifacts[artifact_file.name] = artifact
+            subproblem.artifacts.update(self._read_artifacts(artifacts_dir))
 
             # Recursively load subproblems
             self._load_subproblems(subproblem)
@@ -310,19 +256,26 @@ class FileSystem:
 
         return "\n".join(result)
 
+    def update_files(self) -> None:
+        """Update all files on disk"""
+        with self.lock:
+            if self.root_node:
+                # First ensure all directories exist
+                self._create_node_directories(self.root_node)
+                # Then write all files
+                self._write_node_to_disk(self.root_node)
+
     def _create_node_directories(self, node: Node) -> None:
         """Create all necessary directories for a node"""
         if not node.path:
             if node.parent and node.parent.path:
                 # Create subproblem directory
                 subproblems_dir = node.parent.path / "Subproblems"
-                if not subproblems_dir.exists():
-                    subproblems_dir.mkdir(exist_ok=True)
+                subproblems_dir.mkdir(exist_ok=True)
 
                 # Create directory for this subproblem
                 node_dir = subproblems_dir / self._sanitize_filename(node.title)
-                if not node_dir.exists():
-                    node_dir.mkdir(exist_ok=True)
+                node_dir.mkdir(exist_ok=True)
 
                 node.path = node_dir
             else:
@@ -331,18 +284,15 @@ class FileSystem:
 
         # Create artifacts directory
         artifacts_dir = node.path / "Artifacts"
-        if not artifacts_dir.exists():
-            artifacts_dir.mkdir(exist_ok=True)
+        artifacts_dir.mkdir(exist_ok=True)
 
         # Create subproblems directory
         subproblems_dir = node.path / "Subproblems"
-        if not subproblems_dir.exists():
-            subproblems_dir.mkdir(exist_ok=True)
+        subproblems_dir.mkdir(exist_ok=True)
 
         # Create logs_and_debug directory
         logs_dir = node.path / "logs_and_debug"
-        if not logs_dir.exists():
-            logs_dir.mkdir(exist_ok=True)
+        logs_dir.mkdir(exist_ok=True)
 
         # Recursively create directories for subproblems
         for subproblem in node.subproblems.values():
@@ -389,15 +339,6 @@ class FileSystem:
         # Recursively write subproblems
         for subproblem in node.subproblems.values():
             self._write_node_to_disk(subproblem)
-
-    def update_files(self) -> None:
-        """Update all files on disk"""
-        with self.lock:
-            if self.root_node:
-                # First ensure all directories exist
-                self._create_node_directories(self.root_node)
-                # Then write all files
-                self._write_node_to_disk(self.root_node)
 
     def _read_problem_definition_with_frontmatter(
         self, file_path: Path
@@ -446,3 +387,43 @@ class FileSystem:
             filename = name[:250] + ext
 
         return filename
+
+    def _read_criteria_file(self, criteria_file: Path):
+        criteria = []
+        criteria_done = []
+        if criteria_file.exists():
+            with open(criteria_file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and line[0].isdigit():
+                        # Parse criteria line (format: "1. [x] Criterion text")
+                        parts = line.split(". ", 1)
+                        if len(parts) == 2:
+                            criterion_text = parts[1]
+                            # Check if it's marked as done
+                            done = "[x]" in criterion_text or "[X]" in criterion_text
+                            # Remove status marker
+                            criterion_text = (
+                                criterion_text.split("] ", 1)[1]
+                                if "] " in criterion_text
+                                else criterion_text
+                            )
+                            criteria.append(criterion_text)
+                            criteria_done.append(done)
+        return criteria, criteria_done
+
+    def _read_artifacts(self, artifacts_dir: Path):
+        artifacts = {}
+        if artifacts_dir.exists():
+            for artifact_file in artifacts_dir.iterdir():
+                if artifact_file.is_file():
+                    with open(artifact_file, "r") as f:
+                        # Load artifacts as half-closed by default
+                        artifact_content = f.read()
+                        artifact = Artifact(
+                            name=artifact_file.name,
+                            content=artifact_content,
+                            is_fully_visible=False,
+                        )
+                        artifacts[artifact_file.name] = artifact
+        return artifacts
