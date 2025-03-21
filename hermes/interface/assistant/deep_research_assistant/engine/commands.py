@@ -2,15 +2,9 @@ from typing import Dict, Any, List, Optional
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
-from .command import Command, CommandRegistry, CommandType, register_command
+from .command import Command, CommandRegistry, CommandType, register_command, DefineCommand
 from .file_system import Artifact, ProblemStatus, Node
 from .command_context import CommandContext
-
-
-class DefineCommand(Command):
-    """Base class for commands that define or modify problems"""
-
-    pass
 
 
 @register_command
