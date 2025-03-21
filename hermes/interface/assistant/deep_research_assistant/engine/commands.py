@@ -39,8 +39,7 @@ class DefineProblemCommand(DefineCommand):
         engine.problem_defined = True
 
         # Initialize the task executor with the root node
-        engine.task_executor._initialize_root_task()
-        engine.set_current_node(engine.task_executor.get_current_node())
+        engine.activate_node(engine.task_scheduler.get_current_node())
 
 
 @register_command
@@ -231,14 +230,14 @@ class FocusDownCommand(Command):
         """Focus down to a subproblem"""
         # Request focus down through the task executor
         title = args["title"]
-        result = engine.task_executor.request_focus_down(title)
+        result = engine.task_scheduler.request_focus_down(title)
 
         if result:
             # Get the previous node before updating current_node
             previous_node = engine.current_node
 
             # Update current_node to the new focus
-            engine.set_current_node(engine.task_executor.get_current_node())
+            engine.activate_node(engine.task_scheduler.get_current_node())
 
             # Update statuses
             if previous_node:
@@ -276,11 +275,11 @@ class FocusUpCommand(Command):
             engine.file_system.update_files()
 
         # Request focus up through the task executor
-        result = engine.task_executor.request_focus_up()
+        result = engine.task_scheduler.request_focus_up()
 
         if result:
             # Update current_node to the new focus (parent)
-            engine.set_current_node(engine.task_executor.get_current_node())
+            engine.activate_node(engine.task_scheduler.get_current_node())
 
             # Set the new current node to CURRENT
             if engine.current_node:
@@ -312,11 +311,11 @@ class FailProblemAndFocusUpCommand(Command):
             engine.file_system.update_files()
 
         # Request fail and focus up through the task executor
-        result = engine.task_executor.request_fail_and_focus_up()
+        result = engine.task_scheduler.request_fail_and_focus_up()
 
         if result:
             # Update current_node to the new focus (parent)
-            engine.set_current_node(engine.task_executor.get_current_node())
+            engine.activate_node(engine.task_scheduler.get_current_node())
 
             # Set the new current node to CURRENT
             if engine.current_node:

@@ -10,6 +10,7 @@ class TaskStatus(Enum):
     """Status of a task in the queue"""
 
     PENDING = "pending"  # Task is waiting to be executed
+    CREATED = "created"  # Task is created, but not yet pending
     RUNNING = "running"  # Task is currently being executed
     COMPLETED = "completed"  # Task has been completed successfully
     FAILED = "failed"  # Task has failed
@@ -20,8 +21,7 @@ class TaskStatus(Enum):
 class Task:
     """Represents a task in the queue"""
 
-    status: TaskStatus
-    parent_task_id: Optional[str] = None
+    status: TaskStatus = TaskStatus.CREATED
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
 
@@ -61,22 +61,3 @@ class TaskQueue:
             del self.tasks[task_id]
             return True
         return False
-
-    def get_child_tasks(self, parent_task_id: str) -> List[Task]:
-        """Get all child tasks for a given parent task"""
-        return [
-            task
-            for task in self.tasks.values()
-            if task.parent_task_id == parent_task_id
-        ]
-
-    def are_all_child_tasks_completed(self, parent_task_id: str) -> bool:
-        """Check if all child tasks for a given parent task are completed"""
-        child_tasks = self.get_child_tasks(parent_task_id)
-        if not child_tasks:
-            return True
-
-        return all(
-            task.status == TaskStatus.COMPLETED or task.status == TaskStatus.FAILED
-            for task in child_tasks
-        )

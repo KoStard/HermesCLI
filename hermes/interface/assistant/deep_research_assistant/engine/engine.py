@@ -1,5 +1,3 @@
-import os
-import time
 from pathlib import Path
 from typing import Dict, Generator, List, Optional, Tuple
 
@@ -7,13 +5,12 @@ from .command import CommandRegistry
 from .command_parser import CommandParser, ParseResult
 
 # Import commands to ensure they're registered
-from . import commands
 from .file_system import FileSystem, Node, ProblemStatus
 from .history import ChatHistory
 from .interface import DeepResearcherInterface
 from .llm_interface import LLMInterface
 from .logger import DeepResearchLogger
-from .task_executor import TaskExecutor
+from .task_scheduler import TaskScheduler
 from .task_queue import TaskStatus
 
 
@@ -43,10 +40,10 @@ class DeepResearchEngine:
 
         # Set current node to root node if problem is already defined
         if self.problem_defined:
-            self.set_current_node(existing_problem)
+            self.activate_node(existing_problem)
 
         # Initialize task executor
-        self.task_executor = TaskExecutor(self.file_system.root_node)
+        self.task_scheduler = TaskScheduler()
 
         # Register any extension commands
         if extension_commands:
@@ -247,20 +244,20 @@ class DeepResearchEngine:
         print(f"Criteria Status: {criteria_met}/{criteria_total} met")
 
         # Print task status information
-        if self.task_executor.current_task_id:
-            current_task = self.task_executor.task_queue.get_task(
-                self.task_executor.current_task_id
+        if self.task_scheduler.current_task_id:
+            current_task = self.task_scheduler.task_queue.get_task(
+                self.task_scheduler.current_task_id
             )
             if current_task:
                 print(f"Task Status: {current_task.status.value}")
 
                 # Print pending child tasks if any
                 if (
-                    self.task_executor.current_task_id
-                    in self.task_executor.task_relationships
+                    self.task_scheduler.current_task_id
+                    in self.task_scheduler.task_relationships
                 ):
-                    child_task_ids = self.task_executor.task_relationships[
-                        self.task_executor.current_task_id
+                    child_task_ids = self.task_scheduler.task_relationships[
+                        self.task_scheduler.current_task_id
                     ]
                     pending_children = 0
                     running_children = 0
@@ -268,7 +265,7 @@ class DeepResearchEngine:
                     failed_children = 0
 
                     for child_id in child_task_ids:
-                        child_task = self.task_executor.task_queue.get_task(child_id)
+                        child_task = self.task_scheduler.task_queue.get_task(child_id)
                         if child_task:
                             if child_task.status == TaskStatus.PENDING:
                                 pending_children += 1
@@ -310,14 +307,14 @@ class DeepResearchEngine:
 
         # Initialize current node if problem is already defined
         if self.problem_defined and not self.current_node:
-            self.set_current_node(self.file_system.root_node)
+            self.activate_node(self.file_system.root_node)
 
         while not self.finished:
             # Only update current node from task executor if it's not already set
             if not self.current_node:
-                node = self.task_executor.get_current_node()
+                node = self.task_scheduler.get_current_node()
                 if node:
-                    self.set_current_node(node)
+                    self.activate_node(node)
 
             # Get the interface content
             interface_content = self.get_interface_content()
@@ -380,9 +377,9 @@ class DeepResearchEngine:
             self.process_commands(full_llm_response)
 
             # If there's no current task, we need to check if we're done or if we need to start another task
-            if not self.task_executor.current_task_id:
+            if not self.task_scheduler.current_task_id:
                 # Check if there are any pending tasks
-                pending_tasks = self.task_executor.task_queue.get_tasks_by_status(
+                pending_tasks = self.task_scheduler.task_queue.get_tasks_by_status(
                     TaskStatus.PENDING
                 )
                 if not pending_tasks:
@@ -392,10 +389,11 @@ class DeepResearchEngine:
         # Generate the final report
         return self._generate_final_report()
 
-    def set_current_node(self, node: Node) -> None:
+    def activate_node(self, node: Node) -> None:
         """Set the current node and update chat history"""
         self.current_node = node
         self.chat_history.set_current_node(node.title)
+        engine.task_scheduler.initialize_root_task()
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""

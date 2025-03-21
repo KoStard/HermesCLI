@@ -6,4 +6,4 @@ from .history import ChatHistory, ChatMessage
 from .interface import DeepResearcherInterface
 from .llm_interface import LLMInterface
 from .task_queue import TaskQueue, Task, TaskStatus
-from .task_executor import TaskExecutor
+from .task_scheduler import TaskScheduler

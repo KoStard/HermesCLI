@@ -4,7 +4,43 @@ from typing import Dict, Optional, Set
 from .file_system import Node
 from .task_queue import Task, TaskQueue, TaskStatus
 
-class TaskExecutor:
+class TaskScheduler:
+    """
+    What should the API of task scheduled be?
+    - register node
+    - mark status of node
+    - get_next_node
+    """
+
+    def __init__(self):
+        self.task_queue = TaskQueue()
+        self.task_node_map: Dict[str, Node] = {}  # task_id -> Node
+        self.node_task_map: Dict[str, Task] = {}
+
+    def register_task(self, node: Node):
+        task = Task()
+        self.task_node_map[task.id] = node
+        self.node_task_map[node.title] = task
+        self.task_queue.add_task(task)
+
+    def mark_status_of_node(self, node: Node, status: TaskStatus) -> bool:
+        task = self.node_task_map[node.title]
+        return self.task_queue.update_task_status(task.id, status)
+
+    def get_next_node(self) -> Optional[Node]:
+        if self.task_queue.get_tasks_by_status(TaskStatus.RUNNING):
+            raise Exception("Tasks are still running")
+
+        pending_tasks = self.task_queue.get_tasks_by_status(TaskStatus.PENDING)
+        if not pending_tasks:
+            return None
+
+        task = pending_tasks[0]
+        return self.task_node_map[task.id]
+
+    # From here goes the old implementation, we should move all this logic somewhere else or get dir of them
+
+
     """
     Manages the execution of tasks in the Deep Research system.
 
@@ -12,23 +48,10 @@ class TaskExecutor:
     ensuring that parent tasks don't complete until all child tasks are done.
     """
 
-    def __init__(self, root_node: Node):
-        self.task_queue = TaskQueue()
-        self.current_task_id: Optional[str] = None
-        self.task_relationships: Dict[
-            str, Set[str]
-        ] = {}  # parent_id -> set of child_ids
-        self.task_node_map: Dict[str, Node] = {}  # task_id -> Node
-
-        # Start with root task if available
-        if root_node:
-            self._initialize_root_task(root_node)
-
-    def _initialize_root_task(self, root_node: Node) -> None:
+    def initialize_root_task(self, root_node: Node) -> None:
         """Initialize the root task"""
-        root_task = Task(status=TaskStatus.PENDING)
-        task_id = self.task_queue.add_task(root_task)
-        self.task_node_map[task_id] = root_node
+        task_id = self._register_task_for_node(root_node)
+        self._set_task_status(task_id, TaskStatus.PENDING)
         self._start_next_task()
 
     def request_focus_down(self, subproblem_title: str) -> bool:
@@ -70,7 +93,7 @@ class TaskExecutor:
         self.task_node_map[subproblem_task_id] = subproblem_node
 
         # Mark the current task as on hold
-        self.task_queue.update_task_status(self.current_task_id, TaskStatus.ON_HOLD)
+        self._set_task_status(self.current_task_id, TaskStatus.ON_HOLD)
 
         # Start the next task (which should be the subproblem task)
         self.current_task_id = None
@@ -94,7 +117,7 @@ class TaskExecutor:
 
         # If this is the root task, mark it as completed and we're done
         if not current_task.parent_task_id:
-            self.task_queue.update_task_status(
+            self._set_task_status(
                 self.current_task_id, TaskStatus.COMPLETED
             )
             self.current_task_id = None
@@ -106,7 +129,7 @@ class TaskExecutor:
             child_task_ids = self.task_relationships[parent_task_id]
 
             # Mark this task as completed
-            self.task_queue.update_task_status(
+            self._set_task_status(
                 self.current_task_id, TaskStatus.COMPLETED
             )
 
@@ -124,7 +147,7 @@ class TaskExecutor:
             # If all siblings are completed, we can focus up
             if all_siblings_completed:
                 # Mark the parent task as pending so it can be picked up
-                self.task_queue.update_task_status(
+                self._set_task_status(
                     parent_task_id, TaskStatus.PENDING
                 )
 
@@ -144,7 +167,7 @@ class TaskExecutor:
                 return False
 
         # No parent-child relationship found, just mark as completed and move on
-        self.task_queue.update_task_status(
+        self._set_task_status(
             self.current_task_id, TaskStatus.COMPLETED
         )
         self.current_task_id = None
@@ -166,7 +189,7 @@ class TaskExecutor:
             return False
 
         # Mark this task as failed
-        self.task_queue.update_task_status(self.current_task_id, TaskStatus.FAILED)
+        self._set_task_status(self.current_task_id, TaskStatus.FAILED)
 
         # If this is the root task, we're done
         if not current_task.parent_task_id:
@@ -177,7 +200,7 @@ class TaskExecutor:
         parent_task_id = current_task.parent_task_id
 
         # Mark the parent task as pending so it can be picked up
-        self.task_queue.update_task_status(parent_task_id, TaskStatus.PENDING)
+        self._set_task_status(parent_task_id, TaskStatus.PENDING)
 
         # Clear the current task
         self.current_task_id = None
@@ -186,6 +209,17 @@ class TaskExecutor:
         self._start_next_task()
 
         return True
+
+    def _register_task_for_node(self, node: Node):
+        """Register a task for a node"""
+        task = Task()
+        task_id = self.task_queue.add_task(task)
+        self.task_node_map[task_id] = node
+        return task_id
+
+    def _set_task_status(self, task_id: str, status: TaskStatus) -> None:
+        """Set the status of a task"""
+        self.task_queue.update_task_status(task_id, status)
 
     def _start_next_task(self) -> None:
         """Start the next pending task"""
@@ -201,7 +235,7 @@ class TaskExecutor:
         # Start the first pending task
         # In a more complex system, we might prioritize tasks differently
         next_task = pending_tasks[0]
-        self.task_queue.update_task_status(next_task.id, TaskStatus.RUNNING)
+        self._set_task_status(next_task.id, TaskStatus.RUNNING)
         self.current_task_id = next_task.id
 
     def get_current_node(self) -> Optional[Node]:
