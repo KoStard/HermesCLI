@@ -34,6 +34,7 @@ class Node:
     parent: Optional["Node"] = None
     path: Optional[Path] = None
     status: ProblemStatus = ProblemStatus.NOT_STARTED
+    depth_from_root: int = 0
 
     def add_criteria(self, criteria: str) -> int:
         """Add criteria and return its index"""
@@ -58,7 +59,12 @@ class Node:
         if title in self.subproblems:
             return self.subproblems[title]
 
-        subproblem = Node(title=title, problem_definition=content, parent=self)
+        subproblem = Node(
+            title=title, 
+            problem_definition=content, 
+            parent=self,
+            depth_from_root=self.depth_from_root + 1
+        )
         self.subproblems[title] = subproblem
         return subproblem
 
@@ -118,7 +124,7 @@ class FileSystem:
         self.root_dir.mkdir(parents=True, exist_ok=True)
 
         # Create node and set its path
-        self.root_node = Node(title=title, problem_definition=content, path=self.root_dir)
+        self.root_node = Node(title=title, problem_definition=content, path=self.root_dir, depth_from_root=0)
 
         # Create all necessary directories
         self._create_node_directories(self.root_node)
@@ -148,7 +154,7 @@ class FileSystem:
             title = self.root_dir.name
 
         # Create root node
-        self.root_node = Node(title=title, problem_definition=problem_definition, path=self.root_dir)
+        self.root_node = Node(title=title, problem_definition=problem_definition, path=self.root_dir, depth_from_root=0)
 
         # Load criteria if they exist
         criteria_file = self.root_dir / "Criteria of Definition of Done.md"
@@ -192,7 +198,11 @@ class FileSystem:
             if not title:
                 title = subproblem_dir.name
             subproblem = Node(
-                title=title, problem_definition=problem_definition, parent=parent_node, path=subproblem_dir
+                title=title, 
+                problem_definition=problem_definition, 
+                parent=parent_node, 
+                path=subproblem_dir,
+                depth_from_root=parent_node.depth_from_root + 1
             )
             parent_node.subproblems[title] = subproblem
 
@@ -245,13 +255,14 @@ class FileSystem:
                 artifacts_count = len(node.artifacts)
 
                 prefix = "     " * (i + 1) + " └── "
+                depth_indicator = f"[Depth: {node.depth_from_root}]"
                 if i == len(path) - 1:
                     result.append(
-                        f"{prefix}CURRENT: {node.title} [🗂️ {artifacts_count} artifacts]"
+                        f"{prefix}CURRENT: {node.title} {depth_indicator} [🗂️ {artifacts_count} artifacts]"
                     )
                 else:
                     result.append(
-                        f"{prefix}Level {i+1}: {node.title} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
+                        f"{prefix}Level {i+1}: {node.title} {depth_indicator} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
                     )
 
         return "\n".join(result)
@@ -412,6 +423,10 @@ class FileSystem:
                             criteria_done.append(done)
         return criteria, criteria_done
 
+    def is_node_too_deep(self, node: Node, max_depth: int = 3) -> bool:
+        """Check if a node is too deep in the hierarchy"""
+        return node.depth_from_root > max_depth
+        
     def _read_artifacts(self, artifacts_dir: Path):
         artifacts = {}
         if artifacts_dir.exists():
