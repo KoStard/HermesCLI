@@ -42,7 +42,7 @@ class DeepResearchEngine:
         if self.problem_defined:
             self.activate_node(existing_problem)
 
-        # Initialize task executor
+        # Initialize task scheduler and manager
         self.task_scheduler = TaskScheduler()
 
         # Register any extension commands
@@ -393,7 +393,7 @@ class DeepResearchEngine:
         """Set the current node and update chat history"""
         self.current_node = node
         self.chat_history.set_current_node(node.title)
-        engine.task_scheduler.initialize_root_task()
+        self.task_scheduler.initialize_root_task(node)
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""
