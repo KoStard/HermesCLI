@@ -46,7 +46,10 @@ class BedrockRequestBuilder(RequestBuilder):
             response["additionalModelRequestFields"] = {
                 "thinking": {"type": "enabled", "budget_tokens": self.reasoning_effort}
             }
-            response["inferenceConfig"]["maxTokens"] = self.reasoning_effort * 2
+            response["inferenceConfig"]["maxTokens"] = 124_000
+
+        if "maxTokens" not in response["inferenceConfig"] and 'claude-3-7' in self.model_tag:
+            response["inferenceConfig"]["maxTokens"] = 124_000
 
         # Using Converse API
         return response
