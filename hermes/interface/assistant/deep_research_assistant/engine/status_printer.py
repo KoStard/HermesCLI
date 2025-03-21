@@ -1,9 +1,9 @@
 from typing import Optional
 
 from .file_system import FileSystem, Node
-from .task_manager import TaskManager
-from .task_queue import TaskStatus
 
+
+# TODO: Print problem statuses
 
 class StatusPrinter:
     """
@@ -15,7 +15,6 @@ class StatusPrinter:
         self, 
         problem_defined: bool, 
         current_node: Optional[Node], 
-        task_manager: TaskManager,
         file_system: FileSystem
     ) -> None:
         """Print the current status of the research to STDOUT"""
@@ -39,51 +38,6 @@ class StatusPrinter:
         criteria_met = current_node.get_criteria_met_count()
         criteria_total = current_node.get_criteria_total_count()
         print(f"Criteria Status: {criteria_met}/{criteria_total} met")
-
-        # Print task status information
-        if task_manager.current_task_id:
-            current_task = task_manager.task_queue.get_task(
-                task_manager.current_task_id
-            )
-            if current_task:
-                print(f"Task Status: {current_task.status.value}")
-
-                # Print pending child tasks if any
-                if (
-                    task_manager.current_task_id
-                    in task_manager.task_relationships
-                ):
-                    child_task_ids = task_manager.task_relationships[
-                        task_manager.current_task_id
-                    ]
-                    pending_children = 0
-                    running_children = 0
-                    completed_children = 0
-                    failed_children = 0
-
-                    for child_id in child_task_ids:
-                        child_task = task_manager.task_queue.get_task(child_id)
-                        if child_task:
-                            if child_task.status == TaskStatus.PENDING:
-                                pending_children += 1
-                            elif child_task.status == TaskStatus.RUNNING:
-                                running_children += 1
-                            elif child_task.status == TaskStatus.COMPLETED:
-                                completed_children += 1
-                            elif child_task.status == TaskStatus.FAILED:
-                                failed_children += 1
-
-                    if (
-                        pending_children
-                        + running_children
-                        + completed_children
-                        + failed_children
-                        > 0
-                    ):
-                        print(
-                            f"Child Tasks: {pending_children} pending, {running_children} running, "
-                            f"{completed_children} completed, {failed_children} failed"
-                        )
 
         # Print full problem tree with detailed metadata
         print("\n=== Full Problem Tree ===")
