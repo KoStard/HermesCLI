@@ -119,8 +119,7 @@ class FileSystem:
             self.root_dir.mkdir(parents=True)
 
         # Create node and set its path
-        self.root_node = Node(title=title, problem_definition=content)
-        self.root_node.path = self.root_dir
+        self.root_node = Node(title=title, problem_definition=content, path=self.root_dir)
 
         # Create all necessary directories
         self._create_node_directories(self.root_node)
@@ -150,8 +149,7 @@ class FileSystem:
             title = self.root_dir.name
 
         # Create root node
-        self.root_node = Node(title=title, problem_definition=problem_definition)
-        self.root_node.path = self.root_dir
+        self.root_node = Node(title=title, problem_definition=problem_definition, path=self.root_dir)
 
         # Load criteria if they exist
         criteria_file = self.root_dir / "Criteria of Definition of Done.md"
@@ -222,9 +220,8 @@ class FileSystem:
             if not title:
                 title = subproblem_dir.name
             subproblem = Node(
-                title=title, problem_definition=problem_definition, parent=parent_node
+                title=title, problem_definition=problem_definition, parent=parent_node, path=subproblem_dir
             )
-            subproblem.path = subproblem_dir
             parent_node.subproblems[title] = subproblem
 
             # Load criteria
