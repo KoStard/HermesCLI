@@ -3,8 +3,6 @@ from typing import Optional
 from .file_system import FileSystem, Node
 
 
-# TODO: Print problem statuses
-
 class StatusPrinter:
     """
     Responsible for printing the current status of the research to the console.

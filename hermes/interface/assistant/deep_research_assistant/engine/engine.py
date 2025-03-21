@@ -190,9 +190,8 @@ class DeepResearchEngine:
 
         # Add the auto reply to the current node's history
         self.chat_history.add_message("user", auto_reply)
-        print(auto_reply)
 
-        self._print_current_status()
+        self._print_current_status(auto_reply)
         return commands_executed, error_report, execution_status
 
     def _execute_command(self, command_name: str, args: dict):
@@ -214,8 +213,10 @@ class DeepResearchEngine:
         # Execute the command with the context instead of the engine
         command.execute(self.command_context, args)
 
-    def _print_current_status(self):
+    def _print_current_status(self, auto_reply: str = None):
         """Print the current status of the research to STDOUT"""
+        if auto_reply:
+            print(auto_reply)
         status_printer = StatusPrinter()
         status_printer.print_status(
             self.problem_defined,
