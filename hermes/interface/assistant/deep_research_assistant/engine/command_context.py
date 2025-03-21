@@ -1,6 +1,5 @@
 from typing import Dict, Any, List, Optional, Callable
 from .file_system import Node, Artifact, FileSystem
-from .task_scheduler import TaskScheduler
 from .history import ChatHistory
 
 
@@ -23,7 +22,6 @@ class CommandContext:
         # Core components
         self.file_system = None
         self.current_node = None
-        self.task_scheduler = None
         self.chat_history = None
         
         # State tracking
@@ -36,7 +34,6 @@ class CommandContext:
 
         self.file_system = engine.file_system
         self.current_node = engine.current_node
-        self.task_scheduler = engine.task_scheduler
         self.chat_history = engine.chat_history
         self._permanent_log = engine.permanent_log
         self._problem_defined = engine.problem_defined
@@ -72,7 +69,7 @@ class CommandContext:
         self._engine.current_node = node
     
     def activate_node(self, node: Node) -> None:
-        """Activate a node (set as current and initialize in task scheduler)"""
+        """Activate a node (set as current)"""
         if not node:
             return
             
@@ -81,22 +78,10 @@ class CommandContext:
         # Update chat history
         self.chat_history.set_current_node(node.title)
             
-        # Initialize in task scheduler
-        self.task_scheduler.initialize_root_task(node)
-            
         # Update engine if available
         self._engine.current_node = node
         self._engine.chat_history.set_current_node(node.title)
     
-    # Task scheduler operations
-    def set_task_scheduler(self, task_scheduler: TaskScheduler) -> None:
-        """
-        Set the task scheduler reference
-        
-        Args:
-            task_scheduler: The task scheduler to use
-        """
-        self.task_scheduler = task_scheduler
     
     # Command output operations
     def add_command_output(self, command_name: str, args: Dict, output: str) -> None:

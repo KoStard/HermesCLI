@@ -2,6 +2,7 @@ from typing import List
 
 from .command import CommandRegistry
 from .file_system import FileSystem, Node, Artifact
+from .commands import DefineCommand  # registers the commands
 
 
 class DeepResearcherInterface:

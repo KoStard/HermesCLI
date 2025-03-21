@@ -238,28 +238,10 @@ class FocusDownCommand(Command):
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus down to a subproblem"""
-        # Request focus down through the task scheduler
         title = args["title"]
-        result = context.task_scheduler.request_focus_down(title)
+        result = context._engine.focus_down(title)
 
-        if result:
-            # Get the previous node before updating current_node
-            previous_node = context.current_node
-
-            # Update current_node to the new focus
-            context.activate_node(context.task_scheduler.get_current_node())
-
-            # Update statuses
-            if previous_node:
-                # Set parent to PENDING (focus moved to child)
-                previous_node.status = ProblemStatus.PENDING
-
-            # Set current node to CURRENT
-            context.current_node.status = ProblemStatus.CURRENT
-
-            # Update the file system
-            context.update_files()
-        else:
+        if not result:
             raise ValueError(
                 f"Failed to focus down to subproblem '{title}'. Make sure the subproblem exists."
             )
@@ -276,30 +258,10 @@ class FocusUpCommand(Command):
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus up to the parent problem"""
-        # Store the current node before focusing up
-        previous_node = context.current_node
-
-        # Mark the current node as FINISHED before focusing up
-        if previous_node:
-            previous_node.status = ProblemStatus.FINISHED
-            context.update_files()
-
-        # Request focus up through the task scheduler
-        result = context.task_scheduler.request_focus_up()
-
-        if result:
-            # Update current_node to the new focus (parent)
-            new_node = context.task_scheduler.get_current_node()
-            if new_node:
-                context.activate_node(new_node)
-                # Set the new current node to CURRENT
-                context.current_node.status = ProblemStatus.CURRENT
-                context.update_files()
-            else:
-                # No more nodes to process, we're done
-                context.set_current_node(None)
-                # Mark as finished
-                context.set_finished(True)
+        result = context._engine.focus_up()
+        
+        if not result:
+            raise ValueError("Failed to focus up to parent problem.")
 
 
 @register_command
@@ -313,34 +275,10 @@ class FailProblemAndFocusUpCommand(Command):
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Mark problem as failed and focus up"""
-        # Store the current node before focusing up
-        previous_node = context.current_node
-
-        # Mark the current node as FAILED before focusing up
-        if previous_node:
-            previous_node.status = ProblemStatus.FAILED
-            context.update_files()
-
-        # Request fail and focus up through the task scheduler
-        result = context.task_scheduler.request_fail_and_focus_up()
-
-        if result:
-            # Update current_node to the new focus (parent)
-            new_node = context.task_scheduler.get_current_node()
-            if new_node:
-                context.activate_node(new_node)
-                # Set the new current node to CURRENT
-                context.current_node.status = ProblemStatus.CURRENT
-                context.update_files()
-            else:
-                # No more nodes to process, we're done
-                context.set_current_node(None)
-                # Mark as finished
-                context.set_finished(True)
-        else:
-            raise ValueError(
-                "Failed to mark problem as failed and focus up. This should not happen."
-            )
+        result = context._engine.fail_and_focus_up()
+        
+        if not result:
+            raise ValueError("Failed to mark problem as failed and focus up.")
 
 
 @register_command

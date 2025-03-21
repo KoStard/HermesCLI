@@ -11,8 +11,6 @@ from .history import ChatHistory
 from .interface import DeepResearcherInterface
 from .llm_interface import LLMInterface
 from .logger import DeepResearchLogger
-from .task_scheduler import TaskScheduler
-from .task_queue import TaskStatus
 from .status_printer import StatusPrinter
 from .report_generator import ReportGenerator
 from .auto_reply_generator import AutoReplyGenerator
@@ -41,9 +39,6 @@ class DeepResearchEngine:
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
         self.problem_defined = existing_problem is not None
-
-        # Initialize task scheduler and manager
-        self.task_scheduler = TaskScheduler()
 
         # TODO: Could move to the file system
         self.permanent_log = []
@@ -225,7 +220,6 @@ class DeepResearchEngine:
         status_printer.print_status(
             self.problem_defined,
             self.current_node,
-            self.task_scheduler.task_manager,
             self.file_system
         )
 
@@ -245,12 +239,6 @@ class DeepResearchEngine:
             self.activate_node(self.file_system.root_node)
 
         while not self.finished:
-            # Only update current node from task executor if it's not already set
-            if not self.current_node:
-                node = self.task_scheduler.get_current_node()
-                if node:
-                    self.activate_node(node)
-
             # Get the interface content
             interface_content = self.get_interface_content()
 
@@ -311,13 +299,6 @@ class DeepResearchEngine:
             # Process the commands in the response
             self.process_commands(full_llm_response)
 
-            # If there's no current task, we need to check if we're done or if we need to start another task
-            if not self.task_scheduler.has_current_task():
-                # Check if there are any pending tasks
-                if not self.task_scheduler.get_next_node():
-                    # No more tasks, we're done
-                    self.finished = True
-
         # Generate the final report
         return self._generate_final_report()
 
@@ -325,10 +306,119 @@ class DeepResearchEngine:
         """Set the current node and update chat history"""
         self.current_node = node
         self.chat_history.set_current_node(node.title)
-        self.task_scheduler.initialize_root_task(node)
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""
         report_generator = ReportGenerator(self.file_system)
         return report_generator.generate_final_report(self.interface)
+        
+    def focus_down(self, subproblem_title: str) -> bool:
+        """
+        Focus down to a subproblem
+        
+        Args:
+            subproblem_title: Title of the subproblem to focus on
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.current_node:
+            return False
+            
+        # Check if the subproblem exists
+        if subproblem_title not in self.current_node.subproblems:
+            return False
+            
+        # Get the subproblem
+        subproblem = self.current_node.subproblems[subproblem_title]
+        
+        # Set the parent to PENDING
+        self.current_node.status = ProblemStatus.PENDING
+        
+        # Set the subproblem to CURRENT
+        subproblem.status = ProblemStatus.CURRENT
+        
+        # Update the current node
+        self.activate_node(subproblem)
+        
+        # Update files
+        self.file_system.update_files()
+        
+        return True
+        
+    def focus_up(self) -> bool:
+        """
+        Focus up to the parent problem
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.current_node:
+            return False
+            
+        # Get the parent chain
+        parent_chain = self.file_system.get_parent_chain(self.current_node)
+        
+        # If this is the root node, we're done
+        if len(parent_chain) <= 1:
+            # Mark the root node as FINISHED
+            self.current_node.status = ProblemStatus.FINISHED
+            self.file_system.update_files()
+            self.finished = True
+            return True
+            
+        # Mark the current node as FINISHED
+        self.current_node.status = ProblemStatus.FINISHED
+        
+        # Get the parent node (second to last in the chain, as the last is the current node)
+        parent_node = parent_chain[-2]
+        
+        # Set the parent to CURRENT
+        parent_node.status = ProblemStatus.CURRENT
+        
+        # Update the current node
+        self.activate_node(parent_node)
+        
+        # Update files
+        self.file_system.update_files()
+        
+        return True
+        
+    def fail_and_focus_up(self) -> bool:
+        """
+        Mark the current problem as failed and focus up
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.current_node:
+            return False
+            
+        # Get the parent chain
+        parent_chain = self.file_system.get_parent_chain(self.current_node)
+        
+        # If this is the root node, we're done
+        if len(parent_chain) <= 1:
+            # Mark the root node as FAILED
+            self.current_node.status = ProblemStatus.FAILED
+            self.file_system.update_files()
+            self.finished = True
+            return True
+            
+        # Mark the current node as FAILED
+        self.current_node.status = ProblemStatus.FAILED
+        
+        # Get the parent node (second to last in the chain, as the last is the current node)
+        parent_node = parent_chain[-2]
+        
+        # Set the parent to CURRENT
+        parent_node.status = ProblemStatus.CURRENT
+        
+        # Update the current node
+        self.activate_node(parent_node)
+        
+        # Update files
+        self.file_system.update_files()
+        
+        return True
 
