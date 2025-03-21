@@ -29,7 +29,7 @@ class BedrockModel(ChatModel):
             region_name=aws_region,
             config=Config(
                 connect_timeout=5,
-                read_timeout=60,
+                read_timeout=3600,
                 retries={"max_attempts": 5, "mode": "adaptive"},
             ),
         )
