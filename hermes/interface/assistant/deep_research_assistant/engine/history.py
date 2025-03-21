@@ -41,7 +41,7 @@ class AutoReply(HistoryBlock):
             auto_reply += "\n\n### Command Outputs\n"
             for cmd_name, outputs in self.command_outputs.items():
                 for output_data in outputs:
-                    auto_reply += f"\n#### {cmd_name}\n"
+                    auto_reply += f"\n#### <<< {cmd_name}\n"
                     # Format arguments
                     args_str = ", ".join(
                         f"{k}: {v}" for k, v in output_data["args"].items()
