@@ -92,8 +92,23 @@ Content of the problem definition.
 
         # Format problem hierarchy
         problem_hierarchy = self.file_system.get_problem_hierarchy(target_node)
+        
+        # Check if the current node is too deep and add a warning if needed
+        depth_warning = ""
+        if self.file_system.is_node_too_deep(target_node, 3):
+            depth_warning = """
+⚠️ **DEPTH WARNING** ⚠️
+You are currently at depth level {depth}, which exceeds the recommended maximum of 3 levels.
+Please avoid creating additional subproblems at this level. Instead:
+1. Try to solve the current problem directly
+2. Use 'focus_up' to return to the parent problem when done
+3. If necessary, mark the problem as done or failed using 'fail_problem_and_focus_up'
+
+Excessive depth makes the problem hierarchy difficult to manage and can lead to scope creep.
+""".format(depth=target_node.depth_from_root)
 
         return f"""# Deep Research Interface
+{depth_warning}
 
 ## Introduction
 
