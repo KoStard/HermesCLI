@@ -49,7 +49,7 @@ class DefineProblemCommand(DefineCommand):
         context.set_problem_defined(True)
 
         # Initialize the task executor with the root node
-        context.activate_node(context.task_scheduler.get_current_node())
+        context.activate_node(root_node)
 
 
 @register_command
