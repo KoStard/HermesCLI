@@ -1,8 +1,8 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from .file_system import Node
-from .task_queue import TaskQueue, TaskStatus
 from .task_manager import TaskManager
+from .task_queue import TaskStatus, Task
 
 
 class TaskScheduler:
@@ -37,7 +37,7 @@ class TaskScheduler:
     def get_next_node(self) -> Optional[Node]:
         """Get the next node that should be processed"""
         # Get all pending tasks
-        pending_tasks = self.task_manager.task_queue.get_tasks_by_status(TaskStatus.PENDING)
+        pending_tasks = self._get_pending_tasks()
         if not pending_tasks:
             return None
 
@@ -65,3 +65,11 @@ class TaskScheduler:
     def get_current_node(self) -> Optional[Node]:
         """Get the node associated with the current task"""
         return self.task_manager.get_current_node()
+        
+    def has_current_task(self) -> bool:
+        """Check if there is a current task"""
+        return self.task_manager.current_task_id is not None
+        
+    def _get_pending_tasks(self) -> List[Task]:
+        """Get all pending tasks"""
+        return self.task_manager.task_queue.get_tasks_by_status(TaskStatus.PENDING)

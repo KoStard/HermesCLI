@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type
 
+from hermes.interface.assistant.deep_research_assistant.engine.command_context import CommandContext
+
 
 class CommandSection:
     """Represents a section in a command (e.g., ///title, ///content)"""
@@ -82,13 +84,13 @@ class Command(ABC):
         return ""
 
     @abstractmethod
-    def execute(self, engine: Any, args: Dict[str, Any]) -> None:
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Execute the command with the given arguments"""
         pass
 
-    def add_output(self, engine: Any, args: Dict[str, Any], output: str) -> None:
+    def add_output(self, context: CommandContext, args: Dict[str, Any], output: str) -> None:
         """Add command output to be included in the automatic response"""
-        engine.add_command_output(self.name, args, output)
+        context.add_command_output(self.name, args, output)
 
     def validate(self, args: Dict[str, Any]) -> List[str]:
         """Validate command arguments, return list of error messages"""

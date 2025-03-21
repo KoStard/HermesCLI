@@ -1,6 +1,7 @@
 from typing import Optional
 
 from .file_system import FileSystem, Node
+from .task_manager import TaskManager
 from .task_queue import TaskStatus
 
 
@@ -14,7 +15,7 @@ class StatusPrinter:
         self, 
         problem_defined: bool, 
         current_node: Optional[Node], 
-        task_scheduler: any, 
+        task_manager: TaskManager,
         file_system: FileSystem
     ) -> None:
         """Print the current status of the research to STDOUT"""
@@ -40,20 +41,20 @@ class StatusPrinter:
         print(f"Criteria Status: {criteria_met}/{criteria_total} met")
 
         # Print task status information
-        if task_scheduler.current_task_id:
-            current_task = task_scheduler.task_queue.get_task(
-                task_scheduler.current_task_id
+        if task_manager.current_task_id:
+            current_task = task_manager.task_queue.get_task(
+                task_manager.current_task_id
             )
             if current_task:
                 print(f"Task Status: {current_task.status.value}")
 
                 # Print pending child tasks if any
                 if (
-                    task_scheduler.current_task_id
-                    in task_scheduler.task_relationships
+                    task_manager.current_task_id
+                    in task_manager.task_relationships
                 ):
-                    child_task_ids = task_scheduler.task_relationships[
-                        task_scheduler.current_task_id
+                    child_task_ids = task_manager.task_relationships[
+                        task_manager.current_task_id
                     ]
                     pending_children = 0
                     running_children = 0
@@ -61,7 +62,7 @@ class StatusPrinter:
                     failed_children = 0
 
                     for child_id in child_task_ids:
-                        child_task = task_scheduler.task_queue.get_task(child_id)
+                        child_task = task_manager.task_queue.get_task(child_id)
                         if child_task:
                             if child_task.status == TaskStatus.PENDING:
                                 pending_children += 1

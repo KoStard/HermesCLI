@@ -3,6 +3,7 @@ from typing import Dict, Generator, List, Optional, Tuple
 
 from .command import CommandRegistry
 from .command_parser import CommandParser, ParseResult
+from .command_context import CommandContext
 
 # Import commands to ensure they're registered
 from .file_system import FileSystem, Node, ProblemStatus
@@ -41,12 +42,18 @@ class DeepResearchEngine:
         existing_problem = self.file_system.load_existing_problem()
         self.problem_defined = existing_problem is not None
 
+        # Initialize task scheduler and manager
+        self.task_scheduler = TaskScheduler()
+
+        # TODO: Could move to the file system
+        self.permanent_log = []
+
+        # Create command context for commands to use - shared across all commands
+        self.command_context = CommandContext(self)
+
         # Set current node to root node if problem is already defined
         if self.problem_defined:
             self.activate_node(existing_problem)
-
-        # Initialize task scheduler and manager
-        self.task_scheduler = TaskScheduler()
 
         # Register any extension commands
         if extension_commands:
@@ -60,9 +67,6 @@ class DeepResearchEngine:
         
         # Initialize auto reply generator
         self.auto_reply_generator = AutoReplyGenerator()
-
-        # TODO: Could move to the file system
-        self.permanent_log = []
 
         # Store command outputs for automatic responses
         self.command_outputs = {}
@@ -209,8 +213,11 @@ class DeepResearchEngine:
             # Only define_problem is allowed when problem is not defined
             return
 
-        # Execute the command
-        command.execute(self, args)
+        # Update command context with latest state before each command execution
+        self.command_context.refresh_from_engine()
+        
+        # Execute the command with the context instead of the engine
+        command.execute(self.command_context, args)
 
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
@@ -218,7 +225,7 @@ class DeepResearchEngine:
         status_printer.print_status(
             self.problem_defined,
             self.current_node,
-            self.task_scheduler,
+            self.task_scheduler.task_manager,
             self.file_system
         )
 
@@ -305,12 +312,9 @@ class DeepResearchEngine:
             self.process_commands(full_llm_response)
 
             # If there's no current task, we need to check if we're done or if we need to start another task
-            if not self.task_scheduler.current_task_id:
+            if not self.task_scheduler.has_current_task():
                 # Check if there are any pending tasks
-                pending_tasks = self.task_scheduler.task_queue.get_tasks_by_status(
-                    TaskStatus.PENDING
-                )
-                if not pending_tasks:
+                if not self.task_scheduler.get_next_node():
                     # No more tasks, we're done
                     self.finished = True
 
