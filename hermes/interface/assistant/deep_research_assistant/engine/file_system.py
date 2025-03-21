@@ -115,7 +115,7 @@ class FileSystem:
     def create_root_problem(self, title: str, content: str) -> Node:
         """Create the root problem"""
         # Create root directory if it doesn't exist
-        self.root_dir.mkdir(parents=True)
+        self.root_dir.mkdir(parents=True, exist_ok=True)
 
         # Create node and set its path
         self.root_node = Node(title=title, problem_definition=content, path=self.root_dir)

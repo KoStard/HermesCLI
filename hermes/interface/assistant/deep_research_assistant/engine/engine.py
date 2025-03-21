@@ -7,13 +7,12 @@ from .command_context import CommandContext
 
 # Import commands to ensure they're registered
 from .file_system import FileSystem, Node, ProblemStatus
-from .history import ChatHistory
+from .history import ChatHistory, AutoReply, ChatMessage
 from .interface import DeepResearcherInterface
 from .llm_interface import LLMInterface
 from .logger import DeepResearchLogger
 from .status_printer import StatusPrinter
 from .report_generator import ReportGenerator
-from .auto_reply_generator import AutoReplyGenerator
 
 
 class DeepResearchEngine:
@@ -60,9 +59,6 @@ class DeepResearchEngine:
         # Initialize interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, instruction)
         
-        # Initialize auto reply generator
-        self.auto_reply_generator = AutoReplyGenerator()
-
         # Store command outputs for automatic responses
         self.command_outputs = {}
 
@@ -179,19 +175,15 @@ class DeepResearchEngine:
                 line_info = f" at line {line_num}" if line_num else ""
                 error_report += f"- Command '{cmd_name}'{line_info} {status}\n"
 
-        # Generate auto reply
-        auto_reply = self.auto_reply_generator.generate_auto_reply(
-            error_report, 
-            self.command_outputs
-        )
+        auto_reply = AutoReply(error_report, self.command_outputs)
         
         # Clear command outputs after adding them to the response
         self.command_outputs = {}
 
         # Add the auto reply to the current node's history
-        self.chat_history.add_message("user", auto_reply)
+        self.chat_history.add_auto_reply(auto_reply)
 
-        self._print_current_status(auto_reply)
+        self._print_current_status(auto_reply.generate_auto_reply())
         return commands_executed, error_report, execution_status
 
     def _execute_command(self, command_name: str, args: dict):
@@ -244,10 +236,30 @@ class DeepResearchEngine:
             interface_content = self.get_interface_content()
 
             # Convert history messages to dict format for the LLM interface
-            history_messages = [
-                {"author": message.author, "content": message.content}
-                for message in self.chat_history.messages
-            ]
+            history_messages = []
+
+            auto_reply_counter = 0
+            auto_reply_max_length = None
+            for block in self.chat_history.blocks[::-1]:  # Reverse to handle auto reply contraction
+                if isinstance(block, ChatMessage):
+                    history_messages.append(
+                        {"author": block.author, "content": block.content}
+                    )
+                elif isinstance(block, AutoReply):
+                    auto_reply_counter += 1
+                    if auto_reply_counter > 1:
+                        if not auto_reply_max_length:
+                            auto_reply_max_length = 5_000
+                        else:
+                            auto_reply_max_length = max(auto_reply_max_length / 2, 300)
+                    history_messages.append(
+                        {
+                            "author": "user",
+                            "content": block.generate_auto_reply(auto_reply_max_length),
+                        }
+                    )
+
+            history_messages = history_messages[::-1]  # Reverse to maintain chronological order
 
             # Generate the request
             request = self.llm_interface.generate_request(
