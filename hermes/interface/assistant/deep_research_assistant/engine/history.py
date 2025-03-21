@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Dict, List, Optional
 
-from hermes.interface.assistant.deep_research_assistant.engine.content_trancator import ContentTruncator
+from hermes.interface.assistant.deep_research_assistant.engine.content_truncator import ContentTruncator
 
 
 class HistoryBlock(ABC):
