@@ -228,7 +228,7 @@ class FocusDownCommand(Command):
 
     def execute(self, engine: Any, args: Dict[str, Any]) -> None:
         """Focus down to a subproblem"""
-        # Request focus down through the task executor
+        # Request focus down through the task scheduler
         title = args["title"]
         result = engine.task_scheduler.request_focus_down(title)
 
@@ -274,20 +274,20 @@ class FocusUpCommand(Command):
             previous_node.status = ProblemStatus.FINISHED
             engine.file_system.update_files()
 
-        # Request focus up through the task executor
+        # Request focus up through the task scheduler
         result = engine.task_scheduler.request_focus_up()
 
         if result:
             # Update current_node to the new focus (parent)
-            engine.activate_node(engine.task_scheduler.get_current_node())
-
-            # Set the new current node to CURRENT
-            if engine.current_node:
+            new_node = engine.task_scheduler.get_current_node()
+            if new_node:
+                engine.activate_node(new_node)
+                # Set the new current node to CURRENT
                 engine.current_node.status = ProblemStatus.CURRENT
                 engine.file_system.update_files()
-
-            # Check if we've finished the root task
-            if not engine.current_node:
+            else:
+                # No more nodes to process, we're done
+                engine.current_node = None
                 engine.finished = True
 
 
@@ -310,20 +310,20 @@ class FailProblemAndFocusUpCommand(Command):
             previous_node.status = ProblemStatus.FAILED
             engine.file_system.update_files()
 
-        # Request fail and focus up through the task executor
+        # Request fail and focus up through the task scheduler
         result = engine.task_scheduler.request_fail_and_focus_up()
 
         if result:
             # Update current_node to the new focus (parent)
-            engine.activate_node(engine.task_scheduler.get_current_node())
-
-            # Set the new current node to CURRENT
-            if engine.current_node:
+            new_node = engine.task_scheduler.get_current_node()
+            if new_node:
+                engine.activate_node(new_node)
+                # Set the new current node to CURRENT
                 engine.current_node.status = ProblemStatus.CURRENT
                 engine.file_system.update_files()
-
-            # Check if we've finished the root task
-            if not engine.current_node:
+            else:
+                # No more nodes to process, we're done
+                engine.current_node = None
                 engine.finished = True
         else:
             raise ValueError(

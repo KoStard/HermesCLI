@@ -1,9 +1,7 @@
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set
-
-from hermes.interface.assistant.deep_research_assistant.engine.file_system import Node
+from typing import Dict, List, Optional, Set, Any
 
 
 class TaskStatus(Enum):
@@ -19,14 +17,27 @@ class TaskStatus(Enum):
 
 @dataclass
 class Task:
-    """Represents a task in the queue"""
-
+    """
+    Represents a task in the queue
+    
+    A task is a unit of work that needs to be completed. It has a status
+    and a unique identifier.
+    """
     status: TaskStatus = TaskStatus.CREATED
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 class TaskQueue:
-    """Queue for managing tasks in the Deep Research system"""
+    """
+    Queue for managing tasks in the Deep Research system
+    
+    This class is responsible for:
+    - Adding tasks to the queue
+    - Retrieving tasks by ID or status
+    - Updating task statuses
+    - Removing tasks from the queue
+    """
 
     def __init__(self):
         self.tasks: Dict[str, Task] = {}
