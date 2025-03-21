@@ -105,6 +105,11 @@ class Command(ABC):
         return args
 
 
+
+class DefineCommand(Command):
+    """Base class for commands that define or modify problems"""
+    pass
+
 class CommandRegistry:
     """Registry for all available commands"""
 
@@ -136,5 +141,8 @@ class CommandRegistry:
 # Helper function to register a command
 def register_command(command: Command) -> Command:
     """Register a command and return it (decorator pattern)"""
-    CommandRegistry().register(command())
+    instance = command()
+    if isinstance(instance, DefineCommand):
+        return command
+    CommandRegistry().register(instance)
     return command
