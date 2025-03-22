@@ -1,9 +1,7 @@
-from typing import Dict, Any, List, Optional
-from abc import ABC, abstractmethod
-from enum import Enum, auto
+from typing import Dict, Any, List
 
-from .command import Command, CommandRegistry, CommandType, register_command, DefineCommand
-from .file_system import Artifact, ProblemStatus, Node
+from .command import Command, CommandType, register_command, DefineCommand
+from .file_system import Artifact, ProblemStatus
 from .command_context import CommandContext
 
 
@@ -452,3 +450,18 @@ class HalfCloseArtifactCommand(Command):
 
         # If we get here, the artifact wasn't found
         raise ValueError(f"Artifact '{artifact_name}' not found")
+
+
+@register_command
+class ThinkCommand(Command):
+    def __init__(self):
+        super().__init__(
+            "think",
+            "A place for you to think before taking actions",
+        )
+        self.add_section("content", True, "Thinking content, as long as needed")
+
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
+        """This is a dummy command that doesn't trigger any actions"""
+        # This command doesn't do anything, it's just a place for the assistant to think
+        pass
