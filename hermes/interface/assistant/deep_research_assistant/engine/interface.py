@@ -15,12 +15,8 @@ class DeepResearcherInterface:
         self.file_system = file_system
         self.instruction = instruction
 
-    def render_no_problem_defined(self, artifacts: List[str] = None) -> str:
+    def render_no_problem_defined(self) -> str:
         """Render the interface when no problem is defined"""
-        if artifacts is None:
-            artifacts = []
-
-        artifacts_section = self._format_artifacts(artifacts)
 
         return f"""# Deep Research Interface
 
@@ -48,11 +44,6 @@ Any context provided to you in the context section will be permanent and accessi
 Please note that only one problem definition is allowed. Problem definition is the only action you should take at this point and finish the response message.
 
 Make sure to include closing tags for command blocks, otherwise it will break the parsing and cause syntax errors.
-
-======================
-# Artifacts (Initial)
-
-{artifacts_section}
 
 ======================
 # Instruction

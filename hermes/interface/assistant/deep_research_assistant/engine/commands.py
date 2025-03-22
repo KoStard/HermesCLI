@@ -24,16 +24,6 @@ class DefineProblemCommand(DefineCommand):
         # Set the root node status to CURRENT
         root_node.status = ProblemStatus.CURRENT
 
-        # Copy initial artifacts to the root problem
-        # We need to access engine for this specific property
-        engine = context._engine
-        initial_attachments = []
-        if engine and hasattr(engine, "initial_attachments"):
-            initial_attachments = engine.initial_attachments
-        
-        for artifact in initial_attachments:
-            root_node.add_artifact(artifact, f"Content of {artifact} would be here...")
-
         # Ensure file system is fully updated
         context.update_files()
 

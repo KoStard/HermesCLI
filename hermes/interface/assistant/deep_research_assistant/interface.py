@@ -27,7 +27,6 @@ class DeepResearchAssistantInterface(Interface):
     ):
         self.model = model
         self.instruction = None
-        self.attachments = []
         self.research_dir = research_path if research_path else str(Path.cwd())
         self.extension_commands = extension_commands or []
 
@@ -66,7 +65,6 @@ class DeepResearchAssistantInterface(Interface):
         # Create and execute the engine
         engine = DeepResearchEngine(
             self.instruction,
-            self.attachments,
             self.research_dir,
             llm_interface,
             self.extension_commands,
