@@ -221,7 +221,7 @@ class FocusDownCommand(Command):
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus down to a subproblem"""
         title = args["title"]
-        result = context._engine.focus_down(title)
+        result = context.focus_down(title)
 
         if not result:
             raise ValueError(
@@ -240,7 +240,7 @@ class FocusUpCommand(Command):
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus up to the parent problem"""
-        result = context._engine.focus_up()
+        result = context.focus_up()
         
         if not result:
             raise ValueError("Failed to focus up to parent problem.")
@@ -257,7 +257,7 @@ class FailProblemAndFocusUpCommand(Command):
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Mark problem as failed and focus up"""
-        result = context._engine.fail_and_focus_up()
+        result = context.fail_and_focus_up()
         
         if not result:
             raise ValueError("Failed to mark problem as failed and focus up.")

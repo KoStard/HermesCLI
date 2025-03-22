@@ -137,3 +137,12 @@ class CommandContext:
             content: The content of the message
         """
         self.chat_history.add_message(author, content)
+
+    def focus_down(self, subproblem_title: str) -> bool:
+        return self._engine.focus_down(subproblem_title)
+
+    def focus_up(self) -> bool:
+        return self._engine.focus_up()
+
+    def fail_and_focus_up(self) -> bool:
+        return self._engine.fail_and_focus_up()
