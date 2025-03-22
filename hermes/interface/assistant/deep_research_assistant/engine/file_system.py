@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
+from hermes.interface.assistant.deep_research_assistant.engine.frontmatter_manager import FrontmatterManager
+
 
 @dataclass
 class Artifact:
@@ -114,6 +116,7 @@ class FileSystem:
         self.root_dir = Path(root_dir)
         self.root_node: Optional[Node] = None
         self.lock = threading.RLock()  # Reentrant lock for thread safety
+        self.frontmatter_manager = FrontmatterManager()
 
         # Ensure the root directory exists
         os.makedirs(self.root_dir, exist_ok=True)
@@ -331,11 +334,10 @@ class FileSystem:
 
         # Write problem definition with front-matter
         with open(node.path / "Problem Definition.md", "w") as f:
-            # Add front-matter with title
-            f.write("---\n")
-            f.write(f"title: {node.title}\n")
-            f.write("---\n\n")
-            f.write(node.problem_definition)
+            content = self.frontmatter_manager.add_frontmatter(node.problem_definition, {
+                "title": node.title
+            })
+            f.write(content)
 
         # Write criteria (always create the file)
         with open(node.path / "Criteria of Definition of Done.md", "w") as f:
@@ -379,26 +381,10 @@ class FileSystem:
             return None, ""
 
         with open(file_path, "r") as f:
-            content = f.read()
+            full_content = f.read()
 
-        # Check for front-matter (between --- markers)
-        frontmatter_match = re.match(
-            r"^---\s*\n(.*?)\n---\s*\n(.*)", content, re.DOTALL
-        )
-
-        if frontmatter_match:
-            # Extract front-matter and content
-            frontmatter = frontmatter_match.group(1)
-            problem_definition = frontmatter_match.group(2).strip()
-
-            # Extract title from front-matter
-            title_match = re.search(r"title:\s*(.*?)(\n|$)", frontmatter)
-            title = title_match.group(1).strip() if title_match else None
-
-            return title, problem_definition
-        else:
-            # No front-matter found, return the entire content as problem definition
-            return None, content
+        metadata, content = self.frontmatter_manager.extract_frontmatter(full_content)
+        return metadata.get('title'), content
 
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize a filename to be valid on the filesystem"""
