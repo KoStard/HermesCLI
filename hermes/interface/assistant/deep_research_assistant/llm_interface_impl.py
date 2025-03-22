@@ -20,7 +20,6 @@ class ChatModelLLMInterface(LLMInterface):
 
     def __init__(self, model: ChatModel, research_dir: str = None):
         self.model = model
-        self.model.initialize()
         self.research_dir = research_dir if research_dir else str(Path.cwd())
         self.logger = DeepResearchLogger(Path(self.research_dir))
 

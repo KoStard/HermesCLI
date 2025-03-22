@@ -26,6 +26,7 @@ class DeepResearchAssistantInterface(Interface):
         self, model: ChatModel, research_path: str = None, extension_commands=None
     ):
         self.model = model
+        self.model.initialize()
         self.instruction = None
         self.research_dir = research_path if research_path else str(Path.cwd())
         self.extension_commands = extension_commands or []
@@ -84,3 +85,7 @@ class DeepResearchAssistantInterface(Interface):
         """Initialize the interface from history"""
         # Nothing to do here for now
         print("initialize_from_history in deep research assistant not supported")
+
+    def change_thinking_level(self, level: str):
+        if hasattr(self.model, "set_thinking_level"):
+            self.model.set_thinking_level(level)
