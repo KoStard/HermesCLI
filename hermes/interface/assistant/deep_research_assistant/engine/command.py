@@ -129,9 +129,11 @@ class CommandRegistry:
         """Get a command by name"""
         return self._commands.get(name)
 
-    def get_all_commands(self) -> Dict[str, Command]:
+    def get_problem_defined_interface_commands(self) -> Dict[str, Command]:
         """Get all registered commands"""
-        return self._commands
+        return {
+            name: command for name, command in self._commands.items() if not isinstance(command, DefineCommand)
+        }
 
     def get_command_names(self) -> List[str]:
         """Get names of all registered commands"""
@@ -142,7 +144,5 @@ class CommandRegistry:
 def register_command(command: Command) -> Command:
     """Register a command and return it (decorator pattern)"""
     instance = command()
-    if isinstance(instance, DefineCommand):
-        return command
     CommandRegistry().register(instance)
     return command

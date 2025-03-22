@@ -396,7 +396,7 @@ Remember, we work backwards from the root problem.
     def _generate_command_help(self) -> str:
         """Generate help text for all registered commands"""
         # Get all registered commands
-        commands = CommandRegistry().get_all_commands()
+        commands = CommandRegistry().get_problem_defined_interface_commands()
 
         # Generate command help text
         result = []
