@@ -72,9 +72,6 @@ Content of the problem definition.
         # Format breakdown structure with status information
         breakdown_section = self._format_breakdown_structure(target_node)
         
-        # Format current node status
-        status_section = self._format_node_status(target_node)
-
         # Format permanent log
         permanent_log_section = self._format_permanent_log(permanent_logs)
 
@@ -174,6 +171,8 @@ Make sure to include `add_log_entry` for every single focus change you make. Add
 # Current Problem: {target_node.title}
 
 ## Problem Hierarchy
+Notice: The problem hierarchy includes all the current problems and their hierarchical relationship. Notice which is the current problem.
+
 {problem_hierarchy}
 
 ## Problem Definition
@@ -181,9 +180,6 @@ Make sure to include `add_log_entry` for every single focus change you make. Add
 
 ## Criteria of Definition of Done
 {criteria_section}
-
-## Current Node Status
-{status_section}
 
 ## Breakdown Structure
 {breakdown_section}
@@ -294,7 +290,7 @@ Remember, we work backwards from the root problem.
 
             # Add criteria for this subproblem if any exist
             if subproblem.criteria:
-                result += "#### Criteria:\n"
+                result += "#### Sub-problem's Criteria:\n"
                 for i, (criterion, done) in enumerate(
                     zip(subproblem.criteria, subproblem.criteria_done)
                 ):
@@ -337,29 +333,6 @@ Remember, we work backwards from the root problem.
         entries = "\n".join(f"- {entry}" for entry in permanent_logs)
         return f"<permanent_log>\n{entries}\n</permanent_log>"
 
-    def _format_node_status(self, node: Node) -> str:
-        """Format the current node's status information"""
-        if not node:
-            return "No current node selected."
-            
-        status_label = node.get_status_label()
-        criteria_met = node.get_criteria_met_count()
-        criteria_total = node.get_criteria_total_count()
-        status_emoji = node.get_status_emoji()
-        
-        result = f"{status_emoji} Status: {status_label}\n"
-        result += f"Criteria: {criteria_met}/{criteria_total} met\n"
-        
-        # Add information about subproblems status
-        if node.subproblems:
-            result += "\nSubproblems Status:\n"
-            for title, subproblem in node.subproblems.items():
-                sub_status = subproblem.get_status_label()
-                sub_emoji = subproblem.get_status_emoji()
-                result += f"- {sub_emoji} {title}: {sub_status}\n"
-        
-        return result
-    
     def _format_parent_chain(self, node: Node) -> str:
         """Format parent chain for display"""
         if not node:

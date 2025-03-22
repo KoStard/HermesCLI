@@ -258,7 +258,7 @@ class FileSystem:
         criteria_met = node.get_criteria_met_count()
         criteria_total = node.get_criteria_total_count()
         depth_indicator = f"[Depth: {node.depth_from_root}]"
-        status_emoji = node.get_status_emoji()
+        node_status = node.status.value
         
         # Check if this is the current node
         is_current = node == current_node
@@ -275,7 +275,7 @@ class FileSystem:
             node_line = f"CURRENT: {node_line}"
             
         # Add metrics
-        node_line = f"{status_emoji} {node_line} {depth_indicator} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
+        node_line = f"[{node_status}] {node_line} {depth_indicator} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
         
         # Add to result
         result.append(f"{prefix} └── {node_line}")
