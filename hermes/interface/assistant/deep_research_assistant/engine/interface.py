@@ -408,7 +408,7 @@ Remember, we work backwards from the root problem.
 
             # Add help text if available
             if cmd.help_text:
-                command_text += f"\n; {cmd.help_text}"
+                command_text += '\n' + '\n'.join('; ' + line for line in cmd.help_text.split('\n'))
 
             result.append(command_text)
 
