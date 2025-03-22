@@ -21,7 +21,6 @@ class DeepResearchEngine:
     def __init__(
         self,
         instruction: str,
-        initial_attachments: List[str] = None,
         root_dir: str = "research",
         llm_interface: LLMInterface = None,
         extension_commands: List = None,
@@ -29,7 +28,6 @@ class DeepResearchEngine:
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
         self.command_parser = CommandParser()
-        self.initial_attachments = initial_attachments or []
         self.finished = False
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
@@ -68,7 +66,7 @@ class DeepResearchEngine:
     def get_interface_content(self) -> str:
         """Get the current interface content as a string"""
         if not self.problem_defined:
-            return self.interface.render_no_problem_defined(self.initial_attachments)
+            return self.interface.render_no_problem_defined()
         else:
             return self.interface.render_problem_defined(
                 self.current_node, self.permanent_log
