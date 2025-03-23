@@ -169,7 +169,10 @@ Make sure to include `add_log_entry` for every single focus change you make. Add
 {artifacts_section}
 
 ======================
-# Instruction
+# Root Problem Instruction
+Notice: The actions from the instruction are for the root problem. At the level of the current problem you might be 
+treating only a piece of it.
+
 {self.instruction}
 
 ======================
