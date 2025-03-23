@@ -32,14 +32,14 @@ class ChatModelLLMInterface(LLMInterface):
         # Convert history messages to TextMessage objects
         rendered_messages = []
 
-        # Add the interface content as a user message
-        rendered_messages.append(TextMessage(author="user", text=rendered_interface))
-
         # Add history messages
         for message in history_messages:
             rendered_messages.append(
                 TextMessage(author=message["author"], text=message["content"])
             )
+
+        # Add the interface content as a user message
+        rendered_messages.append(TextMessage(author="user", text=rendered_interface))
 
         # Build and return the request
         return request_builder.build_request(rendered_messages)
