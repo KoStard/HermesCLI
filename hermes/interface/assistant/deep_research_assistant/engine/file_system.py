@@ -1,6 +1,5 @@
 import os
 import threading
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -14,6 +13,16 @@ class Artifact:
     name: str
     content: str
     is_fully_visible: bool = False  # Default to half-closed (not fully visible)
+
+    @staticmethod
+    def load_from_file(file_path: Path) -> "Artifact":
+        with open(file_path, "r") as f:
+            content = f.read()
+        return Artifact(name=file_path.name, content=content, is_fully_visible=False)
+
+    def save_to_file(self, file_path: Path) -> None:
+        with open(file_path, "w") as f:
+            f.write(self.content)
 
 
 class ProblemStatus(Enum):
@@ -186,6 +195,16 @@ class FileSystem:
 
         return node
 
+    def _read_artifacts(self, artifacts_dir: Path) -> Dict[str, Artifact]:
+        """Read artifacts from the artifacts directory"""
+        artifacts = {}
+        if artifacts_dir.exists():
+            for artifact_file in artifacts_dir.iterdir():
+                if artifact_file.is_file():
+                    artifact = Artifact.load_from_file(artifact_file)
+                    artifacts[artifact_file.name] = artifact
+        return artifacts
+
     def get_parent_chain(self, node: Node) -> List[Node]:
         """Get the parent chain including the given node"""
         chain = []
@@ -325,8 +344,7 @@ class FileSystem:
             # Add .md extension if no extension exists
             if "." not in filename:
                 filename = filename + ".md"
-            with open(node.path / "Artifacts" / filename, "w") as f:
-                f.write(artifact.content)
+            artifact.save_to_file(node.path / "Artifacts" / filename)
 
         # Recursively write subproblems
         for subproblem in node.subproblems.values():
@@ -391,22 +409,6 @@ class FileSystem:
     def is_node_too_deep(self, node: Node, max_depth: int = 3) -> bool:
         """Check if a node is too deep in the hierarchy"""
         return node.depth_from_root > max_depth
-        
-    def _read_artifacts(self, artifacts_dir: Path):
-        artifacts = {}
-        if artifacts_dir.exists():
-            for artifact_file in artifacts_dir.iterdir():
-                if artifact_file.is_file():
-                    with open(artifact_file, "r") as f:
-                        # Load artifacts as half-closed by default
-                        artifact_content = f.read()
-                        artifact = Artifact(
-                            name=artifact_file.name,
-                            content=artifact_content,
-                            is_fully_visible=False,
-                        )
-                        artifacts[artifact_file.name] = artifact
-        return artifacts
 
     def get_all_nodes(self):
         root_node = self.root_node
