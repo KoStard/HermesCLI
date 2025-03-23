@@ -139,11 +139,14 @@ class FileSystem:
 
     def load_existing_problem(self) -> Optional[Node]:
         """Check if a problem already exists and load it"""
-        if not self.root_dir.exists():
+        return self._recursively_load_problems(self.root_dir, parent_node=None)
+
+    def _recursively_load_problems(self, node_dir: Path, parent_node: Optional[Node]) -> Optional[Node]:
+        if not node_dir.exists():
             return None
 
         # Check if problem definition file exists
-        problem_def_file = self.root_dir / "Problem Definition.md"
+        problem_def_file = node_dir / "Problem Definition.md"
         if not problem_def_file.exists():
             return None
 
@@ -154,73 +157,34 @@ class FileSystem:
 
         # If no title in front-matter, use directory name as fallback
         if not title:
-            title = self.root_dir.name
+            title = node_dir.name
 
         # Create root node
-        self.root_node = Node(title=title, problem_definition=problem_definition, path=self.root_dir, depth_from_root=0)
+        node = Node(title=title,
+                    problem_definition=problem_definition,
+                    path=node_dir,
+                    parent=parent_node,
+                    depth_from_root=parent_node.depth_from_root + 1 if parent_node else 0)
+
+        if parent_node:
+            parent_node.subproblems[title] = node
 
         # Load criteria if they exist
-        criteria_file = self.root_dir / "Criteria of Definition of Done.md"
+        criteria_file = node_dir / "Criteria of Definition of Done.md"
         criteria, criteria_done = self._read_criteria_file(criteria_file)
-        self.root_node.criteria.extend(criteria)
-        self.root_node.criteria_done.extend(criteria_done)
+        node.criteria.extend(criteria)
+        node.criteria_done.extend(criteria_done)
 
         # Load artifacts
-        artifacts_dir = self.root_dir / "Artifacts"
-        self.root_node.artifacts.update(self._read_artifacts(artifacts_dir))
-
-        # Load subproblems recursively
-        self._load_subproblems(self.root_node)
-
-        return self.root_node
-
-    def _load_subproblems(self, parent_node: Node) -> None:
-        """Recursively load subproblems for a node"""
-        if not parent_node.path:
-            return
+        artifacts_dir = node_dir / "Artifacts"
+        node.artifacts.update(self._read_artifacts(artifacts_dir))
 
         subproblems_dir = parent_node.path / "Subproblems"
-        if not subproblems_dir.exists():
-            return
+        if subproblems_dir.exists():
+            for subproblem_dir in subproblems_dir.iterdir():
+                self._recursively_load_problems(subproblem_dir, node)
 
-        for subproblem_dir in subproblems_dir.iterdir():
-            if not subproblem_dir.is_dir():
-                continue
-
-            # Load problem definition
-            problem_def_file = subproblem_dir / "Problem Definition.md"
-            if not problem_def_file.exists():
-                continue
-
-            # Read problem definition and extract front-matter
-            title, problem_definition = self._read_problem_definition_with_frontmatter(
-                problem_def_file
-            )
-
-            # If no title in front-matter, use directory name as fallback
-            if not title:
-                title = subproblem_dir.name
-            subproblem = Node(
-                title=title, 
-                problem_definition=problem_definition, 
-                parent=parent_node, 
-                path=subproblem_dir,
-                depth_from_root=parent_node.depth_from_root + 1
-            )
-            parent_node.subproblems[title] = subproblem
-
-            # Load criteria
-            criteria_file = subproblem_dir / "Criteria of Definition of Done.md"
-            criteria, criteria_done = self._read_criteria_file(criteria_file)
-            subproblem.criteria.extend(criteria)
-            subproblem.criteria_done.extend(criteria_done)
-
-            # Load artifacts
-            artifacts_dir = subproblem_dir / "Artifacts"
-            subproblem.artifacts.update(self._read_artifacts(artifacts_dir))
-
-            # Recursively load subproblems
-            self._load_subproblems(subproblem)
+        return node
 
     def get_parent_chain(self, node: Node) -> List[Node]:
         """Get the parent chain including the given node"""
