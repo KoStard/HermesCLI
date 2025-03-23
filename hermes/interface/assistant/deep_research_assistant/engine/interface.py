@@ -142,6 +142,11 @@ Artifacts are your primary way to create value while working on problems. They r
 
 You'll see artifacts from all problems in the system. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy.
 
+No need to copy the artifacts into the root problem from child problems.
+You can refer to the child artifacts with markdown links. The artifacts are located in "Artifacts" folder in the child path.
+Example:
+> [Child artifact](Subproblem Title/Sub-subproblem Title/Artifacts/Child Artifact.md) 
+
 ### Log Management
 
 The `add_log_entry` command allows you to log permanent, one-sentence summaries of key actions or milestones in the Permanent Logs section. Its purpose is to maintain a clear, concise record of progress across focus changes, ensuring you don't lose track of what's been done when the chat history resets. This is crucial because it helps you stay aligned with the root problem's goals, avoids redundant work, and provides context for reports or navigation (e.g., confirming all subtasks are finished before focusing up). Use it whenever you take actions - like creating a subtask, adding an artifact, or finishing a problem - to document outcomes that matter to the hierarchy. Add entries right after the action, keeping them specific and brief (e.g., "Subtask 1 artifact created" rather than "Did something"). This keeps the history actionable and relevant.
