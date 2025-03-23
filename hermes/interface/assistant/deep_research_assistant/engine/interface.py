@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from .command import CommandRegistry
 from .file_system import FileSystem, Node, Artifact
@@ -15,10 +15,10 @@ class DeepResearcherInterface:
         self.file_system = file_system
         self.instruction = instruction
 
-    def render_no_problem_defined(self) -> str:
+    def render_no_problem_defined(self) -> Tuple[str, str]:
         """Render the interface when no problem is defined"""
 
-        return f"""# Deep Research Interface
+        static_content = f"""# Deep Research Interface
 
 ## Introduction
 
@@ -60,8 +60,9 @@ title goes here
 Content of the problem definition.
 >>>
 ```"""
+        return static_content, ""
 
-    def render_problem_defined(self, target_node: Node, permanent_logs: List[str]) -> str:
+    def render_problem_defined(self, target_node: Node, permanent_logs: List[str]) -> Tuple[str, str]:
         """Render the interface when a problem is defined"""
         # Format artifacts from current node, parent chain, and all descendants
         artifacts_section = self._format_all_artifacts(target_node)
@@ -95,9 +96,7 @@ Please avoid creating additional subproblems at this level. Instead:
 Excessive depth makes the problem hierarchy difficult to manage and can lead to scope creep.
 """.format(depth=target_node.depth_from_root)
 
-        return f"""# Deep Research Interface
-{depth_warning}
-
+        static_content = f"""# Deep Research Interface
 ## Introduction
 
 ### Using the interface
@@ -153,7 +152,8 @@ Example:
 
 The `add_log_entry` command allows you to log permanent, one-sentence summaries of key actions or milestones in the Permanent Logs section. Its purpose is to maintain a clear, concise record of progress across focus changes, ensuring you don't lose track of what's been done when the chat history resets. This is crucial because it helps you stay aligned with the root problem's goals, avoids redundant work, and provides context for reports or navigation (e.g., confirming all subtasks are finished before focusing up). Use it whenever you take actions - like creating a subtask, adding an artifact, or finishing a problem - to document outcomes that matter to the hierarchy. Add entries right after the action, keeping them specific and brief (e.g., "Subtask 1 artifact created" rather than "Did something"). This keeps the history actionable and relevant.
 Make sure to include `add_log_entry` for every single focus change you make. Add this before making the focus change.
-
+"""
+        dynamic_content = f"""
 ======================
 # Permanent Logs
 {permanent_log_section}
@@ -180,6 +180,8 @@ treating only a piece of it.
 ======================
 # Current Problem: {target_node.title}
 
+{depth_warning}
+
 ## Problem Hierarchy
 Notice: The problem hierarchy includes all the current problems and their hierarchical relationship. Notice which is the current problem.
 
@@ -203,6 +205,7 @@ Your current focus in the current problem as provided above.
 Add criteria for the current problem if needed, create subproblems to structure your investigation, and work toward producing a comprehensive 3-page report. Use the attachments for reference and add new ones as needed. When ready to move to a different focus area, use the focus commands.
 Remember, we work backwards from the root problem.
 """
+        return static_content, dynamic_content
 
     def _format_artifacts(self, artifacts: List[str]) -> str:
         """Format artifacts for display"""

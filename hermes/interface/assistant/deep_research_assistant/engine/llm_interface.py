@@ -10,13 +10,14 @@ class LLMInterface(ABC):
 
     @abstractmethod
     def generate_request(
-        self, rendered_interface: str, history_messages: List[dict]
+        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict]
     ) -> Dict:
         """
         Generate a request for the LLM based on the rendered interface and history
 
         Args:
-            rendered_interface: The rendered interface content as a string
+            static_help_interface: The rendered static interface content as a string
+            dynamic_interface: The rendered dynamic interface content as a string
             history_messages: List of message dictionaries with author and content
 
         Returns:
