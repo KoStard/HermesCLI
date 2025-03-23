@@ -58,7 +58,7 @@ class DeepResearchEngine:
         self.interface = DeepResearcherInterface(self.file_system, instruction)
         
         # Store command outputs for automatic responses
-        self.command_outputs = {}
+        self.command_outputs: List[Tuple[str, dict]] = []
 
         # Print initial status
         self._print_current_status()
@@ -81,10 +81,8 @@ class DeepResearchEngine:
             args: Arguments passed to the command
             output: Output text to display
         """
-        if command_name not in self.command_outputs:
-            self.command_outputs[command_name] = []
 
-        self.command_outputs[command_name].append({"args": args, "output": output})
+        self.command_outputs.append((command_name, {"args": args, "output": output}))
 
     def process_commands(self, text: str) -> tuple[bool, str, Dict]:
         """
@@ -177,7 +175,7 @@ class DeepResearchEngine:
         auto_reply = AutoReply(error_report, self.command_outputs)
         
         # Clear command outputs after adding them to the response
-        self.command_outputs = {}
+        self.command_outputs = []
 
         # Add the auto reply to the current node's history
         if self.current_node:

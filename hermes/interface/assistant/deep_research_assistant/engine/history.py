@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from hermes.interface.assistant.deep_research_assistant.engine.content_truncator import ContentTruncator
 
@@ -17,7 +17,7 @@ class ChatMessage(HistoryBlock):
 
 
 class AutoReply(HistoryBlock):
-    def __init__(self, error_report: str, command_outputs: Dict[str, List[Dict[str, any]]]):
+    def __init__(self, error_report: str, command_outputs: List[Tuple[str, dict]]):
         self.error_report = error_report
         self.command_outputs = command_outputs
 
@@ -39,21 +39,20 @@ class AutoReply(HistoryBlock):
         # Add command outputs if any
         if self.command_outputs:
             auto_reply += "\n\n### Command Outputs\n"
-            for cmd_name, outputs in self.command_outputs.items():
-                for output_data in outputs:
-                    auto_reply += f"\n#### <<< {cmd_name}\n"
-                    # Format arguments
-                    args_str = ", ".join(
-                        f"{k}: {v}" for k, v in output_data["args"].items()
-                    )
-                    if args_str:
-                        auto_reply += f"Arguments: {args_str}\n\n"
-                    # Add the output
-                    if not per_command_output_maximum_length:
-                        truncated_output = output_data['output']
-                    else:
-                        truncated_output = ContentTruncator.truncate(output_data['output'], per_command_output_maximum_length, additional_help="To see the full content again, rerun the command.")
-                    auto_reply += f"```\n{truncated_output}\n```\n"
+            for cmd_name, output_data in self.command_outputs:
+                auto_reply += f"\n#### <<< {cmd_name}\n"
+                # Format arguments
+                args_str = ", ".join(
+                    f"{k}: {v}" for k, v in output_data["args"].items()
+                )
+                if args_str:
+                    auto_reply += f"Arguments: {args_str}\n\n"
+                # Add the output
+                if not per_command_output_maximum_length:
+                    truncated_output = output_data['output']
+                else:
+                    truncated_output = ContentTruncator.truncate(output_data['output'], per_command_output_maximum_length, additional_help="To see the full content again, rerun the command.")
+                auto_reply += f"```\n{truncated_output}\n```\n"
 
         return auto_reply
 
