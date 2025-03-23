@@ -14,15 +14,20 @@ class Artifact:
     content: str
     is_fully_visible: bool = False  # Default to half-closed (not fully visible)
 
+    frontmatter_manager = FrontmatterManager()
+
     @staticmethod
     def load_from_file(file_path: Path) -> "Artifact":
         with open(file_path, "r") as f:
             content = f.read()
-        return Artifact(name=file_path.name, content=content, is_fully_visible=False)
+        metadata, content = FrontmatterManager().extract_frontmatter(content)
+        name = metadata.get("name", file_path.name.rsplit('.', 1)[0])
+        return Artifact(name=name, content=content, is_fully_visible=False)
 
     def save_to_file(self, file_path: Path) -> None:
+        content = self.frontmatter_manager.add_frontmatter(self.content, {"name": self.name})
         with open(file_path, "w") as f:
-            f.write(self.content)
+            f.write(content)
 
 
 class ProblemStatus(Enum):
@@ -148,7 +153,8 @@ class FileSystem:
 
     def load_existing_problem(self) -> Optional[Node]:
         """Check if a problem already exists and load it"""
-        return self._recursively_load_problems(self.root_dir, parent_node=None)
+        self.root_node = self._recursively_load_problems(self.root_dir, parent_node=None)
+        return self.root_node
 
     def _recursively_load_problems(self, node_dir: Path, parent_node: Optional[Node]) -> Optional[Node]:
         if not node_dir.exists():
@@ -188,7 +194,7 @@ class FileSystem:
         artifacts_dir = node_dir / "Artifacts"
         node.artifacts.update(self._read_artifacts(artifacts_dir))
 
-        subproblems_dir = parent_node.path / "Subproblems"
+        subproblems_dir = node.path / "Subproblems"
         if subproblems_dir.exists():
             for subproblem_dir in subproblems_dir.iterdir():
                 self._recursively_load_problems(subproblem_dir, node)
