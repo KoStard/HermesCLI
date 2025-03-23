@@ -443,3 +443,17 @@ class FileSystem:
                         )
                         artifacts[artifact_file.name] = artifact
         return artifacts
+
+    def get_all_nodes(self):
+        root_node = self.root_node
+        if not root_node:
+            return []
+
+        all_nodes = self.get_all_nodes_recursive(root_node)
+        return all_nodes
+
+    def get_all_nodes_recursive(self, node: Node):
+        all_nodes = [node]
+        for subproblem in node.subproblems.values():
+            all_nodes.extend(self.get_all_nodes_recursive(subproblem))
+        return all_nodes

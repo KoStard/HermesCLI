@@ -45,7 +45,7 @@ class DeepResearchEngine:
 
         # Set current node to root node if problem is already defined
         if self.problem_defined:
-            self.activate_node(existing_problem)
+            self.choose_and_activate_node()
 
         # Register any extension commands
         if extension_commands:
@@ -59,6 +59,26 @@ class DeepResearchEngine:
         
         # Print initial status
         self._print_current_status()
+
+    def choose_and_activate_node(self):
+        all_nodes = self.file_system.get_all_nodes()
+        for index, node in enumerate(all_nodes):
+            print(f"{'*' * (node.depth_from_root + 1)} {index+1}: {node.title}")
+        print()
+
+        index = None
+        while index is None:
+            try:
+                index = int(input("Choose the node to start from: "))
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+            if not index or index <= 0 or index > len(all_nodes):
+                print("Invalid index. Please try again.")
+                index = None
+
+        index -= 1
+        node = all_nodes[index]
+        self.activate_node(node)
 
     def get_interface_content(self) -> str:
         """Get the current interface content as a string"""
@@ -232,10 +252,6 @@ class DeepResearchEngine:
         # Check if LLM interface is available
         if not self.llm_interface:
             raise ValueError("LLM interface is required for execution")
-
-        # Initialize current node if problem is already defined
-        if self.problem_defined and not self.current_node:
-            self.activate_node(self.file_system.root_node)
 
         while not self.finished:
             # Get the interface content
