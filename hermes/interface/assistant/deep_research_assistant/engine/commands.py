@@ -458,7 +458,7 @@ class ThinkCommand(Command):
             "think",
             "A place for you to think before taking actions",
         )
-        self.add_section("content", True, "Thinking content, as long as needed")
+        self.add_section("content", False, "Thinking content, as long as needed")
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """This is a dummy command that doesn't trigger any actions"""
