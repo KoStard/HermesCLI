@@ -172,16 +172,15 @@ class DeepResearchEngine:
                 line_info = f" at line {line_num}" if line_num else ""
                 error_report += f"- Command '{cmd_name}'{line_info} {status}\n"
 
-        auto_reply = AutoReply(error_report, self.command_outputs)
-        
+        # Add the auto reply to the current node's history
+        if self.current_node:
+            auto_reply_generator = self.chat_history.get_auto_reply_aggregator(self.current_node.title)
+            auto_reply_generator.add_error_report(error_report)
+            auto_reply_generator.add_command_output(self.command_outputs)
+
         # Clear command outputs after adding them to the response
         self.command_outputs = []
 
-        # Add the auto reply to the current node's history
-        if self.current_node:
-            self.chat_history.add_auto_reply(auto_reply, self.current_node.title)
-
-        self._print_current_status(auto_reply.generate_auto_reply())
         return commands_executed, error_report, execution_status
 
     def _execute_command(self, command_name: str, args: dict):
@@ -239,13 +238,17 @@ class DeepResearchEngine:
             auto_reply_counter = 0
             auto_reply_max_length = None
             if self.current_node:
-                for block in self.chat_history.get_blocks(self.current_node.title)[::-1]:  # Reverse to handle auto reply contraction
+                for block in self.chat_history.commit_and_get_blocks(self.current_node.title)[::-1]:  # Reverse to handle auto reply contraction
                     if isinstance(block, ChatMessage):
                         history_messages.append(
                             {"author": block.author, "content": block.content}
                         )
                     elif isinstance(block, AutoReply):
                         auto_reply_counter += 1
+
+                        if auto_reply_counter == 1:
+                            self._print_current_status(block.generate_auto_reply())
+
                         if auto_reply_counter > 1:
                             if not auto_reply_max_length:
                                 auto_reply_max_length = 5_000

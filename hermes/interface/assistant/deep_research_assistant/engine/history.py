@@ -1,4 +1,5 @@
 from abc import ABC
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 from hermes.interface.assistant.deep_research_assistant.engine.content_truncator import ContentTruncator
@@ -57,30 +58,56 @@ class AutoReply(HistoryBlock):
         return auto_reply
 
 
+class AutoReplyAggregator:
+    def __init__(self):
+        self.error_reports = []
+        self.command_outputs = []
+
+    def add_error_report(self, error_report: str):
+        self.error_reports.append(error_report)
+
+    def add_command_output(self, cmd_name: str, output_data: dict):
+        self.command_outputs.append((cmd_name, output_data))
+
+    def clear(self):
+        self.error_reports = []
+        self.command_outputs = []
+
+    def is_empty(self):
+        return not self.error_reports and not self.command_outputs
+
+    def compile_and_clear(self) -> AutoReply:
+        error_report = "\n".join(self.error_reports)
+        auto_reply = AutoReply(error_report, self.command_outputs)
+        self.clear()
+        return auto_reply
+
+
 class ChatHistory:
     """Manages the chat history for all nodes in the problem hierarchy"""
 
     def __init__(self):
         # Map of node_title -> list of messages
-        self.node_blocks: Dict[str, List[HistoryBlock]] = {}
+        self.node_blocks: Dict[str, List[HistoryBlock]] = defaultdict(list)
+        self.node_auto_reply_aggregators: Dict[str, AutoReplyAggregator] = defaultdict(AutoReplyAggregator)
 
     def add_message(self, author: str, content: str, node_title: str) -> None:
         """Add a message to the current node's history"""
         message = ChatMessage(author, content)
-        if node_title not in self.node_blocks:
-            self.node_blocks[node_title] = []
         self.node_blocks[node_title].append(message)
 
-    def add_auto_reply(self, auto_reply: AutoReply, node_title: str) -> None:
+    def get_auto_reply_aggregator(self, node_title: str) -> AutoReplyAggregator:
         """Add an automatic reply to the current node's history"""
-        if node_title not in self.node_blocks:
-            self.node_blocks[node_title] = []
-        self.node_blocks[node_title].append(auto_reply)
+        return self.node_auto_reply_aggregators[node_title]
 
     def clear_node_history(self, node_title: str) -> None:
         """Clear only the current node's history"""
         self.node_blocks[node_title] = []
 
-    def get_blocks(self, node_title: str) -> List[HistoryBlock]:
+    def commit_and_get_blocks(self, node_title: str) -> List[HistoryBlock]:
         """Get all history blocks for a specific node"""
-        return self.node_blocks.get(node_title, [])
+        auto_reply_aggregator = self.node_auto_reply_aggregators[node_title]
+        if not auto_reply_aggregator.is_empty():
+            auto_reply = auto_reply_aggregator.compile_and_clear()
+            self.node_blocks[node_title].append(auto_reply)
+        return self.node_blocks[node_title]
