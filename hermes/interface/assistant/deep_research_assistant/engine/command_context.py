@@ -82,7 +82,7 @@ class CommandContext:
     # Command output operations
     def add_command_output(self, command_name: str, args: Dict, output: str) -> None:
         """Add command output to be included in the automatic response"""
-        self._engine.add_command_output(command_name, args, output)
+        self._engine.add_command_output(command_name, args, output, self.current_node.title)
     
     # Log operations
     def add_to_permanent_log(self, content: str) -> None:
