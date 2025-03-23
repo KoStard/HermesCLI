@@ -57,9 +57,6 @@ class DeepResearchEngine:
         # Initialize interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, instruction)
         
-        # Store command outputs for automatic responses
-        self.command_outputs: List[Tuple[str, dict]] = []
-
         # Print initial status
         self._print_current_status()
 
@@ -72,7 +69,7 @@ class DeepResearchEngine:
                 self.current_node, self.permanent_log
             )
 
-    def add_command_output(self, command_name: str, args: Dict, output: str) -> None:
+    def add_command_output(self, command_name: str, args: Dict, output: str, node_title: str) -> None:
         """
         Add command output to be included in the automatic response
 
@@ -80,9 +77,10 @@ class DeepResearchEngine:
             command_name: Name of the command
             args: Arguments passed to the command
             output: Output text to display
+            node_title: The title of the node for which the output is being added
         """
-
-        self.command_outputs.append((command_name, {"args": args, "output": output}))
+        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(node_title)
+        auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
 
     def process_commands(self, text: str) -> tuple[bool, str, Dict]:
         """
@@ -176,10 +174,6 @@ class DeepResearchEngine:
         if self.current_node:
             auto_reply_generator = self.chat_history.get_auto_reply_aggregator(self.current_node.title)
             auto_reply_generator.add_error_report(error_report)
-            auto_reply_generator.add_command_output(self.command_outputs)
-
-        # Clear command outputs after adding them to the response
-        self.command_outputs = []
 
         return commands_executed, error_report, execution_status
 
@@ -357,7 +351,7 @@ class DeepResearchEngine:
         
         # Update files
         self.file_system.update_files()
-        
+
         return True
         
     def focus_up(self) -> bool:
