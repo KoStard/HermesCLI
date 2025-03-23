@@ -80,7 +80,7 @@ class DeepResearchEngine:
         node = all_nodes[index]
         self.activate_node(node)
 
-    def get_interface_content(self) -> str:
+    def get_interface_content(self) -> Tuple[str, str]:
         """Get the current interface content as a string"""
         if not self.problem_defined:
             return self.interface.render_no_problem_defined()
@@ -255,7 +255,7 @@ class DeepResearchEngine:
 
         while not self.finished:
             # Get the interface content
-            interface_content = self.get_interface_content()
+            static_interface_content, dynamic_interface_content = self.get_interface_content()
 
             # Convert history messages to dict format for the LLM interface
             history_messages = []
@@ -290,7 +290,7 @@ class DeepResearchEngine:
 
             # Generate the request
             request = self.llm_interface.generate_request(
-                interface_content, history_messages
+                static_interface_content, dynamic_interface_content, history_messages
             )
 
             # Get the current node path for logging
@@ -303,7 +303,7 @@ class DeepResearchEngine:
             # Log the request
             self.llm_interface.log_request(
                 current_node_path,
-                [{"author": "user", "content": interface_content}] + history_messages,
+                [{"author": "user", "content": static_interface_content + "\n==DYNAMIC==\n" + dynamic_interface_content}] + history_messages,
                 request,
             )
 
