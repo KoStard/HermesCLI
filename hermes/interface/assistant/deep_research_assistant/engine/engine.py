@@ -137,7 +137,7 @@ class DeepResearchEngine:
                             "line": line_num,
                         }
                         continue
-                    
+
                     try:
                         command = self._execute_command(result.command_name, result.args)
                         should_be_last_in_message = command.should_be_last_in_message()
@@ -392,6 +392,7 @@ class DeepResearchEngine:
             
         # Mark the current node as FINISHED
         self.current_node.status = ProblemStatus.FINISHED
+        current_node = self.current_node
         
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
@@ -404,6 +405,9 @@ class DeepResearchEngine:
         
         # Update files
         self.file_system.update_files()
+
+        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(parent_node.title)
+        parent_auto_reply_aggregator.add_internal_message_from("Task marked FINISHED, focusing back up.", current_node.title)
         
         return True
         
@@ -430,6 +434,7 @@ class DeepResearchEngine:
             
         # Mark the current node as FAILED
         self.current_node.status = ProblemStatus.FAILED
+        current_node = self.current_node
         
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
@@ -442,6 +447,9 @@ class DeepResearchEngine:
         
         # Update files
         self.file_system.update_files()
+
+        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(parent_node.title)
+        parent_auto_reply_aggregator.add_internal_message_from("Task marked FAILED, focusing back up.", current_node.title)
         
         return True
 

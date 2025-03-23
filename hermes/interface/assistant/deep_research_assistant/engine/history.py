@@ -18,9 +18,10 @@ class ChatMessage(HistoryBlock):
 
 
 class AutoReply(HistoryBlock):
-    def __init__(self, error_report: str, command_outputs: List[Tuple[str, dict]]):
+    def __init__(self, error_report: str, command_outputs: List[Tuple[str, dict]], messages: List[Tuple[str, str]]):
         self.error_report = error_report
         self.command_outputs = command_outputs
+        self.messages = messages
 
     def generate_auto_reply(self, per_command_output_maximum_length: int = None) -> str:
         """
@@ -55,6 +56,11 @@ class AutoReply(HistoryBlock):
                     truncated_output = ContentTruncator.truncate(output_data['output'], per_command_output_maximum_length, additional_help="To see the full content again, rerun the command.")
                 auto_reply += f"```\n{truncated_output}\n```\n"
 
+        if self.messages:
+            auto_reply += "\n\n### Internal Automatic Messages\n"
+            for message, origin_node_title in self.messages:
+                auto_reply += f"\n#### From: {origin_node_title}\n```\n{message}\n```\n"
+
         return auto_reply
 
 
@@ -62,6 +68,7 @@ class AutoReplyAggregator:
     def __init__(self):
         self.error_reports = []
         self.command_outputs = []
+        self.internal_messages = []
 
     def add_error_report(self, error_report: str):
         self.error_reports.append(error_report)
@@ -69,16 +76,20 @@ class AutoReplyAggregator:
     def add_command_output(self, cmd_name: str, output_data: dict):
         self.command_outputs.append((cmd_name, output_data))
 
+    def add_internal_message_from(self, message: str, origin_node_title: str):
+        self.internal_messages.append((message, origin_node_title))
+
     def clear(self):
         self.error_reports = []
         self.command_outputs = []
+        self.internal_messages = []
 
     def is_empty(self):
-        return not self.error_reports and not self.command_outputs
+        return not self.error_reports and not self.command_outputs and not self.internal_messages
 
     def compile_and_clear(self) -> AutoReply:
         error_report = "\n".join(self.error_reports)
-        auto_reply = AutoReply(error_report, self.command_outputs)
+        auto_reply = AutoReply(error_report, self.command_outputs, self.internal_messages)
         self.clear()
         return auto_reply
 
