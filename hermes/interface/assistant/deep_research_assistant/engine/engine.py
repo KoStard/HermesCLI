@@ -121,6 +121,8 @@ class DeepResearchEngine:
         # Execute commands that don't have syntax errors
         commands_executed = False
 
+        command_that_should_be_last_reached = False
+
         for i, result in enumerate(parse_results):
             if result.command_name and not result.has_syntax_error:
                 # Create a unique key for this command instance
@@ -128,8 +130,20 @@ class DeepResearchEngine:
                 line_num = result.errors[0].line_number if result.errors else None
 
                 if not result.errors:
+                    if command_that_should_be_last_reached:
+                        execution_status[cmd_key] = {
+                            "name": result.command_name,
+                            "status": "skipped: came after a command that has to be the last in the message",
+                            "line": line_num,
+                        }
+                        continue
+                    
                     try:
-                        self._execute_command(result.command_name, result.args)
+                        command = self._execute_command(result.command_name, result.args)
+                        should_be_last_in_message = command.should_be_last_in_message()
+                        if should_be_last_in_message:
+                            command_that_should_be_last_reached = True
+
                         execution_status[cmd_key] = {
                             "name": result.command_name,
                             "status": "success",
@@ -195,6 +209,7 @@ class DeepResearchEngine:
         
         # Execute the command with the context instead of the engine
         command.execute(self.command_context, args)
+        return command
 
     def _print_current_status(self, auto_reply: str = None):
         """Print the current status of the research to STDOUT"""
