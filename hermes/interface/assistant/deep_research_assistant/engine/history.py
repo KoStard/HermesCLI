@@ -62,49 +62,26 @@ class ChatHistory:
     """Manages the chat history for all nodes in the problem hierarchy"""
 
     def __init__(self):
-        # Map of node_id -> list of messages
+        # Map of node_title -> list of messages
         self.node_blocks: Dict[str, List[HistoryBlock]] = {}
-        # Current active node ID
-        self.current_node_id: Optional[str] = None
-        # Current active messages list (points to the current node's messages)
-        self.blocks: List[HistoryBlock] = []
 
-    def set_current_node(self, node_id: str) -> None:
-        """Set the current node and load its history"""
-        self.current_node_id = node_id
-
-        # Initialize history for this node if it doesn't exist
-        if node_id not in self.node_blocks:
-            self.node_blocks[node_id] = []
-
-        # Point messages to the current node's history
-        self.blocks = self.node_blocks[node_id]
-
-    def add_message(self, author: str, content: str) -> None:
+    def add_message(self, author: str, content: str, node_title: str) -> None:
         """Add a message to the current node's history"""
-        if not self.current_node_id:
-            # If no current node is set, we can't add messages
-            return
-
         message = ChatMessage(author, content)
-        self.blocks.append(message)
+        if node_title not in self.node_blocks:
+            self.node_blocks[node_title] = []
+        self.node_blocks[node_title].append(message)
 
-    def add_auto_reply(self, auto_reply: AutoReply) -> None:
+    def add_auto_reply(self, auto_reply: AutoReply, node_title: str) -> None:
         """Add an automatic reply to the current node's history"""
-        if not self.current_node_id:
-            # If no current node is set, we can't add messages
-            return
+        if node_title not in self.node_blocks:
+            self.node_blocks[node_title] = []
+        self.node_blocks[node_title].append(auto_reply)
 
-        self.blocks.append(auto_reply)
-
-    def clear(self) -> None:
-        """Clear all messages from all histories"""
-        self.node_blocks.clear()
-        self.current_node_id = None
-        self.blocks = []
-
-    def clear_current_node_history(self) -> None:
+    def clear_node_history(self, node_title: str) -> None:
         """Clear only the current node's history"""
-        if self.current_node_id:
-            self.node_blocks[self.current_node_id] = []
-            self.blocks = []
+        self.node_blocks[node_title] = []
+
+    def get_blocks(self, node_title: str) -> List[HistoryBlock]:
+        """Get all history blocks for a specific node"""
+        return self.node_blocks.get(node_title, [])
