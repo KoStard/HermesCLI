@@ -75,13 +75,9 @@ class CommandContext:
             
         self.current_node = node
         
-        # Update chat history
-        self.chat_history.set_current_node(node.title)
-            
         # Update engine if available
         self._engine.current_node = node
-        self._engine.chat_history.set_current_node(node.title)
-    
+
     
     # Command output operations
     def add_command_output(self, command_name: str, args: Dict, output: str) -> None:
@@ -127,16 +123,6 @@ class CommandContext:
             chat_history: The chat history to use
         """
         self.chat_history = chat_history
-    
-    def add_chat_message(self, author: str, content: str) -> None:
-        """
-        Add a message to the chat history
-        
-        Args:
-            author: The author of the message
-            content: The content of the message
-        """
-        self.chat_history.add_message(author, content)
 
     def focus_down(self, subproblem_title: str) -> bool:
         return self._engine.focus_down(subproblem_title)

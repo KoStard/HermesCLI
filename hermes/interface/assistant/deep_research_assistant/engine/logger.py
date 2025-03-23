@@ -39,7 +39,7 @@ class DeepResearchLogger:
             f.write("=== LLM REQUEST ===\n\n")
             f.write("== Chat History ==\n")
             for msg in rendered_messages:
-                f.write(f"[{msg.get('author', 'unknown')}]: {msg.get('text', '')}\n\n")
+                f.write(f"[{msg.get('author', 'unknown')}]: {msg.get('content', '')}\n\n")
 
             f.write("\n== Request Data ==\n")
             f.write(str(request_data))

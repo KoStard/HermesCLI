@@ -31,7 +31,7 @@ class DeepResearchEngine:
         self.finished = False
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
-        self.current_node = None
+        self.current_node: Optional[Node] = None
 
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
@@ -103,7 +103,8 @@ class DeepResearchEngine:
             )
 
         # Add the assistant's message to history for the current node
-        self.chat_history.add_message("assistant", text)
+        if self.current_node:
+            self.chat_history.add_message("assistant", text, self.current_node.title)
 
         # Parse all commands from the text
         parse_results = self.command_parser.parse_text(text)
@@ -179,7 +180,8 @@ class DeepResearchEngine:
         self.command_outputs = {}
 
         # Add the auto reply to the current node's history
-        self.chat_history.add_auto_reply(auto_reply)
+        if self.current_node:
+            self.chat_history.add_auto_reply(auto_reply, self.current_node.title)
 
         self._print_current_status(auto_reply.generate_auto_reply())
         return commands_executed, error_report, execution_status
@@ -238,24 +240,25 @@ class DeepResearchEngine:
 
             auto_reply_counter = 0
             auto_reply_max_length = None
-            for block in self.chat_history.blocks[::-1]:  # Reverse to handle auto reply contraction
-                if isinstance(block, ChatMessage):
-                    history_messages.append(
-                        {"author": block.author, "content": block.content}
-                    )
-                elif isinstance(block, AutoReply):
-                    auto_reply_counter += 1
-                    if auto_reply_counter > 1:
-                        if not auto_reply_max_length:
-                            auto_reply_max_length = 5_000
-                        else:
-                            auto_reply_max_length = max(auto_reply_max_length / 2, 300)
-                    history_messages.append(
-                        {
-                            "author": "user",
-                            "content": block.generate_auto_reply(auto_reply_max_length),
-                        }
-                    )
+            if self.current_node:
+                for block in self.chat_history.get_blocks(self.current_node.title)[::-1]:  # Reverse to handle auto reply contraction
+                    if isinstance(block, ChatMessage):
+                        history_messages.append(
+                            {"author": block.author, "content": block.content}
+                        )
+                    elif isinstance(block, AutoReply):
+                        auto_reply_counter += 1
+                        if auto_reply_counter > 1:
+                            if not auto_reply_max_length:
+                                auto_reply_max_length = 5_000
+                            else:
+                                auto_reply_max_length = max(auto_reply_max_length / 2, 300)
+                        history_messages.append(
+                            {
+                                "author": "user",
+                                "content": block.generate_auto_reply(auto_reply_max_length),
+                            }
+                        )
 
             history_messages = history_messages[::-1]  # Reverse to maintain chronological order
 
@@ -274,7 +277,7 @@ class DeepResearchEngine:
             # Log the request
             self.llm_interface.log_request(
                 current_node_path,
-                [{"author": "user", "text": interface_content}] + history_messages,
+                [{"author": "user", "content": interface_content}] + history_messages,
                 request,
             )
 
@@ -316,7 +319,6 @@ class DeepResearchEngine:
     def activate_node(self, node: Node) -> None:
         """Set the current node and update chat history"""
         self.current_node = node
-        self.chat_history.set_current_node(node.title)
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""
