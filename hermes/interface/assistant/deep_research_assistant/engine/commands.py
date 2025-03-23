@@ -228,6 +228,9 @@ class FocusDownCommand(Command):
                 f"Failed to focus down to subproblem '{title}'. Make sure the subproblem exists."
             )
 
+    def should_be_last_in_message(self):
+        return True
+
 
 @register_command
 class FocusUpCommand(Command):
@@ -245,6 +248,9 @@ class FocusUpCommand(Command):
         if not result:
             raise ValueError("Failed to focus up to parent problem.")
 
+    def should_be_last_in_message(self):
+        return True
+
 
 @register_command
 class FailProblemAndFocusUpCommand(Command):
@@ -261,6 +267,9 @@ class FailProblemAndFocusUpCommand(Command):
         
         if not result:
             raise ValueError("Failed to mark problem as failed and focus up.")
+
+    def should_be_last_in_message(self):
+        return True
 
 
 @register_command

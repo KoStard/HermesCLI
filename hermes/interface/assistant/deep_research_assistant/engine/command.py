@@ -104,6 +104,9 @@ class Command(ABC):
         """Transform arguments before execution if needed"""
         return args
 
+    def should_be_last_in_message(self):
+        return False
+
 
 
 class DefineCommand(Command):
