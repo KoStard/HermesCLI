@@ -12,8 +12,11 @@ class ContentTruncator:
         Returns:
             Truncated content with a note about omitted content if truncation occurred
         """
-        if len(content) <= max_length:
+        if max_length is None or len(content) <= max_length:
             return content
+
+        if type(max_length) != int:
+            max_length = int(max_length)
             
         # Find the last line break before max_length
         last_newline_pos = content[:max_length].rfind('\n')
