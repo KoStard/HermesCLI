@@ -278,7 +278,7 @@ class DeepResearchEngine:
                             if not auto_reply_max_length:
                                 auto_reply_max_length = 5_000
                             else:
-                                auto_reply_max_length = max(auto_reply_max_length / 2, 300)
+                                auto_reply_max_length = max(auto_reply_max_length // 2, 300)
                         history_messages.append(
                             {
                                 "author": "user",
