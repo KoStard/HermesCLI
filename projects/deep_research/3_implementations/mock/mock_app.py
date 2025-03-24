@@ -26,7 +26,6 @@ class DeepResearchMockApp:
         # Initialize the engine with the mock LLM interface and extensions
         self.engine = DeepResearchEngine(
             instruction,
-            initial_attachments,
             root_dir,
             self.llm_interface,
             deep_research_commands,

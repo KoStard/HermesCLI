@@ -17,7 +17,7 @@ class MockLLMInterface(LLMInterface):
         self.research_dir = research_dir
 
     def generate_request(
-        self, rendered_interface: str, history_messages: List[dict]
+        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict]
     ) -> Dict:
         """
         Generate a request for the LLM based on the rendered interface and history
@@ -32,7 +32,7 @@ class MockLLMInterface(LLMInterface):
         # For the mock, we just need to pass the rendered interface and history
 
         return {
-            "interface": rendered_interface,
+            "interface": static_help_interface + '\n' + dynamic_interface,
             "history": history_messages,
         }
 
