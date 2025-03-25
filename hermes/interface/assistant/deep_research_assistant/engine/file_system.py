@@ -228,51 +228,59 @@ class FileSystem:
         result = []
         
         # Build the hierarchy tree recursively starting from root
-        self._build_hierarchy_tree(self.root_node, result, "", current_node)
+        self._build_hierarchy_tree(self.root_node, result, 0, current_node)
         
         return "\n".join(result)
         
-    def _build_hierarchy_tree(self, node: Node, result: List[str], prefix: str, current_node: Optional[Node] = None) -> None:
+    def _build_hierarchy_tree(self, node: Node, result: List[str], indent_level: int, current_node: Optional[Node] = None) -> None:
         """
-        Recursively build the hierarchy tree
+        Recursively build the hierarchy tree in XML-like format
         
         Args:
             node: The current node to process
             result: List to append formatted strings to
-            prefix: Prefix string for indentation
+            indent_level: Current indentation level
             current_node: The currently active node to highlight
         """
         # Format node information
         artifacts_count = len(node.artifacts)
         criteria_met = node.get_criteria_met_count()
         criteria_total = node.get_criteria_total_count()
-        depth_indicator = f"[Depth: {node.depth_from_root}]"
         node_status = node.status.value
         
         # Check if this is the current node
         is_current = node == current_node
         node_title = node.title
         
-        # Format the node line
-        if node == self.root_node:
-            node_line = f"Root: {node_title}"
-        else:
-            node_line = node_title
-            
-        # Add status indicators
+        # Create indentation
+        indent = "  " * indent_level
+        
+        # Start tag with attributes
+        opening_tag = f'{indent}<"{node_title}" '
+        opening_tag += f'status="{node_status}" '
+        opening_tag += f'criteriaProgress={criteria_met}/{criteria_total} '
+        opening_tag += f'depth={node.depth_from_root} '
+        opening_tag += f'artifacts={artifacts_count} '
+        
         if is_current:
-            node_line = f"CURRENT: {node_line}"
+            opening_tag += 'isCurrent="true" '
             
-        # Add metrics
-        node_line = f"[{node_status}] {node_line} {depth_indicator} [{criteria_met}/{criteria_total} criteria met] [🗂️ {artifacts_count} artifacts]"
-        
-        # Add to result
-        result.append(f"{prefix} └── {node_line}")
-        
-        # Process children with increased indentation
-        child_prefix = prefix + "     "
-        for title, subproblem in node.subproblems.items():
-            self._build_hierarchy_tree(subproblem, result, child_prefix, current_node)
+        # Close the opening tag
+        if not node.subproblems:
+            # Self-closing tag if no children
+            opening_tag += '/>'
+            result.append(opening_tag)
+        else:
+            # Opening tag with children
+            opening_tag += '>'
+            result.append(opening_tag)
+            
+            # Process children with increased indentation
+            for title, subproblem in node.subproblems.items():
+                self._build_hierarchy_tree(subproblem, result, indent_level + 1, current_node)
+                
+            # Closing tag
+            result.append(f'{indent}</{node_title}">')
 
     def update_files(self) -> None:
         """Update all files on disk"""

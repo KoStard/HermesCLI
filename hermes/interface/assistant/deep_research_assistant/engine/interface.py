@@ -190,7 +190,8 @@ treating only a piece of it.
 # Current Problem in Focus: Title "{target_node.title}"
 {depth_warning}
 ## Problem Hierarchy
-Notice: The problem hierarchy includes all the current problems and their hierarchical relationship. Notice which is the current problem.
+Notice: The problem hierarchy includes all the problems in the system and their hierarchical relationship, with some metadata. 
+The current problem is marked with isCurrent="true".
 
 {problem_hierarchy}
 
@@ -200,10 +201,10 @@ Notice: The problem hierarchy includes all the current problems and their hierar
 ## Criteria of Definition of Done
 {criteria_section}
 
-## Breakdown Structure
+## Breakdown of current problem
 {breakdown_section}
 
-
+## Chain of problems from current to root
 {parent_chain_section}
 
 ## Goal
