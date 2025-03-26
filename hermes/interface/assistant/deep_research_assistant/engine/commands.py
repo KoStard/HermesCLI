@@ -22,7 +22,7 @@ class DefineProblemCommand(DefineCommand):
         )
 
         # Set the root node status to CURRENT
-        root_node.status = ProblemStatus.CURRENT
+        root_node.status = ProblemStatus.IN_PROGRESS
 
         # Ensure file system is fully updated
         context.update_files()
