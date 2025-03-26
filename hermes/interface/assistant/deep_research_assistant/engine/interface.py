@@ -3,6 +3,7 @@ from typing import List, Tuple
 from .command import CommandRegistry
 from .file_system import FileSystem, Node, Artifact
 from .commands import DefineCommand  # registers the commands
+from .hierarchy_formatter import HierarchyFormatter
 
 
 class DeepResearcherInterface:
@@ -14,6 +15,7 @@ class DeepResearcherInterface:
     def __init__(self, file_system: FileSystem, instruction: str):
         self.file_system = file_system
         self.instruction = instruction
+        self.hierarchy_formatter = HierarchyFormatter()
 
     def render_no_problem_defined(self) -> Tuple[str, str]:
         """Render the interface when no problem is defined"""
@@ -47,6 +49,8 @@ Make sure to include closing tags for command blocks, otherwise it will break th
 
 ======================
 # Instruction
+Notice: The assistants working on the created problem won't see anymore this instruction. Make sure to include all the important details in the problem definition.
+
 {self.instruction}
 
 ======================
@@ -71,13 +75,13 @@ Content of the problem definition.
         criteria_section = self._format_criteria(target_node)
 
         # Format breakdown structure with status information
-        breakdown_section = self._format_breakdown_structure(target_node)
+        subproblems_sections = self._format_subproblems(target_node)
         
         # Format permanent log
         permanent_log_section = self._format_permanent_log(permanent_logs)
 
-        # Format parent chain
-        parent_chain_section = self._format_parent_chain(target_node)
+        # Format problem path hierarchy
+        problem_path_hierarchy_section = self._format_problem_path_hierarchy(target_node)
 
         # Format problem hierarchy - full tree with current node highlighted
         problem_hierarchy = self.file_system.get_problem_hierarchy(target_node)
@@ -93,8 +97,8 @@ Content of the problem definition.
 You are currently at depth level {target_node.depth_from_root}, which exceeds the recommended maximum of 3 levels.
 Please avoid creating additional subproblems at this level. Instead:
 1. Try to solve the current problem directly
-2. Use 'focus_up' to return to the parent problem when done
-3. If necessary, mark the problem as done or failed using 'fail_problem_and_focus_up'
+2. Use `finish_problem` to allow the parent problem to resume
+3. If necessary, mark the current problem as failed using `fail_problem` command
 
 Excessive depth makes the problem hierarchy difficult to manage and can lead to scope creep.
 """
@@ -103,6 +107,7 @@ Excessive depth makes the problem hierarchy difficult to manage and can lead to 
 ## Introduction
 
 ### About the workforce
+
 You are not working on this problem alone.
 You are part of a bigger dynamically sized team of professionals focused on gradual iterative research fitting in the budget.
 The team receives one "root problem", which is like the EPIC you want to resolve.
@@ -114,8 +119,6 @@ Someone from the team (maybe you) picks up the root problem. Others will get sub
 5. Then based on the results of the subproblems, continue the investigation (going back to step 2), creating further subproblems if necessary, or resolving the current problem.
 
 All of you are pragmatic, yet have strong ownership. You make sure you solve as much of the problem as possible, while also delegating (which is a good sign of leadership) tasks to your teammates as well.
-
-The root problem was defined or updated by the user instructions, which are accessible to you too.
 
 ### Using the interface
 
@@ -181,7 +184,7 @@ Notice that we use <<< for opening the commands, >>> for closing, and /// for ar
 
 Notice that the problem assigned to you doesn't change during the whole chat.
 
-Title "{target_node.title}"
+Title: "{target_node.title}"
 {depth_warning}
 
 ### Problem Definition
@@ -203,14 +206,7 @@ The interface will be automatically refreshed with every message and you'll see 
 {artifacts_section}
 
 ======================
-# Root Problem Instruction
-Notice: The actions from the instruction are for the root problem. At the level of the current problem you might be 
-treating only a piece of it.
-
-{self.instruction}
-
-======================
-## Problem Hierarchy
+## Problem Hierarchy (short)
 Notice: The problem hierarchy includes all the problems in the system and their hierarchical relationship, with some metadata. 
 The current problem is marked with isCurrent="true".
 
@@ -219,11 +215,11 @@ The current problem is marked with isCurrent="true".
 ## Criteria of Definition of Done
 {criteria_section}
 
-## Breakdown of current problem
-{breakdown_section}
+## Subproblems of the current problem
+{subproblems_sections}
 
-## Chain of problems from current to root
-{parent_chain_section}
+## Problem Path Hierarchy (from root to current)
+{problem_path_hierarchy_section}
 
 ## Goal
 Your fundamental goal is to solve the root problem through solving the your assigned problem. Stay frugal, don't focus on the unnecessary details that won't benefit the root problem. But don't sacrifice on quality. If you find yourself working on something that's not worth the effort, mark as done and write it in the report.
@@ -310,31 +306,9 @@ Remember, we work backwards from the root problem.
             result += f"{i+1}. {status} {criterion}\n"
         return result.strip()
 
-    def _format_breakdown_structure(self, node: Node) -> str:
+    def _format_subproblems(self, node: Node) -> str:
         """Format breakdown structure for display"""
-        if not node.subproblems:
-            return "No subproblems defined yet."
-
-        result = ""
-        for title, subproblem in node.subproblems.items():
-            criteria_status = subproblem.get_criteria_status()
-            status_label = subproblem.get_status_label()
-            status_emoji = subproblem.get_status_emoji()
-            
-            # Include emoji and more visible status information
-            result += f"### {status_emoji} {title} {criteria_status} [Status: {status_label}]\n"
-            result += f"{subproblem.problem_definition}\n\n"
-
-            # Add criteria for this subproblem if any exist
-            if subproblem.criteria:
-                result += "#### Sub-problem's Criteria:\n"
-                for i, (criterion, done) in enumerate(
-                    zip(subproblem.criteria, subproblem.criteria_done)
-                ):
-                    status = "[✓]" if done else "[ ]"
-                    result += f"{i+1}. {status} {criterion}\n"
-                result += "\n"
-        return result.strip()
+        return self.hierarchy_formatter.format_subproblems(node)
 
     def collect_artifacts_recursively(self, node: Node) -> list:
         """Recursively collect artifacts from a node and all its descendants"""
@@ -370,29 +344,9 @@ Remember, we work backwards from the root problem.
         entries = "\n".join(f"- {entry}" for entry in permanent_logs)
         return f"<permanent_log>\n{entries}\n</permanent_log>"
 
-    def _format_parent_chain(self, node: Node) -> str:
-        """Format parent chain for display"""
-        if not node:
-            return ""
-
-        chain = self.file_system.get_parent_chain(node)
-        if len(chain) <= 1:
-            return ""
-
-        result = "## Parent chain\n"
-
-        # Skip the current node
-        for i, parent_node in enumerate(chain[:-1]):
-            result += f"### L{i} {'Root Problem' if i == 0 else 'Problem'}: {parent_node.title}\n"
-            result += f"{parent_node.problem_definition}\n\n"
-
-            if parent_node.subproblems:
-                result += f"#### L{i} Problem Breakdown Structure\n"
-                for title, subproblem in parent_node.subproblems.items():
-                    result += f"##### {title}\n"
-                    result += f"{subproblem.problem_definition}\n\n"
-
-        return result.strip()
+    def _format_problem_path_hierarchy(self, node: Node) -> str:
+        """Format the hierarchical path from root to current node for display"""
+        return self.hierarchy_formatter.format_problem_path_hierarchy(node)
 
     def _generate_command_help(self) -> str:
         """Generate help text for all registered commands"""
