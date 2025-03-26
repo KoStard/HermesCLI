@@ -88,87 +88,110 @@ Content of the problem definition.
 #
         depth_warning = ""
         if self.file_system.is_node_too_deep(target_node, 3):
-            depth_warning = """
+            depth_warning = f"""
 ⚠️ **DEPTH WARNING** ⚠️
-You are currently at depth level {depth}, which exceeds the recommended maximum of 3 levels.
+You are currently at depth level {target_node.depth_from_root}, which exceeds the recommended maximum of 3 levels.
 Please avoid creating additional subproblems at this level. Instead:
 1. Try to solve the current problem directly
 2. Use 'focus_up' to return to the parent problem when done
 3. If necessary, mark the problem as done or failed using 'fail_problem_and_focus_up'
 
 Excessive depth makes the problem hierarchy difficult to manage and can lead to scope creep.
-""".format(depth=target_node.depth_from_root)
+"""
 
         static_content = f"""# Deep Research Interface (Static Section)
 ## Introduction
 
+### About the workforce
+You are not working on this problem alone.
+You are part of a bigger dynamically sized team of professionals focused on gradual iterative research fitting in the budget.
+The team receives one "root problem", which is like the EPIC you want to resolve.
+Someone from the team (maybe you) picks up the root problem. Others will get subproblems. The principle is the same:
+1. Start your research of the problem.
+2. Rely on your existing significant knowledge of the domain.
+3. If necessary, use the provided tools to collect more information/knowledge
+4. If the problem is still too vague/big to solve alone, break it into subproblems that your teammates will handle. You'll see the artifacts they create for the problems, and the sub-subproblems they create.
+5. Then based on the results of the subproblems, continue the investigation (going back to step 2), creating further subproblems if necessary, or resolving the current problem.
+
+All of you are pragmatic, yet have strong ownership. You make sure you solve as much of the problem as possible, while also delegating (which is a good sign of leadership) tasks to your teammates as well.
+
+The root problem was defined or updated by the user instructions, which are accessible to you too.
+
 ### Using the interface
 
-This interface helps you conduct thorough research by breaking down complex problems into manageable subproblems. You can use commands to add criteria, create subproblems, attach resources, write reports, and navigate the problem hierarchy.
+This interface helps you conduct thorough research by providing you with the necessary tools and to create subtasks with less vague scope that your teammates will do. You can use commands to add criteria, create subproblems, attach resources, write reports, navigate the problem hierarchy, access external resources, and more.
 
-If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
+In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". If the system detects this code anywhere in your response it will halt the system and the admin will check it.
 
-Please use commands exactly as shown, with correct syntax. Closing tags are mandatory for multiline blocks, otherwise parsing will break. The commands should start from an empty line, from first symbol in the line. Don't put anything else in the lines of the commands.
-
-In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". If the system detects this code anywhere in your response it will halt the system.
-
-### Hierarchy
-
-Your project is solving the root problem (created or updated by the user instructions which are also accessible to you). If the root problem is too big, you create subproblems and solve them before solving the root problem. Recursively you go deeper until you reach to problems that you can confidently solve directly without need for subproblems. Hence the hierarchy of parent/child problems. Don't create subproblems in cases where you confidently can't answer. Create the minimum number of subproblems necessary to solve the current problem.
+### Subproblems
 
 Include expectations on the depth of the results in problem definitions. On average be frugal, not making the problems scope explode.
+Only one teammate will be working on one (sub)problem. The history of the work will not be shared, except for the artifacts, problem hierarchy and shared permanent logs.
 
-The chat history is preserved for each problem node. When you return to a problem you've worked on before, you'll see the previous conversation history for that specific problem. This helps maintain context and continuity as you navigate through the problem hierarchy.
+### Depth
 
-Note that attachments from both the current problem and all parent problems are visible. Each attachment shows its owner (the problem it belongs to) at the top. When changing focus, new attachments from that problem will become available.
-
-At most only one focus change is allowed in one response. The focus change command should be the last command in your message, as it marks the end of the current session. No further commands should follow a focus change.
-
-You should go maximum 3 levels deep.
+Depth is how far we are from the root problem.
+Root problem has a depth of 0.
+Subproblems of the root problem has a depth of 1. Etc.
+As a rule of thumn, unless really necessary, don't go below depth 3.
 
 ### Problem Status System
 
 Each problem in the hierarchy has a status that indicates its current state:
 - **NOT_STARTED**: A problem that has been created but work has not yet begun on it
-- **PENDING**: A problem that is temporarily paused because focus has moved to one of its subproblems
-- **CURRENT**: The problem you are currently focused on and working to solve
+- **PENDING**: A problem that is temporarily paused because it awaits the results of its subproblems
+- **IN_PROGRESS**: The problem that is being currently worked on
 - **FINISHED**: A problem that has been successfully completed
 - **FAILED**: A problem that could not be solved or was determined to be unsolvable
 - **CANCELLED**: A problem that was determined to be unnecessary or irrelevant
 
-You can see the status of each problem in the breakdown structure. The current problem is always marked as CURRENT.
+You can see the status of each problem in the breakdown structure.
 
 ### Artifacts
 
 Artifacts are your primary way to create value while working on problems. They represent the concrete outputs of your research and analysis. Whenever you find important information that moves the root problem towards a solution, capture it in the form of an artifact. High-quality artifacts are the main deliverable of your work.
-All of your artifacts should rely on your factual knowledge or specific resources you have access to or get through commands usage. In deep research artifacts, factuality is essential, and assumptions are not allowed. If you lack information, clearly call out that you don't have that knowledge, what tools are missing and how will you proceed forward.
+All of your artifacts should rely on your factual knowledge or specific resources you have access to or get through commands usage. Include source links/commands. In artifacts, factuality is essential, and assumptions are not allowed. If you lack information, clearly call out that you don't have that knowledge, what tools are missing and how will you proceed forward. We have culture of growth, so clear call out of missing knowledge is considered sign of maturity.
 
-You'll see artifacts from all problems in the system. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy.
+You'll see partially open artifacts from all problems in the system, that you have option to open fully for yourself. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy.
 
 The outputs of the commands are temporary and won't be visible from other nodes. Include all factual details in the artifacts.
 
-No need to copy the artifacts into the root problem from child problems.
-You can refer to the child artifacts with markdown links. The artifacts are located in "Artifacts" folder in the child path.
+No need to copy the artifacts between problems or into the root problem.
+As artifacts are written as markdown files, you can refer to the child artifacts with markdown links. The artifacts are located in "Artifacts" folder in the child path (which consists of a directory with the child problem's title as name).
 Example:
 > [Child artifact](Subproblem Title/Sub-subproblem Title/Artifacts/Child Artifact.md) 
 
 ### Log Management
 
-The `add_log_entry` command allows you to log permanent, one-sentence summaries of key actions or milestones in the Permanent Logs section. Its purpose is to maintain a clear, concise record of progress across focus changes, ensuring you don't lose track of what's been done when the chat history resets. This is crucial because it helps you stay aligned with the root problem's goals, avoids redundant work, and provides context for reports or navigation (e.g., confirming all subtasks are finished before focusing up). Use it whenever you take actions - like creating a subtask, adding an artifact, or finishing a problem - to document outcomes that matter to the hierarchy. Add entries right after the action, keeping them specific and brief (e.g., "Subtask 1 artifact created" rather than "Did something"). This keeps the history actionable and relevant.
-Make sure to include `add_log_entry` for every single focus change you make. Add this before making the focus change.
+The `add_log_entry` command allows you to log permanent, one-sentence summaries of key actions or milestones in the Permanent Logs section. Its purpose is to maintain a clear, concise record of progress across all problems, ensuring the overall progress is always visible. This is crucial because it helps you stay aligned with the root problem's goals, avoids redundant work, and provides context for reports or navigation. Use it whenever you take actions - like creating a subtask, adding an artifact, or finishing a problem - to document outcomes that matter to the hierarchy. Add entries right after the action, keeping them specific and brief (e.g., "Artifact 1 artifact created in task with title ..." rather than "Did something"). This keeps the history actionable and relevant.
 
 ## Commands
 
-Commands are executed only after you finish your message. If you want to use the outputs of the command, you should not change focus in that message, you should wait to receive the results after you finish your message, then in the next message take the next steps.
+If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
+
+Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break. The commands should start from an empty line, from first symbol in the line. Don't put anything else in the lines of the commands.
+
+Commands are executed only after you finish your message. You have to finish your turn (end your message) to receive the results of your commands. This will allow you to collect more information before assigning work to others or resolving the task. You can have as many iterations as needed, while not being wasteful.
 
 Notice that we use <<< for opening the commands, >>> for closing, and /// for arguments. Make sure you use the exact syntax.
 
 {command_help}
+
+## The problem assigned to you
+
+Notice that the problem assigned to you doesn't change during the whole chat.
+
+Title "{target_node.title}"
+{depth_warning}
+
+### Problem Definition
+{target_node.problem_definition}
+
 """
         dynamic_content = f"""
 # Deep Research Interface (Dynamic Section)
 Here goes the dynamic section of the interface. This is a special section which is visible only in the last message you see.
-The interface will be automatically refreshed with every message and you'll see the most up to date information. This is your source of truth. The interface will be in the last message you receive and to be frugal with the length of the history and to prevent confusion, will be redacted from the previous messages.
+The interface will be automatically refreshed with every message and you'll see the most up to date information. This is your source of truth for the changing information. The interface will be in the last message you receive and to be frugal with the length of the history and to prevent confusion, will be redacted from the previous messages.
 
 ======================
 # Permanent Logs
@@ -187,16 +210,11 @@ treating only a piece of it.
 {self.instruction}
 
 ======================
-# Current Problem in Focus: Title "{target_node.title}"
-{depth_warning}
 ## Problem Hierarchy
 Notice: The problem hierarchy includes all the problems in the system and their hierarchical relationship, with some metadata. 
 The current problem is marked with isCurrent="true".
 
 {problem_hierarchy}
-
-## Problem Definition
-{target_node.problem_definition}
 
 ## Criteria of Definition of Done
 {criteria_section}
@@ -208,9 +226,7 @@ The current problem is marked with isCurrent="true".
 {parent_chain_section}
 
 ## Goal
-Your goal is to solve the root problem. Stay frugal, don't focus on the unnecessary details that won't benefit the root problem. But don't sacrifice on quality. If you find yourself working on something that's not worth the effort, mark as done, write it in the report and go up.
-Your current focus in the current problem as provided above.
-Add criteria for the current problem if needed, create subproblems to structure your investigation, and work toward producing a comprehensive 3-page report. Use the attachments for reference and add new ones as needed. When ready to move to a different focus area, use the focus commands.
+Your fundamental goal is to solve the root problem through solving the your assigned problem. Stay frugal, don't focus on the unnecessary details that won't benefit the root problem. But don't sacrifice on quality. If you find yourself working on something that's not worth the effort, mark as done and write it in the report.
 Remember, we work backwards from the root problem.
 """
         return static_content, dynamic_content

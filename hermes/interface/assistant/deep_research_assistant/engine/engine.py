@@ -375,7 +375,7 @@ class DeepResearchEngine:
         self.current_node.status = ProblemStatus.PENDING
         
         # Set the subproblem to CURRENT
-        subproblem.status = ProblemStatus.CURRENT
+        subproblem.status = ProblemStatus.IN_PROGRESS
         
         # Update the current node
         self.activate_node(subproblem)
@@ -414,7 +414,7 @@ class DeepResearchEngine:
         parent_node = parent_chain[-2]
         
         # Set the parent to CURRENT
-        parent_node.status = ProblemStatus.CURRENT
+        parent_node.status = ProblemStatus.IN_PROGRESS
         
         # Update the current node
         self.activate_node(parent_node)
@@ -456,7 +456,7 @@ class DeepResearchEngine:
         parent_node = parent_chain[-2]
         
         # Set the parent to CURRENT
-        parent_node.status = ProblemStatus.CURRENT
+        parent_node.status = ProblemStatus.IN_PROGRESS
         
         # Update the current node
         self.activate_node(parent_node)

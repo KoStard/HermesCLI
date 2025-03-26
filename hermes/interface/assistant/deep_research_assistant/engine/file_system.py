@@ -33,7 +33,7 @@ class Artifact:
 class ProblemStatus(Enum):
     NOT_STARTED = "NOT_STARTED"  # Problem has not been started yet
     PENDING = "PENDING"  # Problem is temporarily paused (focus moved to child)
-    CURRENT = "CURRENT"  # Problem is currently being worked on
+    IN_PROGRESS = "IN_PROGRESS"  # Problem is currently being worked on
     FINISHED = "FINISHED"  # Problem has been successfully completed
     FAILED = "FAILED"  # Problem could not be solved
     CANCELLED = "CANCELLED"  # Problem was determined to be unnecessary
@@ -113,7 +113,7 @@ class Node:
         status_emojis = {
             ProblemStatus.NOT_STARTED: "🆕",
             ProblemStatus.PENDING: "⏳",
-            ProblemStatus.CURRENT: "🔍",
+            ProblemStatus.IN_PROGRESS: "🔍",
             ProblemStatus.FINISHED: "✅",
             ProblemStatus.FAILED: "❌",
             ProblemStatus.CANCELLED: "🚫",
