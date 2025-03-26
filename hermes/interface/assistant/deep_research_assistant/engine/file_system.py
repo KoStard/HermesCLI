@@ -280,7 +280,7 @@ class FileSystem:
                 self._build_hierarchy_tree(subproblem, result, indent_level + 1, current_node)
                 
             # Closing tag
-            result.append(f'{indent}</{node_title}">')
+            result.append(f'{indent}</"{node_title}">')
 
     def update_files(self) -> None:
         """Update all files on disk"""

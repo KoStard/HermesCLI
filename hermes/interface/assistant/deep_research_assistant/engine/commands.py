@@ -213,10 +213,10 @@ class AddCriteriaToSubproblemCommand(Command):
 class FocusDownCommand(Command):
     def __init__(self):
         super().__init__(
-            "focus_down",
-            "Focus on a subproblem",
+            "activate_subproblem_and_wait",
+            "Activate a subproblem and wait for it to be finished before continuing",
         )
-        self.add_section("title", True, "Title of the subproblem to focus on")
+        self.add_section("title", True, "Title of the subproblem to activate")
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus down to a subproblem"""
@@ -225,7 +225,7 @@ class FocusDownCommand(Command):
 
         if not result:
             raise ValueError(
-                f"Failed to focus down to subproblem '{title}'. Make sure the subproblem exists."
+                f"Failed to activate subproblem '{title}'. Make sure the subproblem exists."
             )
 
     def should_be_last_in_message(self):
@@ -236,8 +236,8 @@ class FocusDownCommand(Command):
 class FocusUpCommand(Command):
     def __init__(self):
         super().__init__(
-            "focus_up",
-            "Focus up to the parent problem; when executed on the root problem, will finish the whole task",
+            "finish_problem",
+            "Finish the problem assigned to you. If there is a parent problem, it will become activated.",
             CommandType.SIMPLE,
         )
 
@@ -256,8 +256,8 @@ class FocusUpCommand(Command):
 class FailProblemAndFocusUpCommand(Command):
     def __init__(self):
         super().__init__(
-            "fail_problem_and_focus_up",
-            "Mark the current problem as failed and focus up to the parent problem",
+            "fail_problem",
+            "Mark the current problem as failed. If there is a parent problem, it will become activated.",
             CommandType.SIMPLE,
         )
 

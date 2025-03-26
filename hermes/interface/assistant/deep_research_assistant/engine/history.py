@@ -32,7 +32,7 @@ class AutoReply(HistoryBlock):
         Returns:
             Formatted automatic reply string
         """
-        auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `focus_up` command.'
+        auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `finish_problem` command.'
 
         # Add error report if any
         if self.error_report:
