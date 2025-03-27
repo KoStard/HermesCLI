@@ -192,7 +192,7 @@ The `add_log_entry` command allows you to log permanent, one-sentence summaries 
 When you receive the request, you should decide from beginning what you want to reply with.
 - If you have all the information from beginning and are confident about it, reply with a command to creat artifacts and finish/fail the problem. This is called a final response.
 - If you have all the information needed (no other commands to be sent) and you want to define subproblems, do it without other commands (except maybe logs)
-- If you lack information, reply with the provided commands and finish your message to receive the outputs as automatic response. This is called a partial response.
+- If you lack information, reply with the provided commands and send your message to receive the outputs as automatic response. This is called a partial response. If there are multiple sources you want to check, combine them into one message.
 
 ## Commands
 
