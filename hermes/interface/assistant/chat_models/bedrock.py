@@ -40,7 +40,7 @@ class BedrockModel(ChatModel):
         self._high_reasoning_tokens = self.config.get("low_reasoning_tokens", 1024 * 10)
 
     def send_request(self, request: any) -> Generator[str, None, None]:
-        response = self.client.converse_stream(**request)
+        response = self._call_and_retry_if_needed(request)
 
         for event in response["stream"]:
             if "contentBlockDelta" in event:
@@ -53,6 +53,28 @@ class BedrockModel(ChatModel):
                     yield TextLLMResponse(content)
             elif "messageStop" in event:
                 break
+
+    def _call_and_retry_if_needed(self, request, tries=1):
+        try:
+            response = self.client.converse_stream(**request)
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ThrottlingException':
+                if tries <= 3:
+                    seconds = 10 * (tries ** 2)
+                    print("Throttling Exception Occured.")
+                    print("Retrying.....")
+                    print("Attempt No.: " + str(tries))
+                    print(f"Sleeping for {seconds}")
+                    time.sleep(seconds)
+                    return self._call_and_retry_if_needed(request, tries + 1)
+                else:
+                    print("Attempted 3 Times But No Success.")
+                    print("Raising Exception.....")
+                    raise
+            else:
+                raise
+        return response
+
 
     def get_request_builder(self) -> RequestBuilder:
         return self.request_builder
