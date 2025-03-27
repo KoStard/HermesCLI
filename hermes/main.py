@@ -1,4 +1,5 @@
 import textwrap
+import logging
 from hermes.extensions_loader import load_extensions
 from hermes.engine import Engine
 from argparse import ArgumentParser, Namespace
@@ -51,6 +52,11 @@ def build_cli_interface(
         "--no-markdown",
         action="store_true",
         help="Disable markdown highlighting for output",
+    )
+    chat_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging (DEBUG level)",
     )
 
     # Utils command
@@ -181,6 +187,12 @@ def main():
         extension_utils_visitors.append(extension_utils_builder(utils_subparsers))
 
     cli_args = cli_arguments_parser.parse_args()
+
+    if hasattr(cli_args, 'verbose') and cli_args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.debug("Debug logging enabled")
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     if cli_args.execution_mode == "info":
         execute_info_command(
