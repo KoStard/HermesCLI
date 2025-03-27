@@ -32,7 +32,12 @@ class AutoReply(HistoryBlock):
         Returns:
             Formatted automatic reply string
         """
-        auto_reply = f'Automatic Reply: The status of the research is "In Progress". Please continue the research or mark it as done using `finish_problem` command.'
+        auto_reply = f"""
+# Automatic Reply
+
+If there are commands you sent in your message and they have any errors or outputs, you'll see them below.
+If nothing appears, either you didn't use any commands or the commands you sent weren't identified by the engine.
+"""
 
         # Add error report if any
         if self.error_report:

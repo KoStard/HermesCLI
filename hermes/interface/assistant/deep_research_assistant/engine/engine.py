@@ -207,7 +207,8 @@ class DeepResearchEngine:
         # Add the auto reply to the current node's history
         if self.current_node:
             auto_reply_generator = self.chat_history.get_auto_reply_aggregator(self.current_node.title)
-            auto_reply_generator.add_error_report(error_report)
+            if error_report:
+                auto_reply_generator.add_error_report(error_report)
 
         return commands_executed, error_report, execution_status
 
