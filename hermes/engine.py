@@ -127,7 +127,6 @@ class Engine:
 
         # Make sure there is at least one event in the stream before moving to the next participant
         events_stream = PeekableGenerator(events_stream)
-        logger.debug("Peeking for the first time", self.user_participant)
         events_stream.peek()
 
         # As user events don't come async, and we can't make the LLM request before finishing the user side
@@ -172,7 +171,6 @@ class Engine:
 
             # Make sure there is at least one event in the stream
             events_stream = PeekableGenerator(events_stream)
-            logger.debug("Peeking for the first time", self.assistant_participant)
             events_stream.peek()
 
             yield from self._handle_engine_commands_from_stream(events_stream)

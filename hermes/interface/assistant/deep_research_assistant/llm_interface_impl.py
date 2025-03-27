@@ -13,6 +13,9 @@ from hermes.interface.assistant.deep_research_assistant.engine.logger import (
     DeepResearchLogger,
 )
 from hermes.message import TextMessage
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ChatModelLLMInterface(LLMInterface):
@@ -21,7 +24,7 @@ class ChatModelLLMInterface(LLMInterface):
     def __init__(self, model: ChatModel, research_dir: str = None):
         self.model = model
         self.research_dir = research_dir if research_dir else str(Path.cwd())
-        self.logger = DeepResearchLogger(Path(self.research_dir))
+        self.deep_research_logger = DeepResearchLogger(Path(self.research_dir))
 
     def generate_request(
         self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict]
@@ -60,12 +63,14 @@ class ChatModelLLMInterface(LLMInterface):
                     print("Thinking finished")
                     is_thinking = False
                 llm_response.append(response.text)
+                logger.debug(response.text)
             else:
                 if not is_thinking:
                     is_thinking = True
                     print("Thinking...", end="", flush=True)
                 else:
                     print(".", end="", flush=True)
+                logger.debug(response.text)
 
         # Join the response parts and yield the final result
         full_llm_response = "".join(llm_response)
@@ -75,11 +80,11 @@ class ChatModelLLMInterface(LLMInterface):
         self, node_path, rendered_messages: List[dict], request_data: dict
     ) -> None:
         """Log an LLM request"""
-        self.logger.log_llm_request(node_path, rendered_messages, request_data)
+        self.deep_research_logger.log_llm_request(node_path, rendered_messages, request_data)
 
     def log_response(self, node_path, response: str) -> None:
         """Log an LLM response"""
-        self.logger.log_llm_response(node_path, response)
+        self.deep_research_logger.log_llm_response(node_path, response)
 
     def _handle_string_output(
         self, llm_response_generator: Generator[str, None, None]
