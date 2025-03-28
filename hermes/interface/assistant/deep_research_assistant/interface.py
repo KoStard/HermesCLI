@@ -4,12 +4,9 @@ from typing import Generator, List, Optional
 from pathlib import Path
 
 from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.deep_research_assistant.engine.engine import (
-    DeepResearchEngine,
-)
-from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import (
-    ChatModelLLMInterface,
-)
+from hermes.interface.assistant.deep_research_assistant.engine.engine import DeepResearchEngine
+from hermes.interface.assistant.deep_research_assistant.engine.hierarchy_formatter import HierarchyFormatter
+from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import ChatModelLLMInterface
 from hermes.interface.base import Interface
 from hermes.event import Event, MessageEvent
 from hermes.message import Message, TextMessage, TextualFileMessage
@@ -32,6 +29,7 @@ class DeepResearchAssistantInterface(Interface):
         self.research_dir = research_path if research_path else str(Path.cwd())
         self.extension_commands = extension_commands or []
         self._engine: Optional[DeepResearchEngine] = None
+        self.hierarchy_formatter = HierarchyFormatter()
 
     def render(
         self, history_snapshot: List[Message], events: Generator[Event, None, None]
@@ -75,12 +73,19 @@ class DeepResearchAssistantInterface(Interface):
         # Update the engine's instruction
         if self._engine:
             self._engine.instruction = self.instruction
+            # Ensure external files are loaded/updated in the engine's file system
+            self._engine.file_system.load_external_files()
+
 
         # No need to yield anything here as we'll process in get_input
         yield from []
-        
+
     def _process_textual_file_message(self, message: TextualFileMessage):
         """Process a TextualFileMessage, saving it as an external file"""
+        if not self._engine:
+             logger.error("Engine not initialized, cannot process textual file message.")
+             return
+
         file_content = message.textual_content
         
         # If the message has a filepath but no content, try to read it
@@ -100,8 +105,7 @@ class DeepResearchAssistantInterface(Interface):
             if not filename:
                 filename = f"external_file_{hash(str(file_content))[:8]}"
                 
-            # Add to file system as external file
-            # This will work even if root_node doesn't exist yet
+            # Add to file system as external file using the engine's file system instance
             self._engine.file_system.add_external_file(filename, file_content)
 
     def get_input(self) -> Generator[Event, None, None]:
@@ -121,11 +125,16 @@ class DeepResearchAssistantInterface(Interface):
                 self.extension_commands,
             )
         
-        # Execute the engine and yield the results
-        final_summary = self._engine.execute()
+        try:
+            # Execute the engine and yield the results
+            final_summary = self._engine.execute()
 
-        # Return the summary of artifacts as an event
-        yield MessageEvent(TextMessage(author="assistant", text=final_summary))
+            # Return the summary of artifacts as an event
+            yield MessageEvent(TextMessage(author="assistant", text=final_summary))
+        except Exception as e:
+             logger.error(f"Error during Deep Research engine execution: {e}", exc_info=True)
+             yield MessageEvent(TextMessage(author="assistant", text=f"An error occurred during research: {e}"))
+
 
     def clear(self):
         """Clear the interface state"""
