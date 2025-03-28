@@ -1,9 +1,12 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from .command import CommandRegistry
+from typing import Dict # Import Dict
+from .command import CommandRegistry, CommandType # Import CommandType
 from .file_system import FileSystem, Node, Artifact
 from .commands import DefineCommand  # registers the commands
 from .hierarchy_formatter import HierarchyFormatter
+from .content_truncator import ContentTruncator # Import ContentTruncator
 
 
 class DeepResearcherInterface:
@@ -19,9 +22,9 @@ class DeepResearcherInterface:
 
     def render_no_problem_defined(self) -> Tuple[str, str]:
         """Render the interface when no problem is defined"""
-        
-        # Get external files if they exist
-        external_files_section = self._format_external_files()
+
+        # Get external files using the new centralized method
+        artifacts_section = self._format_artifacts_section(external_only=True)
 
         static_content = f"""# Deep Research Interface
 
@@ -51,10 +54,8 @@ Please note that only one problem definition is allowed. Problem definition is t
 Make sure to include closing tags for command blocks, otherwise it will break the parsing and cause syntax errors.
 
 ======================
-# External Files
-The system may contain external files provided by the user at the beginning of the research. These are shown in this section. These files contain important context for your work and are always fully visible. They are stored centrally and accessible from any problem in the hierarchy.
-
-{external_files_section}
+# Artifacts (External Files Only)
+{artifacts_section}
 
 ======================
 # Instruction
@@ -77,8 +78,8 @@ Content of the problem definition.
 
     def render_problem_defined(self, target_node: Node, permanent_logs: List[str]) -> Tuple[str, str]:
         """Render the interface when a problem is defined"""
-        # Format artifacts from current node, parent chain, and all descendants
-        artifacts_section = self._format_all_artifacts(target_node)
+        # Format all artifacts (external and node-specific)
+        artifacts_section = self._format_artifacts_section(external_only=False, current_node=target_node)
 
         # Format criteria
         criteria_section = self._format_criteria(target_node)
@@ -290,123 +291,71 @@ Remember, we work backwards from the root problem.
 """
         return static_content, dynamic_content
 
-    def _format_artifacts(self, artifacts: List[str]) -> str:
-        """Format artifacts for display"""
-        if not artifacts:
+    def _format_artifacts_section(self, external_only: bool, current_node: Optional[Node] = None) -> str:
+        """Formats the artifacts section, optionally including only external files."""
+        external_files = self.file_system.get_external_files()
+        node_artifacts = []
+
+        if not external_only and current_node:
+             # Collect artifacts recursively starting from the root to get correct ownership info
+             if self.file_system.root_node:
+                 node_artifacts = self.collect_artifacts_recursively(self.file_system.root_node)
+             else:
+                 # Handle case where root_node might not be set yet but problem is defined
+                 node_artifacts = self.collect_artifacts_recursively(current_node)
+
+
+        if not external_files and not node_artifacts:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
 
         result = "<artifacts>\n"
-        for artifact in artifacts:
-            result += f'<artifact name="{artifact}">\n'
-            result += "Content would be displayed here...\n"
-            result += "</artifact>\n"
-        result += "</artifacts>"
-        return result
 
-    def _format_external_files(self) -> str:
-        """Format external files for display when no problem is defined"""
-        external_files_dir = self.file_system.external_files_dir
-        
-        if not external_files_dir.exists() or not any(external_files_dir.iterdir()):
-            return "No external files available."
-        
-        result = "<external_files>\n"
-        result += "These are files provided as context for defining the problem:\n\n"
-        
-        for file_path in external_files_dir.iterdir():
-            if file_path.is_file():
-                try:
-                    artifact = Artifact.load_from_file(file_path)
-                    result += f'<external_file name="{file_path.name}">\n'
-                    result += f"---\n\n"
-                    result += f"{artifact.content}\n"
-                    result += "</external_file>\n\n"
-                except Exception as e:
-                    result += f'<external_file name="{file_path.name}">\n'
-                    result += f"---\n\n"
-                    result += f"Error loading file: {str(e)}\n"
-                    result += "</external_file>\n\n"
-        
-        result += "</external_files>"
-        return result
-        
-    def _format_all_artifacts(self, node: Node) -> str:
-        """Format artifacts from all nodes in the file system"""
-        if not node:
-            return "<artifacts>\nNo artifacts available.\n</artifacts>"
-
-        # Collect all artifacts with their owner information
-        all_artifacts = []
-        external_file_artifacts = []
-
-        # Get the root node
-        root_node = self.file_system.root_node
-
-        # Collect all artifacts from all nodes in the file system
-        all_nodes_artifacts = self.collect_all_artifacts(root_node)
-        for owner_title, name, content, is_fully_visible in all_nodes_artifacts:
-            artifact = Artifact(
-                name=name, content=content, is_fully_visible=is_fully_visible
-            )
-            
-            # Special handling for external files
-            if owner_title == "ExternalFiles":
-                external_file_artifacts.append((name, artifact, owner_title, "external"))
-            else:
-                all_artifacts.append((name, artifact, owner_title, "system"))
-
-        if not all_artifacts and not external_file_artifacts:
-            return "<artifacts>\nNo artifacts available.\n</artifacts>"
-
-        result = "<artifacts>\n"
-        
-        # First add a section about external files if present
-        if external_file_artifacts:
+        # Format external files
+        if external_files:
             result += "<external_files_intro>\n"
             result += "These are external files provided by the user at the start of this research. "
             result += "They contain important context for the problem and are always fully available.\n"
             result += "</external_files_intro>\n\n"
-            
-            # Add external files first with special formatting
-            for name, artifact, owner, relationship in external_file_artifacts:
+
+            for name, artifact in sorted(external_files.items()):
                 result += f'<artifact name="{name}" type="external_file">\n'
                 result += f"---\n"
                 result += f"type: External File\n"
                 result += f"---\n\n"
-                result += f"{artifact.content}\n"
+                result += f"{artifact.content}\n" # External files are always fully visible
                 result += "</artifact>\n"
-            
-            # Add separator if we also have regular artifacts
-            if all_artifacts:
+
+            # Add separator if we also have node artifacts
+            if node_artifacts:
                 result += "\n<separator>---------------------</separator>\n\n"
-        
-        # Then add regular artifacts
-        for name, artifact, owner, relationship in all_artifacts:
-            result += f'<artifact name="{name}">\n'
-            result += f"---\n"
-            result += f"owner: {owner} ({relationship})\n"
-            result += f"---\n\n"
+                result += "<node_artifacts_intro>\n"
+                result += "These are artifacts created during the research process within specific problems.\n"
+                result += "</node_artifacts_intro>\n\n"
 
-            # Show full content or just first 10 lines based on visibility flag
-            if artifact.is_fully_visible:
-                result += f"{artifact.content}\n"
-            else:
-                # Split content into lines and take first 10
-                content_lines = artifact.content.split("\n")
-                preview_lines = content_lines[:10]
-                remaining_count = len(content_lines) - 10
 
-                # Add preview lines
-                result += "\n".join(preview_lines)
+        # Format node-specific artifacts if not external_only
+        if not external_only and node_artifacts:
+            # Sort artifacts by owner then name for consistent display
+            node_artifacts.sort(key=lambda x: (x[0], x[1]))
+            for owner_title, name, content, is_fully_visible in node_artifacts:
+                result += f'<artifact name="{name}">\n'
+                result += f"---\n"
+                result += f"owner: {owner_title}\n" # Simplified owner info
+                result += f"---\n\n"
 
-                # Add message about hidden content if there are more lines
-                if remaining_count > 0:
-                    result += f"\n\n[...{remaining_count} more lines hidden. Use 'open_artifact' command to view full content...]\n"
+                # Show full content or truncated preview
+                if is_fully_visible:
+                    result += f"{content}\n"
+                else:
+                    # Use ContentTruncator for preview
+                    truncated_content = ContentTruncator.truncate(content, 500, "Use 'open_artifact' command to view full content.") # Truncate to 500 chars
+                    result += f"{truncated_content}\n"
 
-            result += "</artifact>\n"
-        
+                result += "</artifact>\n"
+
         result += "</artifacts>"
-        return result
+        return result.strip()
+
 
     def _format_criteria(self, node: Node) -> str:
         """Format criteria for display"""
@@ -423,9 +372,16 @@ Remember, we work backwards from the root problem.
         """Format breakdown structure for display"""
         return self.hierarchy_formatter.format_subproblems(node)
 
-    def collect_artifacts_recursively(self, node: Node) -> list:
-        """Recursively collect artifacts from a node and all its descendants"""
+    def collect_artifacts_recursively(self, node: Node) -> List[Tuple[str, str, str, bool]]:
+        """
+        Recursively collect artifacts from a node and all its descendants.
+
+        Returns:
+            List of tuples: (owner_title, artifact_name, artifact_content, is_fully_visible)
+        """
         artifacts = []
+        if not node:
+            return artifacts
 
         # Add this node's artifacts
         for name, artifact in node.artifacts.items():
@@ -439,38 +395,6 @@ Remember, we work backwards from the root problem.
 
         return artifacts
 
-    def collect_all_artifacts(self, node: Node) -> list:
-        """Collect all artifacts from all nodes in the file system"""
-        if not node:
-            return []
-
-        # Start with artifacts from this node and its descendants
-        artifacts = self.collect_artifacts_recursively(node)
-        
-        # Add external files from root node if we're starting from any node
-        root = self.file_system.root_node
-        if root and root.external_files:
-            for name, artifact in root.external_files.items():
-                artifacts.append((
-                    "ExternalFiles",  # Special owner title for external files
-                    name, 
-                    artifact.content, 
-                    True  # Always fully visible
-                ))
-        # If no root node yet but external files exist on disk, add them
-        elif self.file_system.external_files_dir.exists():
-            for file_path in self.file_system.external_files_dir.iterdir():
-                if file_path.is_file():
-                    artifact = Artifact.load_from_file(file_path)
-                    artifact.is_fully_visible = True
-                    artifacts.append((
-                        "ExternalFiles",
-                        file_path.name,
-                        artifact.content,
-                        True
-                    ))
-
-        return artifacts
 
     def _format_permanent_log(self, permanent_logs: list) -> str:
         """Format permanent history for display"""
@@ -486,7 +410,7 @@ Remember, we work backwards from the root problem.
 
     def _generate_command_help(self) -> str:
         """Generate help text for all registered commands"""
-        # Get all registered commands
+        # Get all registered commands suitable for the problem-defined interface
         commands = CommandRegistry().get_problem_defined_interface_commands()
 
         # Generate command help text
