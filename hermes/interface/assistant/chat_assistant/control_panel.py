@@ -555,10 +555,11 @@ class ChatAssistantControlPanel(ControlPanel):
                 result_text.append("")
 
             yield MessageEvent(
-                TextMessage(
+                TextualFileMessage(
                     author="assistant",
-                    text="\n".join(result_text),
-                    text_role="WebSearchResults",
+                    text_filepath=None,
+                    textual_content="\n".join(result_text),
+                    file_role="WebSearchResults",
                     name=f"Web Search: {query}",
                 )
             )
@@ -855,6 +856,7 @@ class ChatAssistantControlPanel(ControlPanel):
                 TextualFileMessage(
                     author="user",
                     text_filepath=normalized_path,
+                    textual_content=None,
                     file_role="CommandOutput",
                 )
             )
