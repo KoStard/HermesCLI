@@ -361,7 +361,7 @@ class RequestBuilder(ABC):
                 )
                 # Fall through to regular file handling
 
-        from markitdown import MarkItDown, UnsupportedFormatException
+        from markitdown import MarkItDown
 
         try:
             markitdown = MarkItDown()
@@ -376,23 +376,36 @@ class RequestBuilder(ABC):
                 if not file_role
                 else f"TextualFile with role={file_role}",
             )
-        except UnsupportedFormatException as e:
+        except Exception as e:
             if not is_binary(text_filepath):
                 logger.debug(
                     f"Failed to use markitdown to get the data from {text_filepath}, reading it as a text file",
                     e,
                 )
-                with open(text_filepath) as f:
-                    file_content = f.read()
-                self.handle_text_message(
-                    text=file_content,
-                    author=author,
-                    message_id=message_id,
-                    name=text_filepath,
-                    text_role="TextualFile"
-                    if not file_role
-                    else f"TextualFile with role={file_role}",
-                )
+                try:
+                    with open(text_filepath) as f:
+                        file_content = f.read()
+                    self.handle_text_message(
+                        text=file_content,
+                        author=author,
+                        message_id=message_id,
+                        name=text_filepath,
+                        text_role="TextualFile"
+                        if not file_role
+                        else f"TextualFile with role={file_role}",
+                    )
+                except Exception as e:
+                    logger.debug(
+                        f"Also failed to read the raw content of {text_filepath}",
+                        e,
+                    )
+                    self.handle_text_message(
+                        f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}",
+                        author,
+                        message_id,
+                        None,
+                        None,
+                    )
             else:
                 self.notifications_printer.print_error(
                     f"Error reading file {text_filepath}: {e}"
@@ -404,17 +417,6 @@ class RequestBuilder(ABC):
                     None,
                     None,
                 )
-        except Exception as e:
-            self.notifications_printer.print_error(
-                f"Error reading file {text_filepath}: {e}"
-            )
-            self.handle_text_message(
-                f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}",
-                author,
-                message_id,
-                None,
-                None,
-            )
 
     def _extract_pages_from_pdf(self, pdf_path: str, pages: list[int]) -> str:
         """
