@@ -21,7 +21,10 @@ class Artifact:
         with open(file_path, "r") as f:
             content = f.read()
         metadata, content = FrontmatterManager().extract_frontmatter(content)
-        name = metadata.get("name", file_path.name.rsplit('.', 1)[0])
+        # Derive name from filename without extension
+        name = file_path.stem
+        # Use name from metadata if present, otherwise use derived name
+        name = metadata.get("name", name)
         return Artifact(name=name, content=content, is_fully_visible=False)
 
     def save_to_file(self, file_path: Path) -> None:
@@ -220,11 +223,12 @@ class FileSystem:
         artifacts = {}
         if artifacts_dir.exists():
             for artifact_file in artifacts_dir.iterdir():
-                if artifact_file.is_file():
+                if artifact_file.is_file() and artifact_file.suffix == ".md":
                     artifact = Artifact.load_from_file(artifact_file)
-                    artifacts[artifact_file.name] = artifact
+                    # Use artifact's name (derived from filename or metadata) as the key
+                    artifacts[artifact.name] = artifact
         return artifacts
-        
+
     def add_external_file(self, name: str, content: str) -> None:
         """Add an external file to the file system"""
         # Create an artifact for the external file
@@ -235,12 +239,8 @@ class FileSystem:
         # If root node exists, add to its external_files
         if self.root_node:
             self.root_node.external_files[name] = artifact
-        
-        # Always write to disk
-        filename = self._sanitize_filename(name)
-        # Preserve original extension if possible, default to .md
-        if "." not in filename.split('/')[-1]: # Check only filename part
-             filename += ".md"
+        # Always write to disk with .md extension
+        filename = self._sanitize_filename(name) + ".md"
 
         # Ensure the external files directory exists (should be redundant due to __init__)
         self.external_files_dir.mkdir(exist_ok=True)
@@ -417,10 +417,8 @@ class FileSystem:
 
         # Write artifacts
         for name, artifact in node.artifacts.items():
-            filename = self._sanitize_filename(name)
-            # Add .md extension if no extension exists
-            if "." not in filename:
-                filename = filename + ".md"
+            # Always save with .md extension
+            filename = self._sanitize_filename(name) + ".md"
             artifact.save_to_file(node.path / "Artifacts" / filename)
 
         # Recursively write subproblems

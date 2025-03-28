@@ -32,7 +32,7 @@ class DeepResearchEngine:
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
         self.current_node: Optional[Node] = None
-        self.instruction = instruction
+        self._instruction = instruction
 
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
@@ -80,6 +80,11 @@ class DeepResearchEngine:
         index -= 1
         node = all_nodes[index]
         self.activate_node(node)
+
+    def set_instruction(self, instruction: str):
+        """Set the instruction for the engine"""
+        self._instruction = instruction
+        self.interface.instruction = instruction
 
     def get_interface_content(self) -> Tuple[str, str]:
         """Get the current interface content as a string"""
@@ -213,6 +218,7 @@ class DeepResearchEngine:
             if error_report:
                 auto_reply_generator.add_error_report(error_report)
 
+        print(commands_executed, error_report, execution_status)
         return commands_executed, error_report, execution_status
 
     def _execute_command(self, command_name: str, args: dict):

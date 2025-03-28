@@ -47,8 +47,8 @@ The research has been completed and the following artifacts have been created:
         for problem_title, artifact_names in artifacts_by_problem.items():
             result += f"### {problem_title}\n\n"
             for name in artifact_names:
-                # Construct the relative filepath
-                filepath = f"Artifacts/{name}"
+                # Construct the relative filepath, ensuring .md extension
+                filepath = f"Artifacts/{name}.md"
                 result += f"- `{filepath}`: {name}\n"
             result += "\n"
 

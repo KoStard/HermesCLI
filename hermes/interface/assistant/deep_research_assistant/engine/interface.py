@@ -338,6 +338,7 @@ Remember, we work backwards from the root problem.
             # Sort artifacts by owner then name for consistent display
             node_artifacts.sort(key=lambda x: (x[0], x[1]))
             for owner_title, name, content, is_fully_visible in node_artifacts:
+                # Use the artifact name directly (without extension)
                 result += f'<artifact name="{name}">\n'
                 result += f"---\n"
                 result += f"owner: {owner_title}\n" # Simplified owner info

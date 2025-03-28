@@ -71,21 +71,15 @@ class DeepResearchAssistantInterface(Interface):
         self.instruction = "\n".join(instruction)
         
         # Update the engine's instruction
-        if self._engine:
-            self._engine.instruction = self.instruction
-            # Ensure external files are loaded/updated in the engine's file system
-            self._engine.file_system.load_external_files()
-
+        self._engine.set_instruction(self.instruction)
+        # Ensure external files are loaded/updated in the engine's file system
+        self._engine.file_system.load_external_files()
 
         # No need to yield anything here as we'll process in get_input
         yield from []
 
     def _process_textual_file_message(self, message: TextualFileMessage):
         """Process a TextualFileMessage, saving it as an external file"""
-        if not self._engine:
-             logger.error("Engine not initialized, cannot process textual file message.")
-             return
-
         file_content = message.textual_content
         
         # If the message has a filepath but no content, try to read it
@@ -97,7 +91,7 @@ class DeepResearchAssistantInterface(Interface):
                 logger.error(f"Failed to read file {message.text_filepath}")
                 return
         
-        if file_content and self._engine:
+        if file_content:
             # Use the filename from message or derive from text_filepath
             filename = message.name
             if not filename and message.text_filepath:
@@ -114,16 +108,7 @@ class DeepResearchAssistantInterface(Interface):
 
         # The engine should already be initialized in render()
         if not self._engine:
-            # Create the LLM interface
-            llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
-
-            # Create the engine
-            self._engine = DeepResearchEngine(
-                self.instruction,
-                self.research_dir,
-                llm_interface,
-                self.extension_commands,
-            )
+            raise Exception("Render before running the deep research interface")
         
         try:
             # Execute the engine and yield the results
