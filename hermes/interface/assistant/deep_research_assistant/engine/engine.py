@@ -32,6 +32,7 @@ class DeepResearchEngine:
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
         self.current_node: Optional[Node] = None
+        self.instruction = instruction
 
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
@@ -99,6 +100,8 @@ class DeepResearchEngine:
             output: Output text to display
             node_title: The title of the node for which the output is being added
         """
+        if not output:
+            output = ""
         auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(node_title)
         auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
 
