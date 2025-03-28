@@ -126,9 +126,17 @@ class RequestBuilder(ABC):
                     )
             elif isinstance(message, TextualFileMessage):
                 content = message.get_content_for_assistant()
-                if content:
+                if content["textual_content"]:
+                    self.handle_text_message(
+                        content["textual_content"],
+                        message.author,
+                        id(message),
+                        name=message.name,
+                        text_role=message.file_role
+                    )
+                elif content["text_filepath"]:
                     self.handle_textual_file_message(
-                        content,
+                        content["text_filepath"],
                         message.author,
                         id(message),
                         file_role=message.file_role,

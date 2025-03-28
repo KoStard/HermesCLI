@@ -6,7 +6,7 @@ Imagine using Telegram or some other messaging app. What you can add and press S
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Generator, Optional
+from typing import Generator, Optional, Dict
 from abc import ABC, abstractmethod
 
 from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
@@ -416,38 +416,57 @@ class EmbeddedPDFMessage(Message):
 
 @dataclass(init=False)
 class TextualFileMessage(Message):
-    """Class for messages that are textual files"""
+    """
+    Class for messages that are textual files
+    Supports both real files with path, and virtual files that have only content.
+    """
 
-    text_filepath: str
+    text_filepath: Optional[str]
+    textual_content: Optional[str]
     file_role: Optional[str]
+    name: Optional[str]
 
     def __init__(
         self,
         *,
         author: str,
-        text_filepath: str,
+        text_filepath: Optional[str],
+        textual_content: Optional[str],
         timestamp: Optional[datetime] = None,
         file_role: Optional[str] = None,
+        name: Optional[str] = None,
     ):
         super().__init__(author=author, timestamp=timestamp)
-        self.text_filepath = prepare_filepath(remove_quotes(text_filepath))
+        self.text_filepath = None
+        if text_filepath:
+            self.text_filepath = prepare_filepath(remove_quotes(text_filepath))
+        self.textual_content = textual_content
         self.file_role = file_role
+        self.name = name
 
     def get_content_for_user(self) -> str:
+        if self.textual_content:
+            return f"Text file with content: {self.textual_content[:200]}"
+
         if os.path.isdir(self.text_filepath):
             return f"Directory: {self.text_filepath}"
         return f"Text file: {self.text_filepath}"
 
-    def get_content_for_assistant(self) -> str:
-        return self.text_filepath
+    def get_content_for_assistant(self) -> Dict[str, str]:
+        return {
+            "textual_content": self.textual_content,
+            "text_filepath": self.text_filepath
+        }
 
     def to_json(self) -> dict:
         return {
             "type": "textual_file",
             "text_filepath": self.text_filepath,
+            "textual_content": self.textual_content,
             "author": self.author,
             "timestamp": self.timestamp.isoformat(),
             "file_role": self.file_role,
+            "name": self.name
         }
 
     @staticmethod
@@ -455,8 +474,10 @@ class TextualFileMessage(Message):
         return TextualFileMessage(
             author=json_data["author"],
             text_filepath=json_data["text_filepath"],
+            textual_content=json_data.get("textual_content"),
             timestamp=datetime.fromisoformat(json_data["timestamp"]),
             file_role=json_data.get("file_role"),
+            name=json_data.get("name"),
         )
 
 

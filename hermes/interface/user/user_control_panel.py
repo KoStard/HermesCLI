@@ -165,7 +165,7 @@ class UserControlPanel(ControlPanel):
                 description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
                 short_description="Share a text-based document",
                 parser=lambda line: MessageEvent(
-                    TextualFileMessage(author="user", text_filepath=line)
+                    TextualFileMessage(author="user", text_filepath=line, textual_content=None)
                 ),
                 default_on_cli=True,
             )
@@ -365,7 +365,7 @@ class UserControlPanel(ControlPanel):
                 result_events.append(
                     MessageEvent(
                         TextualFileMessage(
-                            author="user", text_filepath=absolute_file_path
+                            author="user", text_filepath=absolute_file_path, textual_content=None
                         )
                     )
                 )
@@ -531,11 +531,12 @@ class UserControlPanel(ControlPanel):
             result_text += f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, it might not be fully up to date"
 
         return MessageEvent(
-            TextMessage(
+            TextualFileMessage(
                 author="user",
                 name=result_title,
-                text_role="url_content",
-                text=result_text,
+                text_filepath=None,
+                file_role="url_content",
+                textual_content=result_text,
             )
         )
 
@@ -556,5 +557,10 @@ class UserControlPanel(ControlPanel):
         depth = int(parts[1]) if len(parts) > 1 else None
 
         tree_string = self.tree_generator.generate_tree(path, depth)
-        tree_message = TextMessage(author="user", text=tree_string)
+        tree_message = TextualFileMessage(
+            author="user",
+            textual_content=tree_string,
+            text_filepath=None,
+            file_role="tree_result"
+        )
         return MessageEvent(tree_message)
