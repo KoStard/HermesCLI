@@ -18,10 +18,11 @@ class ChatMessage(HistoryBlock):
 
 
 class AutoReply(HistoryBlock):
-    def __init__(self, error_report: str, command_outputs: List[Tuple[str, dict]], messages: List[Tuple[str, str]]):
+    def __init__(self, error_report: str, command_outputs: List[Tuple[str, dict]], messages: List[Tuple[str, str]], confirmation_request: Optional[str] = None):
         self.error_report = error_report
         self.command_outputs = command_outputs
         self.messages = messages
+        self.confirmation_request = confirmation_request
 
     def generate_auto_reply(self, per_command_output_maximum_length: int = None) -> str:
         """
@@ -38,6 +39,10 @@ class AutoReply(HistoryBlock):
 If there are commands you sent in your message and they have any errors or outputs, you'll see them below.
 If nothing appears, either you didn't use any commands or the commands you sent weren't identified by the engine.
 """
+
+        # Add confirmation request if present
+        if self.confirmation_request:
+            auto_reply += f"\n\n### Confirmation Required\n{self.confirmation_request}"
 
         # Add error report if any
         if self.error_report:
@@ -74,9 +79,13 @@ class AutoReplyAggregator:
         self.error_reports = []
         self.command_outputs = []
         self.internal_messages = []
+        self.confirmation_requests = []
 
     def add_error_report(self, error_report: str):
         self.error_reports.append(error_report)
+
+    def add_confirmation_request(self, message: str):
+        self.confirmation_requests.append(message)
 
     def add_command_output(self, cmd_name: str, output_data: dict):
         self.command_outputs.append((cmd_name, output_data))
@@ -88,13 +97,15 @@ class AutoReplyAggregator:
         self.error_reports = []
         self.command_outputs = []
         self.internal_messages = []
+        self.confirmation_requests = []
 
     def is_empty(self):
-        return not self.error_reports and not self.command_outputs and not self.internal_messages
+        return not self.error_reports and not self.command_outputs and not self.internal_messages and not self.confirmation_requests
 
     def compile_and_clear(self) -> AutoReply:
         error_report = "\n".join(self.error_reports)
-        auto_reply = AutoReply(error_report, self.command_outputs, self.internal_messages)
+        confirmation_request = "\n".join(self.confirmation_requests) if self.confirmation_requests else None
+        auto_reply = AutoReply(error_report, self.command_outputs, self.internal_messages, confirmation_request)
         self.clear()
         return auto_reply
 

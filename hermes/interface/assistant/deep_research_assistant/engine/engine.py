@@ -133,93 +133,132 @@ class DeepResearchEngine:
         # Parse all commands from the text
         parse_results = self.command_parser.parse_text(text)
 
-        # Check for errors
-        has_errors = any(result.errors for result in parse_results)
+        # --- Pre-execution Checks ---
+        # Check for any parsing/syntax errors first
+        has_parsing_errors = any(result.errors for result in parse_results)
+        initial_error_report = ""
+        if has_parsing_errors:
+            initial_error_report = self.command_parser.generate_error_report(parse_results)
 
+        # --- Command Execution ---
         # Track execution status for reporting
         # Use a dictionary with command names as keys and a list of status entries as values
         # to handle multiple commands with the same name
         execution_status = {}
 
-        # Generate error report if there are errors
-        error_report = ""
-        if has_errors:
-            error_report = self.command_parser.generate_error_report(parse_results)
-
         # Execute commands that don't have syntax errors
         commands_executed = False
-
         command_that_should_be_last_reached = False
+        finish_or_fail_skipped_due_to_errors = False
+        execution_failed_commands = [] # Track commands that fail during execution
 
         for i, result in enumerate(parse_results):
             if result.command_name and not result.has_syntax_error:
                 # Create a unique key for this command instance
                 cmd_key = f"{result.command_name}_{i}"
-                line_num = result.errors[0].line_number if result.errors else None
+                line_num = result.errors[0].line_number if result.errors else None # Use line from parsing error if available
 
-                if not result.errors:
-                    if command_that_should_be_last_reached:
-                        execution_status[cmd_key] = {
-                            "name": result.command_name,
-                            "status": "skipped: came after a command that has to be the last in the message",
-                            "line": line_num,
-                        }
-                        continue
+                # Check for validation errors from parsing phase
+                if result.errors:
+                     execution_status[cmd_key] = {
+                         "name": result.command_name,
+                         "status": "failed: validation errors",
+                         "line": line_num,
+                     }
+                     execution_failed_commands.append(execution_status[cmd_key])
+                     continue # Skip execution if validation failed
 
-                    try:
-                        command = self._execute_command(result.command_name, result.args)
-                        should_be_last_in_message = command.should_be_last_in_message()
-                        if should_be_last_in_message:
-                            command_that_should_be_last_reached = True
-
-                        execution_status[cmd_key] = {
-                            "name": result.command_name,
-                            "status": "success",
-                            "line": line_num,
-                        }
-                        commands_executed = True
-                    except ValueError as e:
-                        execution_status[cmd_key] = {
-                            "name": result.command_name,
-                            "status": f"failed: {str(e)}",
-                            "line": line_num,
-                        }
-                else:
-                    # Command has validation errors but not syntax errors
+                # Check if this command should be skipped because a previous command must be last
+                if command_that_should_be_last_reached:
                     execution_status[cmd_key] = {
                         "name": result.command_name,
-                        "status": "failed: validation errors",
+                        "status": "skipped: came after a command that has to be the last in the message",
                         "line": line_num,
                     }
+                    continue
 
-        # Add execution status to error report if there were failures
-        failed_commands = [
-            info
-            for info in execution_status.values()
-            if info["status"].startswith("failed")
-        ]
+                # --- Special handling for finish/fail commands ---
+                is_finish_or_fail_command = result.command_name in ["finish_problem", "fail_problem"]
+                # Determine if there are *any* errors so far (parsing or execution)
+                has_any_errors = has_parsing_errors or bool(execution_failed_commands)
 
-        if failed_commands:
-            if not error_report:
-                error_report = "### Execution Status Report:\n"
+                if is_finish_or_fail_command and has_any_errors:
+                    finish_or_fail_skipped_due_to_errors = True
+                    execution_status[cmd_key] = {
+                        "name": result.command_name,
+                        "status": "skipped: other errors detected in the message, do you really want to go ahead?",
+                        "line": line_num,
+                    }
+                    continue # Skip execution
+
+                # --- Execute the command ---
+                try:
+                    command = self._execute_command(result.command_name, result.args)
+                    should_be_last_in_message = command.should_be_last_in_message()
+                    if should_be_last_in_message:
+                        command_that_should_be_last_reached = True
+
+                    execution_status[cmd_key] = {
+                        "name": result.command_name,
+                        "status": "success",
+                        "line": line_num,
+                    }
+                    commands_executed = True
+                except ValueError as e:
+                    # Capture execution errors
+                    failed_info = {
+                        "name": result.command_name,
+                        "status": f"failed: {str(e)}",
+                        "line": line_num,
+                    }
+                    execution_status[cmd_key] = failed_info
+                    execution_failed_commands.append(failed_info)
+
+
+        # --- Post-execution Processing ---
+        final_error_report = initial_error_report # Start with parsing errors
+
+        # Add execution status report if there were failures
+        if execution_failed_commands:
+            if not final_error_report:
+                final_error_report = "### Execution Status Report:\n"
             else:
-                error_report += "\n### Execution Status Report:\n"
+                # Add separator if there were also parsing errors
+                if has_parsing_errors:
+                     final_error_report += "\n---\n### Execution Status Report:\n"
+                else: # Only execution errors
+                     final_error_report += "\n### Execution Status Report:\n"
 
-            for info in failed_commands:
+
+            for info in execution_failed_commands:
                 cmd_name = info["name"]
                 status = info["status"]
                 line_num = info["line"]
-                line_info = f" at line {line_num}" if line_num else ""
-                error_report += f"- Command '{cmd_name}'{line_info} {status}\n"
+                line_info = f" at line {line_num}" if line_num is not None else ""
+                final_error_report += f"- Command '{cmd_name}'{line_info} {status}\n"
 
-        # Add the auto reply to the current node's history
+        # Add the auto reply content to the current node's history
         if self.current_node:
             auto_reply_generator = self.chat_history.get_auto_reply_aggregator(self.current_node.title)
-            if error_report:
-                auto_reply_generator.add_error_report(error_report)
 
-        print(commands_executed, error_report, execution_status)
-        return commands_executed, error_report, execution_status
+            # Add confirmation request if finish/fail was skipped
+            if finish_or_fail_skipped_due_to_errors:
+                 confirmation_msg = (
+                     "You attempted to finish or fail the current problem, but there were errors "
+                     "in your message (see report below).\n"
+                     "Please review the errors. If you still want to finish/fail the problem, "
+                     "resend the `finish_problem` or `fail_problem` command **without** the errors.\n"
+                     "Otherwise, correct the errors and continue working on the problem."
+                 )
+                 auto_reply_generator.add_confirmation_request(confirmation_msg)
+
+            # Add the combined error report
+            if final_error_report:
+                auto_reply_generator.add_error_report(final_error_report)
+
+        # Return overall status
+        has_any_errors = has_parsing_errors or bool(execution_failed_commands)
+        return commands_executed, final_error_report, execution_status
 
     def _execute_command(self, command_name: str, args: dict):
         """Execute a command"""
