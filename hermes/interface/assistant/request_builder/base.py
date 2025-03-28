@@ -23,6 +23,7 @@ from hermes.message import (
     VideoMessage,
 )
 from hermes.utils.binary_file import is_binary
+from hermes.utils.file_reader import FileReader
 
 import logging
 
@@ -313,19 +314,32 @@ class RequestBuilder(ABC):
         For directories, process each file recursively.
         """
         if os.path.isdir(text_filepath):
-            for root, _, files in os.walk(text_filepath):
-                for file in files:
-                    full_path = os.path.join(root, file)
-                    try:
-                        # Skip hidden files
-                        if not file.startswith("."):
-                            self._process_single_file(
-                                full_path, author, message_id, file_role
-                            )
-                    except Exception as e:
-                        self.notifications_printer.print_error(
-                            f"Error processing file {full_path}: {e}"
-                        )
+            # Use FileReader to process the entire directory
+            file_contents = FileReader.read_directory(text_filepath)
+            
+            # Process each file in the directory
+            for relative_path, content in file_contents.items():
+                full_path = os.path.join(text_filepath, relative_path)
+                try:
+                    # Use the content we already read
+                    role = "TextualFile"
+                    if full_path.endswith(".ipynb"):
+                        role = "JupyterNotebook"
+                        
+                    if file_role:
+                        role = f"{role} with role={file_role}"
+                        
+                    self.handle_text_message(
+                        text=content,
+                        author=author,
+                        message_id=message_id,
+                        name=full_path,
+                        text_role=role,
+                    )
+                except Exception as e:
+                    self.notifications_printer.print_error(
+                        f"Error processing file {full_path}: {e}"
+                    )
             return
 
         # If it's a single file, process it directly
@@ -341,82 +355,37 @@ class RequestBuilder(ABC):
         """
         Process a single file and send its content as a message.
         """
-        # Check if file is a Jupyter notebook
-        if text_filepath.endswith(".ipynb"):
-            try:
-                file_content = convert_notebook_custom(text_filepath)
-                self.handle_text_message(
-                    text=file_content,
-                    author=author,
-                    message_id=message_id,
-                    name=text_filepath,
-                    text_role="JupyterNotebook"
-                    if not file_role
-                    else f"JupyterNotebook with role={file_role}",
-                )
-                return
-            except Exception as e:
-                self.notifications_printer.print_error(
-                    f"Error converting notebook {text_filepath}: {e}"
-                )
-                # Fall through to regular file handling
-
-        from markitdown import MarkItDown
-
-        try:
-            markitdown = MarkItDown()
-            conversion_result = markitdown.convert(text_filepath)
-            file_content = conversion_result.text_content
+        # Use the shared FileReader utility to get file content
+        file_content, success = FileReader.read_file(text_filepath)
+        
+        if success:
+            # Determine the appropriate role based on file type
+            role = "TextualFile"
+            if text_filepath.endswith(".ipynb"):
+                role = "JupyterNotebook"
+                
+            # Add file_role if specified
+            if file_role:
+                role = f"{role} with role={file_role}"
+                
+            # Handle the message with the content
             self.handle_text_message(
                 text=file_content,
                 author=author,
                 message_id=message_id,
                 name=text_filepath,
-                text_role="TextualFile"
-                if not file_role
-                else f"TextualFile with role={file_role}",
+                text_role=role,
             )
-        except Exception as e:
-            if not is_binary(text_filepath):
-                logger.debug(
-                    f"Failed to use markitdown to get the data from {text_filepath}, reading it as a text file",
-                    e,
-                )
-                try:
-                    with open(text_filepath) as f:
-                        file_content = f.read()
-                    self.handle_text_message(
-                        text=file_content,
-                        author=author,
-                        message_id=message_id,
-                        name=text_filepath,
-                        text_role="TextualFile"
-                        if not file_role
-                        else f"TextualFile with role={file_role}",
-                    )
-                except Exception as e:
-                    logger.debug(
-                        f"Also failed to read the raw content of {text_filepath}",
-                        e,
-                    )
-                    self.handle_text_message(
-                        f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}",
-                        author,
-                        message_id,
-                        None,
-                        None,
-                    )
-            else:
-                self.notifications_printer.print_error(
-                    f"Error reading file {text_filepath}: {e}"
-                )
-                self.handle_text_message(
-                    f"Here was supposed to be the file content, but reading it failed: {text_filepath}: {e}",
-                    author,
-                    message_id,
-                    None,
-                    None,
-                )
+        else:
+            # Handle error case
+            self.notifications_printer.print_error(f"Failed to read file: {text_filepath}")
+            self.handle_text_message(
+                text=file_content,  # This will contain the error message
+                author=author,
+                message_id=message_id,
+                name=text_filepath,
+                text_role="ErrorReadingFile",
+            )
 
     def _extract_pages_from_pdf(self, pdf_path: str, pages: list[int]) -> str:
         """

@@ -46,6 +46,7 @@ class Node:
     criteria: List[str] = field(default_factory=list)
     criteria_done: List[bool] = field(default_factory=list)
     artifacts: Dict[str, Artifact] = field(default_factory=dict)
+    external_files: Dict[str, Artifact] = field(default_factory=dict)  # External files as artifacts
     subproblems: Dict[str, "Node"] = field(default_factory=dict)
     parent: Optional["Node"] = None
     path: Optional[Path] = None
@@ -134,6 +135,10 @@ class FileSystem:
 
         # Ensure the root directory exists
         os.makedirs(self.root_dir, exist_ok=True)
+        
+        # Create the external files directory
+        self.external_files_dir = self.root_dir / "ExternalFiles"
+        os.makedirs(self.external_files_dir, exist_ok=True)
 
     def create_root_problem(self, title: str, content: str) -> Node:
         """Create the root problem"""
@@ -154,6 +159,11 @@ class FileSystem:
     def load_existing_problem(self) -> Optional[Node]:
         """Check if a problem already exists and load it"""
         self.root_node = self._recursively_load_problems(self.root_dir, parent_node=None)
+        
+        # Load external files if the root node exists
+        if self.root_node:
+            self.load_external_files()
+            
         return self.root_node
 
     def _recursively_load_problems(self, node_dir: Path, parent_node: Optional[Node]) -> Optional[Node]:
@@ -210,6 +220,42 @@ class FileSystem:
                     artifact = Artifact.load_from_file(artifact_file)
                     artifacts[artifact_file.name] = artifact
         return artifacts
+        
+    def add_external_file(self, name: str, content: str) -> None:
+        """Add an external file to the file system"""
+        # Create an artifact for the external file
+        artifact = Artifact(
+            name=name, content=content, is_fully_visible=True
+        )
+        
+        # If root node exists, add to its external_files
+        if self.root_node:
+            self.root_node.external_files[name] = artifact
+        
+        # Always write to disk regardless of root node
+        filename = self._sanitize_filename(name)
+        if "." not in filename:
+            filename = filename + ".md"
+            
+        # Ensure the external files directory exists
+        os.makedirs(self.external_files_dir, exist_ok=True)
+            
+        with open(self.external_files_dir / filename, "w") as f:
+            f.write(content)
+            
+    def load_external_files(self) -> None:
+        """Load external files from disk"""
+        if not self.root_node:
+            return
+            
+        self.root_node.external_files = {}
+        
+        if self.external_files_dir.exists():
+            for file_path in self.external_files_dir.iterdir():
+                if file_path.is_file():
+                    artifact = Artifact.load_from_file(file_path)
+                    artifact.is_fully_visible = True  # External files should be fully visible
+                    self.root_node.external_files[file_path.name] = artifact
 
     def get_parent_chain(self, node: Node) -> List[Node]:
         """Get the parent chain including the given node"""
@@ -319,6 +365,11 @@ class FileSystem:
         # Create logs_and_debug directory
         logs_dir = node.path / "logs_and_debug"
         logs_dir.mkdir(exist_ok=True)
+        
+        # If this is the root node, ensure external files directory exists
+        if not node.parent:
+            external_files_dir = self.root_dir / "ExternalFiles"
+            external_files_dir.mkdir(exist_ok=True)
 
         # Recursively create directories for subproblems
         for subproblem in node.subproblems.values():
@@ -359,6 +410,15 @@ class FileSystem:
             if "." not in filename:
                 filename = filename + ".md"
             artifact.save_to_file(node.path / "Artifacts" / filename)
+            
+        # Write external files (for root node only)
+        if not node.parent and node.external_files:
+            for name, artifact in node.external_files.items():
+                filename = self._sanitize_filename(name)
+                # Preserve original extension if possible
+                if "." not in filename:
+                    filename = filename + ".md"
+                artifact.save_to_file(self.external_files_dir / filename)
 
         # Recursively write subproblems
         for subproblem in node.subproblems.values():

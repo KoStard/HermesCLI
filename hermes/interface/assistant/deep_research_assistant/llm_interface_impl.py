@@ -65,6 +65,7 @@ class ChatModelLLMInterface(LLMInterface):
                     is_thinking = False
                 if not is_working:
                     print("Working...", end="", flush=True)
+                    is_working = True
                 else:
                     print(".", end="", flush=True)
                 llm_response.append(response.text)
@@ -76,6 +77,7 @@ class ChatModelLLMInterface(LLMInterface):
                 else:
                     print(".", end="", flush=True)
                 logger.debug(response.text)
+        print()
 
         # Join the response parts and yield the final result
         full_llm_response = "".join(llm_response)

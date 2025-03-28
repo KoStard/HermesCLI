@@ -19,6 +19,9 @@ class DeepResearcherInterface:
 
     def render_no_problem_defined(self) -> Tuple[str, str]:
         """Render the interface when no problem is defined"""
+        
+        # Get external files if they exist
+        external_files_section = self._format_external_files()
 
         static_content = f"""# Deep Research Interface
 
@@ -46,6 +49,12 @@ Any context provided to you in the context section will be permanent and accessi
 Please note that only one problem definition is allowed. Problem definition is the only action you should take at this point and finish the response message.
 
 Make sure to include closing tags for command blocks, otherwise it will break the parsing and cause syntax errors.
+
+======================
+# External Files
+The system may contain external files provided by the user at the beginning of the research. These are shown in this section. These files contain important context for your work and are always fully visible. They are stored centrally and accessible from any problem in the hierarchy.
+
+{external_files_section}
 
 ======================
 # Instruction
@@ -112,6 +121,9 @@ Excessive depth makes the problem hierarchy difficult to manage and can lead to 
 You, as well as your team, are working on the provided problems.
 Each of you have a version of this device in front of you.
 It's a special interface allowing you to do many things that are necessary to finish the task.
+
+### External Files
+The system may contain external files provided by the user at the beginning of the research. These are shown in the artifacts section with special "External File" designation. These files contain important context for your work and are always fully visible. They are stored centrally and accessible from any problem in the hierarchy.
 
 ### About the workforce
 
@@ -291,6 +303,33 @@ Remember, we work backwards from the root problem.
         result += "</artifacts>"
         return result
 
+    def _format_external_files(self) -> str:
+        """Format external files for display when no problem is defined"""
+        external_files_dir = self.file_system.external_files_dir
+        
+        if not external_files_dir.exists() or not any(external_files_dir.iterdir()):
+            return "No external files available."
+        
+        result = "<external_files>\n"
+        result += "These are files provided as context for defining the problem:\n\n"
+        
+        for file_path in external_files_dir.iterdir():
+            if file_path.is_file():
+                try:
+                    artifact = Artifact.load_from_file(file_path)
+                    result += f'<external_file name="{file_path.name}">\n'
+                    result += f"---\n\n"
+                    result += f"{artifact.content}\n"
+                    result += "</external_file>\n\n"
+                except Exception as e:
+                    result += f'<external_file name="{file_path.name}">\n'
+                    result += f"---\n\n"
+                    result += f"Error loading file: {str(e)}\n"
+                    result += "</external_file>\n\n"
+        
+        result += "</external_files>"
+        return result
+        
     def _format_all_artifacts(self, node: Node) -> str:
         """Format artifacts from all nodes in the file system"""
         if not node:
@@ -298,6 +337,7 @@ Remember, we work backwards from the root problem.
 
         # Collect all artifacts with their owner information
         all_artifacts = []
+        external_file_artifacts = []
 
         # Get the root node
         root_node = self.file_system.root_node
@@ -305,21 +345,42 @@ Remember, we work backwards from the root problem.
         # Collect all artifacts from all nodes in the file system
         all_nodes_artifacts = self.collect_all_artifacts(root_node)
         for owner_title, name, content, is_fully_visible in all_nodes_artifacts:
-            all_artifacts.append(
-                (
-                    name,
-                    Artifact(
-                        name=name, content=content, is_fully_visible=is_fully_visible
-                    ),
-                    owner_title,
-                    "system",
-                )
+            artifact = Artifact(
+                name=name, content=content, is_fully_visible=is_fully_visible
             )
+            
+            # Special handling for external files
+            if owner_title == "ExternalFiles":
+                external_file_artifacts.append((name, artifact, owner_title, "external"))
+            else:
+                all_artifacts.append((name, artifact, owner_title, "system"))
 
-        if not all_artifacts:
+        if not all_artifacts and not external_file_artifacts:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
 
         result = "<artifacts>\n"
+        
+        # First add a section about external files if present
+        if external_file_artifacts:
+            result += "<external_files_intro>\n"
+            result += "These are external files provided by the user at the start of this research. "
+            result += "They contain important context for the problem and are always fully available.\n"
+            result += "</external_files_intro>\n\n"
+            
+            # Add external files first with special formatting
+            for name, artifact, owner, relationship in external_file_artifacts:
+                result += f'<artifact name="{name}" type="external_file">\n'
+                result += f"---\n"
+                result += f"type: External File\n"
+                result += f"---\n\n"
+                result += f"{artifact.content}\n"
+                result += "</artifact>\n"
+            
+            # Add separator if we also have regular artifacts
+            if all_artifacts:
+                result += "\n<separator>---------------------</separator>\n\n"
+        
+        # Then add regular artifacts
         for name, artifact, owner, relationship in all_artifacts:
             result += f'<artifact name="{name}">\n'
             result += f"---\n"
@@ -343,6 +404,7 @@ Remember, we work backwards from the root problem.
                     result += f"\n\n[...{remaining_count} more lines hidden. Use 'open_artifact' command to view full content...]\n"
 
             result += "</artifact>\n"
+        
         result += "</artifacts>"
         return result
 
@@ -384,6 +446,29 @@ Remember, we work backwards from the root problem.
 
         # Start with artifacts from this node and its descendants
         artifacts = self.collect_artifacts_recursively(node)
+        
+        # Add external files from root node if we're starting from any node
+        root = self.file_system.root_node
+        if root and root.external_files:
+            for name, artifact in root.external_files.items():
+                artifacts.append((
+                    "ExternalFiles",  # Special owner title for external files
+                    name, 
+                    artifact.content, 
+                    True  # Always fully visible
+                ))
+        # If no root node yet but external files exist on disk, add them
+        elif self.file_system.external_files_dir.exists():
+            for file_path in self.file_system.external_files_dir.iterdir():
+                if file_path.is_file():
+                    artifact = Artifact.load_from_file(file_path)
+                    artifact.is_fully_visible = True
+                    artifacts.append((
+                        "ExternalFiles",
+                        file_path.name,
+                        artifact.content,
+                        True
+                    ))
 
         return artifacts
 
