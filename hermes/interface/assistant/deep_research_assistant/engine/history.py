@@ -131,10 +131,14 @@ class ChatHistory:
         """Clear only the current node's history"""
         self.node_blocks[node_title] = []
 
-    def commit_and_get_blocks(self, node_title: str) -> List[HistoryBlock]:
-        """Get all history blocks for a specific node"""
+    def commit_and_get_auto_reply(self, node_title: str) -> Optional[AutoReply]:
         auto_reply_aggregator = self.node_auto_reply_aggregators[node_title]
         if not auto_reply_aggregator.is_empty():
             auto_reply = auto_reply_aggregator.compile_and_clear()
             self.node_blocks[node_title].append(auto_reply)
+            return auto_reply
+        return None
+
+    def get_compiled_blocks(self, node_title: str) -> List[HistoryBlock]:
+        """Get all history blocks for a specific node"""
         return self.node_blocks[node_title]

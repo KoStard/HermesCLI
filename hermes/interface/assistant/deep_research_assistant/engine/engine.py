@@ -346,10 +346,8 @@ class DeepResearchEngine:
         processor = _CommandProcessor(self)
         return processor.process(text)
 
-    def _print_current_status(self, auto_reply: str = None):
+    def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
-        if auto_reply:
-            print(auto_reply)
         status_printer = StatusPrinter()
         status_printer.print_status(
             self.problem_defined,
@@ -377,17 +375,20 @@ class DeepResearchEngine:
 
             auto_reply_counter = 0
             auto_reply_max_length = None
+
             if self.current_node:
-                for block in self.chat_history.commit_and_get_blocks(self.current_node.title)[::-1]:  # Reverse to handle auto reply contraction
+                current_auto_reply = self.chat_history.commit_and_get_auto_reply(self.current_node.title)
+
+                if current_auto_reply:
+                    print(current_auto_reply.generate_auto_reply())
+
+                for block in self.chat_history.get_compiled_blocks(self.current_node.title)[::-1]:  # Reverse to handle auto reply contraction
                     if isinstance(block, ChatMessage):
                         history_messages.append(
                             {"author": block.author, "content": block.content}
                         )
                     elif isinstance(block, AutoReply):
                         auto_reply_counter += 1
-
-                        if auto_reply_counter == 1:
-                            self._print_current_status(block.generate_auto_reply())
 
                         if auto_reply_counter > 1:
                             if not auto_reply_max_length:
@@ -446,6 +447,8 @@ class DeepResearchEngine:
 
             # Process the commands in the response
             self.process_commands(full_llm_response)
+
+            self._print_current_status()
 
         # Generate the final report
         return self._generate_final_report()
