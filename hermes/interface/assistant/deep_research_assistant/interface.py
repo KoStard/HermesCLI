@@ -121,7 +121,15 @@ class DeepResearchAssistantInterface(Interface):
             raise Exception("Render before running the deep research interface")
         
         try:
-            # Execute the engine and yield the results
+            # Check if root problem is defined
+            if not self._engine.is_root_problem_defined():
+                # Define the root problem first
+                success = self._engine.define_root_problem()
+                if not success:
+                    yield MessageEvent(TextMessage(author="assistant", text="Failed to define the root problem."))
+                    return
+            
+            # Now execute the engine with the defined problem
             final_summary = self._engine.execute()
 
             # Return the summary of artifacts as an event
