@@ -159,7 +159,7 @@ class _CommandProcessor:
                 # This should ideally be caught during parsing, but handle defensively
                 raise ValueError(f"Command '{command_name}' not found in registry.")
 
-            if not self.engine.problem_defined and command_name != "define_problem":
+            if not self.engine.is_root_problem_defined() and command_name != "define_problem":
                 raise ValueError("Only 'define_problem' command is allowed before a problem is defined.")
 
             # Update command context before execution
@@ -260,8 +260,7 @@ class DeepResearchEngine:
         self.revision_index = 1
 
         # Check if problem already exists
-        existing_problem = self.file_system.load_existing_problem()
-        self.problem_defined = existing_problem is not None
+        self.file_system.load_existing_problem()
 
         # TODO: Could move to the file system
         self.permanent_log = []
@@ -270,7 +269,7 @@ class DeepResearchEngine:
         self.command_context = CommandContext(self)
 
         # Set current node to root node if problem is already defined
-        if self.problem_defined:
+        if self.is_root_problem_defined():
             self.manually_choose_and_activate_node()
 
         # Register any extension commands
@@ -288,7 +287,7 @@ class DeepResearchEngine:
 
     def is_root_problem_defined(self) -> bool:
         """Check if the root problem is already defined"""
-        return self.problem_defined or self.file_system.root_node is not None
+        return self.file_system.root_node is not None
 
     def define_root_problem(self, instruction: str) -> bool:
         """
@@ -469,7 +468,7 @@ class DeepResearchEngine:
         """Print the current status of the research to STDOUT"""
         status_printer = StatusPrinter()
         status_printer.print_status(
-            self.problem_defined,
+            self.is_root_problem_defined(),
             self.current_node,
             self.file_system
         )
