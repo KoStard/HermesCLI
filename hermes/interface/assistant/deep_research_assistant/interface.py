@@ -29,6 +29,7 @@ class DeepResearchAssistantInterface(Interface):
         self.extension_commands = extension_commands or []
         self._engine: Optional[DeepResearchEngine] = None
         self.hierarchy_formatter = HierarchyFormatter()
+        self.instruction = None
 
     def render(
         self, history_snapshot: List[Message], events: Generator[Event, None, None]
@@ -63,21 +64,17 @@ class DeepResearchAssistantInterface(Interface):
                     else:
                         instruction_pieces.append(message.get_content_for_assistant())
 
-        instruction = "\n".join(instruction_pieces)
+        self.instruction = "\n".join(instruction_pieces)
 
         if not self._engine:
             # Create LLM interface
             llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
 
             self._engine = DeepResearchEngine(
-                instruction,  # Empty instruction for now, will be updated
                 self.research_dir,
                 llm_interface,
                 self.extension_commands,
             )
-        else:
-            # Update the engine's instruction
-            self._engine.set_instruction(instruction)
 
         for file_details in textual_files:
             filename, file_content = file_details
@@ -123,8 +120,11 @@ class DeepResearchAssistantInterface(Interface):
         try:
             # Check if root problem is defined
             if not self._engine.is_root_problem_defined():
+                if not self.instruction:
+                    yield MessageEvent(TextMessage(author="assistant", text="Failed to define the root problem, as no instruction provided."))
+                    return
                 # Define the root problem first
-                success = self._engine.define_root_problem()
+                success = self._engine.define_root_problem(self.instruction)
                 if not success:
                     yield MessageEvent(TextMessage(author="assistant", text="Failed to define the root problem."))
                     return
