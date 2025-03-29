@@ -17,21 +17,12 @@ class DefineProblemCommand(DefineCommand):
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Create the root problem"""
-        root_node = context.file_system.create_root_problem(
+        context.file_system.create_root_problem(
             args["title"], args["content"]
         )
 
-        # Set the root node status to CURRENT
-        root_node.status = ProblemStatus.IN_PROGRESS
-
         # Ensure file system is fully updated
         context.update_files()
-
-        # Set problem_defined flag
-        context.set_problem_defined(True)
-
-        # Initialize the task executor with the root node
-        context.activate_node(root_node)
 
 
 @register_command
