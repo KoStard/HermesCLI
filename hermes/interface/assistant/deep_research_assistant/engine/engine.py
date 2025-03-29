@@ -282,26 +282,82 @@ class DeepResearchEngine:
 
         self._extension_commands = extension_commands
 
-        # Initialize interface with the file system
+        # Update interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, instruction)
-        
+
         # Print initial status
         self._print_current_status()
 
+    def is_root_problem_defined(self) -> bool:
+        """Check if the root problem is already defined"""
+        return self.problem_defined or self.file_system.root_node is not None
+
+    def define_root_problem(self) -> bool:
+        """
+        Handle the initial problem definition phase.
+
+        Returns:
+            bool: True if a problem was successfully defined, False otherwise
+        """
+        # Check if LLM interface is available
+        if not self.llm_interface:
+            raise ValueError("LLM interface is required for execution")
+
+        # Run until a problem is defined
+        while True:
+            # Get the interface content
+            static_interface_content, dynamic_interface_content = self.interface.render_no_problem_defined()
+
+            # Convert history messages to dict format for the LLM interface
+            history_messages = []
+
+            # Get the current node path for logging
+            current_node_path = self.file_system.root_dir
+
+            # Generate the request
+            request = self.llm_interface.generate_request(
+                static_interface_content, dynamic_interface_content, history_messages, current_node_path
+            )
+
+            # Process the request and get the response
+            response_generator = self._handle_llm_request(request, current_node_path)
+
+            # Get the full response
+            try:
+                full_llm_response = next(response_generator)
+            except StopIteration:
+                full_llm_response = ""
+
+            # Process the commands in the response
+            self.process_commands(full_llm_response)
+
+            self._print_current_status()
+
+            # If problem was defined, activate the root node
+            if self.is_root_problem_defined():
+                self.activate_node(self.file_system.root_node)
+                return True
+
     def execute(self) -> str:
         """
-        Execute the deep research process and return the final report
-
+        Execute the deep research process after the root problem is defined and return the final report.
+        
         Returns:
             str: Final report
         """
         # Check if LLM interface is available
         if not self.llm_interface:
             raise ValueError("LLM interface is required for execution")
+            
+        # Check if root problem is defined
+        if not self.is_root_problem_defined():
+            raise ValueError("Root problem must be defined before execution")
 
         while not self.finished:
             # Get the interface content
-            static_interface_content, dynamic_interface_content = self.get_interface_content()
+            static_interface_content, dynamic_interface_content = self.interface.render_problem_defined(
+                self.current_node, self.permanent_log
+            )
 
             # Convert history messages to dict format for the LLM interface
             history_messages = []
@@ -350,33 +406,13 @@ class DeepResearchEngine:
             )
 
             # Process the request and get the response
-            while True:
-                try:
-                    response_generator = self.llm_interface.send_request(request)
-
-                    # Get the full response
-                    try:
-                        full_llm_response = next(response_generator)
-                        break  # Successfully got a response, exit the retry loop
-                    except StopIteration:
-                        full_llm_response = ""
-                        break  # Empty response but not an error, exit the retry loop
-                except Exception as e:
-                    import traceback
-
-                    print("\n\n===== LLM INTERFACE ERROR =====")
-                    print(traceback.format_exc())
-                    print("===============================")
-                    print("\nPress Enter to retry or Ctrl+C to exit...")
-                    try:
-                        input()  # Wait for user input
-                        print("Retrying LLM request...")
-                    except KeyboardInterrupt:
-                        print("\nExiting due to user request.")
-                        return "Research terminated due to LLM interface error."
-
-            # Log the response
-            self.llm_interface.log_response(current_node_path, full_llm_response)
+            response_generator = self._handle_llm_request(request, current_node_path)
+            
+            # Get the full response
+            try:
+                full_llm_response = next(response_generator)
+            except StopIteration:
+                full_llm_response = ""
 
             # Process the commands in the response
             self.process_commands(full_llm_response)
@@ -410,15 +446,6 @@ class DeepResearchEngine:
         """Set the instruction for the engine"""
         self._instruction = instruction
         self.interface.instruction = instruction
-
-    def get_interface_content(self) -> Tuple[str, str]:
-        """Get the current interface content as a string"""
-        if not self.problem_defined:
-            return self.interface.render_no_problem_defined()
-        else:
-            return self.interface.render_problem_defined(
-                self.current_node, self.permanent_log
-            )
 
     def add_command_output(self, command_name: str, args: Dict, output: str, node_title: str) -> None:
         """
@@ -461,6 +488,47 @@ class DeepResearchEngine:
 
     def increment_revision(self):
         self.revision_index += 1
+
+    def _handle_llm_request(self, request, current_node_path):
+        """
+        Handle the LLM request with retry capability
+        
+        Args:
+            request: Request object to send to LLM
+            current_node_path: Path to current node for logging
+            
+        Returns:
+            Generator yielding the full response
+        """
+        while True:
+            try:
+                response_generator = self.llm_interface.send_request(request)
+
+                # Get the full response
+                try:
+                    full_llm_response = next(response_generator)
+                    # Log the response
+                    self.llm_interface.log_response(current_node_path, full_llm_response)
+                    yield full_llm_response
+                    break  # Successfully got a response, exit the retry loop
+                except StopIteration:
+                    full_llm_response = ""
+                    yield full_llm_response
+                    break  # Empty response but not an error, exit the retry loop
+            except Exception as e:
+                import traceback
+
+                print("\n\n===== LLM INTERFACE ERROR =====")
+                print(traceback.format_exc())
+                print("===============================")
+                print("\nPress Enter to retry or Ctrl+C to exit...")
+                try:
+                    input()  # Wait for user input
+                    print("Retrying LLM request...")
+                except KeyboardInterrupt:
+                    print("\nExiting due to user request.")
+                    yield "Research terminated due to LLM interface error."
+                    break
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""
