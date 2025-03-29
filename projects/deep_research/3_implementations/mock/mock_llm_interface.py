@@ -17,7 +17,7 @@ class MockLLMInterface(LLMInterface):
         self.research_dir = research_dir
 
     def generate_request(
-        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict]
+        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict], current_node_path
     ) -> Dict:
         """
         Generate a request for the LLM based on the rendered interface and history
@@ -88,20 +88,6 @@ class MockLLMInterface(LLMInterface):
 
         full_response = "\n".join(response_lines)
         yield full_response
-
-    def log_request(
-        self, node_path, rendered_messages: List[dict], request_data: dict
-    ) -> None:
-        """
-        Log an LLM request
-
-        Args:
-            node_path: Path to the current node
-            rendered_messages: List of message dictionaries
-            request_data: The request data sent to the LLM
-        """
-        # In the mock implementation, we don't need to log requests
-        pass
 
     def log_response(self, node_path, response: str) -> None:
         """

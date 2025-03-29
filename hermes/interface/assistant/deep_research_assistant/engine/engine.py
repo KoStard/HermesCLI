@@ -403,11 +403,6 @@ class DeepResearchEngine:
 
             history_messages = history_messages[::-1]  # Reverse to maintain chronological order
 
-            # Generate the request
-            request = self.llm_interface.generate_request(
-                static_interface_content, dynamic_interface_content, history_messages
-            )
-
             # Get the current node path for logging
             current_node_path = (
                 self.current_node.path
@@ -415,11 +410,9 @@ class DeepResearchEngine:
                 else self.file_system.root_dir
             )
 
-            # Log the request
-            self.llm_interface.log_request(
-                current_node_path,
-                [{"author": "user", "content": static_interface_content + "\n==DYNAMIC==\n" + dynamic_interface_content}] + history_messages,
-                request,
+            # Generate the request
+            request = self.llm_interface.generate_request(
+                static_interface_content, dynamic_interface_content, history_messages, current_node_path
             )
 
             # Process the request and get the response

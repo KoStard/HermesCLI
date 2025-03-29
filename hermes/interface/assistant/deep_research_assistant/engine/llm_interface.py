@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Dict, Generator, List
 
 from typing import Dict, Generator, List
@@ -10,7 +11,7 @@ class LLMInterface(ABC):
 
     @abstractmethod
     def generate_request(
-        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict]
+        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict], node_path: Path
     ) -> Dict:
         """
         Generate a request for the LLM based on the rendered interface and history
@@ -19,6 +20,7 @@ class LLMInterface(ABC):
             static_help_interface: The rendered static interface content as a string
             dynamic_interface: The rendered dynamic interface content as a string
             history_messages: List of message dictionaries with author and content
+            node_path: For logging
 
         Returns:
             Dict: The request object to send to the LLM
@@ -35,20 +37,6 @@ class LLMInterface(ABC):
 
         Returns:
             Generator[str, None, None]: Generator yielding LLM responses
-        """
-        pass
-
-    @abstractmethod
-    def log_request(
-        self, node_path, rendered_messages: List[dict], request_data: dict
-    ) -> None:
-        """
-        Log an LLM request
-
-        Args:
-            node_path: Path to the current node
-            rendered_messages: List of message dictionaries
-            request_data: The request data sent to the LLM
         """
         pass
 
