@@ -25,7 +25,6 @@ class DeepResearchAssistantInterface(Interface):
     ):
         self.model = model
         self.model.initialize()
-        self.instruction = None
         self.research_dir = research_path if research_path else str(Path.cwd())
         self.extension_commands = extension_commands or []
         self._engine: Optional[DeepResearchEngine] = None
@@ -37,26 +36,20 @@ class DeepResearchAssistantInterface(Interface):
         """Render the interface with the given history and events"""
         logger.debug("Rendering Deep Research Assistant interface")
 
-        instruction = []
+        instruction_pieces = []
+        textual_files = []
         
         # Initialize the engine if it doesn't exist yet
         if not self._engine:
-            # Create LLM interface
-            llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
-            self._engine = DeepResearchEngine(
-                "",  # Empty instruction for now, will be updated
-                self.research_dir,
-                llm_interface,
-                self.extension_commands,
-            )
-
             # Process all external files from history
             for message in history_snapshot:
                 if message.author == "user":
                     if isinstance(message, TextualFileMessage):
-                        self._process_textual_file_message(message)
+                        file_details = self._process_textual_file_message(message)
+                        if file_details:
+                            textual_files.append(file_details)
                     else:
-                        instruction.append(message.get_content_for_assistant())
+                        instruction_pieces.append(message.get_content_for_assistant())
 
         # Process new messages and file uploads
         for event in events:
@@ -64,14 +57,32 @@ class DeepResearchAssistantInterface(Interface):
                 message = event.get_message()
                 if message.author == "user":
                     if isinstance(message, TextualFileMessage):
-                        self._process_textual_file_message(message)
+                        file_details = self._process_textual_file_message(message)
+                        if file_details:
+                            textual_files.append(file_details)
                     else:
-                        instruction.append(message.get_content_for_assistant())
+                        instruction_pieces.append(message.get_content_for_assistant())
 
-        self.instruction = "\n".join(instruction)
-        
-        # Update the engine's instruction
-        self._engine.set_instruction(self.instruction)
+        instruction = "\n".join(instruction_pieces)
+
+        if not self._engine:
+            # Create LLM interface
+            llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
+
+            self._engine = DeepResearchEngine(
+                instruction,  # Empty instruction for now, will be updated
+                self.research_dir,
+                llm_interface,
+                self.extension_commands,
+            )
+        else:
+            # Update the engine's instruction
+            self._engine.set_instruction(instruction)
+
+        for file_details in textual_files:
+            filename, file_content = file_details
+            self._engine.file_system.add_external_file(filename, file_content)
+
         # Ensure external files are loaded/updated in the engine's file system
         self._engine.file_system.load_external_files()
 
@@ -98,9 +109,8 @@ class DeepResearchAssistantInterface(Interface):
                 filename = os.path.basename(message.text_filepath)
             if not filename:
                 filename = f"external_file_{hash(str(file_content))[:8]}"
-                
-            # Add to file system as external file using the engine's file system instance
-            self._engine.file_system.add_external_file(filename, file_content)
+
+            return filename, file_content
 
     def get_input(self) -> Generator[Event, None, None]:
         """Process the instruction and generate a response"""
