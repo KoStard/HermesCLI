@@ -259,6 +259,7 @@ class DeepResearchEngine:
         self.llm_interface = llm_interface
         self.current_node: Optional[Node] = None
         self._instruction = instruction
+        self.revision_index = 1
 
         # Check if problem already exists
         existing_problem = self.file_system.load_existing_problem()
@@ -272,7 +273,7 @@ class DeepResearchEngine:
 
         # Set current node to root node if problem is already defined
         if self.problem_defined:
-            self.choose_and_activate_node()
+            self.manually_choose_and_activate_node()
 
         # Register any extension commands
         if extension_commands:
@@ -385,7 +386,7 @@ class DeepResearchEngine:
         # Generate the final report
         return self._generate_final_report()
 
-    def choose_and_activate_node(self):
+    def manually_choose_and_activate_node(self):
         all_nodes = self.file_system.get_all_nodes()
         for index, node in enumerate(all_nodes):
             print(f"{'*' * (node.depth_from_root + 1)} {index+1}: {node.title}")
@@ -456,6 +457,10 @@ class DeepResearchEngine:
     def activate_node(self, node: Node) -> None:
         """Set the current node and update chat history"""
         self.current_node = node
+        node.status = ProblemStatus.IN_PROGRESS
+
+    def increment_revision(self):
+        self.revision_index += 1
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""
@@ -484,9 +489,6 @@ class DeepResearchEngine:
         
         # Set the parent to PENDING
         self.current_node.status = ProblemStatus.PENDING
-        
-        # Set the subproblem to CURRENT
-        subproblem.status = ProblemStatus.IN_PROGRESS
         
         # Update the current node
         self.activate_node(subproblem)
@@ -523,9 +525,6 @@ class DeepResearchEngine:
         
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
-        
-        # Set the parent to CURRENT
-        parent_node.status = ProblemStatus.IN_PROGRESS
         
         # Update the current node
         self.activate_node(parent_node)
@@ -565,9 +564,6 @@ class DeepResearchEngine:
         
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
-        
-        # Set the parent to CURRENT
-        parent_node.status = ProblemStatus.IN_PROGRESS
         
         # Update the current node
         self.activate_node(parent_node)
