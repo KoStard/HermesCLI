@@ -27,13 +27,19 @@ class ChatModelLLMInterface(LLMInterface):
         self.deep_research_logger = DeepResearchLogger(Path(self.research_dir))
 
     def generate_request(
-        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict]
+        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict], node_path: Path
     ) -> Dict:
         """Generate a request for the LLM based on the rendered interface and history"""
         request_builder = self.model.get_request_builder()
 
+        logging_history = list(history_messages)
+
         # Convert history messages to TextMessage objects
         rendered_messages = [TextMessage(author="user", text=static_help_interface)]
+        logging_history.insert(0, {
+            "author": "user",
+            "content": static_help_interface
+        })
 
         # Add history messages
         for message in history_messages:
@@ -43,9 +49,17 @@ class ChatModelLLMInterface(LLMInterface):
 
         if dynamic_interface:
             rendered_messages.append(TextMessage(author="user", text=dynamic_interface))
+            logging_history.append({
+                "author": "user",
+                "content": dynamic_interface
+            })
 
         # Build and return the request
-        return request_builder.build_request(rendered_messages)
+        request = request_builder.build_request(rendered_messages)
+
+        self.deep_research_logger.log_llm_request(node_path, logging_history, request)
+
+        return request
 
     def send_request(self, request: Dict) -> Generator[str, None, None]:
         """Send a request to the LLM and get a generator of responses"""
@@ -82,12 +96,6 @@ class ChatModelLLMInterface(LLMInterface):
         # Join the response parts and yield the final result
         full_llm_response = "".join(llm_response)
         yield full_llm_response
-
-    def log_request(
-        self, node_path, rendered_messages: List[dict], request_data: dict
-    ) -> None:
-        """Log an LLM request"""
-        self.deep_research_logger.log_llm_request(node_path, rendered_messages, request_data)
 
     def log_response(self, node_path, response: str) -> None:
         """Log an LLM response"""
