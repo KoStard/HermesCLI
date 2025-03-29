@@ -26,7 +26,6 @@ class CommandContext:
         
         # State tracking
         self._permanent_log = []
-        self._problem_defined = False
         self._finished = False
         
         # Reference to engine for special cases and callbacks
@@ -36,13 +35,11 @@ class CommandContext:
         self.current_node = engine.current_node
         self.chat_history = engine.chat_history
         self._permanent_log = engine.permanent_log
-        self._problem_defined = engine.problem_defined
         self._finished = engine.finished
     
     def refresh_from_engine(self):
         """Refresh context data from the engine"""
         self.current_node = self._engine.current_node
-        self._problem_defined = self._engine.problem_defined
         self._finished = self._engine.finished
     
     # File system operations
@@ -92,16 +89,9 @@ class CommandContext:
             # Update engine if available
             self._engine.permanent_log.append(content)
     
-    # Problem state operations
-    def set_problem_defined(self, defined: bool) -> None:
-        """Set whether the problem is defined"""
-        self._problem_defined = defined
-        # Update engine if available
-        self._engine.problem_defined = defined
-    
     def is_problem_defined(self) -> bool:
         """Check if the problem is defined"""
-        return self._problem_defined
+        return self._engine.is_root_problem_defined()
     
     # Execution state operations
     def set_finished(self, finished: bool) -> None:
