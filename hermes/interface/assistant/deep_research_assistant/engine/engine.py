@@ -257,6 +257,7 @@ class DeepResearchEngine:
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
         self.current_node: Optional[Node] = None
+        self.next_node: Optional[Node] = None  # Tracks scheduled focus changes
         self.revision_index = 1
 
         # Check if problem already exists
@@ -328,12 +329,13 @@ class DeepResearchEngine:
             # Process the commands in the response
             self.process_commands(full_llm_response)
 
-            self._print_current_status()
-
             # If problem was defined, activate the root node
             if self.is_root_problem_defined():
                 self.activate_node(self.file_system.root_node)
+                self._print_current_status()
                 return True
+
+            self._print_current_status()
 
     def execute(self) -> str:
         """
@@ -413,6 +415,11 @@ class DeepResearchEngine:
 
             # Process the commands in the response
             self.process_commands(full_llm_response)
+            
+            # Apply any scheduled focus change now that the cycle is complete
+            if self.next_node is not None:
+                self.activate_node(self.next_node)
+                self.next_node = None
 
             self._print_current_status()
 
@@ -529,7 +536,7 @@ class DeepResearchEngine:
         
     def focus_down(self, subproblem_title: str) -> bool:
         """
-        Focus down to a subproblem
+        Schedule focus down to a subproblem after the current cycle is complete
         
         Args:
             subproblem_title: Title of the subproblem to focus on
@@ -550,8 +557,8 @@ class DeepResearchEngine:
         # Set the parent to PENDING
         self.current_node.status = ProblemStatus.PENDING
         
-        # Update the current node
-        self.activate_node(subproblem)
+        # Schedule the focus change
+        self.next_node = subproblem
         
         # Update files
         self.file_system.update_files()
@@ -560,7 +567,7 @@ class DeepResearchEngine:
         
     def focus_up(self) -> bool:
         """
-        Focus up to the parent problem
+        Schedule focus up to the parent problem after the current cycle is complete
         
         Returns:
             bool: True if successful, False otherwise
@@ -586,8 +593,8 @@ class DeepResearchEngine:
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
         
-        # Update the current node
-        self.activate_node(parent_node)
+        # Schedule the focus change
+        self.next_node = parent_node
         
         # Update files
         self.file_system.update_files()
@@ -599,7 +606,7 @@ class DeepResearchEngine:
         
     def fail_and_focus_up(self) -> bool:
         """
-        Mark the current problem as failed and focus up
+        Mark the current problem as failed and schedule focus up after the current cycle is complete
         
         Returns:
             bool: True if successful, False otherwise
@@ -625,8 +632,8 @@ class DeepResearchEngine:
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
         
-        # Update the current node
-        self.activate_node(parent_node)
+        # Schedule the focus change
+        self.next_node = parent_node
         
         # Update files
         self.file_system.update_files()

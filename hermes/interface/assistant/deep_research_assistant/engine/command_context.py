@@ -19,29 +19,25 @@ class CommandContext:
         Args:
             engine: Optional reference to the engine for initialization
         """
-        # Core components
-        self.file_system = None
-        self.current_node = None
-        self.chat_history = None
-        
-        # State tracking
-        self._permanent_log = []
-        self._finished = False
-        
         # Reference to engine for special cases and callbacks
         self._engine = engine
 
         self.file_system = engine.file_system
-        self.current_node = engine.current_node
         self.chat_history = engine.chat_history
         self._permanent_log = engine.permanent_log
-        self._finished = engine.finished
-    
+
     def refresh_from_engine(self):
         """Refresh context data from the engine"""
-        self.current_node = self._engine.current_node
-        self._finished = self._engine.finished
-    
+        pass
+
+    @property
+    def current_node(self):
+        return self._engine.current_node
+
+    @property
+    def finished(self):
+        return self._engine.finished
+
     # File system operations
     def set_file_system(self, file_system: FileSystem) -> None:
         """
@@ -57,23 +53,6 @@ class CommandContext:
         Update files in the file system
         """
         self.file_system.update_files()
-    
-    # Node operations
-    def set_current_node(self, node: Node) -> None:
-        """Set the current node"""
-        self.current_node = node
-        # Update engine if available
-        self._engine.current_node = node
-    
-    def activate_node(self, node: Node) -> None:
-        """Activate a node (set as current)"""
-        if not node:
-            return
-            
-        self.current_node = node
-        
-        # Update engine if available
-        self._engine.current_node = node
 
     
     # Command output operations
