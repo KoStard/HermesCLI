@@ -287,74 +287,6 @@ class DeepResearchEngine:
         # Print initial status
         self._print_current_status()
 
-    def choose_and_activate_node(self):
-        all_nodes = self.file_system.get_all_nodes()
-        for index, node in enumerate(all_nodes):
-            print(f"{'*' * (node.depth_from_root + 1)} {index+1}: {node.title}")
-        print()
-
-        index = None
-        while index is None:
-            try:
-                index = int(input("Choose the node to start from: "))
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-            if not index or index <= 0 or index > len(all_nodes):
-                print("Invalid index. Please try again.")
-                index = None
-
-        index -= 1
-        node = all_nodes[index]
-        self.activate_node(node)
-
-    def set_instruction(self, instruction: str):
-        """Set the instruction for the engine"""
-        self._instruction = instruction
-        self.interface.instruction = instruction
-
-    def get_interface_content(self) -> Tuple[str, str]:
-        """Get the current interface content as a string"""
-        if not self.problem_defined:
-            return self.interface.render_no_problem_defined()
-        else:
-            return self.interface.render_problem_defined(
-                self.current_node, self.permanent_log
-            )
-
-    def add_command_output(self, command_name: str, args: Dict, output: str, node_title: str) -> None:
-        """
-        Add command output to be included in the automatic response
-
-        Args:
-            command_name: Name of the command
-            args: Arguments passed to the command
-            output: Output text to display
-            node_title: The title of the node for which the output is being added
-        """
-        if not output:
-            output = ""
-        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(node_title)
-        auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
-
-    def process_commands(self, text: str) -> tuple[bool, str, Dict]:
-        """
-        Process commands from text using the _CommandProcessor helper class.
-
-        Returns:
-            tuple: (commands_executed, error_report, execution_status)
-        """
-        processor = _CommandProcessor(self)
-        return processor.process(text)
-
-    def _print_current_status(self):
-        """Print the current status of the research to STDOUT"""
-        status_printer = StatusPrinter()
-        status_printer.print_status(
-            self.problem_defined,
-            self.current_node,
-            self.file_system
-        )
-
     def execute(self) -> str:
         """
         Execute the deep research process and return the final report
@@ -452,6 +384,74 @@ class DeepResearchEngine:
 
         # Generate the final report
         return self._generate_final_report()
+
+    def choose_and_activate_node(self):
+        all_nodes = self.file_system.get_all_nodes()
+        for index, node in enumerate(all_nodes):
+            print(f"{'*' * (node.depth_from_root + 1)} {index+1}: {node.title}")
+        print()
+
+        index = None
+        while index is None:
+            try:
+                index = int(input("Choose the node to start from: "))
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+            if not index or index <= 0 or index > len(all_nodes):
+                print("Invalid index. Please try again.")
+                index = None
+
+        index -= 1
+        node = all_nodes[index]
+        self.activate_node(node)
+
+    def set_instruction(self, instruction: str):
+        """Set the instruction for the engine"""
+        self._instruction = instruction
+        self.interface.instruction = instruction
+
+    def get_interface_content(self) -> Tuple[str, str]:
+        """Get the current interface content as a string"""
+        if not self.problem_defined:
+            return self.interface.render_no_problem_defined()
+        else:
+            return self.interface.render_problem_defined(
+                self.current_node, self.permanent_log
+            )
+
+    def add_command_output(self, command_name: str, args: Dict, output: str, node_title: str) -> None:
+        """
+        Add command output to be included in the automatic response
+
+        Args:
+            command_name: Name of the command
+            args: Arguments passed to the command
+            output: Output text to display
+            node_title: The title of the node for which the output is being added
+        """
+        if not output:
+            output = ""
+        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(node_title)
+        auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
+
+    def process_commands(self, text: str) -> tuple[bool, str, Dict]:
+        """
+        Process commands from text using the _CommandProcessor helper class.
+
+        Returns:
+            tuple: (commands_executed, error_report, execution_status)
+        """
+        processor = _CommandProcessor(self)
+        return processor.process(text)
+
+    def _print_current_status(self):
+        """Print the current status of the research to STDOUT"""
+        status_printer = StatusPrinter()
+        status_printer.print_status(
+            self.problem_defined,
+            self.current_node,
+            self.file_system
+        )
 
     def activate_node(self, node: Node) -> None:
         """Set the current node and update chat history"""
