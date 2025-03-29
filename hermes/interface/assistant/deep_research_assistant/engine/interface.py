@@ -15,12 +15,11 @@ class DeepResearcherInterface:
     This class handles all string formatting and presentation logic.
     """
 
-    def __init__(self, file_system: FileSystem, instruction: str):
+    def __init__(self, file_system: FileSystem):
         self.file_system = file_system
-        self.instruction = instruction
         self.hierarchy_formatter = HierarchyFormatter()
 
-    def render_no_problem_defined(self) -> Tuple[str, str]:
+    def render_no_problem_defined(self, instruction) -> Tuple[str, str]:
         """Render the interface when no problem is defined"""
 
         # Get external files using the new centralized method
@@ -61,7 +60,7 @@ Make sure to include closing tags for command blocks, otherwise it will break th
 # Instruction
 Notice: The assistants working on the created problem won't see anymore this instruction. Make sure to include all the important details in the problem definition.
 
-{self.instruction}
+{instruction}
 
 ======================
 # How to define a problem

@@ -246,7 +246,6 @@ class DeepResearchEngine:
 
     def __init__(
         self,
-        instruction: str,
         root_dir: str = "research",
         llm_interface: LLMInterface = None,
         extension_commands: List = None,
@@ -258,7 +257,6 @@ class DeepResearchEngine:
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
         self.current_node: Optional[Node] = None
-        self._instruction = instruction
         self.revision_index = 1
 
         # Check if problem already exists
@@ -283,7 +281,7 @@ class DeepResearchEngine:
         self._extension_commands = extension_commands
 
         # Update interface with the file system
-        self.interface = DeepResearcherInterface(self.file_system, instruction)
+        self.interface = DeepResearcherInterface(self.file_system)
 
         # Print initial status
         self._print_current_status()
@@ -292,7 +290,7 @@ class DeepResearchEngine:
         """Check if the root problem is already defined"""
         return self.problem_defined or self.file_system.root_node is not None
 
-    def define_root_problem(self) -> bool:
+    def define_root_problem(self, instruction: str) -> bool:
         """
         Handle the initial problem definition phase.
 
@@ -306,7 +304,7 @@ class DeepResearchEngine:
         # Run until a problem is defined
         while True:
             # Get the interface content
-            static_interface_content, dynamic_interface_content = self.interface.render_no_problem_defined()
+            static_interface_content, dynamic_interface_content = self.interface.render_no_problem_defined(instruction)
 
             # Convert history messages to dict format for the LLM interface
             history_messages = []
@@ -441,11 +439,6 @@ class DeepResearchEngine:
         index -= 1
         node = all_nodes[index]
         self.activate_node(node)
-
-    def set_instruction(self, instruction: str):
-        """Set the instruction for the engine"""
-        self._instruction = instruction
-        self.interface.instruction = instruction
 
     def add_command_output(self, command_name: str, args: Dict, output: str, node_title: str) -> None:
         """
