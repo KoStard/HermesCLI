@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from .command import CommandError, CommandRegistry, ParseResult
 
@@ -133,7 +133,7 @@ class CommandParser:
                 errors.append(
                     CommandError(
                         command="unknown",
-                        message=f"Unexpected closing '>>>' tag without matching opening tag",
+                        message="Unexpected closing '>>>' tag without matching opening tag",
                         line_number=line_num,
                         is_syntax_error=True,
                     )

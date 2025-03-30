@@ -1,4 +1,4 @@
-from typing import Tuple, Dict
+from typing import Tuple
 
 
 class FrontmatterManager:

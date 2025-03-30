@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Generator, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .command import Command, CommandRegistry
 from .command_parser import CommandParser, ParseResult
@@ -514,7 +514,7 @@ class DeepResearchEngine:
                     full_llm_response = ""
                     yield full_llm_response
                     break  # Empty response but not an error, exit the retry loop
-            except Exception as e:
+            except Exception:
                 import traceback
 
                 print("\n\n===== LLM INTERFACE ERROR =====")
