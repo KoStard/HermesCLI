@@ -2,7 +2,9 @@ from abc import ABC
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from hermes.interface.assistant.deep_research_assistant.engine.content_truncator import ContentTruncator
+from hermes.interface.assistant.deep_research_assistant.engine.content_truncator import (
+    ContentTruncator,
+)
 
 
 class HistoryBlock(ABC):
@@ -18,7 +20,13 @@ class ChatMessage(HistoryBlock):
 
 
 class AutoReply(HistoryBlock):
-    def __init__(self, error_report: str, command_outputs: List[Tuple[str, dict]], messages: List[Tuple[str, str]], confirmation_request: Optional[str] = None):
+    def __init__(
+        self,
+        error_report: str,
+        command_outputs: List[Tuple[str, dict]],
+        messages: List[Tuple[str, str]],
+        confirmation_request: Optional[str] = None,
+    ):
         self.error_report = error_report
         self.command_outputs = command_outputs
         self.messages = messages
@@ -61,9 +69,13 @@ If nothing appears, either you didn't use any commands or the commands you sent 
                     auto_reply += f"Arguments: {args_str}\n\n"
                 # Add the output
                 if not per_command_output_maximum_length:
-                    truncated_output = output_data['output']
+                    truncated_output = output_data["output"]
                 else:
-                    truncated_output = ContentTruncator.truncate(output_data['output'], per_command_output_maximum_length, additional_help="To see the full content again, rerun the command.")
+                    truncated_output = ContentTruncator.truncate(
+                        output_data["output"],
+                        per_command_output_maximum_length,
+                        additional_help="To see the full content again, rerun the command.",
+                    )
                 auto_reply += f"```\n{truncated_output}\n```\n"
 
         if self.messages:
@@ -100,12 +112,26 @@ class AutoReplyAggregator:
         self.confirmation_requests = []
 
     def is_empty(self):
-        return not self.error_reports and not self.command_outputs and not self.internal_messages and not self.confirmation_requests
+        return (
+            not self.error_reports
+            and not self.command_outputs
+            and not self.internal_messages
+            and not self.confirmation_requests
+        )
 
     def compile_and_clear(self) -> AutoReply:
         error_report = "\n".join(self.error_reports)
-        confirmation_request = "\n".join(self.confirmation_requests) if self.confirmation_requests else None
-        auto_reply = AutoReply(error_report, self.command_outputs, self.internal_messages, confirmation_request)
+        confirmation_request = (
+            "\n".join(self.confirmation_requests)
+            if self.confirmation_requests
+            else None
+        )
+        auto_reply = AutoReply(
+            error_report,
+            self.command_outputs,
+            self.internal_messages,
+            confirmation_request,
+        )
         self.clear()
         return auto_reply
 
@@ -116,7 +142,9 @@ class ChatHistory:
     def __init__(self):
         # Map of node_title -> list of messages
         self.node_blocks: Dict[str, List[HistoryBlock]] = defaultdict(list)
-        self.node_auto_reply_aggregators: Dict[str, AutoReplyAggregator] = defaultdict(AutoReplyAggregator)
+        self.node_auto_reply_aggregators: Dict[str, AutoReplyAggregator] = defaultdict(
+            AutoReplyAggregator
+        )
 
     def add_message(self, author: str, content: str, node_title: str) -> None:
         """Add a message to the current node's history"""

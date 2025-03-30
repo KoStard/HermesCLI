@@ -4,9 +4,15 @@ from typing import Generator, List, Optional
 from pathlib import Path
 
 from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.deep_research_assistant.engine.engine import DeepResearchEngine
-from hermes.interface.assistant.deep_research_assistant.engine.hierarchy_formatter import HierarchyFormatter
-from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import ChatModelLLMInterface
+from hermes.interface.assistant.deep_research_assistant.engine.engine import (
+    DeepResearchEngine,
+)
+from hermes.interface.assistant.deep_research_assistant.engine.hierarchy_formatter import (
+    HierarchyFormatter,
+)
+from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import (
+    ChatModelLLMInterface,
+)
 from hermes.interface.base import Interface
 from hermes.event import Event, MessageEvent
 from hermes.message import Message, TextMessage, TextualFileMessage
@@ -39,7 +45,7 @@ class DeepResearchAssistantInterface(Interface):
 
         instruction_pieces = []
         textual_files = []
-        
+
         # Initialize the engine if it doesn't exist yet
         if not self._engine:
             # Process all external files from history
@@ -89,7 +95,7 @@ class DeepResearchAssistantInterface(Interface):
     def _process_textual_file_message(self, message: TextualFileMessage):
         """Process a TextualFileMessage, saving it as an external file"""
         file_content = message.textual_content
-        
+
         # If the message has a filepath but no content, try to read it
         if not file_content and message.text_filepath:
             content, success = FileReader.read_file(message.text_filepath)
@@ -98,7 +104,7 @@ class DeepResearchAssistantInterface(Interface):
             else:
                 logger.error(f"Failed to read file {message.text_filepath}")
                 return
-        
+
         if file_content:
             # Use the filename from message or derive from text_filepath
             filename = message.name
@@ -116,28 +122,43 @@ class DeepResearchAssistantInterface(Interface):
         # The engine should already be initialized in render()
         if not self._engine:
             raise Exception("Render before running the deep research interface")
-        
+
         try:
             # Check if root problem is defined
             if not self._engine.is_root_problem_defined():
                 if not self.instruction:
-                    yield MessageEvent(TextMessage(author="assistant", text="Failed to define the root problem, as no instruction provided."))
+                    yield MessageEvent(
+                        TextMessage(
+                            author="assistant",
+                            text="Failed to define the root problem, as no instruction provided.",
+                        )
+                    )
                     return
                 # Define the root problem first
                 success = self._engine.define_root_problem(self.instruction)
                 if not success:
-                    yield MessageEvent(TextMessage(author="assistant", text="Failed to define the root problem."))
+                    yield MessageEvent(
+                        TextMessage(
+                            author="assistant",
+                            text="Failed to define the root problem.",
+                        )
+                    )
                     return
-            
+
             # Now execute the engine with the defined problem
             final_summary = self._engine.execute()
 
             # Return the summary of artifacts as an event
             yield MessageEvent(TextMessage(author="assistant", text=final_summary))
         except Exception as e:
-             logger.error(f"Error during Deep Research engine execution: {e}", exc_info=True)
-             yield MessageEvent(TextMessage(author="assistant", text=f"An error occurred during research: {e}"))
-
+            logger.error(
+                f"Error during Deep Research engine execution: {e}", exc_info=True
+            )
+            yield MessageEvent(
+                TextMessage(
+                    author="assistant", text=f"An error occurred during research: {e}"
+                )
+            )
 
     def clear(self):
         """Clear the interface state"""

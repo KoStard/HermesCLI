@@ -41,14 +41,22 @@ class _CommandProcessor:
             tuple: (commands_executed, final_error_report, execution_status)
         """
         if self._handle_shutdown_request(text):
-            return True, "System shutdown requested and executed.", {"shutdown": "success"}
+            return (
+                True,
+                "System shutdown requested and executed.",
+                {"shutdown": "success"},
+            )
 
         self._add_assistant_message_to_history(text)
 
         parse_results = self._parse_and_validate_commands(text)
-        if not parse_results: # Handle case where only syntax errors occurred
-             self._update_auto_reply() # Ensure syntax errors are reported
-             return self.commands_executed, self.final_error_report, self.execution_status
+        if not parse_results:  # Handle case where only syntax errors occurred
+            self._update_auto_reply()  # Ensure syntax errors are reported
+            return (
+                self.commands_executed,
+                self.final_error_report,
+                self.execution_status,
+            )
 
         self._execute_commands(parse_results)
         self._generate_final_report()
@@ -76,19 +84,25 @@ class _CommandProcessor:
         has_syntax_errors = any(result.has_syntax_error for result in parse_results)
         if has_syntax_errors:
             # If syntax errors exist, the parser returns a single result with these errors
-            self._parsing_error_report = self.command_parser.generate_error_report(parse_results)
+            self._parsing_error_report = self.command_parser.generate_error_report(
+                parse_results
+            )
             # No further execution needed if there are syntax errors
-            return [] # Return empty list to signal stop
+            return []  # Return empty list to signal stop
 
         # Generate report for any non-syntax parsing errors (e.g., missing sections)
-        self._parsing_error_report = self.command_parser.generate_error_report(parse_results)
+        self._parsing_error_report = self.command_parser.generate_error_report(
+            parse_results
+        )
 
         return parse_results
 
     def _execute_commands(self, parse_results: List[ParseResult]):
         """Execute valid commands and track status."""
         command_that_should_be_last_reached = False
-        has_parsing_errors = bool(self._parsing_error_report) # Check if initial parsing found errors
+        has_parsing_errors = bool(
+            self._parsing_error_report
+        )  # Check if initial parsing found errors
 
         for i, result in enumerate(parse_results):
             # Skip execution if the command itself had parsing errors (e.g., missing required section)
@@ -106,16 +120,29 @@ class _CommandProcessor:
 
             # Skip execution if a previous command required being last
             if command_that_should_be_last_reached:
-                self._mark_as_skipped(result, i, "came after a command that has to be the last in the message")
+                self._mark_as_skipped(
+                    result,
+                    i,
+                    "came after a command that has to be the last in the message",
+                )
                 continue
 
             # Special handling for finish/fail commands
-            is_finish_or_fail = result.command_name in ["finish_problem", "fail_problem"]
-            has_any_errors_so_far = has_parsing_errors or bool(self._execution_failed_commands)
+            is_finish_or_fail = result.command_name in [
+                "finish_problem",
+                "fail_problem",
+            ]
+            has_any_errors_so_far = has_parsing_errors or bool(
+                self._execution_failed_commands
+            )
 
             if is_finish_or_fail and has_any_errors_so_far:
                 self._finish_or_fail_skipped = True
-                self._mark_as_skipped(result, i, "other errors detected in the message, do you really want to go ahead?")
+                self._mark_as_skipped(
+                    result,
+                    i,
+                    "other errors detected in the message, do you really want to go ahead?",
+                )
                 continue
 
             # --- Execute the command ---
@@ -123,7 +150,9 @@ class _CommandProcessor:
 
             # --- Update Status ---
             cmd_key = f"{result.command_name}_{i}"
-            line_num = result.errors[0].line_number if result.errors else None # Should be None here
+            line_num = (
+                result.errors[0].line_number if result.errors else None
+            )  # Should be None here
 
             if execution_error:
                 failed_info = {
@@ -133,18 +162,20 @@ class _CommandProcessor:
                 }
                 self.execution_status[cmd_key] = failed_info
                 self._execution_failed_commands.append(failed_info)
-            elif command: # Command executed successfully
-                 self.execution_status[cmd_key] = {
-                     "name": result.command_name,
-                     "status": "success",
-                     "line": line_num,
-                 }
-                 self.commands_executed = True
-                 if command.should_be_last_in_message():
-                     command_that_should_be_last_reached = True
+            elif command:  # Command executed successfully
+                self.execution_status[cmd_key] = {
+                    "name": result.command_name,
+                    "status": "success",
+                    "line": line_num,
+                }
+                self.commands_executed = True
+                if command.should_be_last_in_message():
+                    command_that_should_be_last_reached = True
             # else: command was None (e.g., unknown command, handled during parsing)
 
-    def _execute_single_command(self, result: ParseResult) -> Tuple[Optional[Command], Optional[Exception]]:
+    def _execute_single_command(
+        self, result: ParseResult
+    ) -> Tuple[Optional[Command], Optional[Exception]]:
         """Execute a single command and return the command object and any execution error."""
         command_name = result.command_name
         args = result.args
@@ -159,8 +190,13 @@ class _CommandProcessor:
                 # This should ideally be caught during parsing, but handle defensively
                 raise ValueError(f"Command '{command_name}' not found in registry.")
 
-            if not self.engine.is_root_problem_defined() and command_name != "define_problem":
-                raise ValueError("Only 'define_problem' command is allowed before a problem is defined.")
+            if (
+                not self.engine.is_root_problem_defined()
+                and command_name != "define_problem"
+            ):
+                raise ValueError(
+                    "Only 'define_problem' command is allowed before a problem is defined."
+                )
 
             # Update command context before execution
             self.command_context.refresh_from_engine()
@@ -174,9 +210,9 @@ class _CommandProcessor:
             # Catch unexpected errors during execution
             error = e
             import traceback
+
             print(f"Unexpected error executing command '{command_name}':")
             print(traceback.format_exc())
-
 
         return command, error
 
@@ -206,19 +242,23 @@ class _CommandProcessor:
             if not self.final_error_report:
                 self.final_error_report = execution_report.strip()
             else:
-                 # Add separator if there were also parsing errors
-                 if self._parsing_error_report and "### Errors report:" in self._parsing_error_report:
-                      self.final_error_report += "\n---\n" + execution_report
-                 else: # Only execution errors or syntax errors
-                      self.final_error_report += "\n" + execution_report
-
+                # Add separator if there were also parsing errors
+                if (
+                    self._parsing_error_report
+                    and "### Errors report:" in self._parsing_error_report
+                ):
+                    self.final_error_report += "\n---\n" + execution_report
+                else:  # Only execution errors or syntax errors
+                    self.final_error_report += "\n" + execution_report
 
     def _update_auto_reply(self):
         """Add error reports and confirmation requests to the auto-reply aggregator."""
         if not self.current_node:
             return
 
-        auto_reply_generator = self.chat_history.get_auto_reply_aggregator(self.current_node.title)
+        auto_reply_generator = self.chat_history.get_auto_reply_aggregator(
+            self.current_node.title
+        )
 
         # Add confirmation request if finish/fail was skipped
         if self._finish_or_fail_skipped:
@@ -234,10 +274,13 @@ class _CommandProcessor:
         # Add the combined error report
         if self.final_error_report:
             # Ensure the report starts with the expected header if only execution errors are present
-            if "### Errors report:" not in self.final_error_report and "### Execution Status Report:" not in self.final_error_report:
-                 report_to_add = "### Errors report:\n" + self.final_error_report
+            if (
+                "### Errors report:" not in self.final_error_report
+                and "### Execution Status Report:" not in self.final_error_report
+            ):
+                report_to_add = "### Errors report:\n" + self.final_error_report
             else:
-                 report_to_add = self.final_error_report
+                report_to_add = self.final_error_report
             auto_reply_generator.add_error_report(report_to_add)
 
 
@@ -304,7 +347,9 @@ class DeepResearchEngine:
         # Run until a problem is defined
         while True:
             # Get the interface content
-            static_interface_content, dynamic_interface_content = self.interface.render_no_problem_defined(instruction)
+            static_interface_content, dynamic_interface_content = (
+                self.interface.render_no_problem_defined(instruction)
+            )
 
             # Convert history messages to dict format for the LLM interface
             history_messages = []
@@ -314,7 +359,10 @@ class DeepResearchEngine:
 
             # Generate the request
             request = self.llm_interface.generate_request(
-                static_interface_content, dynamic_interface_content, history_messages, current_node_path
+                static_interface_content,
+                dynamic_interface_content,
+                history_messages,
+                current_node_path,
             )
 
             # Process the request and get the response
@@ -340,22 +388,24 @@ class DeepResearchEngine:
     def execute(self) -> str:
         """
         Execute the deep research process after the root problem is defined and return the final report.
-        
+
         Returns:
             str: Final report
         """
         # Check if LLM interface is available
         if not self.llm_interface:
             raise ValueError("LLM interface is required for execution")
-            
+
         # Check if root problem is defined
         if not self.is_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
 
         while not self.finished:
             # Get the interface content
-            static_interface_content, dynamic_interface_content = self.interface.render_problem_defined(
-                self.current_node, self.permanent_log
+            static_interface_content, dynamic_interface_content = (
+                self.interface.render_problem_defined(
+                    self.current_node, self.permanent_log
+                )
             )
 
             # Convert history messages to dict format for the LLM interface
@@ -365,12 +415,16 @@ class DeepResearchEngine:
             auto_reply_max_length = None
 
             if self.current_node:
-                current_auto_reply = self.chat_history.commit_and_get_auto_reply(self.current_node.title)
+                current_auto_reply = self.chat_history.commit_and_get_auto_reply(
+                    self.current_node.title
+                )
 
                 if current_auto_reply:
                     print(current_auto_reply.generate_auto_reply())
 
-                for block in self.chat_history.get_compiled_blocks(self.current_node.title)[::-1]:  # Reverse to handle auto reply contraction
+                for block in self.chat_history.get_compiled_blocks(
+                    self.current_node.title
+                )[::-1]:  # Reverse to handle auto reply contraction
                     if isinstance(block, ChatMessage):
                         history_messages.append(
                             {"author": block.author, "content": block.content}
@@ -382,15 +436,21 @@ class DeepResearchEngine:
                             if not auto_reply_max_length:
                                 auto_reply_max_length = 5_000
                             else:
-                                auto_reply_max_length = max(auto_reply_max_length // 2, 300)
+                                auto_reply_max_length = max(
+                                    auto_reply_max_length // 2, 300
+                                )
                         history_messages.append(
                             {
                                 "author": "user",
-                                "content": block.generate_auto_reply(auto_reply_max_length),
+                                "content": block.generate_auto_reply(
+                                    auto_reply_max_length
+                                ),
                             }
                         )
 
-            history_messages = history_messages[::-1]  # Reverse to maintain chronological order
+            history_messages = history_messages[
+                ::-1
+            ]  # Reverse to maintain chronological order
 
             # Get the current node path for logging
             current_node_path = (
@@ -401,12 +461,15 @@ class DeepResearchEngine:
 
             # Generate the request
             request = self.llm_interface.generate_request(
-                static_interface_content, dynamic_interface_content, history_messages, current_node_path
+                static_interface_content,
+                dynamic_interface_content,
+                history_messages,
+                current_node_path,
             )
 
             # Process the request and get the response
             response_generator = self._handle_llm_request(request, current_node_path)
-            
+
             # Get the full response
             try:
                 full_llm_response = next(response_generator)
@@ -415,7 +478,7 @@ class DeepResearchEngine:
 
             # Process the commands in the response
             self.process_commands(full_llm_response)
-            
+
             # Apply any scheduled focus change now that the cycle is complete
             if self.next_node is not None:
                 self.activate_node(self.next_node)
@@ -446,7 +509,9 @@ class DeepResearchEngine:
         node = all_nodes[index]
         self.activate_node(node)
 
-    def add_command_output(self, command_name: str, args: Dict, output: str, node_title: str) -> None:
+    def add_command_output(
+        self, command_name: str, args: Dict, output: str, node_title: str
+    ) -> None:
         """
         Add command output to be included in the automatic response
 
@@ -459,7 +524,9 @@ class DeepResearchEngine:
         if not output:
             output = ""
         auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(node_title)
-        auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
+        auto_reply_aggregator.add_command_output(
+            command_name, {"args": args, "output": output}
+        )
 
     def process_commands(self, text: str) -> tuple[bool, str, Dict]:
         """
@@ -475,9 +542,7 @@ class DeepResearchEngine:
         """Print the current status of the research to STDOUT"""
         status_printer = StatusPrinter()
         status_printer.print_status(
-            self.is_root_problem_defined(),
-            self.current_node,
-            self.file_system
+            self.is_root_problem_defined(), self.current_node, self.file_system
         )
 
     def activate_node(self, node: Node) -> None:
@@ -491,11 +556,11 @@ class DeepResearchEngine:
     def _handle_llm_request(self, request, current_node_path):
         """
         Handle the LLM request with retry capability
-        
+
         Args:
             request: Request object to send to LLM
             current_node_path: Path to current node for logging
-            
+
         Returns:
             Generator yielding the full response
         """
@@ -507,7 +572,9 @@ class DeepResearchEngine:
                 try:
                     full_llm_response = next(response_generator)
                     # Log the response
-                    self.llm_interface.log_response(current_node_path, full_llm_response)
+                    self.llm_interface.log_response(
+                        current_node_path, full_llm_response
+                    )
                     yield full_llm_response
                     break  # Successfully got a response, exit the retry loop
                 except StopIteration:
@@ -533,51 +600,51 @@ class DeepResearchEngine:
         """Generate a summary of all artifacts created during the research"""
         report_generator = ReportGenerator(self.file_system)
         return report_generator.generate_final_report(self.interface)
-        
+
     def focus_down(self, subproblem_title: str) -> bool:
         """
         Schedule focus down to a subproblem after the current cycle is complete
-        
+
         Args:
             subproblem_title: Title of the subproblem to focus on
-            
+
         Returns:
             bool: True if successful, False otherwise
         """
         if not self.current_node:
             return False
-            
+
         # Check if the subproblem exists
         if subproblem_title not in self.current_node.subproblems:
             return False
-            
+
         # Get the subproblem
         subproblem = self.current_node.subproblems[subproblem_title]
-        
+
         # Set the parent to PENDING
         self.current_node.status = ProblemStatus.PENDING
-        
+
         # Schedule the focus change
         self.next_node = subproblem
-        
+
         # Update files
         self.file_system.update_files()
 
         return True
-        
+
     def focus_up(self) -> bool:
         """
         Schedule focus up to the parent problem after the current cycle is complete
-        
+
         Returns:
             bool: True if successful, False otherwise
         """
         if not self.current_node:
             return False
-            
+
         # Get the parent chain
         parent_chain = self.file_system.get_parent_chain(self.current_node)
-        
+
         # If this is the root node, we're done
         if len(parent_chain) <= 1:
             # Mark the root node as FINISHED
@@ -585,38 +652,42 @@ class DeepResearchEngine:
             self.file_system.update_files()
             self.finished = True
             return True
-            
+
         # Mark the current node as FINISHED
         self.current_node.status = ProblemStatus.FINISHED
         current_node = self.current_node
-        
+
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
-        
+
         # Schedule the focus change
         self.next_node = parent_node
-        
+
         # Update files
         self.file_system.update_files()
 
-        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(parent_node.title)
-        parent_auto_reply_aggregator.add_internal_message_from("Task marked FINISHED, focusing back up.", current_node.title)
-        
+        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+            parent_node.title
+        )
+        parent_auto_reply_aggregator.add_internal_message_from(
+            "Task marked FINISHED, focusing back up.", current_node.title
+        )
+
         return True
-        
+
     def fail_and_focus_up(self) -> bool:
         """
         Mark the current problem as failed and schedule focus up after the current cycle is complete
-        
+
         Returns:
             bool: True if successful, False otherwise
         """
         if not self.current_node:
             return False
-            
+
         # Get the parent chain
         parent_chain = self.file_system.get_parent_chain(self.current_node)
-        
+
         # If this is the root node, we're done
         if len(parent_chain) <= 1:
             # Mark the root node as FAILED
@@ -624,22 +695,25 @@ class DeepResearchEngine:
             self.file_system.update_files()
             self.finished = True
             return True
-            
+
         # Mark the current node as FAILED
         self.current_node.status = ProblemStatus.FAILED
         current_node = self.current_node
-        
+
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
-        
+
         # Schedule the focus change
         self.next_node = parent_node
-        
+
         # Update files
         self.file_system.update_files()
 
-        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(parent_node.title)
-        parent_auto_reply_aggregator.add_internal_message_from("Task marked FAILED, focusing back up.", current_node.title)
-        
-        return True
+        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+            parent_node.title
+        )
+        parent_auto_reply_aggregator.add_internal_message_from(
+            "Task marked FAILED, focusing back up.", current_node.title
+        )
 
+        return True

@@ -10,10 +10,10 @@ class StatusPrinter:
     """
 
     def print_status(
-        self, 
-        problem_defined: bool, 
-        current_node: Optional[Node], 
-        file_system: FileSystem
+        self,
+        problem_defined: bool,
+        current_node: Optional[Node],
+        file_system: FileSystem,
     ) -> None:
         """Print the current status of the research to STDOUT"""
         if not problem_defined:
@@ -43,7 +43,9 @@ class StatusPrinter:
 
         print("=" * 80 + "\n")
 
-    def _print_problem_tree(self, node: Node, prefix: str, is_last: bool, current_node: Node):
+    def _print_problem_tree(
+        self, node: Node, prefix: str, is_last: bool, current_node: Node
+    ):
         """Print a tree representation of the problem hierarchy with metadata"""
         if not node:
             return

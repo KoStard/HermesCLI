@@ -634,9 +634,11 @@ class ChatAssistantControlPanel(ControlPanel):
                 self.notifications_printer.print_notification(
                     f"LLM used command: {command_label}"
                 )
-                yield from self._catch_command_exception(command_label, content, self.commands[command_label].parser(
-                    content, peekable_generator
-                ))
+                yield from self._catch_command_exception(
+                    command_label,
+                    content,
+                    self.commands[command_label].parser(content, peekable_generator),
+                )
             else:
                 # TODO, it's a problem, if the TextGeneratorMessage is not finished, and this method is called again for a yield.
                 # Maybe we shouldn't have the text generator message andjust generate text messages.
@@ -652,16 +654,25 @@ class ChatAssistantControlPanel(ControlPanel):
                     )
                 )
 
-    def _catch_command_exception(self, command_label: str, content: str, command_events_generator: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def _catch_command_exception(
+        self,
+        command_label: str,
+        content: str,
+        command_events_generator: Generator[Event, None, None],
+    ) -> Generator[Event, None, None]:
         try:
             events = list(command_events_generator)
         except Exception as e:
-            events = [MessageEvent(TextMessage(
-                author="assistant",
-                text=f"{command_label} failed with arguments {content}. Error message: {e}",
-                name=f"{command_label} failure {content.strip()}",
-                text_role="command_failure"
-            ))]
+            events = [
+                MessageEvent(
+                    TextMessage(
+                        author="assistant",
+                        text=f"{command_label} failed with arguments {content}. Error message: {e}",
+                        name=f"{command_label} failure {content.strip()}",
+                        text_role="command_failure",
+                    )
+                )
+            ]
         yield from events
 
     def set_command_override_status(self, command_id: str, status: str) -> None:

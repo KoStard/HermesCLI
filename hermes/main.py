@@ -188,7 +188,7 @@ def main():
 
     cli_args = cli_arguments_parser.parse_args()
 
-    if hasattr(cli_args, 'verbose') and cli_args.verbose:
+    if hasattr(cli_args, "verbose") and cli_args.verbose:
         logging.basicConfig(level=logging.DEBUG)
         logging.debug("Debug logging enabled")
     else:

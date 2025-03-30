@@ -48,7 +48,10 @@ class BedrockRequestBuilder(RequestBuilder):
             }
             response["inferenceConfig"]["maxTokens"] = 124_000
 
-        if "maxTokens" not in response["inferenceConfig"] and 'claude-3-7' in self.model_tag:
+        if (
+            "maxTokens" not in response["inferenceConfig"]
+            and "claude-3-7" in self.model_tag
+        ):
             response["inferenceConfig"]["maxTokens"] = 124_000
 
         # Using Converse API

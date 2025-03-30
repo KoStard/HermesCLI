@@ -165,7 +165,9 @@ class UserControlPanel(ControlPanel):
                 description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
                 short_description="Share a text-based document",
                 parser=lambda line: MessageEvent(
-                    TextualFileMessage(author="user", text_filepath=line, textual_content=None)
+                    TextualFileMessage(
+                        author="user", text_filepath=line, textual_content=None
+                    )
                 ),
                 default_on_cli=True,
             )
@@ -365,7 +367,9 @@ class UserControlPanel(ControlPanel):
                 result_events.append(
                     MessageEvent(
                         TextualFileMessage(
-                            author="user", text_filepath=absolute_file_path, textual_content=None
+                            author="user",
+                            text_filepath=absolute_file_path,
+                            textual_content=None,
                         )
                     )
                 )
@@ -561,6 +565,6 @@ class UserControlPanel(ControlPanel):
             author="user",
             textual_content=tree_string,
             text_filepath=None,
-            file_role="tree_result"
+            file_role="tree_result",
         )
         return MessageEvent(tree_message)

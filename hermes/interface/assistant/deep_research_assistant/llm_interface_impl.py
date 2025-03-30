@@ -27,7 +27,11 @@ class ChatModelLLMInterface(LLMInterface):
         self.deep_research_logger = DeepResearchLogger(Path(self.research_dir))
 
     def generate_request(
-        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict], node_path: Path
+        self,
+        static_help_interface: str,
+        dynamic_interface: str,
+        history_messages: List[dict],
+        node_path: Path,
     ) -> Dict:
         """Generate a request for the LLM based on the rendered interface and history"""
         request_builder = self.model.get_request_builder()
@@ -36,10 +40,7 @@ class ChatModelLLMInterface(LLMInterface):
 
         # Convert history messages to TextMessage objects
         rendered_messages = [TextMessage(author="user", text=static_help_interface)]
-        logging_history.insert(0, {
-            "author": "user",
-            "content": static_help_interface
-        })
+        logging_history.insert(0, {"author": "user", "content": static_help_interface})
 
         # Add history messages
         for message in history_messages:
@@ -49,10 +50,7 @@ class ChatModelLLMInterface(LLMInterface):
 
         if dynamic_interface:
             rendered_messages.append(TextMessage(author="user", text=dynamic_interface))
-            logging_history.append({
-                "author": "user",
-                "content": dynamic_interface
-            })
+            logging_history.append({"author": "user", "content": dynamic_interface})
 
         # Build and return the request
         request = request_builder.build_request(rendered_messages)

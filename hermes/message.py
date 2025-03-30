@@ -455,7 +455,7 @@ class TextualFileMessage(Message):
     def get_content_for_assistant(self) -> Dict[str, str]:
         return {
             "textual_content": self.textual_content,
-            "text_filepath": self.text_filepath
+            "text_filepath": self.text_filepath,
         }
 
     def to_json(self) -> dict:
@@ -466,7 +466,7 @@ class TextualFileMessage(Message):
             "author": self.author,
             "timestamp": self.timestamp.isoformat(),
             "file_role": self.file_role,
-            "name": self.name
+            "name": self.name,
         }
 
     @staticmethod
