@@ -22,32 +22,6 @@ class CommandType(Enum):
     SIMPLE = "simple"  # Commands without sections
 
 
-@dataclass
-class CommandError:
-    """Represents an error in command parsing"""
-
-    command: str
-    message: str
-    line_number: Optional[int] = None
-    is_syntax_error: bool = False
-
-
-@dataclass
-class ParseResult:
-    """Result of parsing a command"""
-
-    command_name: Optional[str] = None
-    args: Dict[str, Any] = None
-    errors: List[CommandError] = None
-    has_syntax_error: bool = False
-
-    def __post_init__(self):
-        if self.args is None:
-            self.args = {}
-        if self.errors is None:
-            self.errors = []
-
-
 class Command(ABC):
     """Base class for all commands"""
 

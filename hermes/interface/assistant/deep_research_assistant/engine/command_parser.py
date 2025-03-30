@@ -1,7 +1,34 @@
 import re
-from typing import Dict, List, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
-from .command import CommandError, CommandRegistry, ParseResult
+from .command import CommandRegistry
+
+
+@dataclass
+class CommandError:
+    """Represents an error in command parsing"""
+
+    command: str
+    message: str
+    line_number: Optional[int] = None
+    is_syntax_error: bool = False
+
+
+@dataclass
+class ParseResult:
+    """Result of parsing a command"""
+
+    command_name: Optional[str] = None
+    args: Dict[str, Any] = None
+    errors: List[CommandError] = None
+    has_syntax_error: bool = False
+
+    def __post_init__(self):
+        if self.args is None:
+            self.args = {}
+        if self.errors is None:
+            self.errors = []
 
 
 class CommandParser:
