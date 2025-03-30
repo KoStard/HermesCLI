@@ -58,9 +58,9 @@ class BedrockModel(ChatModel):
         try:
             response = self.client.converse_stream(**request)
         except ClientError as e:
-            if e.response['Error']['Code'] == 'ThrottlingException':
+            if e.response["Error"]["Code"] == "ThrottlingException":
                 if tries <= 3:
-                    seconds = 10 * (tries ** 2)
+                    seconds = 10 * (tries**2)
                     print("Throttling Exception Occured.")
                     print("Retrying.....")
                     print("Attempt No.: " + str(tries))
@@ -74,7 +74,6 @@ class BedrockModel(ChatModel):
             else:
                 raise
         return response
-
 
     def get_request_builder(self) -> RequestBuilder:
         return self.request_builder

@@ -126,7 +126,7 @@ class CommandParser:
         # TODO: This method should return not just errors, but the blocks that will be processed
         # Otherwise we'll have duplicate logic
         errors = []
-        
+
         lines = text.split("\n")
         latest_opening_tag_index = -1
         latest_closing_tag_index = -1
@@ -135,7 +135,7 @@ class CommandParser:
         duplicate_closing_tag_indices = []
         unclosed_opening_tag_indices = []
         unopened_closing_tag_indices = []
-        
+
         for index, line in enumerate(lines):
             line = line.strip()
             # TODO: Check that there are no more opening/closing symbols
@@ -150,7 +150,9 @@ class CommandParser:
                 else:
                     # We are good
                     pass
-                latest_opening_tag_index = index # Picking the latest, regardless duplicate or not
+                latest_opening_tag_index = (
+                    index  # Picking the latest, regardless duplicate or not
+                )
             elif line.startswith(">>>"):
                 # There should have been an opening tag
                 # If recent closing tag came after the latest opening tag, then we have duplicate closing tags
@@ -161,13 +163,13 @@ class CommandParser:
                     unopened_closing_tag_indices.append(index)
                 else:
                     # We are good
-                    latest_closing_tag_index = index # Picking the earliest valid
+                    latest_closing_tag_index = index  # Picking the earliest valid
                     blocks.append((latest_opening_tag_index, latest_closing_tag_index))
-        
+
         # If there is a opening tag after the latest closing tag, then we have an open block left here
         if latest_opening_tag_index > latest_closing_tag_index:
             unclosed_opening_tag_indices.append(latest_opening_tag_index)
-        
+
         for index in duplicate_opening_tag_indices:
             errors.append(
                 CommandError(
@@ -177,7 +179,7 @@ class CommandParser:
                     is_syntax_error=True,
                 )
             )
-        
+
         for index in duplicate_closing_tag_indices:
             errors.append(
                 CommandError(
@@ -187,7 +189,7 @@ class CommandParser:
                     is_syntax_error=True,
                 )
             )
-        
+
         for index in unclosed_opening_tag_indices:
             errors.append(
                 CommandError(
@@ -197,7 +199,7 @@ class CommandParser:
                     is_syntax_error=True,
                 )
             )
-        
+
         for index in unopened_closing_tag_indices:
             errors.append(
                 CommandError(

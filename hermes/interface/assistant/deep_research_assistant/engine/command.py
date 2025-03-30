@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from hermes.interface.assistant.deep_research_assistant.engine.command_context import CommandContext
+from hermes.interface.assistant.deep_research_assistant.engine.command_context import (
+    CommandContext,
+)
 
 
 class CommandSection:
@@ -62,7 +64,9 @@ class Command(ABC):
         """Execute the command with the given arguments"""
         pass
 
-    def add_output(self, context: CommandContext, args: Dict[str, Any], output: str) -> None:
+    def add_output(
+        self, context: CommandContext, args: Dict[str, Any], output: str
+    ) -> None:
         """Add command output to be included in the automatic response"""
         context.add_command_output(self.name, args, output)
 
@@ -82,10 +86,11 @@ class Command(ABC):
         return False
 
 
-
 class DefineCommand(Command):
     """Base class for commands that define or modify problems"""
+
     pass
+
 
 class CommandRegistry:
     """Registry for all available commands"""
@@ -109,7 +114,9 @@ class CommandRegistry:
     def get_problem_defined_interface_commands(self) -> Dict[str, Command]:
         """Get all registered commands"""
         return {
-            name: command for name, command in self._commands.items() if not isinstance(command, DefineCommand)
+            name: command
+            for name, command in self._commands.items()
+            if not isinstance(command, DefineCommand)
         }
 
     def get_command_names(self) -> List[str]:

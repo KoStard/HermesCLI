@@ -5,7 +5,7 @@ from .command import CommandRegistry
 from .file_system import FileSystem, Node
 from .commands import register_predefined_commands
 from .hierarchy_formatter import HierarchyFormatter
-from .content_truncator import ContentTruncator # Import ContentTruncator
+from .content_truncator import ContentTruncator  # Import ContentTruncator
 
 
 register_predefined_commands()
@@ -77,28 +77,34 @@ Content of the problem definition.
 ```"""
         return static_content, ""
 
-    def render_problem_defined(self, target_node: Node, permanent_logs: List[str]) -> Tuple[str, str]:
+    def render_problem_defined(
+        self, target_node: Node, permanent_logs: List[str]
+    ) -> Tuple[str, str]:
         """Render the interface when a problem is defined"""
         # Format all artifacts (external and node-specific)
-        artifacts_section = self._format_artifacts_section(external_only=False, current_node=target_node)
+        artifacts_section = self._format_artifacts_section(
+            external_only=False, current_node=target_node
+        )
 
         # Format criteria
         criteria_section = self._format_criteria(target_node)
 
         # Format breakdown structure with status information
         subproblems_sections = self._format_subproblems(target_node)
-        
+
         # Format permanent log
         permanent_log_section = self._format_permanent_log(permanent_logs)
 
         # Format problem path hierarchy
-        problem_path_hierarchy_section = self._format_problem_path_hierarchy(target_node)
+        problem_path_hierarchy_section = self._format_problem_path_hierarchy(
+            target_node
+        )
 
         # Format problem hierarchy - full tree with current node highlighted
         problem_hierarchy = self.file_system.get_problem_hierarchy(target_node)
-        
+
         command_help = self._generate_command_help()
-        
+
         # Check if the current node is too deep and add a warning if needed
 
         depth_warning = ""
@@ -292,19 +298,22 @@ Remember, we work backwards from the root problem.
 """
         return static_content, dynamic_content
 
-    def _format_artifacts_section(self, external_only: bool, current_node: Optional[Node] = None) -> str:
+    def _format_artifacts_section(
+        self, external_only: bool, current_node: Optional[Node] = None
+    ) -> str:
         """Formats the artifacts section, optionally including only external files."""
         external_files = self.file_system.get_external_files()
         node_artifacts = []
 
         if not external_only and current_node:
-             # Collect artifacts recursively starting from the root to get correct ownership info
-             if self.file_system.root_node:
-                 node_artifacts = self.collect_artifacts_recursively(self.file_system.root_node)
-             else:
-                 # Handle case where root_node might not be set yet but problem is defined
-                 node_artifacts = self.collect_artifacts_recursively(current_node)
-
+            # Collect artifacts recursively starting from the root to get correct ownership info
+            if self.file_system.root_node:
+                node_artifacts = self.collect_artifacts_recursively(
+                    self.file_system.root_node
+                )
+            else:
+                # Handle case where root_node might not be set yet but problem is defined
+                node_artifacts = self.collect_artifacts_recursively(current_node)
 
         if not external_files and not node_artifacts:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
@@ -318,7 +327,8 @@ Remember, we work backwards from the root problem.
                 These are external files provided by the user at the start of this research. They contain important context for the problem and are always fully available.
                 </external_files_intro>
                 
-                """)
+                """
+            )
 
             for name, artifact in sorted(external_files.items()):
                 result += textwrap.dedent(f"""<artifact name="{name}" type="external_file">
@@ -342,7 +352,6 @@ Remember, we work backwards from the root problem.
                     """
                 )
 
-
         # Format node-specific artifacts if not external_only
         if not external_only and node_artifacts:
             # Sort artifacts by owner then name for consistent display
@@ -352,7 +361,11 @@ Remember, we work backwards from the root problem.
                     shown_content = content
                 else:
                     # Use ContentTruncator for preview
-                    truncated_content = ContentTruncator.truncate(content, 500, "Use 'open_artifact' command to view full content.") # Truncate to 500 chars
+                    truncated_content = ContentTruncator.truncate(
+                        content,
+                        500,
+                        "Use 'open_artifact' command to view full content.",
+                    )  # Truncate to 500 chars
                     shown_content += truncated_content
                 result += textwrap.dedent(
                     f"""<artifact name="{name}">
@@ -362,11 +375,11 @@ Remember, we work backwards from the root problem.
                     
                     {shown_content}
                     </artifact>
-                    """)
+                    """
+                )
 
         result += "</artifacts>"
         return result.strip()
-
 
     def _format_criteria(self, node: Node) -> str:
         """Format criteria for display"""
@@ -383,7 +396,9 @@ Remember, we work backwards from the root problem.
         """Format breakdown structure for display"""
         return self.hierarchy_formatter.format_subproblems(node)
 
-    def collect_artifacts_recursively(self, node: Node) -> List[Tuple[str, str, str, bool]]:
+    def collect_artifacts_recursively(
+        self, node: Node
+    ) -> List[Tuple[str, str, str, bool]]:
         """
         Recursively collect artifacts from a node and all its descendants.
 
@@ -405,7 +420,6 @@ Remember, we work backwards from the root problem.
             artifacts.extend(self.collect_artifacts_recursively(subproblem))
 
         return artifacts
-
 
     def _format_permanent_log(self, permanent_logs: list) -> str:
         """Format permanent history for display"""
@@ -443,7 +457,9 @@ Remember, we work backwards from the root problem.
 
             # Add help text if available
             if cmd.help_text:
-                command_text += '\n' + '\n'.join('; ' + line for line in cmd.help_text.split('\n'))
+                command_text += "\n" + "\n".join(
+                    "; " + line for line in cmd.help_text.split("\n")
+                )
 
             result.append(command_text)
 

@@ -133,7 +133,7 @@ class RequestBuilder(ABC):
                         message.author,
                         id(message),
                         name=message.name,
-                        text_role=message.file_role
+                        text_role=message.file_role,
                     )
                 elif content["text_filepath"]:
                     self.handle_textual_file_message(
@@ -316,7 +316,7 @@ class RequestBuilder(ABC):
         if os.path.isdir(text_filepath):
             # Use FileReader to process the entire directory
             file_contents = FileReader.read_directory(text_filepath)
-            
+
             # Process each file in the directory
             for relative_path, content in file_contents.items():
                 full_path = os.path.join(text_filepath, relative_path)
@@ -325,10 +325,10 @@ class RequestBuilder(ABC):
                     role = "TextualFile"
                     if full_path.endswith(".ipynb"):
                         role = "JupyterNotebook"
-                        
+
                     if file_role:
                         role = f"{role} with role={file_role}"
-                        
+
                     self.handle_text_message(
                         text=content,
                         author=author,
@@ -357,17 +357,17 @@ class RequestBuilder(ABC):
         """
         # Use the shared FileReader utility to get file content
         file_content, success = FileReader.read_file(text_filepath)
-        
+
         if success:
             # Determine the appropriate role based on file type
             role = "TextualFile"
             if text_filepath.endswith(".ipynb"):
                 role = "JupyterNotebook"
-                
+
             # Add file_role if specified
             if file_role:
                 role = f"{role} with role={file_role}"
-                
+
             # Handle the message with the content
             self.handle_text_message(
                 text=file_content,
@@ -378,7 +378,9 @@ class RequestBuilder(ABC):
             )
         else:
             # Handle error case
-            self.notifications_printer.print_error(f"Failed to read file: {text_filepath}")
+            self.notifications_printer.print_error(
+                f"Failed to read file: {text_filepath}"
+            )
             self.handle_text_message(
                 text=file_content,  # This will contain the error message
                 author=author,

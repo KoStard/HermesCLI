@@ -17,9 +17,7 @@ class DefineProblemCommand(DefineCommand):
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Create the root problem"""
-        context.file_system.create_root_problem(
-            args["title"], args["content"]
-        )
+        context.file_system.create_root_problem(args["title"], args["content"])
 
         # Ensure file system is fully updated
         context.update_files()
@@ -235,7 +233,7 @@ class FocusUpCommand(Command):
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus up to the parent problem"""
         result = context.focus_up()
-        
+
         if not result:
             raise ValueError("Failed to focus up to parent problem.")
 
@@ -255,7 +253,7 @@ class FailProblemAndFocusUpCommand(Command):
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Mark problem as failed and focus up"""
         result = context.fail_and_focus_up()
-        
+
         if not result:
             raise ValueError("Failed to mark problem as failed and focus up.")
 

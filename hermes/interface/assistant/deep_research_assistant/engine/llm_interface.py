@@ -3,13 +3,16 @@ from pathlib import Path
 from typing import Dict, Generator, List
 
 
-
 class LLMInterface(ABC):
     """Abstract interface for LLM interaction"""
 
     @abstractmethod
     def generate_request(
-        self, static_help_interface: str, dynamic_interface: str, history_messages: List[dict], node_path: Path
+        self,
+        static_help_interface: str,
+        dynamic_interface: str,
+        history_messages: List[dict],
+        node_path: Path,
     ) -> Dict:
         """
         Generate a request for the LLM based on the rendered interface and history

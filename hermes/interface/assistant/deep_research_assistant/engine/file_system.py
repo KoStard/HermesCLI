@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
-from hermes.interface.assistant.deep_research_assistant.engine.frontmatter_manager import FrontmatterManager
+from hermes.interface.assistant.deep_research_assistant.engine.frontmatter_manager import (
+    FrontmatterManager,
+)
 
 
 @dataclass
@@ -28,7 +30,9 @@ class Artifact:
         return Artifact(name=name, content=content, is_fully_visible=False)
 
     def save_to_file(self, file_path: Path) -> None:
-        content = self.frontmatter_manager.add_frontmatter(self.content, {"name": self.name})
+        content = self.frontmatter_manager.add_frontmatter(
+            self.content, {"name": self.name}
+        )
         with open(file_path, "w") as f:
             f.write(content)
 
@@ -79,10 +83,10 @@ class Node:
             return self.subproblems[title]
 
         subproblem = Node(
-            title=title, 
-            problem_definition=content, 
+            title=title,
+            problem_definition=content,
             parent=self,
-            depth_from_root=self.depth_from_root + 1
+            depth_from_root=self.depth_from_root + 1,
         )
         self.subproblems[title] = subproblem
         return subproblem
@@ -130,9 +134,11 @@ class Node:
 
 class FileSystem:
     def __init__(self, root_dir: str = "research"):
-        self.root_dir = Path(root_dir).resolve() # Use absolute path
+        self.root_dir = Path(root_dir).resolve()  # Use absolute path
         self.root_node: Optional[Node] = None
-        self._external_files: Dict[str, Artifact] = {} # Central storage for external files
+        self._external_files: Dict[
+            str, Artifact
+        ] = {}  # Central storage for external files
         self.lock = threading.RLock()  # Reentrant lock for thread safety
         self.frontmatter_manager = FrontmatterManager()
 
@@ -151,13 +157,20 @@ class FileSystem:
         if self.root_node:
             # Avoid creating multiple root problems if one already exists in memory
             # Or handle merging/updating if necessary
-            print(f"Warning: Root problem '{self.root_node.title}' already exists. Overwriting is not implemented.")
+            print(
+                f"Warning: Root problem '{self.root_node.title}' already exists. Overwriting is not implemented."
+            )
             return self.root_node
         # Create root directory if it doesn't exist
         self.root_dir.mkdir(parents=True, exist_ok=True)
 
         # Create node and set its path
-        self.root_node = Node(title=title, problem_definition=content, path=self.root_dir, depth_from_root=0)
+        self.root_node = Node(
+            title=title,
+            problem_definition=content,
+            path=self.root_dir,
+            depth_from_root=0,
+        )
 
         # Create all necessary directories
         self._create_node_directories(self.root_node)
@@ -170,10 +183,14 @@ class FileSystem:
     def load_existing_problem(self) -> Optional[Node]:
         """Check if a problem already exists and load it"""
         # External files are loaded during __init__
-        self.root_node = self._recursively_load_problems(self.root_dir, parent_node=None)
+        self.root_node = self._recursively_load_problems(
+            self.root_dir, parent_node=None
+        )
         return self.root_node
 
-    def _recursively_load_problems(self, node_dir: Path, parent_node: Optional[Node]) -> Optional[Node]:
+    def _recursively_load_problems(
+        self, node_dir: Path, parent_node: Optional[Node]
+    ) -> Optional[Node]:
         if not node_dir.exists():
             return None
 
@@ -192,11 +209,13 @@ class FileSystem:
             title = node_dir.name
 
         # Create root node
-        node = Node(title=title,
-                    problem_definition=problem_definition,
-                    path=node_dir,
-                    parent=parent_node,
-                    depth_from_root=parent_node.depth_from_root + 1 if parent_node else 0)
+        node = Node(
+            title=title,
+            problem_definition=problem_definition,
+            path=node_dir,
+            parent=parent_node,
+            depth_from_root=parent_node.depth_from_root + 1 if parent_node else 0,
+        )
 
         if parent_node:
             parent_node.subproblems[title] = node
@@ -232,10 +251,8 @@ class FileSystem:
     def add_external_file(self, name: str, content: str) -> None:
         """Add an external file to the file system"""
         # Create an artifact for the external file
-        artifact = Artifact(
-            name=name, content=content, is_fully_visible=True
-        )
-        
+        artifact = Artifact(name=name, content=content, is_fully_visible=True)
+
         # If root node exists, add to its external_files
         if self.root_node:
             self.root_node.external_files[name] = artifact
@@ -254,25 +271,26 @@ class FileSystem:
         except Exception as e:
             print(f"Error saving external file {filename}: {e}")
 
-
     def load_external_files(self) -> None:
         """Load external files from disk into the central dictionary"""
-        self._external_files = {} # Clear existing cache before loading
+        self._external_files = {}  # Clear existing cache before loading
 
         if self.external_files_dir.exists():
             for file_path in self.external_files_dir.iterdir():
                 if file_path.is_file():
                     try:
                         artifact = Artifact.load_from_file(file_path)
-                        artifact.is_fully_visible = True  # External files should be fully visible
+                        artifact.is_fully_visible = (
+                            True  # External files should be fully visible
+                        )
                         self._external_files[file_path.name] = artifact
                     except Exception as e:
-                         print(f"Error loading external file {file_path.name}: {e}")
+                        print(f"Error loading external file {file_path.name}: {e}")
 
     def get_external_files(self) -> Dict[str, Artifact]:
-         """Get the dictionary of loaded external files"""
-         # Consider adding a check here to reload if needed, but __init__ load should suffice for now
-         return self._external_files
+        """Get the dictionary of loaded external files"""
+        # Consider adding a check here to reload if needed, but __init__ load should suffice for now
+        return self._external_files
 
     def get_parent_chain(self, node: Node) -> List[Node]:
         """Get the parent chain including the given node"""
@@ -289,16 +307,22 @@ class FileSystem:
             return ""
 
         result = []
-        
+
         # Build the hierarchy tree recursively starting from root
         self._build_hierarchy_tree(self.root_node, result, 0, current_node)
-        
+
         return "\n".join(result)
-        
-    def _build_hierarchy_tree(self, node: Node, result: List[str], indent_level: int, current_node: Optional[Node] = None) -> None:
+
+    def _build_hierarchy_tree(
+        self,
+        node: Node,
+        result: List[str],
+        indent_level: int,
+        current_node: Optional[Node] = None,
+    ) -> None:
         """
         Recursively build the hierarchy tree in XML-like format
-        
+
         Args:
             node: The current node to process
             result: List to append formatted strings to
@@ -310,38 +334,40 @@ class FileSystem:
         criteria_met = node.get_criteria_met_count()
         criteria_total = node.get_criteria_total_count()
         node_status = node.status.value
-        
+
         # Check if this is the current node
         is_current = node == current_node
         node_title = node.title
-        
+
         # Create indentation
         indent = "  " * indent_level
-        
+
         # Start tag with attributes
         opening_tag = f'{indent}<"{node_title}" '
         opening_tag += f'status="{node_status}" '
-        opening_tag += f'criteriaProgress={criteria_met}/{criteria_total} '
-        opening_tag += f'depth={node.depth_from_root} '
-        opening_tag += f'artifacts={artifacts_count} '
-        
+        opening_tag += f"criteriaProgress={criteria_met}/{criteria_total} "
+        opening_tag += f"depth={node.depth_from_root} "
+        opening_tag += f"artifacts={artifacts_count} "
+
         if is_current:
             opening_tag += 'isCurrent="true" '
-            
+
         # Close the opening tag
         if not node.subproblems:
             # Self-closing tag if no children
-            opening_tag += '/>'
+            opening_tag += "/>"
             result.append(opening_tag)
         else:
             # Opening tag with children
-            opening_tag += '>'
+            opening_tag += ">"
             result.append(opening_tag)
-            
+
             # Process children with increased indentation
             for title, subproblem in node.subproblems.items():
-                self._build_hierarchy_tree(subproblem, result, indent_level + 1, current_node)
-                
+                self._build_hierarchy_tree(
+                    subproblem, result, indent_level + 1, current_node
+                )
+
             # Closing tag
             result.append(f'{indent}</"{node_title}">')
 
@@ -394,9 +420,9 @@ class FileSystem:
 
         # Write problem definition with front-matter
         with open(node.path / "Problem Definition.md", "w") as f:
-            content = self.frontmatter_manager.add_frontmatter(node.problem_definition, {
-                "title": node.title
-            })
+            content = self.frontmatter_manager.add_frontmatter(
+                node.problem_definition, {"title": node.title}
+            )
             f.write(content)
 
         # Write criteria (always create the file)
@@ -441,7 +467,7 @@ class FileSystem:
             full_content = f.read()
 
         metadata, content = self.frontmatter_manager.extract_frontmatter(full_content)
-        return metadata.get('title'), content
+        return metadata.get("title"), content
 
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize a filename to be valid on the filesystem"""
