@@ -15,7 +15,7 @@ class CommandParser:
         results = []
 
         # First check for syntax errors in block commands
-        syntax_errors = self._check_block_command_syntax(text)
+        blocks, syntax_errors = self._check_block_command_syntax(text)
         if syntax_errors:
             # If there are syntax errors, return only those errors
             result = ParseResult()
@@ -181,7 +181,7 @@ class CommandParser:
                 )
             )
 
-        return errors
+        return blocks, errors
 
     @staticmethod
     def _parse_command_sections(
