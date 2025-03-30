@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from .file_system import Node
 from .xml_formatter import XMLFormatter

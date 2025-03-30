@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, Generator, List
 
-from typing import Dict, Generator, List
-from hermes.message import Message
 
 
 class LLMInterface(ABC):

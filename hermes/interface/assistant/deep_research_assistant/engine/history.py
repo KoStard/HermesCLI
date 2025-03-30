@@ -33,7 +33,7 @@ class AutoReply(HistoryBlock):
         Returns:
             Formatted automatic reply string
         """
-        auto_reply = f"""
+        auto_reply = """
 # Automatic Reply
 
 If there are commands you sent in your message and they have any errors or outputs, you'll see them below.
