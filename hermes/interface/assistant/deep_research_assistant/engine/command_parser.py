@@ -23,7 +23,7 @@ class CommandParser:
             result.has_syntax_error = True
             return [result]
 
-        # Process the text line by line to identify block commands and simple commands
+        # Process the text line by line to identify block commands commands
         lines = text.split("\n")
         i = 0
         while i < len(lines):
@@ -96,65 +96,90 @@ class CommandParser:
 
     def _check_block_command_syntax(self, text: str) -> List[CommandError]:
         """Check for syntax errors in block commands"""
+        # TODO: This method should return not just errors, but the blocks that will be processed
+        # Otherwise we'll have duplicate logic
         errors = []
-
-        # Find all opening and closing tags with their line numbers
+        
         lines = text.split("\n")
-        opening_tags = []
-        closing_tags = []
-
-        for i, line in enumerate(lines):
+        latest_opening_tag_index = -1
+        latest_closing_tag_index = -1
+        blocks = []
+        duplicate_opening_tag_indices = []
+        duplicate_closing_tag_indices = []
+        unclosed_opening_tag_indices = []
+        unopened_closing_tag_indices = []
+        
+        for index, line in enumerate(lines):
             line = line.strip()
+            # TODO: Check that there are no more opening/closing symbols
             if line.startswith("<<<"):
-                # Extract command name
-                parts = line.split()
-                command = parts[1] if len(parts) > 1 else "unknown"
-                opening_tags.append((i + 1, command))
+                # There should have been a closing tag or nothing
+                # So latest_closing_tag > latest_opening_tag
+                # Otherwise multiple opening tags
+                if latest_opening_tag_index > latest_closing_tag_index:
+                    # We have a problem
+                    # Considering the previous opening one as problematic
+                    duplicate_opening_tag_indices.append(latest_opening_tag_index)
+                else:
+                    # We are good
+                    pass
+                latest_opening_tag_index = index # Picking the latest, regardless duplicate or not
             elif line.startswith(">>>"):
-                closing_tags.append(i + 1)
-
-        # Check for unbalanced tags
-        if len(opening_tags) > len(closing_tags):
-            # Missing closing tags
-            for i in range(len(closing_tags), len(opening_tags)):
-                line_num, command = opening_tags[i]
-                errors.append(
-                    CommandError(
-                        command=command,
-                        message=f"Missing closing '>>>' tag for command block starting at line {line_num}",
-                        line_number=line_num,
-                        is_syntax_error=True,
-                    )
+                # There should have been an opening tag
+                # If recent closing tag came after the latest opening tag, then we have duplicate closing tags
+                if latest_closing_tag_index > latest_opening_tag_index:
+                    # We have a problem
+                    duplicate_closing_tag_indices.append(index)
+                elif latest_opening_tag_index == -1:
+                    unopened_closing_tag_indices.append(index)
+                else:
+                    # We are good
+                    latest_closing_tag_index = index # Picking the earliest valid
+                    blocks.append((latest_opening_tag_index, latest_closing_tag_index))
+        
+        # If there is a opening tag after the latest closing tag, then we have an open block left here
+        if latest_opening_tag_index > latest_closing_tag_index:
+            unclosed_opening_tag_indices.append(latest_opening_tag_index)
+        
+        for index in duplicate_opening_tag_indices:
+            errors.append(
+                CommandError(
+                    command=lines[index],
+                    message="Duplicate opening tags. Other opening tags coming after it. This tag did not trigger a command.",
+                    line_number=index,
+                    is_syntax_error=True,
                 )
-        elif len(closing_tags) > len(opening_tags):
-            # Extra closing tags
-            for i in range(len(opening_tags), len(closing_tags)):
-                line_num = closing_tags[i]
-                errors.append(
-                    CommandError(
-                        command="unknown",
-                        message="Unexpected closing '>>>' tag without matching opening tag",
-                        line_number=line_num,
-                        is_syntax_error=True,
-                    )
+            )
+        
+        for index in duplicate_closing_tag_indices:
+            errors.append(
+                CommandError(
+                    command=lines[index],
+                    message="Duplicate closing tags. Other opening tags coming before it. This tag did not trigger a command.",
+                    line_number=index,
+                    is_syntax_error=True,
                 )
-
-        # Check for proper nesting (no overlapping blocks)
-        if len(opening_tags) == len(closing_tags) and opening_tags:
-            for i in range(len(opening_tags)):
-                if (
-                    i < len(opening_tags) - 1
-                    and closing_tags[i] > opening_tags[i + 1][0]
-                ):
-                    line_num, command = opening_tags[i]
-                    errors.append(
-                        CommandError(
-                            command=command,
-                            message=f"Overlapping command blocks. Block starting at line {line_num} must be closed before starting a new block",
-                            line_number=line_num,
-                            is_syntax_error=True,
-                        )
-                    )
+            )
+        
+        for index in unclosed_opening_tag_indices:
+            errors.append(
+                CommandError(
+                    command=lines[index],
+                    message="This command tag was never closed in the message. This tag did not trigger a command.",
+                    line_number=index,
+                    is_syntax_error=True,
+                )
+            )
+        
+        for index in unopened_closing_tag_indices:
+            errors.append(
+                CommandError(
+                    command=lines[index],
+                    message="This command tag does not have corresponding opening tag coming before it. This tag did not trigger a command.",
+                    line_number=index,
+                    is_syntax_error=True,
+                )
+            )
 
         return errors
 
