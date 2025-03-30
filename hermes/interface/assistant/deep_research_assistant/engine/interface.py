@@ -1,12 +1,14 @@
+import textwrap
 from typing import List, Optional, Tuple
 
 from .command import CommandRegistry
-from typing import Dict # Import Dict
-from .command import CommandRegistry, CommandType # Import CommandType
-from .file_system import FileSystem, Node, Artifact
-from .commands import DefineCommand  # registers the commands
+from .file_system import FileSystem, Node
+from .commands import register_predefined_commands
 from .hierarchy_formatter import HierarchyFormatter
 from .content_truncator import ContentTruncator # Import ContentTruncator
+
+
+register_predefined_commands()
 
 
 class DeepResearcherInterface:
@@ -98,7 +100,7 @@ Content of the problem definition.
         command_help = self._generate_command_help()
         
         # Check if the current node is too deep and add a warning if needed
-#
+
         depth_warning = ""
         if self.file_system.is_node_too_deep(target_node, 3):
             depth_warning = f"""
@@ -311,25 +313,34 @@ Remember, we work backwards from the root problem.
 
         # Format external files
         if external_files:
-            result += "<external_files_intro>\n"
-            result += "These are external files provided by the user at the start of this research. "
-            result += "They contain important context for the problem and are always fully available.\n"
-            result += "</external_files_intro>\n\n"
+            result += textwrap.dedent(
+                """<external_files_intro>
+                These are external files provided by the user at the start of this research. They contain important context for the problem and are always fully available.
+                </external_files_intro>
+                
+                """)
 
             for name, artifact in sorted(external_files.items()):
-                result += f'<artifact name="{name}" type="external_file">\n'
-                result += f"---\n"
-                result += f"type: External File\n"
-                result += f"---\n\n"
-                result += f"{artifact.content}\n" # External files are always fully visible
-                result += "</artifact>\n"
+                result += textwrap.dedent(f"""<artifact name="{name}" type="external_file">
+                ---
+                type: External File
+                ---
+                {artifact.content}
+                </artifact>
+                """)
 
             # Add separator if we also have node artifacts
             if node_artifacts:
-                result += "\n<separator>---------------------</separator>\n\n"
-                result += "<node_artifacts_intro>\n"
-                result += "These are artifacts created during the research process within specific problems.\n"
-                result += "</node_artifacts_intro>\n\n"
+                result += textwrap.dedent(
+                    """
+                    <separator>---------------------</separator>
+                    
+                    <node_artifacts_intro>
+                    These are artifacts created during the research process within specific problems.
+                    </node_artifacts_intro>
+                    
+                    """
+                )
 
 
         # Format node-specific artifacts if not external_only
@@ -337,21 +348,21 @@ Remember, we work backwards from the root problem.
             # Sort artifacts by owner then name for consistent display
             node_artifacts.sort(key=lambda x: (x[0], x[1]))
             for owner_title, name, content, is_fully_visible in node_artifacts:
-                # Use the artifact name directly (without extension)
-                result += f'<artifact name="{name}">\n'
-                result += f"---\n"
-                result += f"owner: {owner_title}\n" # Simplified owner info
-                result += f"---\n\n"
-
-                # Show full content or truncated preview
                 if is_fully_visible:
-                    result += f"{content}\n"
+                    shown_content = content
                 else:
                     # Use ContentTruncator for preview
                     truncated_content = ContentTruncator.truncate(content, 500, "Use 'open_artifact' command to view full content.") # Truncate to 500 chars
-                    result += f"{truncated_content}\n"
-
-                result += "</artifact>\n"
+                    shown_content += truncated_content
+                result += textwrap.dedent(
+                    f"""<artifact name="{name}">
+                    ---
+                    owner: {owner_title}
+                    ---
+                    
+                    {shown_content}
+                    </artifact>
+                    """)
 
         result += "</artifacts>"
         return result.strip()

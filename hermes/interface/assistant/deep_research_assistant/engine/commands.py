@@ -455,3 +455,8 @@ class ThinkCommand(Command):
         """This is a dummy command that doesn't trigger any actions"""
         # This command doesn't do anything, it's just a place for the assistant to think
         pass
+
+
+def register_predefined_commands():
+    # Dummy command
+    pass
