@@ -1,5 +1,5 @@
 import textwrap
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 from .command import CommandRegistry
 from .file_system import FileSystem, Node
@@ -21,9 +21,15 @@ class DeepResearcherInterface:
         self.file_system = file_system
         self.hierarchy_formatter = HierarchyFormatter()
 
-    def render_no_problem_defined(self, instruction) -> Tuple[str, str]:
-        """Render the interface when no problem is defined"""
-
+    def render_no_problem_defined(self, instruction) -> Tuple[str, List[str]]:
+        """
+        Render the interface when no problem is defined
+        
+        Returns:
+            A tuple containing:
+            - static_content (str): Fixed interface content that doesn't change
+            - dynamic_sections (List[str]): List of interface sections that may change, with consistent indices
+        """
         # Get external files using the new centralized method
         artifacts_section = self._format_artifacts_section(external_only=True)
 
@@ -32,6 +38,16 @@ class DeepResearcherInterface:
 ## Introduction
 
 This interface helps you conduct thorough research by breaking down complex problems into manageable subproblems.
+
+### Interface Structure
+The interface has two main parts:
+1. **Static Section** - Basic instructions and commands that don't change
+2. **Dynamic Sections** - Data that updates as you work on the problem
+
+When you first join a problem, you'll receive all sections of the interface. After that, in each automatic reply, 
+you'll only receive the dynamic sections that have changed since your last message. This keeps the interface efficient 
+and focused on what's new or different. If a section isn't included in an automatic reply, it means that section 
+hasn't changed.
 
 If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Please check this section if your commands don't seem to be working as expected.
 
@@ -53,18 +69,27 @@ Any context provided to you in the context section will be permanent and accessi
 Please note that only one problem definition is allowed. Problem definition is the only action you should take at this point and finish the response message.
 
 Make sure to include closing tags for command blocks, otherwise it will break the parsing and cause syntax errors.
+"""
 
-======================
+        # Create dynamic sections list
+        dynamic_sections = [
+            # Section 0: Header
+            """# Dynamic Section for Problem Definition""",
+            
+            # Section 1: Artifacts
+            f"""======================
 # Artifacts (External Files Only)
-{artifacts_section}
-
-======================
+{artifacts_section}""",
+            
+            # Section 2: Instruction
+            f"""======================
 # Instruction
 Notice: The assistants working on the created problem won't see anymore this instruction. Make sure to include all the important details in the problem definition.
 
-{instruction}
-
-======================
+{instruction}""",
+            
+            # Section 3: How to define
+            """======================
 # How to define a problem
 Define the problem using this command:
 ```
@@ -75,12 +100,31 @@ title goes here
 Content of the problem definition.
 >>>
 ```"""
-        return static_content, ""
+        ]
+
+        return static_content, dynamic_sections
 
     def render_problem_defined(
         self, target_node: Node, permanent_logs: List[str]
-    ) -> Tuple[str, str]:
-        """Render the interface when a problem is defined"""
+    ) -> Tuple[str, List[str]]:
+        """
+        Render the interface when a problem is defined
+        
+        Returns:
+            A tuple containing:
+            - static_content (str): Fixed interface content that doesn't change
+            - dynamic_sections (List[str]): List of interface sections that may change, with consistent indices
+              
+              The sections are ordered as follows:
+              0. Header
+              1. Permanent Logs
+              2. Artifacts
+              3. Problem Hierarchy
+              4. Criteria
+              5. Subproblems
+              6. Problem Path Hierarchy
+              7. Goal
+        """
         # Format all artifacts (external and node-specific)
         artifacts_section = self._format_artifacts_section(
             external_only=False, current_node=target_node
@@ -106,7 +150,6 @@ Content of the problem definition.
         command_help = self._generate_command_help()
 
         # Check if the current node is too deep and add a warning if needed
-
         depth_warning = ""
         if self.file_system.is_node_too_deep(target_node, 3):
             depth_warning = f"""
@@ -129,6 +172,16 @@ Excessive depth makes the problem hierarchy difficult to manage and can lead to 
 You, as well as your team, are working on the provided problems.
 Each of you have a version of this device in front of you.
 It's a special interface allowing you to do many things that are necessary to finish the task.
+
+### Interface Structure
+The interface has two main parts:
+1. **Static Section** - Basic instructions and commands that don't change
+2. **Dynamic Sections** - Data that updates as you work on the problem
+
+When you first join a problem, you'll receive all sections of the interface. After that, in each automatic reply, 
+you'll only receive the sections that have changed since your last message. This keeps the interface efficient 
+and focused on what's new or different. If a section isn't included in an automatic reply, it means that section 
+hasn't changed.
 
 ### External Files
 The system may contain external files provided by the user at the beginning of the research. These are shown in the artifacts section with special "External File" designation. These files contain important context for your work and are always fully visible. They are stored centrally and accessible from any problem in the hierarchy.
@@ -261,44 +314,55 @@ Title: "{target_node.title}"
 {target_node.problem_definition}
 
 """
-        dynamic_content = f"""
-# Deep Research Interface (Dynamic Section)
-Here goes the dynamic section of the interface. This is a special section which is visible only in the last message you see.
-The interface will be automatically refreshed with every message and you'll see the most up to date information. This is your source of truth for the changing information. The interface will be in the last message you receive and to be frugal with the length of the history and to prevent confusion, will be redacted from the previous messages.
-
-======================
+        # Create a list of dynamic sections instead of a dictionary
+        dynamic_sections = [
+            # Section 0: Header
+            """# Deep Research Interface (Dynamic Section)
+Here goes the dynamic section of the interface. This contains key information that changes as you work.
+When you first join a problem, you'll see all sections. After that, you'll only receive the sections 
+that have changed since your last message.""",
+            
+            # Section 1: Permanent Logs
+            f"""======================
 # Permanent Logs
-{permanent_log_section}
-
-======================
+{permanent_log_section}""",
+            
+            # Section 2: Artifacts
+            f"""======================
 # Artifacts (All Problems)
 
-{artifacts_section}
-
-======================
+{artifacts_section}""",
+            
+            # Section 3: Problem Hierarchy
+            f"""======================
 ## Problem Hierarchy (short)
 Notice: The problem hierarchy includes all the problems in the system and their hierarchical relationship, with some metadata. 
 The current problem is marked with isCurrent="true".
 
-{problem_hierarchy}
-
-## Criteria of Definition of Done
-{criteria_section}
-
-## Subproblems of the current problem
-{subproblems_sections}
-
-## Problem Path Hierarchy (from root to current)
-{problem_path_hierarchy_section}
-
-## Goal
+{problem_hierarchy}""",
+            
+            # Section 4: Criteria
+            f"""## Criteria of Definition of Done
+{criteria_section}""",
+            
+            # Section 5: Subproblems
+            f"""## Subproblems of the current problem
+{subproblems_sections}""",
+            
+            # Section 6: Problem Path Hierarchy
+            f"""## Problem Path Hierarchy (from root to current)
+{problem_path_hierarchy_section}""",
+            
+            # Section 7: Goal
+            """## Goal
 Ask yourself, what does the user want?
-Your fundamental goal is to helo/solve the root problem through solving the your assigned problem. Stay frugal, don't focus on the unnecessary details that won't benefit the root problem. But don't sacrifice on quality. If you find yourself working on something that's not worth the effort, mark as done and write it in the report.
+Your fundamental goal is to help/solve the root problem through solving your assigned problem. Stay frugal, don't focus on the unnecessary details that won't benefit the root problem. But don't sacrifice on quality. If you find yourself working on something that's not worth the effort, mark as done and write it in the report.
 Remember, we work backwards from the root problem.
 
-# So, what's your message to the engine?
-"""
-        return static_content, dynamic_content
+# So, what's your message to the engine?"""
+        ]
+        
+        return static_content, dynamic_sections
 
     def _format_artifacts_section(
         self, external_only: bool, current_node: Optional[Node] = None
@@ -368,7 +432,7 @@ Remember, we work backwards from the root problem.
                         500,
                         "Use 'open_artifact' command to view full content.",
                     )  # Truncate to 500 chars
-                    shown_content += truncated_content
+                    shown_content = truncated_content
                 result += textwrap.dedent(
                     f"""<artifact name="{name}">
                     ---

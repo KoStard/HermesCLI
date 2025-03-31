@@ -44,13 +44,11 @@ class CommandParser:
         # First check for syntax errors in block commands
         blocks, syntax_errors = self._check_block_command_syntax(text)
         if syntax_errors:
-            # TODO: Run the commands that are expected to be correct
-            # If there are syntax errors, return only those errors
             # TODO: Find a better way to represent syntax errors
             result = ParseResult()
             result.errors = syntax_errors
             result.has_syntax_error = True
-            return [result]
+            results.append(result)
 
         for block in blocks:
             block_start_line_index = block[0]
@@ -101,7 +99,7 @@ class CommandParser:
         
         return results
 
-    def _check_block_command_syntax(self, text: str) -> Tuple[List[str], List[CommandError]]:
+    def _check_block_command_syntax(self, text: str) -> Tuple[Tuple[int, List[str]], List[CommandError]]:
         """Check for syntax errors in block commands"""
         # TODO: This method should return not just errors, but the blocks that will be processed
         # Otherwise we'll have duplicate logic
@@ -246,22 +244,8 @@ class CommandParser:
             report += f"Command: {error.command}{line_info}\n"
             report += f"Message: {error.message}\n\n"
 
-        # Add information about which commands have syntax errors
-        # Use a list of tuples with (command_name, line_number) to distinguish between multiple instances
-        commands_with_syntax_errors = [
-            (
-                result.command_name,
-                result.errors[0].line_number if result.errors else None,
-            )
-            for result in parse_results
-            if result.has_syntax_error
-        ]
-        if commands_with_syntax_errors:
-            report += "Commands with syntax errors that will not be executed:\n"
-            for cmd, line_num in commands_with_syntax_errors:
-                line_info = f" at line {line_num}" if line_num else ""
-                report += f"- {cmd}{line_info}\n"
-            report += "\nOther valid commands will still be executed.\n"
+        report += "Commands with syntax errors that will not be executed.\n"
+        report += "Other valid commands will still be executed.\n"
 
         return report
 

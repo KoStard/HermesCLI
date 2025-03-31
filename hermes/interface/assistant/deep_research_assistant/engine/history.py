@@ -26,17 +26,20 @@ class AutoReply(HistoryBlock):
         command_outputs: List[Tuple[str, dict]],
         messages: List[Tuple[str, str]],
         confirmation_request: Optional[str] = None,
+        dynamic_sections: Optional[List[Tuple[int, str]]] = None,
     ):
         self.error_report = error_report
         self.command_outputs = command_outputs
         self.messages = messages
         self.confirmation_request = confirmation_request
+        self.dynamic_sections = dynamic_sections or []
 
     def generate_auto_reply(self, per_command_output_maximum_length: int = None) -> str:
         """
         Generate an automatic reply based on command execution results
 
         Args:
+            per_command_output_maximum_length: Optional maximum length for command outputs
 
         Returns:
             Formatted automatic reply string
@@ -85,6 +88,14 @@ If you don't see a command report, then no commands were executed!
             for message, origin_node_title in self.messages:
                 auto_reply += f"\n#### From: {origin_node_title}\n```\n{message}\n```\n"
 
+        # Add any changed dynamic sections
+        if self.dynamic_sections:
+            auto_reply += "\n\n### Updated Interface Sections\n"
+            auto_reply += "\nThe following interface sections have been updated:\n"
+            
+            for section_index, content in self.dynamic_sections:
+                auto_reply += f"\n{content}\n"
+
         return auto_reply
 
 
@@ -94,6 +105,8 @@ class AutoReplyAggregator:
         self.command_outputs = []
         self.internal_messages = []
         self.confirmation_requests = []
+        self.dynamic_sections = []
+        self.last_dynamic_sections = []
 
     def add_error_report(self, error_report: str):
         self.error_reports.append(error_report)
@@ -107,11 +120,38 @@ class AutoReplyAggregator:
     def add_internal_message_from(self, message: str, origin_node_title: str):
         self.internal_messages.append((message, origin_node_title))
 
+    def update_dynamic_sections(self, new_sections: List[str]):
+        """
+        Update tracked dynamic sections, identifying which ones have changed
+        
+        Args:
+            new_sections: List of all current dynamic sections
+        """
+        changed_section_indices = []
+        
+        # Initialize last_dynamic_sections if empty
+        if not self.last_dynamic_sections and new_sections:
+            # If the last dynamic sections has not been initialized, not considering anything changed
+            self.last_dynamic_sections = new_sections.copy()
+        
+        # Compare new sections with last known sections to find changes
+        for i, content in enumerate(new_sections):
+            if (i >= len(self.last_dynamic_sections) or 
+                self.last_dynamic_sections[i] != content):
+                changed_section_indices.append(i)
+        
+        # Store the changed sections to include in the next auto-reply
+        self.dynamic_sections = [(i, new_sections[i]) for i in changed_section_indices]
+        
+        # Update last known state for all sections
+        self.last_dynamic_sections = new_sections.copy()
+
     def clear(self):
         self.error_reports = []
         self.command_outputs = []
         self.internal_messages = []
         self.confirmation_requests = []
+        self.dynamic_sections = []  # Keep last_dynamic_sections for comparison
 
     def is_empty(self):
         return (
@@ -119,6 +159,7 @@ class AutoReplyAggregator:
             and not self.command_outputs
             and not self.internal_messages
             and not self.confirmation_requests
+            and not self.dynamic_sections
         )
 
     def compile_and_clear(self) -> AutoReply:
@@ -133,6 +174,7 @@ class AutoReplyAggregator:
             self.command_outputs,
             self.internal_messages,
             confirmation_request,
+            self.dynamic_sections,
         )
         self.clear()
         return auto_reply
