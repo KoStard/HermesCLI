@@ -204,7 +204,10 @@ All of you are pragmatic, yet have strong ownership. You make sure you solve as 
 
 This interface helps you conduct thorough research by providing you with the necessary tools to collect information or to create subproblems assigned to your teammates.
 
-You use a keyboard and a screen. It's a text-only chat-like interface. You write a multiline multi-command message, send it, receive the results based on your commands, then repeat. While you are writing, nothing happens. The command outputs are included in as "user response".
+You use a keyboard and a screen. It's a text-only chat-like interface. You write a multiline multi-command message, send it, receive the results based on your commands, then repeat. While you are writing, nothing happens. The command outputs are included as automatic "user response".
+
+Notice that the commands execution is different from regular web-based interfaces, where you'll see immediate response for your actions.
+Here you reply with a long message, and after you send it, the commands will be extracted and executed. Then you'll receive the response for all commands at once.
 
 Everything you write is included in the message. Then you finish the message, it's processed and you receive a response.
 
