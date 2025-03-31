@@ -65,7 +65,6 @@ class CommandContext:
     def add_to_permanent_log(self, content: str) -> None:
         """Add content to the permanent log"""
         if content:
-            self._permanent_log.append(content)
             # Update engine if available
             self._engine.permanent_log.append(content)
 
