@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -345,7 +346,7 @@ class DeepResearchEngine:
         if not self.is_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
 
-        initial_interface_content = None
+        initial_interface_content_by_node = defaultdict()
 
         while not self.finished:
             # Get the interface content - now returns static content and a list of dynamic sections
@@ -355,8 +356,8 @@ class DeepResearchEngine:
                 )
             )
 
-            if not initial_interface_content:
-                initial_interface_content = "\n\n".join([
+            if self._current_history_tag not in initial_interface_content_by_node or not initial_interface_content_by_node[self._current_history_tag]:
+                initial_interface_content_by_node[self._current_history_tag] = "\n\n".join([
                     static_interface_content,
                     *dynamic_sections
                 ])
@@ -419,7 +420,7 @@ class DeepResearchEngine:
 
             # Generate the request
             request = self.llm_interface.generate_request(
-                initial_interface_content,
+                initial_interface_content_by_node[self._current_history_tag],
                 history_messages,
                 current_node_path,
             )
