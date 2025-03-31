@@ -28,8 +28,7 @@ class ChatModelLLMInterface(LLMInterface):
 
     def generate_request(
         self,
-        static_help_interface: str,
-        dynamic_interface: str,
+        help_interface: str,
         history_messages: List[dict],
         node_path: Path,
     ) -> Dict:
@@ -39,18 +38,15 @@ class ChatModelLLMInterface(LLMInterface):
         logging_history = list(history_messages)
 
         # Convert history messages to TextMessage objects
-        rendered_messages = [TextMessage(author="user", text=static_help_interface)]
-        logging_history.insert(0, {"author": "user", "content": static_help_interface})
+        # First the static interface
+        rendered_messages = [TextMessage(author="user", text=help_interface)]
+        logging_history.insert(0, {"author": "user", "content": help_interface})
 
         # Add history messages
         for message in history_messages:
             rendered_messages.append(
                 TextMessage(author=message["author"], text=message["content"])
             )
-
-        if dynamic_interface:
-            rendered_messages.append(TextMessage(author="user", text=dynamic_interface))
-            logging_history.append({"author": "user", "content": dynamic_interface})
 
         # Build and return the request
         request = request_builder.build_request(rendered_messages)

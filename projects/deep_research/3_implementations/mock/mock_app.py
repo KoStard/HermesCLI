@@ -1,4 +1,3 @@
-import os
 from typing import List
 
 from hermes.extensions_loader import load_extensions
@@ -25,11 +24,12 @@ class DeepResearchMockApp:
 
         # Initialize the engine with the mock LLM interface and extensions
         self.engine = DeepResearchEngine(
-            instruction,
             root_dir,
             self.llm_interface,
             deep_research_commands,
         )
+
+        self.instruction = instruction
 
     def start(self):
         """Start the mock application"""
@@ -52,6 +52,11 @@ class DeepResearchMockApp:
 
         print("\nPress Enter to continue...")
         input()
+
+        if not self.engine.is_root_problem_defined():
+            success = self.engine.define_root_problem(self.instruction)
+            if not success:
+                raise ValueError("Failed to define root problem")
 
         # Execute the engine, which will use the mock LLM interface
         final_report = self.engine.execute()

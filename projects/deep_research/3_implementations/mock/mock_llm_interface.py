@@ -18,8 +18,7 @@ class MockLLMInterface(LLMInterface):
 
     def generate_request(
         self,
-        static_help_interface: str,
-        dynamic_interface: str,
+        help_interface: str,
         history_messages: List[dict],
         current_node_path,
     ) -> Dict:
@@ -27,8 +26,7 @@ class MockLLMInterface(LLMInterface):
         Generate a request for the LLM based on the rendered interface and history
 
         Args:
-            rendered_interface: The rendered interface content as a string
-            history_messages: List of message dictionaries with author and content
+            help_interface: The rendered interface content as a string
 
         Returns:
             Dict: The request object to send to the LLM
@@ -36,7 +34,7 @@ class MockLLMInterface(LLMInterface):
         # For the mock, we just need to pass the rendered interface and history
 
         return {
-            "interface": static_help_interface + "\n" + dynamic_interface,
+            "interface": help_interface,
             "history": history_messages,
         }
 
@@ -75,7 +73,7 @@ class MockLLMInterface(LLMInterface):
 
         print("\n" + "=" * 100)
         print(
-            "ENTER YOUR RESPONSE AS THE AI ASSISTANT (type 'END_RESPONSE' on a new line when finished):"
+            "ENTER YOUR RESPONSE AS THE AI ASSISTANT (type END_RESPONSE on a new line when finished):"
         )
         print("=" * 100 + "\n")
 

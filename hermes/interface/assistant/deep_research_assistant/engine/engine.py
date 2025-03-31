@@ -50,13 +50,6 @@ class _CommandProcessor:
         self._add_assistant_message_to_history(text)
 
         parse_results = self._parse_and_validate_commands(text)
-        if not parse_results:  # Handle case where only syntax errors occurred
-            self._update_auto_reply()  # Ensure syntax errors are reported
-            return (
-                self.commands_executed,
-                self.final_error_report,
-                self.execution_status,
-            )
 
         self._execute_commands(parse_results)
         self._generate_final_report()
@@ -71,24 +64,20 @@ class _CommandProcessor:
             return True
         return False
 
+    @property
+    def _current_history_tag(self):
+        if self.current_node:
+            return self.current_node.title
+        else:
+            return "no_node"
+
     def _add_assistant_message_to_history(self, text: str):
         """Add the assistant's message to history for the current node."""
-        if self.current_node:
-            self.chat_history.add_message("assistant", text, self.current_node.title)
+        self.chat_history.add_message("assistant", text, self._current_history_tag)
 
     def _parse_and_validate_commands(self, text: str) -> List[ParseResult]:
         """Parse commands, handle syntax errors, and perform initial validation."""
         parse_results = self.command_parser.parse_text(text)
-
-        # Check for syntax errors reported by the parser
-        has_syntax_errors = any(result.has_syntax_error for result in parse_results)
-        if has_syntax_errors:
-            # If syntax errors exist, the parser returns a single result with these errors
-            self._parsing_error_report = self.command_parser.generate_error_report(
-                parse_results
-            )
-            # No further execution needed if there are syntax errors
-            return []  # Return empty list to signal stop
 
         # Generate report for any non-syntax parsing errors (e.g., missing sections)
         self._parsing_error_report = self.command_parser.generate_error_report(
@@ -107,15 +96,7 @@ class _CommandProcessor:
         for i, result in enumerate(parse_results):
             # Skip execution if the command itself had parsing errors (e.g., missing required section)
             if result.errors:
-                # Mark as failed due to validation errors found during parsing
-                cmd_key = f"{result.command_name}_{i}"
-                failed_info = {
-                    "name": result.command_name,
-                    "status": "failed: validation errors during parsing",
-                    "line": result.errors[0].line_number if result.errors else None,
-                }
-                self.execution_status[cmd_key] = failed_info
-                self._execution_failed_commands.append(failed_info)
+                # Skipped commands that failed parsing or validation
                 continue
 
             # Skip execution if a previous command required being last
@@ -252,11 +233,8 @@ class _CommandProcessor:
 
     def _update_auto_reply(self):
         """Add error reports and confirmation requests to the auto-reply aggregator."""
-        if not self.current_node:
-            return
-
         auto_reply_generator = self.chat_history.get_auto_reply_aggregator(
-            self.current_node.title
+            self._current_history_tag
         )
 
         # Add confirmation request if finish/fail was skipped
@@ -343,23 +321,76 @@ class DeepResearchEngine:
         if not self.llm_interface:
             raise ValueError("LLM interface is required for execution")
 
+        initial_interface_content = None
+
         # Run until a problem is defined
         while True:
             # Get the interface content
-            static_interface_content, dynamic_interface_content = (
+            static_interface_content, dynamic_sections = (
                 self.interface.render_no_problem_defined(instruction)
             )
 
+            if not initial_interface_content:
+                initial_interface_content = "\n\n".join([
+                    static_interface_content,
+                    *dynamic_sections
+                ])
+
+            # Update auto reply aggregator with the new dynamic sections
+            current_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+                self._current_history_tag
+            )
+            current_auto_reply_aggregator.update_dynamic_sections(dynamic_sections)
+
             # Convert history messages to dict format for the LLM interface
             history_messages = []
+
+            auto_reply_counter = 0
+            auto_reply_max_length = None
+
+            current_auto_reply = self.chat_history.commit_and_get_auto_reply(
+                self._current_history_tag
+            )
+
+            if current_auto_reply:
+                print(current_auto_reply.generate_auto_reply())
+
+            for block in self.chat_history.get_compiled_blocks(
+                    self._current_history_tag
+            )[::-1]:  # Reverse to handle auto reply contraction
+                if isinstance(block, ChatMessage):
+                    history_messages.append(
+                        {"author": block.author, "content": block.content}
+                    )
+                elif isinstance(block, AutoReply):
+                    auto_reply_counter += 1
+
+                    if auto_reply_counter > 1:
+                        if not auto_reply_max_length:
+                            auto_reply_max_length = 5_000
+                        else:
+                            auto_reply_max_length = max(
+                                auto_reply_max_length // 2, 300
+                            )
+                    history_messages.append(
+                        {
+                            "author": "user",
+                            "content": block.generate_auto_reply(
+                                auto_reply_max_length
+                            ),
+                        }
+                    )
+
+            history_messages = history_messages[
+               ::-1
+               ]  # Reverse to maintain chronological order
 
             # Get the current node path for logging
             current_node_path = self.file_system.root_dir
 
             # Generate the request
             request = self.llm_interface.generate_request(
-                static_interface_content,
-                dynamic_interface_content,
+                initial_interface_content,
                 history_messages,
                 current_node_path,
             )
@@ -399,13 +430,27 @@ class DeepResearchEngine:
         if not self.is_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
 
+        initial_interface_content = None
+
         while not self.finished:
-            # Get the interface content
-            static_interface_content, dynamic_interface_content = (
+            # Get the interface content - now returns static content and a list of dynamic sections
+            static_interface_content, dynamic_sections = (
                 self.interface.render_problem_defined(
                     self.current_node, self.permanent_log
                 )
             )
+
+            if not initial_interface_content:
+                initial_interface_content = "\n\n".join([
+                    static_interface_content,
+                    *dynamic_sections
+                ])
+            
+            # Update auto reply aggregator with the new dynamic sections
+            current_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+                self._current_history_tag
+            )
+            current_auto_reply_aggregator.update_dynamic_sections(dynamic_sections)
 
             # Convert history messages to dict format for the LLM interface
             history_messages = []
@@ -413,39 +458,38 @@ class DeepResearchEngine:
             auto_reply_counter = 0
             auto_reply_max_length = None
 
-            if self.current_node:
-                current_auto_reply = self.chat_history.commit_and_get_auto_reply(
-                    self.current_node.title
-                )
+            current_auto_reply = self.chat_history.commit_and_get_auto_reply(
+                self._current_history_tag
+            )
 
-                if current_auto_reply:
-                    print(current_auto_reply.generate_auto_reply())
+            if current_auto_reply:
+                print(current_auto_reply.generate_auto_reply())
 
-                for block in self.chat_history.get_compiled_blocks(
-                    self.current_node.title
-                )[::-1]:  # Reverse to handle auto reply contraction
-                    if isinstance(block, ChatMessage):
-                        history_messages.append(
-                            {"author": block.author, "content": block.content}
-                        )
-                    elif isinstance(block, AutoReply):
-                        auto_reply_counter += 1
+            for block in self.chat_history.get_compiled_blocks(
+                self._current_history_tag
+            )[::-1]:  # Reverse to handle auto reply contraction
+                if isinstance(block, ChatMessage):
+                    history_messages.append(
+                        {"author": block.author, "content": block.content}
+                    )
+                elif isinstance(block, AutoReply):
+                    auto_reply_counter += 1
 
-                        if auto_reply_counter > 1:
-                            if not auto_reply_max_length:
-                                auto_reply_max_length = 5_000
-                            else:
-                                auto_reply_max_length = max(
-                                    auto_reply_max_length // 2, 300
-                                )
-                        history_messages.append(
-                            {
-                                "author": "user",
-                                "content": block.generate_auto_reply(
-                                    auto_reply_max_length
-                                ),
-                            }
-                        )
+                    if auto_reply_counter > 1:
+                        if not auto_reply_max_length:
+                            auto_reply_max_length = 5_000
+                        else:
+                            auto_reply_max_length = max(
+                                auto_reply_max_length // 2, 300
+                            )
+                    history_messages.append(
+                        {
+                            "author": "user",
+                            "content": block.generate_auto_reply(
+                                auto_reply_max_length
+                            ),
+                        }
+                    )
 
             history_messages = history_messages[
                 ::-1
@@ -460,8 +504,7 @@ class DeepResearchEngine:
 
             # Generate the request
             request = self.llm_interface.generate_request(
-                static_interface_content,
-                dynamic_interface_content,
+                initial_interface_content,
                 history_messages,
                 current_node_path,
             )
@@ -536,6 +579,13 @@ class DeepResearchEngine:
         """
         processor = _CommandProcessor(self)
         return processor.process(text)
+
+    @property
+    def _current_history_tag(self):
+        if self.current_node:
+            return self.current_node.title
+        else:
+            return "no_node"
 
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
