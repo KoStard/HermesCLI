@@ -54,6 +54,7 @@ class CommandParser:
             block_start_line_index = block[0]
             block_lines = block[1]
             opening_line = block_lines[0]
+            command_content = block_lines[1:-1]
             block_match = re.match(r"<<<\s*(\w+)", opening_line)
             command_name = block_match.group(1)
             
@@ -63,7 +64,7 @@ class CommandParser:
             command = self.registry.get_command(command_name)
             if command:
                 args, errors = self._parse_command_sections(
-                    "\n".join(block_lines),
+                    "\n".join(command_content),
                     block_start_line_index + 1,
                     command.get_required_sections(),
                     command_name,
