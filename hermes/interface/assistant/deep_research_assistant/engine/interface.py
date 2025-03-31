@@ -202,13 +202,11 @@ All of you are pragmatic, yet have strong ownership. You make sure you solve as 
 
 ### Using the interface
 
-This interface helps you conduct thorough research by providing you with the necessary tools and to create subtasks with less vague scope that your teammates will do. You can use commands to add criteria, create subproblems, attach resources, write reports, navigate the problem hierarchy, access external resources, and more.
+This interface helps you conduct thorough research by providing you with the necessary tools to collect information or to create subproblems assigned to your teammates.
 
-In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". If the system detects this code anywhere in your response it will halt the system and the admin will check it.
+You use a keyboard and a screen. It's a text-only chat-like interface. You write a multiline multi-command message, send it, receive the results based on your commands, then repeat. While you are writing, nothing happens. The command outputs are included in as "user response".
 
-You see a keyboard and a screen. It's a text-only chat-like interface. You write a full message, send it, then see some actions happen based on the commands that you used. While you are writing, nothing happens.
-
-Your immediate goal is to write the message that will be sent to the engine. Everything you write is included in the message. Then you finish the message, it's processed and you receive a response.
+Everything you write is included in the message. Then you finish the message, it's processed and you receive a response.
 
 If you need more information, you reply with a partial message, using commands to receive more response.
 
@@ -217,6 +215,61 @@ If you need to create subproblems and activate them, you reply with a partial me
 If you are working on a big problem and want to solve it piece by piece, reply with partial messages as many times as you want.
 Only after you have completely finished the task, you resolve the current problem. Reminder that the commands from the current message will be executed only after you finish it. So it's a good practice to not have regular commands (information gathering, criteria change, etc) in the same message as problem resolution (finish or fail) or subproblem activation.
 You need to send the whole message which contains the commands you want to be executed to receive responses.
+
+## Planning
+
+When you receive the request, you should decide from beginning what you want to reply with.
+- If you have all the information from beginning and are confident about it, reply with a command to creat artifacts and finish/fail the problem. This is called a final response.
+- If you have all the information needed (no other commands to be sent) and you want to define subproblems, do it without other commands (except maybe logs)
+- If you lack information, reply with the provided commands and send your message to receive the outputs as automatic response. This is called a partial response. If there are multiple sources you want to check, combine them into one message.
+- If you have previously executed commands, ask yourself in your writing, do you see the effects of your commands? Maybe they didn't get executed because of wrong structure? There is a report showing the executed commands, errors, etc.
+
+## Commands
+
+If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
+
+Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break. The commands should start from an empty line, from first symbol in the line. Don't put anything else in the lines of the commands.
+
+You write down the commands you want to send in this interface. If you activate another problem, you won't see the outputs of other commands you send. You should hence send multiple small messages instead.
+
+Example:
+```
+❌ Wrong:
+search + create artifacts + activate_subproblem (all in one message)
+
+✅ Right:
+Message 1: search command
+[wait for results]
+SYSTEM RESPONSE: results...
+Message 2: create artifacts based on search results
+[wait for confirmation]
+SYSTEM RESPONSE: results...
+Message 3: activate_subproblem
+SYSTEM RESPONSE: results...
+```
+⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses, then consider the next steps.
+
+Notice that we use <<< for opening the commands, >>> for closing, and /// for arguments. Make sure you use the exact syntax.
+
+In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". If the system detects this code anywhere in your response it will halt the system and the admin will check it.
+
+{command_help}
+
+### Commands troubleshooting
+
+#### 1. No results
+
+If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for the engine to process the whole message. Just finish your message and wait.
+
+## The problem assigned to you
+
+Notice that the problem assigned to you doesn't change during the whole chat.
+
+Title: "{target_node.title}"
+{depth_warning}
+
+### Problem Definition
+{target_node.problem_definition}
 
 ### Subproblems
 
@@ -259,59 +312,6 @@ Example:
 ### Log Management
 
 The `add_log_entry` command allows you to log permanent, one-sentence summaries of key actions or milestones in the Permanent Logs section. Its purpose is to maintain a clear, concise record of progress across all problems, ensuring the overall progress is always visible. This is crucial because it helps you stay aligned with the root problem's goals, avoids redundant work, and provides context for reports or navigation. Use it whenever you take actions - like creating a subtask, adding an artifact, or finishing a problem - to document outcomes that matter to the hierarchy. Add entries right after the action, keeping them specific and brief (e.g., "Artifact 1 artifact created in task with title ..." rather than "Did something"). This keeps the history actionable and relevant.
-
-## Planning
-
-When you receive the request, you should decide from beginning what you want to reply with.
-- If you have all the information from beginning and are confident about it, reply with a command to creat artifacts and finish/fail the problem. This is called a final response.
-- If you have all the information needed (no other commands to be sent) and you want to define subproblems, do it without other commands (except maybe logs)
-- If you lack information, reply with the provided commands and send your message to receive the outputs as automatic response. This is called a partial response. If there are multiple sources you want to check, combine them into one message.
-- If you have previously executed commands, ask yourself in your writing, do you see the effects of your commands? Maybe they didn't get executed because of wrong structure? There is a report showing the executed commands, errors, etc.
-
-## Commands
-
-If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
-
-Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break. The commands should start from an empty line, from first symbol in the line. Don't put anything else in the lines of the commands.
-
-You write down the commands you want to send in this interface. If you activate another problem, you won't see the outputs of other commands you send. You should hence send multiple small messages instead.
-
-Example:
-```
-❌ Wrong:
-search + create artifacts + activate_subproblem (all in one message)
-
-✅ Right:
-Message 1: search command
-[wait for results]
-SYSTEM RESPONSE: results...
-Message 2: create artifacts based on search results
-[wait for confirmation]
-SYSTEM RESPONSE: results...
-Message 3: activate_subproblem
-SYSTEM RESPONSE: results...
-```
-⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses, then consider the next steps.
-
-Notice that we use <<< for opening the commands, >>> for closing, and /// for arguments. Make sure you use the exact syntax.
-
-{command_help}
-
-### Commands troubleshooting
-
-#### 1. No results
-
-If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for the engine to process the whole message. Just finish your message and wait.
-
-## The problem assigned to you
-
-Notice that the problem assigned to you doesn't change during the whole chat.
-
-Title: "{target_node.title}"
-{depth_warning}
-
-### Problem Definition
-{target_node.problem_definition}
 
 """
         # Create a list of dynamic sections instead of a dictionary

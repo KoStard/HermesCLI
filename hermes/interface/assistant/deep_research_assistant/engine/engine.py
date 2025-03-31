@@ -449,6 +449,11 @@ class DeepResearchEngine:
 
     def manually_choose_and_activate_node(self):
         all_nodes = self.file_system.get_all_nodes()
+
+        if len(all_nodes) == 1:
+            self.activate_node(all_nodes[0])
+            return
+
         for index, node in enumerate(all_nodes):
             print(f"{'*' * (node.depth_from_root + 1)} {index+1}: {node.title}")
         print()
