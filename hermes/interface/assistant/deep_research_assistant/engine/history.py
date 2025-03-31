@@ -45,7 +45,7 @@ class AutoReply(HistoryBlock):
 # Automatic Reply
 
 If there are commands you sent in your message and they have any errors or outputs, you'll see them below.
-If nothing appears, either you didn't use any commands or the commands you sent weren't identified by the engine.
+If you don't see a command report, then no commands were executed!
 """
 
         # Add confirmation request if present
@@ -57,8 +57,8 @@ If nothing appears, either you didn't use any commands or the commands you sent 
             auto_reply += f"\n\n{self.error_report}"
 
         # Add command outputs if any
+        auto_reply += "\n\n### Command Outputs\n"
         if self.command_outputs:
-            auto_reply += "\n\n### Command Outputs\n"
             for cmd_name, output_data in self.command_outputs:
                 auto_reply += f"\n#### <<< {cmd_name}\n"
                 # Format arguments
@@ -77,6 +77,8 @@ If nothing appears, either you didn't use any commands or the commands you sent 
                         additional_help="To see the full content again, rerun the command.",
                     )
                 auto_reply += f"```\n{truncated_output}\n```\n"
+        else:
+            auto_reply += "\nNo commands executed\n"
 
         if self.messages:
             auto_reply += "\n\n### Internal Automatic Messages\n"
@@ -161,7 +163,7 @@ class ChatHistory:
 
     def commit_and_get_auto_reply(self, node_title: str) -> Optional[AutoReply]:
         auto_reply_aggregator = self.node_auto_reply_aggregators[node_title]
-        if not auto_reply_aggregator.is_empty():
+        if not auto_reply_aggregator.is_empty() or len(self.node_blocks[node_title]) > 0:
             auto_reply = auto_reply_aggregator.compile_and_clear()
             self.node_blocks[node_title].append(auto_reply)
             return auto_reply

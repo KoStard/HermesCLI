@@ -230,26 +230,25 @@ class _CommandProcessor:
         """Combine parsing and execution errors into the final report."""
         self.final_error_report = self._parsing_error_report
 
-        if self._execution_failed_commands:
-            execution_report = "\n### Execution Status Report:\n"
-            for info in self._execution_failed_commands:
-                cmd_name = info["name"]
-                status = info["status"]
-                line_num = info["line"]
-                line_info = f" at line {line_num}" if line_num is not None else ""
-                execution_report += f"- Command '{cmd_name}'{line_info} {status}\n"
+        execution_report = "\n### Execution Status Report:\n"
+        for info in self._execution_failed_commands:
+            cmd_name = info["name"]
+            status = info["status"]
+            line_num = info["line"]
+            line_info = f" at line {line_num}" if line_num is not None else ""
+            execution_report += f"- Command '{cmd_name}'{line_info} {status}\n"
 
-            if not self.final_error_report:
-                self.final_error_report = execution_report.strip()
-            else:
-                # Add separator if there were also parsing errors
-                if (
-                    self._parsing_error_report
-                    and "### Errors report:" in self._parsing_error_report
-                ):
-                    self.final_error_report += "\n---\n" + execution_report
-                else:  # Only execution errors or syntax errors
-                    self.final_error_report += "\n" + execution_report
+        if not self.final_error_report:
+            self.final_error_report = execution_report.strip()
+        else:
+            # Add separator if there were also parsing errors
+            if (
+                self._parsing_error_report
+                and "### Errors report:" in self._parsing_error_report
+            ):
+                self.final_error_report += "\n---\n" + execution_report
+            else:  # Only execution errors or syntax errors
+                self.final_error_report += "\n" + execution_report
 
     def _update_auto_reply(self):
         """Add error reports and confirmation requests to the auto-reply aggregator."""
