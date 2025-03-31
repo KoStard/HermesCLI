@@ -321,99 +321,14 @@ class DeepResearchEngine:
         if not self.llm_interface:
             raise ValueError("LLM interface is required for execution")
 
-        initial_interface_content = None
+        title = instruction[:200]
+        if len(instruction) > 200:
+            title += "..."
+        self.file_system.create_root_problem("User Request: " + title, instruction)
 
-        # Run until a problem is defined
-        while True:
-            # Get the interface content
-            static_interface_content, dynamic_sections = (
-                self.interface.render_no_problem_defined(instruction)
-            )
-
-            if not initial_interface_content:
-                initial_interface_content = "\n\n".join([
-                    static_interface_content,
-                    *dynamic_sections
-                ])
-
-            # Update auto reply aggregator with the new dynamic sections
-            current_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-                self._current_history_tag
-            )
-            current_auto_reply_aggregator.update_dynamic_sections(dynamic_sections)
-
-            # Convert history messages to dict format for the LLM interface
-            history_messages = []
-
-            auto_reply_counter = 0
-            auto_reply_max_length = None
-
-            current_auto_reply = self.chat_history.commit_and_get_auto_reply(
-                self._current_history_tag
-            )
-
-            if current_auto_reply:
-                print(current_auto_reply.generate_auto_reply())
-
-            for block in self.chat_history.get_compiled_blocks(
-                    self._current_history_tag
-            )[::-1]:  # Reverse to handle auto reply contraction
-                if isinstance(block, ChatMessage):
-                    history_messages.append(
-                        {"author": block.author, "content": block.content}
-                    )
-                elif isinstance(block, AutoReply):
-                    auto_reply_counter += 1
-
-                    if auto_reply_counter > 1:
-                        if not auto_reply_max_length:
-                            auto_reply_max_length = 5_000
-                        else:
-                            auto_reply_max_length = max(
-                                auto_reply_max_length // 2, 300
-                            )
-                    history_messages.append(
-                        {
-                            "author": "user",
-                            "content": block.generate_auto_reply(
-                                auto_reply_max_length
-                            ),
-                        }
-                    )
-
-            history_messages = history_messages[
-               ::-1
-               ]  # Reverse to maintain chronological order
-
-            # Get the current node path for logging
-            current_node_path = self.file_system.root_dir
-
-            # Generate the request
-            request = self.llm_interface.generate_request(
-                initial_interface_content,
-                history_messages,
-                current_node_path,
-            )
-
-            # Process the request and get the response
-            response_generator = self._handle_llm_request(request, current_node_path)
-
-            # Get the full response
-            try:
-                full_llm_response = next(response_generator)
-            except StopIteration:
-                full_llm_response = ""
-
-            # Process the commands in the response
-            self.process_commands(full_llm_response)
-
-            # If problem was defined, activate the root node
-            if self.is_root_problem_defined():
-                self.activate_node(self.file_system.root_node)
-                self._print_current_status()
-                return True
-
-            self._print_current_status()
+        self.activate_node(self.file_system.root_node)
+        self._print_current_status()
+        return True
 
     def execute(self) -> str:
         """
@@ -445,7 +360,7 @@ class DeepResearchEngine:
                     static_interface_content,
                     *dynamic_sections
                 ])
-            
+
             # Update auto reply aggregator with the new dynamic sections
             current_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
                 self._current_history_tag
