@@ -258,11 +258,15 @@ In case the interface has a bug and you are not able to navigate, you can use an
 
 {command_help}
 
-### Commands troubleshooting
+### Commands FAQ
 
-#### 1. No results
+#### Q: What to do if I don't see any results
 
-If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for the engine to process the whole message. Just finish your message and wait.
+A: If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for the engine to process the whole message. Just finish your message and wait.
+
+#### Q: How many commands to send at once?
+
+# A: If you already know that you'll need multiple pieces of information, and getting the results of part of them won't influence the need for others, send a command for all of them, don't spend another message/response cycle. Commands are parallelizable! You can go even with 20-30 commands without worry, you'll then receive all of their outputs in the response.
 
 ## The problem assigned to you
 
