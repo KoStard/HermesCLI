@@ -1,3 +1,4 @@
+import textwrap
 from typing import Dict, Any, List
 
 from .command import Command, CommandType, register_command, DefineCommand
@@ -226,7 +227,9 @@ class FocusUpCommand(Command):
     def __init__(self):
         super().__init__(
             "finish_problem",
-            "Finish the problem assigned to you. If there is a parent problem, it will become activated.",
+            textwrap.dedent("""Finish the problem assigned to you. If there is a parent problem, it will become activated.
+            True for all commands, but especially here true: make sure you let the system to process your other commands before sending this command. Meaning don't send this alongside with other commands, as the interface is not interactive, you won't see the responses of other commands immediately, you need to send the message to receive the responses.
+            """),
             CommandType.SIMPLE,
         )
 
