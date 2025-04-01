@@ -1,5 +1,6 @@
 import os
 import logging
+import textwrap
 from typing import Generator, List, Optional
 from pathlib import Path
 
@@ -144,6 +145,16 @@ class DeepResearchAssistantInterface(Interface):
                         )
                     )
                     return
+            elif self.instruction:
+                self._engine.finished = False
+                new_message_text = f"""
+New instructions arrived from the user:
+<instruction>
+{self.instruction}
+</instruction>
+Take your time to run commands, check the results, the usual effort. When you are done, don't forget to mark it as complete to send again to the user through finish_problem command.
+"""
+                self._engine.chat_history.get_auto_reply_aggregator(self._engine._current_history_tag).add_internal_message_from(new_message_text, "USER MESSAGE")
 
             # Now execute the engine with the defined problem
             final_summary = self._engine.execute()
