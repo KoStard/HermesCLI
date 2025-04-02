@@ -209,13 +209,18 @@ def main():
     )
     stt_input_handler_optional = get_stt_input_handler(cli_args, config)
     markdown_highlighter = None if cli_args.no_markdown else MarkdownHighlighter()
+
+    is_deep_research_mode = bool(cli_args.deep_research)
+    user_control_panel.is_deep_research_mode = is_deep_research_mode
+    
+
     user_interface = UserInterface(
         control_panel=user_control_panel,
         command_completer=CommandCompleter(user_control_panel.get_command_labels()),
         markdown_highlighter=markdown_highlighter,
         stt_input_handler=stt_input_handler_optional,
         notifications_printer=notifications_printer,
-        user_input_from_cli=user_input_from_cli,
+        user_input_from_cli=user_input_from_cli
     )
     user_participant = UserParticipant(user_interface)
 
@@ -246,7 +251,7 @@ def main():
             )
             debug_participant = DebugParticipant(debug_interface)
             assistant_participant = debug_participant
-        elif cli_args.deep_research:
+        elif is_deep_research_mode:
             # Use the Deep Research Assistant interface with the specified path
             research_path = os.path.abspath(cli_args.deep_research)
             deep_research_interface = DeepResearchAssistantInterface(

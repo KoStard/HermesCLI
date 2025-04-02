@@ -128,6 +128,12 @@ class ThinkingLevelEvent(EngineCommandEvent):
     level: str
 
 
+@dataclass
+class DeepResearchBudgetEvent(EngineCommandEvent):
+    """Event for setting a budget for Deep Research Assistant"""
+    budget: int
+
+
 """
 Notification events are events that contain a notification and are sent to the next participant.
 """

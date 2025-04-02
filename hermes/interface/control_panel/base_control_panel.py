@@ -21,11 +21,14 @@ class ControlPanelCommand:
     short_description: str
     parser: Callable[[str], Event]
     priority: int = 0
+    with_argument: bool = True
     # For user commands only
     visible_from_cli: bool = True
     default_on_cli: bool = False
+    # For assistant commands
     is_agent_command: bool = False
-    with_argument: bool = True
+    # For deep research
+    is_deep_research: bool = False
 
 
 class ControlPanel(ABC):

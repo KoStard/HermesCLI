@@ -280,6 +280,12 @@ class DeepResearchEngine:
         self.current_node: Optional[Node] = None
         self.next_node: Optional[Node] = None  # Tracks scheduled focus changes
         self.revision_index = 1
+        
+        # Budget tracking
+        self.budget = None  # No budget by default
+        self.initial_budget = None  # Store the initial budget for reference
+        self.message_cycles_used = 0
+        self.budget_warning_shown = False
 
         # Check if problem already exists
         self.file_system.load_existing_problem()
@@ -352,7 +358,7 @@ class DeepResearchEngine:
             # Get the interface content - now returns static content and a list of dynamic sections
             static_interface_content, dynamic_sections = (
                 self.interface.render_problem_defined(
-                    self.current_node, self.permanent_log
+                    self.current_node, self.permanent_log, self.budget, self.get_remaining_budget()
                 )
             )
 
@@ -436,6 +442,76 @@ class DeepResearchEngine:
 
             # Process the commands in the response
             self.process_commands(full_llm_response)
+            
+            # Increment message cycles and check budget
+            self.increment_message_cycles()
+            
+            # Check if budget is exhausted
+            if self.is_budget_exhausted():
+                if not self.budget_warning_shown:
+                    self.budget_warning_shown = True
+                    print(f"\n===== BUDGET ALERT =====")
+                    print(f"Budget of {self.budget} message cycles has been exhausted.")
+                    print(f"Current usage: {self.message_cycles_used} cycles")
+                    
+                    # Add a buffer of 10 cycles
+                    self.budget += 10
+                    print(f"Adding a buffer of 10 cycles. New budget: {self.budget}")
+                    print(f"The assistant will be notified to wrap up quickly.")
+                    
+                    # Add a warning message to the current node's auto reply
+                    if self.current_node:
+                        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+                            self._current_history_tag
+                        )
+                        auto_reply_aggregator.add_internal_message_from(
+                            "⚠️ BUDGET ALERT: The message cycle budget has been exhausted. "
+                            "Please finalize your work as quickly as possible. "
+                            "You have a buffer of 10 additional cycles to complete your work.",
+                            "SYSTEM"
+                        )
+                elif self.message_cycles_used >= self.budget:
+                    # Buffer is also exhausted
+                    print(f"\n===== BUDGET COMPLETELY EXHAUSTED =====")
+                    print(f"Initial budget: {self.initial_budget} cycles")
+                    print(f"Current usage: {self.message_cycles_used} cycles (including buffer)")
+                    
+                    user_input = input("Would you like to add 20 more cycles to continue? (y/N): ").strip().lower()
+                    if user_input == 'y':
+                        additional_cycles = 20
+                        self.budget += additional_cycles
+                        print(f"Added {additional_cycles} more cycles. New budget: {self.budget}")
+                        
+                        # Add a notification to the current node's auto reply
+                        if self.current_node:
+                            auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+                                self._current_history_tag
+                            )
+                            auto_reply_aggregator.add_internal_message_from(
+                                f"The budget has been extended with {additional_cycles} additional cycles. "
+                                f"New total: {self.budget} cycles.",
+                                "SYSTEM"
+                            )
+                    else:
+                        print("Finishing research due to budget constraints.")
+                        self.finished = True
+                        
+            # Check if approaching budget limit (within 10 cycles)
+            elif self.is_approaching_budget_limit() and not self.budget_warning_shown:
+                self.budget_warning_shown = True
+                print(f"\n===== BUDGET WARNING =====")
+                print(f"Approaching budget limit. {self.get_remaining_budget()} cycles remaining out of {self.budget}.")
+                
+                # Add a warning message to the current node's auto reply
+                if self.current_node:
+                    auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+                        self._current_history_tag
+                    )
+                    auto_reply_aggregator.add_internal_message_from(
+                        f"⚠️ BUDGET WARNING: Only {self.get_remaining_budget()} message cycles remaining out of {self.budget}. "
+                        "Please prioritize the most important tasks and consider wrapping up soon.",
+                        "SYSTEM"
+                    )
 
             # Apply any scheduled focus change now that the cycle is complete
             if self.next_node is not None:
@@ -514,6 +590,44 @@ class DeepResearchEngine:
         status_printer.print_status(
             self.is_root_problem_defined(), self.current_node, self.file_system
         )
+        
+    def set_budget(self, budget: int):
+        """Set the budget for the Deep Research Assistant"""
+        self.budget = budget
+        self.initial_budget = budget
+        self.budget_warning_shown = False
+        
+        # Add a message to the current node's auto reply
+        if self.current_node:
+            auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+                self._current_history_tag
+            )
+            auto_reply_aggregator.add_internal_message_from(
+                f"Budget has been set to {budget} message cycles.", "SYSTEM"
+            )
+    
+    def increment_message_cycles(self):
+        """Increment the message cycles counter"""
+        self.message_cycles_used += 1
+        
+    def get_remaining_budget(self):
+        """Get the remaining budget"""
+        if self.budget is None:
+            return None
+        return self.budget - self.message_cycles_used
+        
+    def is_budget_exhausted(self):
+        """Check if the budget is exhausted"""
+        if self.budget is None:
+            return False
+        return self.message_cycles_used >= self.budget
+        
+    def is_approaching_budget_limit(self):
+        """Check if we're approaching the budget limit (within 10 cycles)"""
+        if self.budget is None:
+            return False
+        remaining = self.get_remaining_budget()
+        return 0 < remaining <= 10
 
     def activate_node(self, node: Node) -> None:
         """Set the current node and update chat history"""

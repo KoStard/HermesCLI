@@ -37,6 +37,7 @@ class DeepResearchAssistantInterface(Interface):
         self._engine: Optional[DeepResearchEngine] = None
         self.hierarchy_formatter = HierarchyFormatter()
         self.instruction = None
+        self._pending_budget = None  # Store budget until engine is initialized
 
     def render(
         self, history_snapshot: List[Message], events: Generator[Event, None, None]
@@ -82,6 +83,11 @@ class DeepResearchAssistantInterface(Interface):
                 llm_interface,
                 self.extension_commands,
             )
+            
+            # Apply any pending budget
+            if self._pending_budget is not None:
+                self._engine.set_budget(self._pending_budget)
+                self._pending_budget = None
 
         for file_details in textual_files:
             filename, file_content = file_details
@@ -154,6 +160,9 @@ New instructions arrived from the user:
 </instruction>
 Take your time to run commands, check the results, the usual effort. When you are done, don't forget to mark it as complete to send again to the user through finish_problem command.
 """
+                if self._engine.budget is not None:
+                    new_message_text += "\n\nThe budget has been extended with 20 additional cycles."
+                    self._engine.set_budget(self._engine.budget + 20)
                 self._engine.chat_history.get_auto_reply_aggregator(self._engine._current_history_tag).add_internal_message_from(new_message_text, "USER MESSAGE")
 
             # Now execute the engine with the defined problem
@@ -183,3 +192,11 @@ Take your time to run commands, check the results, the usual effort. When you ar
     def change_thinking_level(self, level: str):
         if hasattr(self.model, "set_thinking_level"):
             self.model.set_thinking_level(level)
+            
+    def set_budget(self, budget: int):
+        """Set the budget for the Deep Research Assistant"""
+        if self._engine:
+            self._engine.set_budget(budget)
+        else:
+            # Store the budget to be set when the engine is initialized
+            self._pending_budget = budget

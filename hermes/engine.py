@@ -5,6 +5,7 @@ from typing import Generator
 from hermes.event import (
     AssistantDoneEvent,
     ClearHistoryEvent,
+    DeepResearchBudgetEvent,
     FileEditEvent,
     EngineCommandEvent,
     ExitEvent,
@@ -257,6 +258,17 @@ class Engine:
                     self.notifications_printer.print_notification(
                         f"Thinking level set to {event.level}"
                     )
+                elif isinstance(event, DeepResearchBudgetEvent):
+                    if hasattr(self.assistant_participant.interface, "set_budget"):
+                        self.assistant_participant.interface.set_budget(event.budget)
+                        self.notifications_printer.print_notification(
+                            f"Deep Research budget set to {event.budget} message cycles"
+                        )
+                    else:
+                        self.notifications_printer.print_notification(
+                            "Budget setting is only available for Deep Research Assistant",
+                            CLIColors.YELLOW
+                        )
                 elif isinstance(event, FileEditEvent):
                     if event.mode == "create":
                         if not self._confirm_file_creation(event.file_path):

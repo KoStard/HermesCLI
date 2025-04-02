@@ -105,7 +105,7 @@ Content of the problem definition.
         return static_content, dynamic_sections
 
     def render_problem_defined(
-        self, target_node: Node, permanent_logs: List[str]
+        self, target_node: Node, permanent_logs: List[str], budget: Optional[int], remaining_budget: Optional[int]
     ) -> Tuple[str, List[str]]:
         """
         Render the interface when a problem is defined
@@ -227,6 +227,23 @@ When you receive the request, you should decide from beginning what you want to 
 - If you lack information, reply with the provided commands and send your message to receive the outputs as automatic response. This is called a partial response. If there are multiple sources you want to check, combine them into one message.
 - If you have previously executed commands, ask yourself in your writing, do you see the effects of your commands? Maybe they didn't get executed because of wrong structure? There is a report showing the executed commands, errors, etc.
 
+### Budget
+
+Q: What is a budget?
+A: If budget is provided, it defined how much resources you can use during deep research. The goal is to limit the amount of resources we invest into a vague problem. If the problem in reality can be solved with smaller investment, great, finish early!
+
+Q: What if there is no budget set?
+A: That means you have freedom to choose how much resources you should use, but still keep it mind frugality and prioritise the most important actions to solve the problem.
+
+Q: Is budget global?
+A: Yes, it's for the whole investigation process, impacts the whole researchers team, it's a shared budget.
+
+Q: What does the budget count?
+A: It's the number of messages sent. Remember, in one message you can run multiple commands, it counts as one.
+
+Q: Where to find the budget information?
+A: You can find it in the dynamic sections.
+
 ## Commands
 
 If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
@@ -334,7 +351,10 @@ that have changed since your last message.""",
 # Permanent Logs
 {permanent_log_section}""",
             
-            # Section 2: Artifacts
+            # Section 2: Budget Information
+            self._format_budget_section(budget, remaining_budget),
+            
+            # Section 3: Artifacts
             f"""======================
 # Artifacts (All Problems)
 
@@ -537,3 +557,38 @@ Remember, we work backwards from the root problem.
             result.append(command_text)
 
         return "\n\n".join(result)
+        
+    def _format_budget_section(self, total, remaining) -> str:
+        """Format the budget section for display"""
+        # Get budget info from the engine
+        if total is None or remaining is None:
+            return "======================\n# Budget Information\nNo budget has been set."
+            
+        used = total - remaining
+        
+        budget_status = "GOOD"
+        if remaining <= 10:
+            budget_status = "LOW"
+        if remaining <= 0:
+            budget_status = "CRITICAL"
+        
+        budget_section = f"""======================
+# Budget Information
+- Total budget: {total} message cycles
+- Used: {used} message cycles
+- Remaining: {remaining} message cycles
+- Status: {budget_status}
+
+"""
+        if budget_status == "CRITICAL":
+            budget_section += """⚠️ **BUDGET CRITICAL** ⚠️
+You are operating on borrowed time. Please finalize your work immediately and submit your findings.
+"""
+        elif budget_status == "LOW":
+            budget_section += """⚠️ **BUDGET WARNING** ⚠️
+Budget is running low. Please prioritize the most important tasks and consider wrapping up soon.
+"""
+        else:
+            budget_section += "Please be mindful of the budget when planning your research strategy."
+            
+        return budget_section

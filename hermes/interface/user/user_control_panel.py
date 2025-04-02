@@ -1,4 +1,3 @@
-import configparser
 from datetime import datetime, timezone
 import shlex
 from argparse import ArgumentParser, Namespace
@@ -21,6 +20,7 @@ from hermes.message import (
     UrlMessage,
 )
 from hermes.event import (
+    DeepResearchBudgetEvent,
     Event,
     ExitEvent,
     LoadHistoryEvent,
@@ -46,6 +46,7 @@ class UserControlPanel(ControlPanel):
         extra_commands: list[ControlPanelCommand] = None,
         exa_client: Optional[ExaClient] = None,
         llm_control_panel=None,
+        is_deep_research_mode=False
     ):
         super().__init__()
         self.tree_generator = TreeGenerator()
@@ -53,6 +54,7 @@ class UserControlPanel(ControlPanel):
         self._cli_arguments = set()  # Track which arguments were added to CLI
         self.notifications_printer = notifications_printer
         self.exa_client = exa_client
+        self.is_deep_research_mode = is_deep_research_mode
 
         # Register core commands
         self._register_core_commands()
@@ -305,6 +307,17 @@ class UserControlPanel(ControlPanel):
                 parser=lambda line: ThinkingLevelEvent(level=line.strip().lower()),
             )
         )
+        
+        self._register_command(
+            ControlPanelCommand(
+                command_id="set_deep_research_budget",
+                command_label="/set_deep_research_budget",
+                description="Set a soft budget limit for Deep Research Assistant (number of message cycles)",
+                short_description="Set Deep Research budget",
+                parser=self._parse_set_deep_research_budget_command,
+                is_deep_research=True
+            )
+        )
         self._register_command(
             ControlPanelCommand(
                 command_id="set_assistant_command_status",
@@ -356,6 +369,22 @@ class UserControlPanel(ControlPanel):
         self.notifications_printer.print_notification("\n".join(output))
 
         return None
+        
+    def _parse_set_deep_research_budget_command(self, content: str) -> Event:
+        """Parse the /set_deep_research_budget command"""
+        try:
+            budget = int(content.strip())
+            if budget <= 0:
+                self.notifications_printer.print_notification(
+                    "Budget must be a positive integer", CLIColors.RED
+                )
+                return None
+            return DeepResearchBudgetEvent(budget=budget)
+        except ValueError:
+            self.notifications_printer.print_notification(
+                "Invalid budget value. Please provide a positive integer.", CLIColors.RED
+            )
+            return None
 
     def _parse_fuzzy_select_command(self, content: str) -> Event:
         """Parse the /fuzzy_select command"""
@@ -379,9 +408,13 @@ class UserControlPanel(ControlPanel):
         return []
 
     def render(self):
-        return "\n".join(
-            self._render_command_in_control_panel(command) for command in self.commands
-        )
+        results = []
+        for command in self.commands:
+            if self.commands[command].is_deep_research and not self.is_deep_research_mode:
+                continue
+            results.append(self._render_command_in_control_panel(command))
+        
+        return "\n".join(results)
 
     def break_down_and_execute_message(
         self, message: Message
