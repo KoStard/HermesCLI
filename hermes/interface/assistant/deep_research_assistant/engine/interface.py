@@ -424,13 +424,13 @@ Remember, we work backwards from the root problem.
             )
 
             for name, artifact in sorted(external_files.items()):
-                result += textwrap.dedent(f"""<artifact name="{name}" type="external_file">
-                ---
-                type: External File
-                ---
-                {artifact.content}
-                </artifact>
-                """)
+                result += f"""<artifact name="{name}" type="external_file">
+---
+type: External File
+---
+{artifact.content}
+</artifact>
+"""
 
             # Add separator if we also have node artifacts
             if node_artifacts:
@@ -460,16 +460,14 @@ Remember, we work backwards from the root problem.
                         "Use 'open_artifact' command to view full content.",
                     )  # Truncate to 500 chars
                     shown_content = truncated_content
-                result += textwrap.dedent(
-                    f"""<artifact name="{name}">
-                    ---
-                    owner: {owner_title}
-                    ---
-                    
-                    {shown_content}
-                    </artifact>
-                    """
-                )
+                result += f"""<artifact name="{name}">
+---
+owner: {owner_title}
+---
+
+{shown_content}
+</artifact>
+"""
 
         result += "</artifacts>"
         return result.strip()
