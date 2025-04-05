@@ -41,9 +41,6 @@ class DeepResearchLogger:
                     f"[{msg.get('author', 'unknown')}]: {msg.get('content', '')}\n\n"
                 )
 
-            f.write("\n== Request Data ==\n")
-            f.write(str(request_data))
-
     def log_llm_response(self, node_path: Optional[Path], response: str) -> None:
         """Log an LLM response to a file"""
         logs_dir = self.ensure_logs_directory(node_path)
