@@ -201,7 +201,17 @@ A: If you send a command, a search, and don't see any results, that's likely bec
 
 #### Q: How many commands to send at once?
 
-# A: If you already know that you'll need multiple pieces of information, and getting the results of part of them won't influence the need for others, send a command for all of them, don't spend another message/response cycle. Commands are parallelizable! You can go even with 20-30 commands without worry, you'll then receive all of their outputs in the response.
+A: If you already know that you'll need multiple pieces of information, and getting the results of part of them won't influence the need for others, send a command for all of them, don't spend another message/response cycle. Commands are parallelizable! You can go even with 20-30 commands without worry, you'll then receive all of their outputs in the response.
+
+#### Q: How to input same argument multiple times for a command?
+
+A: You need to put `///section_name` each time, example:
+<<< activate_subproblems_and_wait
+///title
+subproblem title 1
+///title
+subproblem title 2
+>>>
 
 ## The problem assigned to you
 

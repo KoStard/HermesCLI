@@ -204,7 +204,7 @@ class FocusDownCommand(Command):
     def __init__(self):
         super().__init__(
             "activate_subproblems_and_wait",
-            "Activate subproblems and wait for them to be finished before continuing. They will be executed sequentially.",
+            "Activate subproblems and wait for them to be finished before continuing. Multiple titles are allowed, they will be executed sequentially.",
         )
         self.add_section("title", True, "Title of the subproblem to activate", allow_multiple=True)
 
