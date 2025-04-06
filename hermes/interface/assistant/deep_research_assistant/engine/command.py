@@ -11,10 +11,11 @@ from hermes.interface.assistant.deep_research_assistant.engine.command_context i
 class CommandSection:
     """Represents a section in a command (e.g., ///title, ///content)"""
 
-    def __init__(self, name: str, required: bool = True, help_text: str = ""):
+    def __init__(self, name: str, required: bool = True, help_text: str = "", allow_multiple: bool = False):
         self.name = name
         self.required = required
         self.help_text = help_text
+        self.allow_multiple = allow_multiple
 
 
 class CommandType(Enum):
@@ -39,10 +40,10 @@ class Command(ABC):
         self.sections: List[CommandSection] = []
 
     def add_section(
-        self, name: str, required: bool = True, help_text: str = ""
+        self, name: str, required: bool = True, help_text: str = "", allow_multiple: bool = False
     ) -> None:
         """Add a section to this command"""
-        self.sections.append(CommandSection(name, required, help_text))
+        self.sections.append(CommandSection(name, required, help_text, allow_multiple=allow_multiple))
 
     def get_required_sections(self) -> List[str]:
         """Get names of all required sections"""

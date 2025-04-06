@@ -21,89 +21,6 @@ class DeepResearcherInterface:
         self.file_system = file_system
         self.hierarchy_formatter = HierarchyFormatter()
 
-    def render_no_problem_defined(self, instruction) -> Tuple[str, List[str]]:
-        """
-        Render the interface when no problem is defined
-        
-        Returns:
-            A tuple containing:
-            - static_content (str): Fixed interface content that doesn't change
-            - dynamic_sections (List[str]): List of interface sections that may change, with consistent indices
-        """
-        # Get external files using the new centralized method
-        artifacts_section = self._format_artifacts_section(external_only=True)
-
-        static_content = f"""# Deep Research Interface
-
-## Introduction
-
-This interface helps you conduct thorough research by breaking down complex problems into manageable subproblems.
-
-### Interface Structure
-The interface has two main parts:
-1. **Static Section** - Basic instructions and commands that don't change
-2. **Dynamic Sections** - Data that updates as you work on the problem
-
-When you first join a problem, you'll receive all sections of the interface. After that, in each automatic reply, 
-you'll only receive the dynamic sections that have changed since your last message. This keeps the interface efficient 
-and focused on what's new or different. If a section isn't included in an automatic reply, it means that section 
-hasn't changed.
-
-If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Please check this section if your commands don't seem to be working as expected.
-
-To begin, you need to define the problem you'll be researching. Please follow these standards and best practices:
-- Make the problem statement clear and specific
-- Include any constraints or requirements
-- Consider what a successful outcome would look like
-- Don't expand from the scope of the provided instructions from the user. The smaller the scope of the problem the faster the user will receive the answer.
-- Include expectations on the depth of the results. On average be frugal, not making the problems scope explode.
-- Explicitely describe what should the answer have to be considered as done.
-- For broad topics, provide guidance on how to bring the scope down.
-
-Note: This is a temporary state. After defining the problem, this chat will be discarded and you'll start working on the problem with a fresh interface.
-
-Any artifacts provided will be copied to the root problem after creation and won't be lost. Once the problem is defined, you'll be able to see artifacts from the current problem, all its parent problems, and all descendant problems.
-
-Any context provided to you in the context section will be permanent and accessible in the future while working on the problem, so you can refer to it if needed.
-
-Please note that only one problem definition is allowed. Problem definition is the only action you should take at this point and finish the response message.
-
-Make sure to include closing tags for command blocks, otherwise it will break the parsing and cause syntax errors.
-"""
-
-        # Create dynamic sections list
-        dynamic_sections = [
-            # Section 0: Header
-            """# Dynamic Section for Problem Definition""",
-            
-            # Section 1: Artifacts
-            f"""======================
-# Artifacts (External Files Only)
-{artifacts_section}""",
-            
-            # Section 2: Instruction
-            f"""======================
-# Instruction
-Notice: The assistants working on the created problem won't see anymore this instruction. Make sure to include all the important details in the problem definition.
-
-{instruction}""",
-            
-            # Section 3: How to define
-            """======================
-# How to define a problem
-Define the problem using this command:
-```
-<<< define_problem
-///title
-title goes here
-///content
-Content of the problem definition.
->>>
-```"""
-        ]
-
-        return static_content, dynamic_sections
-
     def render_problem_defined(
         self, target_node: Node, permanent_logs: List[str], budget: Optional[int], remaining_budget: Optional[int]
     ) -> Tuple[str, List[str]]:
@@ -184,6 +101,7 @@ and focused on what's new or different. If a section isn't included in an automa
 hasn't changed.
 
 ### External Files
+
 The system may contain external files provided by the user at the beginning of the research. These are shown in the artifacts section with special "External File" designation. These files contain important context for your work and are always fully visible. They are stored centrally and accessible from any problem in the hierarchy.
 
 ### About the workforce
@@ -195,7 +113,7 @@ Someone from the team (maybe you) picks up the root problem. Others will get sub
 1. Start your research of the problem.
 2. Rely on your existing significant knowledge of the domain.
 3. If necessary, use the provided commands to **request** more information/knowledge (then **stop** to receive them)
-4. If the problem is still too vague/big to solve alone, break it into subproblems that your teammates will handle. You'll see the artifacts they create for the problems, and the sub-subproblems they create. When you active another problem, you should **stop** to let them continue.
+4. If the problem is still too vague/big to solve alone, break it into subproblems that your teammates will handle. You'll see the artifacts they create for the problems, and the sub-subproblems they create. When you activate another problem, you'll **stop** to let them continue.
 5. Then based on the results of the subproblems, continue the investigation (going back to step 2), creating further subproblems if necessary, or resolving the current problem.
 
 All of you are pragmatic, yet have strong ownership. You make sure you solve as much of the problem as possible, while also delegating (which is a good sign of leadership) tasks to your teammates as well.
@@ -538,6 +456,8 @@ owner: {owner_title}
             # Add sections
             for section in cmd.sections:
                 command_text += f"\n///{section.name}"
+                if section.allow_multiple:
+                    command_text += " (multiple allowed)"
                 if section.help_text:
                     command_text += f"\n{section.help_text}"
                 else:

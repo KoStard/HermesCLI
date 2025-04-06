@@ -203,17 +203,26 @@ class AddCriteriaToSubproblemCommand(Command):
 class FocusDownCommand(Command):
     def __init__(self):
         super().__init__(
-            "activate_subproblem_and_wait",
-            "Activate a subproblem and wait for it to be finished before continuing",
+            "activate_subproblems_and_wait",
+            "Activate subproblems and wait for them to be finished before continuing. They will be executed sequentially.",
         )
-        self.add_section("title", True, "Title of the subproblem to activate")
+        self.add_section("title", True, "Title of the subproblem to activate", allow_multiple=True)
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus down to a subproblem"""
-        title = args["title"]
+        titles = args["title"]
+        if not isinstance(titles, list):
+            titles = [titles]  # Handle single title case
+            
+        if not titles:
+            raise ValueError("No subproblems specified to activate")
+            
+        # For now, we only activate the first subproblem
+        # TODO: Implement proper sequential activation of multiple subproblems
+        title = titles[0]
         result = context.focus_down(title)
 
-        if not result:
+        if not titles:
             raise ValueError(
                 f"Failed to activate subproblem '{title}'. Make sure the subproblem exists."
             )

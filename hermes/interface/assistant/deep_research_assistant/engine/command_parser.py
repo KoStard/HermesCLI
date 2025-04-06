@@ -1,8 +1,9 @@
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from .command import CommandRegistry
+from .command import CommandRegistry, Command
 
 
 @dataclass
@@ -66,10 +67,10 @@ class CommandParser:
                 args, errors = self._parse_command_sections(
                     "\n".join(command_content),
                     block_start_line_index + 1,
-                    command.get_required_sections(),
+                    command,
                     command_name,
                 )
-                
+
                 # Apply any transformations to the arguments
                 args = command.transform_args(args)
 
@@ -192,19 +193,29 @@ class CommandParser:
 
     @staticmethod
     def _parse_command_sections(
-        content: str, line_number: int, required_sections: List[str], command_name: str
+        content: str, line_number: int, command: Command, command_name: str
     ) -> Tuple[Dict, List[CommandError]]:
         """Helper to parse command sections with /// delimiters"""
+        required_sections = command.get_required_sections()
         errors = []
-        result = {}
+        arguments = {}
 
         # Find all sections in the content
         sections = re.findall(r"///(\w+)\s+(.*?)(?=///|\Z)", content, re.DOTALL)
-        found_sections = {section[0]: section[1].strip() for section in sections}
+        
+        # Track sections that allow multiple instances
+        sections_by_name = defaultdict(list)
+        for section_name, section_content in sections:
+            sections_by_name[section_name].append(section_content.strip())
 
+        allow_multiple_dict = {
+            section.name: section.allow_multiple
+            for section in command.sections
+        }
+            
         # Validate required sections
         for section in required_sections:
-            if section not in found_sections:
+            if section not in sections_by_name:
                 errors.append(
                     CommandError(
                         command=command_name,
@@ -212,7 +223,7 @@ class CommandParser:
                         line_number=line_number,
                     )
                 )
-            elif not found_sections[section]:
+            elif not sections_by_name[section] or not any(sections_by_name[section]):
                 errors.append(
                     CommandError(
                         command=command_name,
@@ -220,13 +231,31 @@ class CommandParser:
                         line_number=line_number,
                     )
                 )
+        
+        # Validate that sections that don't allow multiple instances don't have multiple values
+        for section_name, values in sections_by_name.items():
+            if len(values) > 1 and not allow_multiple_dict.get(section_name, False):
+                errors.append(
+                    CommandError(
+                        command=command_name,
+                        message=f"Multiple instances of section '{section_name}' provided, but this section doesn't allow multiple instances",
+                        line_number=line_number,
+                    )
+                )
 
-        # Add valid sections to result
-        for section, value in found_sections.items():
-            if value:  # Only add non-empty values
-                result[section] = value
+        # Process sections with their values
+        for section_name, values in sections_by_name.items():
+            # Filter out empty values
+            valid_values = [v for v in values if v]
+            if not valid_values:
+                continue
+                
+            if allow_multiple_dict.get(section_name, False):
+                arguments[section_name] = valid_values
+            else:
+                arguments[section_name] = valid_values[0]
 
-        return result, errors
+        return arguments, errors
 
     @staticmethod
     def generate_error_report(parse_results: List[ParseResult]) -> str:
