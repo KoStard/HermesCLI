@@ -14,8 +14,7 @@ from hermes.interface.assistant.deep_research_assistant.engine.frontmatter_manag
 class Artifact:
     name: str
     content: str
-    is_fully_visible: bool = False  # Default to half-closed (not fully visible)
-
+    
     frontmatter_manager = FrontmatterManager()
 
     @staticmethod
@@ -27,7 +26,7 @@ class Artifact:
         name = file_path.stem
         # Use name from metadata if present, otherwise use derived name
         name = metadata.get("name", name)
-        return Artifact(name=name, content=content, is_fully_visible=False)
+        return Artifact(name=name, content=content)
 
     def save_to_file(self, file_path: Path) -> None:
         content = self.frontmatter_manager.add_frontmatter(
@@ -58,6 +57,7 @@ class Node:
     path: Optional[Path] = None
     status: ProblemStatus = ProblemStatus.NOT_STARTED
     depth_from_root: int = 0
+    visible_artifacts: Dict[str, bool] = field(default_factory=dict)  # Track visibility state for all artifacts
 
     def add_criteria(self, criteria: str) -> int:
         """Add criteria and return its index"""

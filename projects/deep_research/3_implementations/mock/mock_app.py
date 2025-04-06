@@ -52,9 +52,6 @@ class DeepResearchMockApp:
         else:
             print("\nNo extension commands loaded.")
 
-        print("\nPress Enter to continue...")
-        input()
-
         if not self.engine.is_root_problem_defined():
             success = self.engine.define_root_problem(self.instruction)
             if not success:

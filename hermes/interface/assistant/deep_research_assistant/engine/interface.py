@@ -334,11 +334,12 @@ Remember, we work backwards from the root problem.
             # Collect artifacts recursively starting from the root to get correct ownership info
             if self.file_system.root_node:
                 node_artifacts = self.collect_artifacts_recursively(
-                    self.file_system.root_node
+                    self.file_system.root_node,
+                    current_node
                 )
             else:
                 # Handle case where root_node might not be set yet but problem is defined
-                node_artifacts = self.collect_artifacts_recursively(current_node)
+                node_artifacts = self.collect_artifacts_recursively(current_node, current_node)
 
         if not external_files and not node_artifacts:
             return "<artifacts>\nNo artifacts available.\n</artifacts>"
@@ -420,13 +421,17 @@ owner: {owner_title}
         return self.hierarchy_formatter.format_subproblems(node)
 
     def collect_artifacts_recursively(
-        self, node: Node
+        self, node: Node, current_node: Node
     ) -> List[Tuple[str, str, str, bool]]:
         """
         Recursively collect artifacts from a node and all its descendants.
 
+        Args:
+            node: The node to collect artifacts from
+            current_node: The node currently being viewed (for visibility checks)
+
         Returns:
-            List of tuples: (owner_title, artifact_name, artifact_content, is_fully_visible)
+            List of tuples: (owner_title, artifact_name, artifact_content, is_visible_to_current_node)
         """
         artifacts = []
         if not node:
@@ -434,13 +439,14 @@ owner: {owner_title}
 
         # Add this node's artifacts
         for name, artifact in node.artifacts.items():
+            is_visible = current_node.visible_artifacts.get(name, False)
             artifacts.append(
-                (node.title, name, artifact.content, artifact.is_fully_visible)
+                (node.title, name, artifact.content, is_visible)
             )
 
         # Recursively collect artifacts from all subproblems
         for title, subproblem in node.subproblems.items():
-            artifacts.extend(self.collect_artifacts_recursively(subproblem))
+            artifacts.extend(self.collect_artifacts_recursively(subproblem, current_node))
 
         return artifacts
 

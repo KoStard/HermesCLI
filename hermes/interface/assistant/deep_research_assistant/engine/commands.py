@@ -383,7 +383,7 @@ class OpenArtifactCommand(Command):
         def search_subproblems(node):
             for subproblem in node.subproblems.values():
                 if artifact_name in subproblem.artifacts:
-                    subproblem.artifacts[artifact_name].is_fully_visible = True
+                    current_node.visible_artifacts[artifact_name] = True
                     return True
                 if search_subproblems(subproblem):
                     return True
@@ -450,7 +450,7 @@ class HalfCloseArtifactCommand(Command):
         def search_subproblems(node):
             for subproblem in node.subproblems.values():
                 if artifact_name in subproblem.artifacts:
-                    subproblem.artifacts[artifact_name].is_fully_visible = False
+                    current_node.visible_artifacts[artifact_name] = False
                     return True
                 if search_subproblems(subproblem):
                     return True
