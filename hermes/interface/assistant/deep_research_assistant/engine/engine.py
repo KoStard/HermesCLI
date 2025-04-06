@@ -280,6 +280,10 @@ class DeepResearchEngine:
         self.current_node: Optional[Node] = None
         self.next_node: Optional[Node] = None  # Tracks scheduled focus changes
         self.revision_index = 1
+        # When parent requests activation of multiple children sequentially, we'll track them here
+        # Then when the child is finished, and wants to activate the parent again, we'll activate the next in the queue
+        # It's a dict, as the child itself might activate other grandchildren
+        self.children_queue = defaultdict(list)
         
         # Budget tracking
         self.budget = None  # No budget by default
@@ -744,8 +748,24 @@ class DeepResearchEngine:
         # Get the parent node (second to last in the chain, as the last is the current node)
         parent_node = parent_chain[-2]
 
-        # Schedule the focus change
-        self.next_node = parent_node
+        # Check if there are queued siblings to activate
+        if parent_node.title in self.children_queue and self.children_queue[parent_node.title]:
+            # Get the next sibling from the queue
+            next_sibling_title = self.children_queue[parent_node.title].pop(0)
+            # If queue is empty after pop, remove the key
+            if not self.children_queue[parent_node.title]:
+                del self.children_queue[parent_node.title]
+            
+            # Activate the next sibling
+            next_sibling = parent_node.subproblems.get(next_sibling_title)
+            if next_sibling:
+                self.next_node = next_sibling
+            else:
+                # If sibling not found, fall back to parent
+                self.next_node = parent_node
+        else:
+            # No queued siblings, focus up to parent
+            self.next_node = parent_node
 
         # Update files
         self.file_system.update_files()

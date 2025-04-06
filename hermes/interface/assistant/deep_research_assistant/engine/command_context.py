@@ -38,6 +38,10 @@ class CommandContext:
     def finished(self):
         return self._engine.finished
 
+    @property
+    def children_queue(self):
+        return self._engine.children_queue
+
     # File system operations
     def set_file_system(self, file_system: FileSystem) -> None:
         """

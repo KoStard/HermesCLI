@@ -216,15 +216,26 @@ class FocusDownCommand(Command):
             
         if not titles:
             raise ValueError("No subproblems specified to activate")
-            
-        # For now, we only activate the first subproblem
-        # TODO: Implement proper sequential activation of multiple subproblems
-        title = titles[0]
-        result = context.focus_down(title)
 
-        if not titles:
+        # Queue up all subproblems for sequential activation
+        current_node = context.current_node
+        if not current_node:
+            raise ValueError("No current node")
+
+        # Validate all subproblems exist before queueing
+        for title in titles:
+            if title not in current_node.subproblems:
+                raise ValueError(f"Subproblem '{title}' not found")
+
+        # Add all titles to the queue except the first one
+        if len(titles) > 1:
+            context.children_queue[current_node.title].extend(titles[1:])
+
+        # Activate the first subproblem
+        result = context.focus_down(titles[0])
+        if not result:
             raise ValueError(
-                f"Failed to activate subproblem '{title}'. Make sure the subproblem exists."
+                f"Failed to activate subproblem '{titles[0]}'. Make sure the subproblem exists."
             )
 
     def should_be_last_in_message(self):
