@@ -54,7 +54,7 @@ class CommandParser:
         for block in blocks:
             block_start_line_index = block[0]
             block_lines = block[1]
-            opening_line = block_lines[0]
+            opening_line = block_lines[0].strip()
             command_content = block_lines[1:-1]
             block_match = re.match(r"<<<\s*(\w+)", opening_line)
             command_name = block_match.group(1)
