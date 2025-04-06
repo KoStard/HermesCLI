@@ -81,7 +81,7 @@ If you don't see a command report, then no commands were executed!
                     )
                 auto_reply += f"```\n{truncated_output}\n```\n"
         else:
-            auto_reply += "\nNo commands executed\n"
+            auto_reply += "\nNo command outputs\n"
 
         if self.messages:
             auto_reply += "\n\n### Internal Automatic Messages\n"

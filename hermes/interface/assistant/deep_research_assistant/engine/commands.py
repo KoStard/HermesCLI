@@ -231,6 +231,12 @@ class FocusDownCommand(Command):
         if len(titles) > 1:
             context.children_queue[current_node.title].extend(titles[1:])
 
+        self.add_output(
+            context,
+            args,
+            f"Focusing on {titles[0]}.",
+        )
+
         # Activate the first subproblem
         result = context.focus_down(titles[0])
         if not result:
