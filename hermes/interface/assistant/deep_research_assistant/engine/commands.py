@@ -140,9 +140,8 @@ class AddArtifactCommand(Command):
         if not current_node:
             return
 
-        # Create artifact with default half-closed visibility
         artifact = Artifact(
-            name=args["name"], content=args["content"], is_fully_visible=False
+            name=args["name"], content=args["content"], is_external=True
         )
         current_node.artifacts[args["name"]] = artifact
         context.update_files()

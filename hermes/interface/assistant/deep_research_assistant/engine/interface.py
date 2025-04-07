@@ -439,7 +439,7 @@ owner: {owner_title}
 
         # Add this node's artifacts
         for name, artifact in node.artifacts.items():
-            is_visible = current_node.visible_artifacts.get(name, False)
+            is_visible = current_node.visible_artifacts.get(name, False) or artifact.is_external
             artifacts.append(
                 (node.title, name, artifact.content, is_visible)
             )

@@ -14,6 +14,7 @@ from hermes.interface.assistant.deep_research_assistant.engine.frontmatter_manag
 class Artifact:
     name: str
     content: str
+    is_external: bool = False
     
     frontmatter_manager = FrontmatterManager()
 
@@ -94,7 +95,7 @@ class Node:
     def add_artifact(self, name: str, content: str) -> None:
         """Add an artifact"""
         self.artifacts[name] = Artifact(
-            name=name, content=content, is_fully_visible=False
+            name=name, content=content
         )
 
     def append_to_problem_definition(self, content: str) -> None:
@@ -251,7 +252,7 @@ class FileSystem:
     def add_external_file(self, name: str, content: str) -> None:
         """Add an external file to the file system"""
         # Create an artifact for the external file
-        artifact = Artifact(name=name, content=content, is_fully_visible=True)
+        artifact = Artifact(name=name, content=content)
 
         # If root node exists, add to its external_files
         if self.root_node:
