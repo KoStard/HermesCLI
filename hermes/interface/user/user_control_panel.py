@@ -170,7 +170,22 @@ class UserControlPanel(ControlPanel):
                     TextualFileMessage(
                         author="user", text_filepath=line, textual_content=None
                     )
+                )
+            )
+        )
+
+        self._register_command(
+            ControlPanelCommand(
+                command_id="textual_files",
+                command_label="/textual_files",
+                description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
+                short_description="Share a text-based document",
+                parser=lambda line: MessageEvent(
+                    TextualFileMessage(
+                        author="user", text_filepath=line, textual_content=None
+                    )
                 ),
+                visible_from_interface=False,
                 default_on_cli=True,
             )
         )
@@ -412,6 +427,8 @@ class UserControlPanel(ControlPanel):
         for command in self.commands:
             if self.commands[command].is_deep_research and not self.is_deep_research_mode:
                 continue
+            if not self.commands[command].visible_from_interface:
+                continue
             results.append(self._render_command_in_control_panel(command))
         
         return "\n".join(results)
@@ -505,13 +522,14 @@ class UserControlPanel(ControlPanel):
                             help=self.commands[command_label].description,
                         )
                         self._cli_arguments.add(command_label[1:])
-                    parser.add_argument(
-                        "--" + command_label[1:],
-                        type=str,
-                        action="append",
-                        help=self.commands[command_label].description,
-                    )
-                    self._cli_arguments.add(command_label[1:])
+                    else:
+                        parser.add_argument(
+                            "--" + command_label[1:],
+                            type=str,
+                            action="append",
+                            help=self.commands[command_label].description,
+                        )
+                        self._cli_arguments.add(command_label[1:])
                 else:
                     # Add flag-only arguments (no values)
                     parser.add_argument(

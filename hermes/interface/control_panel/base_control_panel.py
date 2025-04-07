@@ -24,6 +24,7 @@ class ControlPanelCommand:
     with_argument: bool = True
     # For user commands only
     visible_from_cli: bool = True
+    visible_from_interface: bool = True
     default_on_cli: bool = False
     # For assistant commands
     is_agent_command: bool = False
