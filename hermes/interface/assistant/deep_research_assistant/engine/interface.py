@@ -258,7 +258,7 @@ All of your artifacts should rely on your factual knowledge or specific resource
 
 You'll see partially open artifacts from all problems in the system, that you have option to open fully for yourself. This gives you a complete view of all the valuable outputs created throughout the problem hierarchy.
 
-The outputs of the commands are temporary and won't be visible from other nodes. Include all factual details in the artifacts.
+The outputs of the commands are temporary and won't be visible from other nodes. Include all factual details in the artifacts. As the command outputs are temporary, you might want to create **draft** artifacts for yourself, so that you can compile your intermediary research before writing the final ones. You can do this by adding "DRAFT_" prefix to the artifact name. This will clearly distinguish your intermediary artifacts from the main output artifacts and won't confuse the user.
 
 No need to copy the artifacts between problems or into the root problem.
 As artifacts are written as markdown files, you can refer to the child artifacts with markdown links. The artifacts are located in "Artifacts" folder in the child path (which consists of a directory with the child problem's title as name).
