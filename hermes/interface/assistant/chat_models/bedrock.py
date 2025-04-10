@@ -101,6 +101,8 @@ class BedrockModel(ChatModel):
                 level = self._medium_reasoning_tokens
             elif level == "high":
                 level = self._high_reasoning_tokens
+            elif level == "off":
+                level = None
             else:
                 raise ValueError(f"Invalid thinking level: {level}")
             self.request_builder.set_reasoning_effort(level)
