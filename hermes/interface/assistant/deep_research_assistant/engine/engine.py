@@ -401,7 +401,7 @@ class DeepResearchEngine:
                 elif isinstance(block, AutoReply):
                     auto_reply_counter += 1
 
-                    if auto_reply_counter > 1:
+                    if auto_reply_counter > 3:
                         if not auto_reply_max_length:
                             auto_reply_max_length = 5_000
                         else:
