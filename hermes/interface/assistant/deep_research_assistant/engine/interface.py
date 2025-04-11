@@ -260,6 +260,8 @@ You'll see partially open artifacts from all problems in the system, that you ha
 
 The outputs of the commands are temporary and won't be visible from other nodes. Include all factual details in the artifacts. As the command outputs are temporary, you might want to create **draft** artifacts for yourself, so that you can compile your intermediary research before writing the final ones. You can do this by adding "DRAFT_" prefix to the artifact name. This will clearly distinguish your intermediary artifacts from the main output artifacts and won't confuse the user.
 
+Also, you are encouraged to share feedback about your experience using the interface. If you have feedback, write an artifact capturing both the good and the growth areas, so that the admin improves the interface.
+
 No need to copy the artifacts between problems or into the root problem.
 As artifacts are written as markdown files, you can refer to the child artifacts with markdown links. The artifacts are located in "Artifacts" folder in the child path (which consists of a directory with the child problem's title as name).
 Example:
