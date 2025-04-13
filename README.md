@@ -60,6 +60,9 @@ aws_profile_name = YOUR_AWS_PROFILE_NAME ; Optional: Specify the AWS profile nam
 
 [XAI]
 api_key = YOUR_XAI_API_KEY
+
+[DEEP_RESEARCH]
+; max_parallel_threads = 4 ; Uncomment and set a value to limit parallel threads. Default is unlimited.
 ```
 
 Replace `YOUR_API_KEY` with your actual API keys for each provider.

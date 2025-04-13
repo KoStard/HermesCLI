@@ -46,6 +46,12 @@ def build_cli_interface(
         type=str,
     )
     chat_parser.add_argument(
+        "--max-parallel-threads",
+        type=int,
+        help="Maximum number of subproblems to run in parallel for Deep Research (default: read from config or unlimited)",
+        default=None,  # Default will be handled later based on config
+    )
+    chat_parser.add_argument(
         "--stt", action="store_true", help="Use Speech to Text mode for input"
     )
     chat_parser.add_argument(
@@ -212,7 +218,6 @@ def main():
 
     is_deep_research_mode = bool(cli_args.deep_research)
     user_control_panel.is_deep_research_mode = is_deep_research_mode
-    
 
     user_interface = UserInterface(
         control_panel=user_control_panel,
@@ -253,10 +258,25 @@ def main():
         elif is_deep_research_mode:
             # Use the Deep Research Assistant interface with the specified path
             research_path = os.path.abspath(cli_args.deep_research)
+
+            # Determine max_parallel_threads: CLI > Config > Default (None = unlimited)
+            max_threads = cli_args.max_parallel_threads
+            if max_threads is None:
+                # Use getint with fallback=None to distinguish between not set and set to 0
+                max_threads_config = config.get("DEEP_RESEARCH", "max_parallel_threads", fallback=None)
+                if max_threads_config is not None:
+                    try:
+                        max_threads = int(max_threads_config)
+                    except ValueError:
+                        print(f"Warning: Invalid value for max_parallel_threads in config: '{max_threads_config}'. Using default (unlimited).")
+                        max_threads = None # Fallback to None if config value is invalid
+                # If still None (not set in CLI or config), it remains None (unlimited)
+
             deep_research_interface = DeepResearchAssistantInterface(
                 model=model,
                 research_path=research_path,
                 extension_commands=deep_research_commands,
+                max_parallel_threads=max_threads,
             )
             deep_research_participant = LLMParticipant(deep_research_interface)
             assistant_participant = deep_research_participant
@@ -399,6 +419,11 @@ def load_config():
 
     config = configparser.ConfigParser()
     config.read(config_path)
+
+    # Ensure DEEP_RESEARCH section exists for default values
+    if "DEEP_RESEARCH" not in config:
+        config["DEEP_RESEARCH"] = {}
+
     return config
 
 

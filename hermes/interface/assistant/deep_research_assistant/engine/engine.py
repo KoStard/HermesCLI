@@ -1,6 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from typing import Optional # Added for type hinting
 
 from .command import Command, CommandRegistry
 from .command_parser import CommandParser, ParseResult
@@ -270,9 +271,11 @@ class DeepResearchEngine:
         root_dir: str = "research",
         llm_interface: LLMInterface = None,
         extension_commands: List = None,
+        max_parallel_threads: Optional[int] = None, # Default to None (unlimited)
     ):
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
+        self.max_parallel_threads = max_parallel_threads
         self.command_parser = CommandParser()
         self.finished = False
         self.logger = DeepResearchLogger(Path(root_dir))

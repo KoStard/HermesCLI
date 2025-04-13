@@ -1,7 +1,7 @@
 import os
 import logging
 import textwrap
-from typing import Generator, List, Optional
+from typing import Generator, List, Optional # Added Optional
 from pathlib import Path
 
 from hermes.interface.assistant.chat_models.base import ChatModel
@@ -28,10 +28,15 @@ class DeepResearchAssistantInterface(Interface):
     """Interface for the Deep Research Assistant"""
 
     def __init__(
-        self, model: ChatModel, research_path: str = None, extension_commands=None
+        self,
+        model: ChatModel,
+        research_path: str = None,
+        extension_commands=None,
+        max_parallel_threads: Optional[int] = None, # Default to None (unlimited)
     ):
         self.model = model
         self.model.initialize()
+        self.max_parallel_threads = max_parallel_threads
         self.research_dir = research_path if research_path else str(Path.cwd())
         self.extension_commands = extension_commands or []
         self._engine: Optional[DeepResearchEngine] = None
@@ -82,8 +87,9 @@ class DeepResearchAssistantInterface(Interface):
                 self.research_dir,
                 llm_interface,
                 self.extension_commands,
+                self.max_parallel_threads,
             )
-            
+
             # Apply any pending budget
             if self._pending_budget is not None:
                 self._engine.set_budget(self._pending_budget)
