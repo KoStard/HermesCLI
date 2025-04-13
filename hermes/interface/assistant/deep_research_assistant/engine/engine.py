@@ -16,6 +16,7 @@ from .llm_interface import LLMInterface
 from .logger import DeepResearchLogger
 from .status_printer import StatusPrinter
 from .report_generator import ReportGenerator
+from .parallel_task_manager import ParallelTaskManager # Added import
 
 
 class _CommandProcessor:
@@ -281,6 +282,7 @@ class DeepResearchEngine:
         self.finished = False
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
+        self.task_manager = ParallelTaskManager(max_parallel_threads) # Instantiate Task Manager
         self.current_node: Optional[Node] = None
         self.next_node: Optional[Node] = None  # Tracks scheduled focus changes
         self.revision_index = 1
