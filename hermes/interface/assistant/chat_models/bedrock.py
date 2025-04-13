@@ -24,7 +24,17 @@ class BedrockModel(ChatModel):
         import boto3
 
         aws_region = self.config.get("aws_region")
-        self.client = boto3.client(
+        aws_profile_name = self.config.get("aws_profile_name")
+
+        if aws_profile_name:
+            session = boto3.Session(profile_name=aws_profile_name)
+            self.notifications_printer.print_notification(
+                f"Using AWS profile: {aws_profile_name}"
+            )
+        else:
+            session = boto3.Session()  # Use default profile/credentials
+
+        self.client = session.client(
             "bedrock-runtime",
             region_name=aws_region,
             config=Config(

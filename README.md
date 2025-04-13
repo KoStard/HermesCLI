@@ -55,7 +55,8 @@ api_key = YOUR_SAMBANOVA_API_KEY
 api_key = YOUR_OPENROUTER_API_KEY
 
 [BEDROCK]
-aws_region = YOUR_AWS_REGION  ; Will use your default profile in you AWS credentials
+aws_region = YOUR_AWS_REGION  ; Specify the AWS region for Bedrock.
+aws_profile_name = YOUR_AWS_PROFILE_NAME ; Optional: Specify the AWS profile name to use. If omitted, the default profile/credentials will be used.
 
 [XAI]
 api_key = YOUR_XAI_API_KEY
