@@ -1,5 +1,5 @@
-from typing import Dict
-from .file_system import FileSystem
+from typing import Dict, Optional, List
+from .file_system import FileSystem, Node, ProblemStatus
 from .history import ChatHistory
 
 
@@ -22,9 +22,15 @@ class CommandContext:
         # Reference to engine for special cases and callbacks
         self._engine = engine
 
-        self.file_system = engine.file_system
-        self.chat_history = engine.chat_history
-        self._permanent_log = engine.permanent_log
+        self.file_system: FileSystem = engine.file_system
+        self.chat_history: ChatHistory = engine.chat_history
+        self._permanent_log: List[str] = engine.permanent_log
+
+        # --- Signals for Engine Loop ---
+        # Set by finish/fail commands to signal completion request
+        self.completion_requested: Optional[ProblemStatus] = None
+        # Set by activate_subproblems command to signal which subproblems to start
+        self.pending_subproblems_to_activate: Optional[List[Node]] = None
 
     def refresh_from_engine(self):
         """Refresh context data from the engine"""

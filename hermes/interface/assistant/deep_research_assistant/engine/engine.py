@@ -452,8 +452,31 @@ class DeepResearchEngine:
                 full_llm_response = ""
 
             # Process the commands in the response
-            self.process_commands(full_llm_response)
-            
+            commands_executed, error_report, execution_status = self.process_commands(full_llm_response)
+
+            # --- Handle Signals from Commands ---
+            # Check for completion requests (finish/fail)
+            if self.command_context.completion_requested:
+                requested_status = self.command_context.completion_requested
+                if requested_status == ProblemStatus.FINISHED:
+                    self._handle_finish_problem()
+                elif requested_status == ProblemStatus.FAILED:
+                    self._handle_fail_problem()
+                # Reset the signal
+                self.command_context.completion_requested = None
+                # Update files after handling completion
+                self.file_system.update_files()
+
+            # Check for subproblem activation requests
+            elif self.command_context.pending_subproblems_to_activate:
+                subproblems_to_activate = self.command_context.pending_subproblems_to_activate
+                self._handle_activate_subproblems(subproblems_to_activate)
+                # Reset the signal
+                self.command_context.pending_subproblems_to_activate = None
+                # Update files after handling activation
+                self.file_system.update_files()
+            # --- End Signal Handling ---
+
             # Increment message cycles and check budget
             self.increment_message_cycles()
             
@@ -533,6 +556,134 @@ class DeepResearchEngine:
 
         # Generate the final report
         return self._generate_final_report()
+
+    # --- Command Signal Handlers ---
+
+    def _handle_finish_problem(self):
+        """Handles the logic previously in focus_up()"""
+        if not self.current_node:
+            print("Warning: _handle_finish_problem called with no current node.")
+            return
+
+        current_node_title = self.current_node.title # Store before changing node
+        parent_chain = self.file_system.get_parent_chain(self.current_node)
+
+        # Mark the current node as FINISHED
+        self.current_node.status = ProblemStatus.FINISHED
+
+        # If this is the root node, we're done
+        if len(parent_chain) <= 1:
+            self.finished = True
+            print(f"Root problem '{current_node_title}' marked FINISHED. Research complete.")
+            # No next node to activate
+            self.next_node = None
+            return
+
+        # Get the parent node
+        parent_node = parent_chain[-2]
+
+        # Check if there are queued siblings to activate
+        if parent_node.title in self.children_queue and self.children_queue[parent_node.title]:
+            # Get the next sibling from the queue
+            next_sibling_title = self.children_queue[parent_node.title].pop(0)
+            # If queue is empty after pop, remove the key
+            if not self.children_queue[parent_node.title]:
+                del self.children_queue[parent_node.title]
+
+            # Activate the next sibling
+            next_sibling = parent_node.subproblems.get(next_sibling_title)
+            if next_sibling:
+                print(f"Problem '{current_node_title}' marked FINISHED. Activating next queued sibling: '{next_sibling_title}'.")
+                self.next_node = next_sibling
+                # Parent remains PENDING until queue is empty
+                parent_node.status = ProblemStatus.PENDING
+            else:
+                # If sibling not found (shouldn't happen), fall back to parent
+                print(f"Warning: Queued sibling '{next_sibling_title}' not found. Focusing up to parent '{parent_node.title}'.")
+                self.next_node = parent_node
+                parent_node.status = ProblemStatus.IN_PROGRESS # Parent becomes active
+        else:
+            # No queued siblings, focus up to parent
+            print(f"Problem '{current_node_title}' marked FINISHED. Focusing up to parent: '{parent_node.title}'.")
+            self.next_node = parent_node
+            parent_node.status = ProblemStatus.IN_PROGRESS # Parent becomes active
+
+        # Add internal message to parent
+        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+            parent_node.title
+        )
+        parent_auto_reply_aggregator.add_internal_message_from(
+            f"Subproblem '{current_node_title}' marked FINISHED.", current_node_title
+        )
+
+    def _handle_fail_problem(self):
+        """Handles the logic previously in fail_and_focus_up()"""
+        if not self.current_node:
+            print("Warning: _handle_fail_problem called with no current node.")
+            return
+
+        current_node_title = self.current_node.title # Store before changing node
+        parent_chain = self.file_system.get_parent_chain(self.current_node)
+
+        # Mark the current node as FAILED
+        self.current_node.status = ProblemStatus.FAILED
+
+        # If this is the root node, we're done
+        if len(parent_chain) <= 1:
+            self.finished = True
+            print(f"Root problem '{current_node_title}' marked FAILED. Research complete.")
+            # No next node to activate
+            self.next_node = None
+            return
+
+        # Get the parent node
+        parent_node = parent_chain[-2]
+
+        # Schedule the focus change directly to the parent
+        print(f"Problem '{current_node_title}' marked FAILED. Focusing up to parent: '{parent_node.title}'.")
+        self.next_node = parent_node
+        parent_node.status = ProblemStatus.IN_PROGRESS # Parent becomes active
+
+        # Add internal message to parent
+        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+            parent_node.title
+        )
+        parent_auto_reply_aggregator.add_internal_message_from(
+            f"Subproblem '{current_node_title}' marked FAILED.", current_node_title
+        )
+
+    def _handle_activate_subproblems(self, subproblems: List[Node]):
+        """Handles the logic for activating subproblems sequentially (for now)."""
+        if not self.current_node:
+            print("Warning: _handle_activate_subproblems called with no current node.")
+            return
+        if not subproblems:
+            print("Warning: _handle_activate_subproblems called with empty subproblem list.")
+            # Revert parent status if it was set to PENDING unnecessarily
+            if self.current_node.status == ProblemStatus.PENDING:
+                 self.current_node.status = ProblemStatus.IN_PROGRESS
+            return
+
+        parent_node = self.current_node
+        # Ensure parent status is PENDING (should have been set by the command)
+        parent_node.status = ProblemStatus.PENDING
+        first_subproblem = subproblems[0]
+        remaining_subproblems = subproblems[1:]
+
+        # Mimic the old focus_down behavior for the *first* subproblem
+        # Parent status is PENDING (set by command and confirmed above)
+        # Schedule the focus change to the first subproblem
+        self.next_node = first_subproblem
+        print(f"Activating first subproblem: '{first_subproblem.title}'. Parent '{parent_node.title}' status: {parent_node.status.value}.")
+
+        # Queue the rest for sequential execution using the old mechanism
+        if remaining_subproblems:
+            remaining_titles = [node.title for node in remaining_subproblems]
+            self.children_queue[parent_node.title].extend(remaining_titles)
+            print(f"Queued remaining subproblems for '{parent_node.title}': {remaining_titles}")
+
+    # --- End Command Signal Handlers ---
+
 
     def manually_choose_and_activate_node(self):
         all_nodes = self.file_system.get_all_nodes()
@@ -696,136 +847,3 @@ class DeepResearchEngine:
         """Generate a summary of all artifacts created during the research"""
         report_generator = ReportGenerator(self.file_system)
         return report_generator.generate_final_report(self.interface)
-
-    def focus_down(self, subproblem_title: str) -> bool:
-        """
-        Schedule focus down to a subproblem after the current cycle is complete
-
-        Args:
-            subproblem_title: Title of the subproblem to focus on
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        if not self.current_node:
-            return False
-
-        # Check if the subproblem exists
-        if subproblem_title not in self.current_node.subproblems:
-            return False
-
-        # Get the subproblem
-        subproblem = self.current_node.subproblems[subproblem_title]
-
-        # Set the parent to PENDING
-        self.current_node.status = ProblemStatus.PENDING
-
-        # Schedule the focus change
-        self.next_node = subproblem
-
-        # Update files
-        self.file_system.update_files()
-
-        return True
-
-    def focus_up(self) -> bool:
-        """
-        Schedule focus up to the parent problem after the current cycle is complete
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        if not self.current_node:
-            return False
-
-        # Get the parent chain
-        parent_chain = self.file_system.get_parent_chain(self.current_node)
-
-        # If this is the root node, we're done
-        if len(parent_chain) <= 1:
-            # Mark the root node as FINISHED
-            self.current_node.status = ProblemStatus.FINISHED
-            self.file_system.update_files()
-            self.finished = True
-            return True
-
-        # Mark the current node as FINISHED
-        self.current_node.status = ProblemStatus.FINISHED
-        current_node = self.current_node
-
-        # Get the parent node (second to last in the chain, as the last is the current node)
-        parent_node = parent_chain[-2]
-
-        # Check if there are queued siblings to activate
-        if parent_node.title in self.children_queue and self.children_queue[parent_node.title]:
-            # Get the next sibling from the queue
-            next_sibling_title = self.children_queue[parent_node.title].pop(0)
-            # If queue is empty after pop, remove the key
-            if not self.children_queue[parent_node.title]:
-                del self.children_queue[parent_node.title]
-            
-            # Activate the next sibling
-            next_sibling = parent_node.subproblems.get(next_sibling_title)
-            if next_sibling:
-                self.next_node = next_sibling
-            else:
-                # If sibling not found, fall back to parent
-                self.next_node = parent_node
-        else:
-            # No queued siblings, focus up to parent
-            self.next_node = parent_node
-
-        # Update files
-        self.file_system.update_files()
-
-        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-            parent_node.title
-        )
-        parent_auto_reply_aggregator.add_internal_message_from(
-            "Task marked FINISHED, focusing back up.", current_node.title
-        )
-
-        return True
-
-    def fail_and_focus_up(self) -> bool:
-        """
-        Mark the current problem as failed and schedule focus up after the current cycle is complete
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        if not self.current_node:
-            return False
-
-        # Get the parent chain
-        parent_chain = self.file_system.get_parent_chain(self.current_node)
-
-        # If this is the root node, we're done
-        if len(parent_chain) <= 1:
-            # Mark the root node as FAILED
-            self.current_node.status = ProblemStatus.FAILED
-            self.file_system.update_files()
-            self.finished = True
-            return True
-
-        # Mark the current node as FAILED
-        self.current_node.status = ProblemStatus.FAILED
-        current_node = self.current_node
-
-        # Get the parent node (second to last in the chain, as the last is the current node)
-        parent_node = parent_chain[-2]
-
-        # Schedule the focus change
-        self.next_node = parent_node
-
-        # Update files
-        self.file_system.update_files()
-
-        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-            parent_node.title
-        )
-        parent_auto_reply_aggregator.add_internal_message_from(
-            "Task marked FAILED, focusing back up.", current_node.title
-        )
-
-        return True

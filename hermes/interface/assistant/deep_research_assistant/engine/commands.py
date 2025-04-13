@@ -2,7 +2,7 @@ import textwrap
 from typing import Dict, Any, List
 
 from .command import Command, CommandType, register_command, DefineCommand
-from .file_system import Artifact, ProblemStatus
+from .file_system import Artifact, Node, ProblemStatus
 from .command_context import CommandContext
 
 
@@ -214,34 +214,32 @@ class FocusDownCommand(Command):
             titles = [titles]  # Handle single title case
             
         if not titles:
-            raise ValueError("No subproblems specified to activate")
-
-        # Queue up all subproblems for sequential activation
+            raise ValueError("No subproblems specified to activate.")
         current_node = context.current_node
         if not current_node:
-            raise ValueError("No current node")
+            raise ValueError("Cannot activate subproblems without a current node.")
 
-        # Validate all subproblems exist before queueing
+        subproblem_nodes: List[Node] = []
+        # Validate all subproblems exist and collect Node objects
         for title in titles:
             if title not in current_node.subproblems:
-                raise ValueError(f"Subproblem '{title}' not found")
+                raise ValueError(f"Subproblem '{title}' not found in '{current_node.title}'.")
+            subproblem_nodes.append(current_node.subproblems[title])
 
-        # Add all titles to the queue except the first one
+        # Set parent status to PENDING
+        # This status indicates the engine should look for pending subproblems
+        current_node.status = ProblemStatus.PENDING
+        # Note: We update files in the engine loop after processing signals
+
+        # Store the list of nodes to be activated in the context
+        context.pending_subproblems_to_activate = subproblem_nodes
+
+        # Add output message indicating activation request
+        activation_msg = f"Requested activation for subproblem(s): {', '.join(titles)}."
         if len(titles) > 1:
-            context.children_queue[current_node.title].extend(titles[1:])
-
-        self.add_output(
-            context,
-            args,
-            f"Focusing on {titles[0]}.",
-        )
-
-        # Activate the first subproblem
-        result = context.focus_down(titles[0])
-        if not result:
-            raise ValueError(
-                f"Failed to activate subproblem '{titles[0]}'. Make sure the subproblem exists."
-            )
+             activation_msg += " They will be processed sequentially for now." # TODO: Update when parallel is implemented
+        self.add_output(context, args, activation_msg)
+        # The actual focus change and queuing happens in the engine loop based on the context signal
 
     def should_be_last_in_message(self):
         return True
@@ -259,11 +257,12 @@ class FocusUpCommand(Command):
         )
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
-        """Focus up to the parent problem"""
-        result = context.focus_up()
-
-        if not result:
-            raise ValueError("Failed to focus up to parent problem.")
+        """Signal the engine to finish the current problem and focus up"""
+        if not context.current_node:
+             raise ValueError("Cannot finish problem: No current node.")
+        # Signal completion request - the engine loop will handle the actual focus change
+        context.completion_requested = ProblemStatus.FINISHED
+        self.add_output(context, args, "Requested to mark problem as FINISHED and focus up.")
 
     def should_be_last_in_message(self):
         return True
@@ -279,11 +278,12 @@ class FailProblemAndFocusUpCommand(Command):
         )
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
-        """Mark problem as failed and focus up"""
-        result = context.fail_and_focus_up()
-
-        if not result:
-            raise ValueError("Failed to mark problem as failed and focus up.")
+        """Signal the engine to mark the current problem as failed and focus up"""
+        if not context.current_node:
+             raise ValueError("Cannot fail problem: No current node.")
+        # Signal completion request - the engine loop will handle the actual focus change
+        context.completion_requested = ProblemStatus.FAILED
+        self.add_output(context, args, "Requested to mark problem as FAILED and focus up.")
 
     def should_be_last_in_message(self):
         return True

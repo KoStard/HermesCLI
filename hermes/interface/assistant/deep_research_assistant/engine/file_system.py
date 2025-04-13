@@ -39,7 +39,7 @@ class Artifact:
 
 class ProblemStatus(Enum):
     NOT_STARTED = "NOT_STARTED"  # Problem has not been started yet
-    PENDING = "PENDING"  # Problem is temporarily paused (focus moved to child)
+    PENDING = "PENDING"  # Problem is temporarily paused (focus moved to child or waiting for children)
     IN_PROGRESS = "IN_PROGRESS"  # Problem is currently being worked on
     FINISHED = "FINISHED"  # Problem has been successfully completed
     FAILED = "FAILED"  # Problem could not be solved
@@ -119,14 +119,14 @@ class Node:
     def get_status_emoji(self) -> str:
         """Get an emoji representation of the problem status"""
         status_emojis = {
-            ProblemStatus.NOT_STARTED: "🆕",
-            ProblemStatus.PENDING: "⏳",
-            ProblemStatus.IN_PROGRESS: "🔍",
-            ProblemStatus.FINISHED: "✅",
-            ProblemStatus.FAILED: "❌",
-            ProblemStatus.CANCELLED: "🚫",
+            ProblemStatus.NOT_STARTED: "🆕", # New
+            ProblemStatus.PENDING: "⏳", # Pending (waiting for child/children)
+            ProblemStatus.IN_PROGRESS: "🔍", # In Progress
+            ProblemStatus.FINISHED: "✅", # Finished
+            ProblemStatus.FAILED: "❌", # Failed
+            ProblemStatus.CANCELLED: "🚫", # Cancelled
         }
-        return status_emojis.get(self.status, "🆕")
+        return status_emojis.get(self.status, "❓") # Default to question mark if unknown
 
     def get_status_label(self) -> str:
         """Get a short label for the problem status"""
