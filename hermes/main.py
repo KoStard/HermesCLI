@@ -241,9 +241,8 @@ def main():
             )
         provider, model_tag = model_info_string.split("/", 1)
         provider = provider.upper()
-        config_section = get_config_section(config, provider)
 
-        model = model_factory.get_model(provider, model_tag, config_section)
+        model = model_factory.get_model(provider, model_tag, config)
 
         if is_debug_mode:
             debug_interface = DebugInterface(
@@ -419,14 +418,6 @@ def get_default_model_info_string(config: configparser.ConfigParser):
         return None
     base_section = config["BASE"]
     return base_section.get("model")
-
-
-def get_config_section(config: configparser.ConfigParser, provider: str):
-    if provider not in config.sections():
-        raise ValueError(
-            f"Config section {provider} is not found. Please double check it and specify it in the config file ~/.config/hermes/config.ini. You might need to specify the api_key there."
-        )
-    return config[provider]
 
 
 if __name__ == "__main__":

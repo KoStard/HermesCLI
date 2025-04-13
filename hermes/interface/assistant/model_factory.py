@@ -1,3 +1,4 @@
+from configparser import ConfigParser
 from typing import List, Type
 from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.interface.assistant.chat_models.bedrock import BedrockModel
@@ -49,7 +50,7 @@ class ModelFactory:
         return self.provider_and_model_tag_pairs
 
     def get_model(
-        self, provider: str, model_tag: str, config_section: dict
+        self, provider: str, model_tag: str, config: ConfigParser
     ) -> ChatModel:
         """
         Creates and returns an appropriate chat model instance based on the provider and model tag.
@@ -70,6 +71,8 @@ class ModelFactory:
         # First try exact match
         model_class = self.provider_model_map.get((provider, model_tag))
         if model_class:
+            config_section_name = model_class.get_config_section_name()
+            config_section = get_config_section(config, config_section_name)
             return model_class(config_section, model_tag, self.notifications_printer)
 
         # If no exact match, find all classes for this provider
@@ -89,7 +92,18 @@ class ModelFactory:
                 f"{matching_classes[0].__name__}"
             )
 
+        model_class = matching_classes[0]
+        config_section_name = model_class.get_config_section_name()
+        config_section = get_config_section(config, config_section_name)
         # Use first matching class
-        return matching_classes[0](
+        return model_class(
             config_section, model_tag, self.notifications_printer
         )
+
+
+def get_config_section(config: ConfigParser, provider: str):
+    if provider not in config.sections():
+        raise ValueError(
+            f"Config section {provider} is not found. Please double check it and specify it in the config file ~/.config/hermes/config.ini. You might need to specify the api_key there."
+        )
+    return config[provider]
