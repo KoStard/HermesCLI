@@ -1,3 +1,4 @@
+import threading
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -293,6 +294,7 @@ class DeepResearchEngine:
         self.initial_budget = None  # Store the initial budget for reference
         self.message_cycles_used = 0
         self.budget_warning_shown = False
+        self.budget_lock = threading.Lock() # Lock for thread-safe budget updates
 
         # Check if problem already exists
         self.file_system.load_existing_problem()
@@ -614,8 +616,9 @@ class DeepResearchEngine:
             )
     
     def increment_message_cycles(self):
-        """Increment the message cycles counter"""
-        self.message_cycles_used += 1
+        """Increment the message cycles counter atomically."""
+        with self.budget_lock:
+            self.message_cycles_used += 1
         
     def get_remaining_budget(self):
         """Get the remaining budget"""
