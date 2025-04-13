@@ -196,3 +196,30 @@ DECISION: Default max_parallel_threads is None, which means no limitation
     *   **Verification:** Code review and stress testing with high parallelism (`max_parallel_threads` > 4) involving frequent file/node modifications.
 
 This breakdown provides a step-by-step path, starting with setup, introducing structures, refactoring sequentially, enabling basic threading, and finally adding full concurrency and refinement.
+
+---
+
+## Review Notes (2025-04-14)
+
+Based on a review of the current codebase and design (`parallel.md`):
+
+1.  **`PENDING_PARALLEL` Status (Task 1.1):** This task is obsolete based on the decision noted ("PENDING is enough"). The focus should be on ensuring the `PENDING` status is correctly used and reported when waiting for parallel tasks.
+2.  **Command Refactoring & Signaling (Tasks 3.1, 3.2):**
+    *   The core refactoring to use signals (`completion_requested`, `pending_subproblems_to_activate` in `CommandContext`) is **DONE**.
+    *   Task 3.1 description needs update: The `activate_subproblems_and_wait` command now sets the `pending_subproblems_to_activate` signal. The engine loop detects this *after* command processing, sets the parent to `PENDING`, and interacts with the `ParallelTaskManager`. The sequential fallback/`children_queue` logic mentioned is no longer relevant here.
+    *   Task 3.2 description (using `completion_requested`) is accurate to the current implementation.
+3.  **Engine Loop Integration (Task 4.2):** The trigger mechanism is the `pending_subproblems_to_activate` signal, not checking for a specific status *before* command processing. The engine loop should:
+    *   Process commands.
+    *   Check for `completion_requested` signal -> handle finish/fail.
+    *   Check for `pending_subproblems_to_activate` signal -> set parent `PENDING`, call `task_manager.submit_tasks`, clear signal.
+    *   If the *current* node's status *is* `PENDING` (set in a previous cycle), call `task_manager.wait_for_completion`, process results, set status back to `IN_PROGRESS`.
+    *   Otherwise (normal sequential step), run the single node logic (potentially via `SubtaskRunner`).
+4.  **Missing/Incomplete Tasks:**
+    *   **Context Propagation:** Need explicit steps/verification for passing shared resources (LLM interface, file system, chat history, locks) to `ParallelTaskManager` and `SubtaskRunner`.
+    *   **Locking Implementation:**
+        *   Task 5.1 (`ChatHistory` locking): **Needs Implementation.**
+        *   Task 5.2 (`LLMInterface` locking): **Needs Implementation.**
+        *   Task 5.6 (`FileSystem` locking): Should be changed to **Verify Existing Lock Usage.** The `RLock` exists, but its application needs review for parallel scenarios.
+    *   **Result Aggregation (Task 5.4):** **Needs Implementation.** Define how results are passed from `SubtaskRunner` -> `ParallelTaskManager` -> Parent `AutoReplyAggregator`.
+    *   **UI/Status Reporting (Task 5.5):** **Needs Implementation.** Adapt `StatusPrinter` and `HierarchyFormatter` for `PENDING` status when parallel tasks are active.
+    *   **SubtaskRunner Implementation (Task 4.1 & 4.2):** Needs detailed implementation, ensuring it correctly uses passed context/locks and handles its lifecycle based on signals.
