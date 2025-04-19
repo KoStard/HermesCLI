@@ -10,13 +10,22 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Type
 import logging
+from appdirs import user_config_dir # Added for cross-platform config directory
 from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
 from hermes.interface.assistant.deep_research_assistant.engine.commands.command import Command
 
 
 def get_extensions_dir() -> Path:
-    """Get the path to the extensions directory"""
-    return Path.home() / ".config" / "hermes" / "extensions"
+    """Get the path to the extensions directory in a cross-platform way"""
+    # Define app name and author (consistent with main.py)
+    app_name = "HermesCLI"
+    app_author = "HermesCLI" # Optional, but good practice
+
+    # Get the platform-specific user config directory
+    config_dir = Path(user_config_dir(appname=app_name, appauthor=app_author))
+
+    # Return the path to the 'extensions' subdirectory
+    return config_dir / "extensions"
 
 
 def load_extension_module(extension_path: Path) -> Optional[object]:

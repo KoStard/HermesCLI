@@ -24,6 +24,8 @@ from hermes.exa_client import ExaClient
 from hermes.participants import DebugParticipant, LLMParticipant, UserParticipant
 import configparser
 import os
+from pathlib import Path
+from appdirs import user_config_dir
 
 
 def build_cli_interface(
@@ -388,13 +390,22 @@ def execute_utils_command(cli_args, config, extension_utils_visitors):
     else:
         for extension_util_visitor in extension_utils_visitors:
             extension_util_visitor(cli_args, config)
-
-
 def load_config():
-    config_path = os.path.expanduser("~/.config/hermes/config.ini")
-    if not os.path.exists(config_path):
+    # Define app name and author (used for directory structure)
+    app_name = "HermesCLI"
+    app_author = "HermesCLI" # Optional, but good practice
+
+    # Get the platform-specific user config directory
+    config_dir = Path(user_config_dir(appname=app_name, appauthor=app_author))
+
+    # Define the full path to the config file
+    config_path = config_dir / "config.ini"
+
+    if not config_path.exists():
+        # Update the error message to be more informative
         raise ValueError(
-            "Configuration file at ~/.config/hermes/config.ini not found. Please go to https://github.com/KoStard/HermesCLI/ and follow the setup steps."
+            f"Configuration file not found. Please create it at: {config_path}\n"
+            "Go to https://github.com/KoStard/HermesCLI/ and follow the setup steps."
         )
 
     config = configparser.ConfigParser()

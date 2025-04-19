@@ -26,7 +26,15 @@ uv tool install git+https://github.com/KoStard/HermesCLI --upgrade --python 3.11
 
 ### Configuration
 
-Before using Hermes, you'll need to configure your API keys for the LLMs you intend to use. Create a configuration file at `~/.config/hermes/config.ini` with the following format:
+Before using Hermes, you'll need to configure your API keys for the LLMs you intend to use. Hermes looks for its configuration file (`config.ini`) in the standard user configuration directory for your operating system.
+
+First, create the application's configuration directory:
+*   **Linux:** `~/.config/HermesCLI/`
+*   **macOS:** `~/Library/Application Support/HermesCLI/`
+*   **Windows:** `C:\Users\<YourUsername>\AppData\Roaming\HermesCLI\HermesCLI\`
+    *(Note: The exact path might vary slightly based on your Windows version and configuration. `%APPDATA%\HermesCLI\HermesCLI\` is the general location)*
+
+Then, inside that directory, create a file named `config.ini` with the following format:
 
 ```ini
 [BASE]
@@ -139,19 +147,32 @@ The same way as you (the user) has access to commands in Hermes, the LLM has acc
 
 ## Extending Hermes
 
-Hermes can be extended by adding custom commands. Extensions are loaded from the `~/.config/hermes/extensions/` directory. Each extension should be in a separate subdirectory and contain an `extension.py` file.
+Hermes can be extended by adding custom commands. Extensions are loaded from the `extensions` subdirectory within the Hermes configuration directory (see the Configuration section above for the location on your OS). Each extension should be in its own subdirectory and contain an `extension.py` file.
 
 ### Extension Structure
 
+Example for Linux:
 ```
-~/.config/hermes/extensions/
-└── my_extension/
-    └── extension.py
+~/.config/HermesCLI/
+├── config.ini
+└── extensions/
+    └── my_extension/
+        └── extension.py
 ```
+
+Example for Windows:
+```
+C:\Users\<YourUsername>\AppData\Roaming\HermesCLI\HermesCLI\
+├── config.ini
+└── extensions\
+    └── my_extension\
+        └── extension.py
+```
+
 
 ### Example Extension
 
-Here's an example of an `extension.py` file that you can put to `~/.config/hermes/extensions/example_extension/`:
+Here's an example of an `extension.py` file that you can put inside an `example_extension` subdirectory within your `extensions` folder:
 
 ```python
 from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
