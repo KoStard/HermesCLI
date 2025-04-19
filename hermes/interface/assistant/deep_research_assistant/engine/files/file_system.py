@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
-from hermes.interface.assistant.deep_research_assistant.engine.frontmatter_manager import (
+from .frontmatter_manager import (
     FrontmatterManager,
 )
 

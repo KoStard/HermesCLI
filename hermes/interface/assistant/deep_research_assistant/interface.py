@@ -1,6 +1,5 @@
 import os
 import logging
-import textwrap
 from typing import Generator, List, Optional
 from pathlib import Path
 
@@ -8,7 +7,7 @@ from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
-from hermes.interface.assistant.deep_research_assistant.engine.hierarchy_formatter import (
+from hermes.interface.assistant.deep_research_assistant.engine.context.hierarchy_formatter import (
     HierarchyFormatter,
 )
 from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import (

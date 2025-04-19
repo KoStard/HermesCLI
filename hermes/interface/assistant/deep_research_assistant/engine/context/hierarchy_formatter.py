@@ -1,6 +1,6 @@
 from typing import List
 
-from .file_system import Node
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import Node
 from .xml_formatter import XMLFormatter
 
 

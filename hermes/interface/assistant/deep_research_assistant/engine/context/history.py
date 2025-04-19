@@ -2,7 +2,7 @@ from abc import ABC
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from hermes.interface.assistant.deep_research_assistant.engine.content_truncator import (
+from hermes.interface.assistant.deep_research_assistant.engine.context.content_truncator import (
     ContentTruncator,
 )
 

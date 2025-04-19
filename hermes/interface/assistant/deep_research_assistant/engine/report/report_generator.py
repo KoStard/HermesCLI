@@ -1,4 +1,4 @@
-from .file_system import FileSystem
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem
 
 
 class ReportGenerator:

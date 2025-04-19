@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .file_system import FileSystem, Node
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
 
 
 class StatusPrinter:

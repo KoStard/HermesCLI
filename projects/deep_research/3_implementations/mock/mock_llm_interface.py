@@ -1,7 +1,6 @@
 from typing import Dict, Generator, List
-import sys
 
-from hermes.interface.assistant.deep_research_assistant.engine.llm_interface import (
+from hermes.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,
 )
 

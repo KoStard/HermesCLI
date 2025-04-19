@@ -2,7 +2,7 @@ import textwrap
 from typing import Dict, Any, List
 
 from .command import Command, CommandType, register_command, DefineCommand
-from .file_system import Artifact, ProblemStatus
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import Artifact, ProblemStatus
 from .command_context import CommandContext
 
 

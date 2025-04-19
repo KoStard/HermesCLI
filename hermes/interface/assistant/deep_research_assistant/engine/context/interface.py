@@ -1,9 +1,9 @@
 import textwrap
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple
 
-from .command import CommandRegistry
-from .file_system import FileSystem, Node
-from .commands import register_predefined_commands
+from hermes.interface.assistant.deep_research_assistant.engine.commands.command import CommandRegistry
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
+from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import register_predefined_commands
 from .hierarchy_formatter import HierarchyFormatter
 from .content_truncator import ContentTruncator  # Import ContentTruncator
 

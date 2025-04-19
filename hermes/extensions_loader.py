@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Optional, Type
 import logging
 from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
-from hermes.interface.assistant.deep_research_assistant.engine.command import Command
+from hermes.interface.assistant.deep_research_assistant.engine.commands.command import Command
 
 
 def get_extensions_dir() -> Path:

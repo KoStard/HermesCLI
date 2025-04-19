@@ -2,18 +2,18 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from .command import Command, CommandRegistry
-from .command_parser import CommandParser, ParseResult
-from .command_context import CommandContext
+from hermes.interface.assistant.deep_research_assistant.engine.commands.command import Command, CommandRegistry
+from hermes.interface.assistant.deep_research_assistant.engine.commands.command_parser import CommandParser, ParseResult
+from hermes.interface.assistant.deep_research_assistant.engine.commands.command_context import CommandContext
 
 # Import commands to ensure they're registered
-from .file_system import FileSystem, Node, ProblemStatus
-from .history import ChatHistory, AutoReply, ChatMessage
-from .interface import DeepResearcherInterface
-from .llm_interface import LLMInterface
-from .logger import DeepResearchLogger
-from .status_printer import StatusPrinter
-from .report_generator import ReportGenerator
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, ProblemStatus
+from hermes.interface.assistant.deep_research_assistant.engine.context.history import ChatHistory, AutoReply, ChatMessage
+from hermes.interface.assistant.deep_research_assistant.engine.context.interface import DeepResearcherInterface
+from hermes.interface.assistant.deep_research_assistant.llm_interface import LLMInterface
+from hermes.interface.assistant.deep_research_assistant.engine.files.logger import DeepResearchLogger
+from hermes.interface.assistant.deep_research_assistant.engine.report.status_printer import StatusPrinter
+from hermes.interface.assistant.deep_research_assistant.engine.report.report_generator import ReportGenerator
 
 
 class _CommandProcessor:
