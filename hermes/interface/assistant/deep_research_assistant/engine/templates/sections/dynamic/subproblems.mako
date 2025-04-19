@@ -1,4 +1,3 @@
 <%namespace name="xml" file="/macros/xml.mako"/>
-======================
 ${'##'} Subproblems of the current problem
-${subproblems_content}
+${hierarchy_formatter.format_subproblems(target_node)}

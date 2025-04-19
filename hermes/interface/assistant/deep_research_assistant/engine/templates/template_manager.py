@@ -32,7 +32,8 @@ class TemplateManager:
             return template.render(**context).decode('utf-8')
         except Exception as e:
             # For now return a basic error message, we'll improve error handling later
-            return f"Error rendering template {template_name}: {str(e)}"
+            print(f"Error rendering template {template_name}: {str(e)}")
+            raise
 
     def get_template(self, template_name: str) -> Optional[Template]:
         """

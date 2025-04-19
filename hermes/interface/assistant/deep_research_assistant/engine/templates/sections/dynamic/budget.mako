@@ -1,12 +1,11 @@
 <%namespace name="xml" file="/macros/xml.mako"/>
-======================
 ${'#'} Budget Information
-% if total is None or remaining is None:
+% if budget is None or remaining_budget is None:
 No budget has been set.
 % else:
-- Total budget: ${total} message cycles
-- Used: ${total - remaining} message cycles
-- Remaining: ${remaining} message cycles
+- Total budget: ${budget} message cycles
+- Used: ${budget - remaining_budget} message cycles
+- Remaining: ${remaining_budget} message cycles
 - Status: ${budget_status}
 
 % if budget_status == "CRITICAL":
