@@ -43,16 +43,8 @@ class DeepResearcherInterface:
               6. Problem Path Hierarchy
               7. Goal
         """
-        # Prepare context for the base template
-        template_context = {
-            'static_content': self._render_static_content(),
-            'target_node': target_node,
-            'budget': budget,
-            'remaining_budget': remaining_budget
-        }
-        
-        # Render the complete interface using the base template
-        static_section = self.template_manager.render_template('static.mako', **template_context)
+        # Render static and dynamic sections separately
+        static_section = self._render_static_content(target_node)
         dynamic_sections = self._render_dynamic_sections(
             target_node=target_node,
             permanent_logs=permanent_logs,
@@ -61,26 +53,13 @@ class DeepResearcherInterface:
         )
         return static_section, dynamic_sections
 
-    def _render_static_content(self) -> str:
-        """Render all static content sections"""
-        sections = []
-        # Define the order of static sections
-        static_template_names = [
-            'introduction', 
-            'mission', 
-            'interface_structure', 
-            'commands', 
-            'problem_details',  # Added the new section here
-            'planning', 
-            'budget'
-        ]
-        for template_name in static_template_names:
-            template_path = f'sections/static/{template_name}.mako'
-            context = {}
-            if template_name == 'commands':
-                context['command_help'] = self._generate_command_help()
-            sections.append(self.template_manager.render_template(template_path, **context))
-        return '\n\n'.join(sections)
+    def _render_static_content(self, target_node: Node) -> str:
+        """Render the static content by rendering the main static.mako template."""
+        context = {
+            'target_node': target_node,
+            'command_help': self._generate_command_help()
+        }
+        return self.template_manager.render_template('static.mako', **context)
 
     def _render_dynamic_sections(self, target_node: Node, permanent_logs: List[str], budget: Optional[int], remaining_budget: Optional[int]) -> List[str]:
         """Render all dynamic sections"""
