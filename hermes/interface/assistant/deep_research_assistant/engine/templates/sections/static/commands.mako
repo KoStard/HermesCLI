@@ -29,7 +29,7 @@ Notice that we use <<< for opening the commands, >>> for closing, and /// for ar
 
 In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". If the system detects this code anywhere in your response it will halt the system and the admin will check it.
 
-${command_help}
+<%include file="command_help.mako" args="commands=commands"/>
 
 ${'###'} Commands FAQ
 

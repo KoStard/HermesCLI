@@ -6,7 +6,7 @@
 
 <%include file="sections/static/interface_structure.mako"/>
 
-<%include file="sections/static/commands.mako" args="command_help=command_help"/>
+<%include file="sections/static/commands.mako" args="commands=commands"/>
 
 <%include file="sections/static/problem_details.mako" args="target_node=target_node"/>
 

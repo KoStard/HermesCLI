@@ -55,10 +55,14 @@ class DeepResearcherInterface:
 
     def _render_static_content(self, target_node: Node) -> str:
         """Render the static content by rendering the main static.mako template."""
+        # Get commands to pass to the template context
+        commands = CommandRegistry().get_problem_defined_interface_commands()
+        
         context = {
             'target_node': target_node,
-            'command_help': self._generate_command_help()
+            'commands': commands  # Pass the commands dictionary directly
         }
+        
         return self.template_manager.render_template('static.mako', **context)
 
     def _render_dynamic_sections(self, target_node: Node, permanent_logs: List[str], budget: Optional[int], remaining_budget: Optional[int]) -> List[str]:
@@ -206,38 +210,15 @@ class DeepResearcherInterface:
         return self.template_manager.render_template('sections/dynamic/goal.mako')
 
     def _generate_command_help(self) -> str:
-        """Generate help text for all registered commands"""
+        """Generate help text for all registered commands by rendering the command_help template."""
         # Get all registered commands suitable for the problem-defined interface
         commands = CommandRegistry().get_problem_defined_interface_commands()
-
-        # Generate command help text
-        result = []
-        for name, cmd in sorted(commands.items()):
-            # Command header with name
-            command_text = f"<<< {name}"
-
-            # Add sections
-            for section in cmd.sections:
-                command_text += f"\n///{section.name}"
-                if section.allow_multiple:
-                    command_text += " (multiple allowed)"
-                if section.help_text:
-                    command_text += f"\n{section.help_text}"
-                else:
-                    command_text += f"\nYour {section.name} here"
-
-            # Command footer
-            command_text += "\n>>>"
-
-            # Add help text if available
-            if cmd.help_text:
-                command_text += "\n" + "\n".join(
-                    "; " + line for line in cmd.help_text.split("\n")
-                )
-
-            result.append(command_text)
-
-        return "\n\n".join(result)
+        
+        # Render the command help template
+        return self.template_manager.render_template(
+            'sections/static/command_help.mako', 
+            commands=commands
+        )
 
     def _format_budget_section(self, total, remaining) -> str:
         """Format the budget section using templates"""
