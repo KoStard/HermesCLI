@@ -1,4 +1,12 @@
 <%namespace name="xml" file="/macros/xml.mako"/>
+<%
+budget_status = "GOOD"
+if budget is not None and remaining_budget is not None:
+    if remaining_budget <= 0:
+        budget_status = "CRITICAL"
+    elif remaining_budget <= 10:
+        budget_status = "LOW"
+%>
 ${'#'} Budget Information
 % if budget is None or remaining_budget is None:
 No budget has been set.

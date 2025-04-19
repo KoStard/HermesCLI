@@ -67,14 +67,6 @@ class DeepResearcherInterface:
     ) -> List[str]:
         """Render all dynamic sections by rendering the main dynamic_sections.mako template and splitting the result."""
         # --- Prepare context data needed by the main dynamic sections template ---
-        # Budget Status Calculation
-        budget_status = "GOOD"
-        if budget is not None and remaining_budget is not None:
-            if remaining_budget <= 0:
-                budget_status = "CRITICAL"
-            elif remaining_budget <= 10:
-                budget_status = "LOW"
-
         # Artifacts Data (Raw)
         external_files = self.file_system.get_external_files()
         node_artifacts = []
@@ -96,7 +88,6 @@ class DeepResearcherInterface:
             "permanent_logs": permanent_logs,
             "budget": budget,
             "remaining_budget": remaining_budget,
-            "budget_status": budget_status,
             "external_files": external_files,
             "node_artifacts": node_artifacts,
             "file_system": self.file_system,
@@ -121,8 +112,6 @@ class DeepResearcherInterface:
         ]
 
         return dynamic_sections
-
-    # Note: Individual format_* methods for dynamic sections are removed below
 
     def _collect_artifacts_recursively(
         self, node: Node, current_node: Node
