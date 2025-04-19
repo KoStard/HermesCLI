@@ -55,7 +55,7 @@ class FileReader:
                     f"Failed to use markitdown for {filepath}, reading as text file: {e}"
                 )
                 try:
-                    with open(filepath, "r") as f:
+                    with open(filepath, "r", encoding="utf-8") as f:
                         content = f.read()
                     return content, True
                 except Exception as read_error:

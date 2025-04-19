@@ -33,7 +33,7 @@ class DeepResearchLogger:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{timestamp}_LLM_Request.md"
 
-        with open(logs_dir / filename, "w") as f:
+        with open(logs_dir / filename, "w", encoding="utf-8") as f:
             f.write("=== LLM REQUEST ===\n\n")
             f.write("== Chat History ==\n")
             for msg in rendered_messages:
@@ -50,6 +50,6 @@ class DeepResearchLogger:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{timestamp}_LLM_Response.md"
 
-        with open(logs_dir / filename, "w") as f:
+        with open(logs_dir / filename, "w", encoding="utf-8") as f:
             f.write("=== LLM RESPONSE ===\n\n")
             f.write(response)

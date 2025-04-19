@@ -16,7 +16,7 @@ class MarkdownDocumentUpdater:
     def _create_if_not_exists(self, section_path: List[str], content: str) -> None:
         """Create a new markdown file with initial section structure."""
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
-        with open(self.file_path, "w") as f:
+        with open(self.file_path, "w", encoding="utf-8") as f:
             for i, header in enumerate(section_path, 1):
                 f.write("#" * i + " " + header + "\n")
             f.write(content)
@@ -54,7 +54,7 @@ class MarkdownDocumentUpdater:
         if not new_content.endswith("\n"):
             new_content += "\n"
 
-        with open(self.file_path, "r") as f:
+        with open(self.file_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         is_preface = False
@@ -66,7 +66,7 @@ class MarkdownDocumentUpdater:
             lines, section_path, new_content, mode, is_preface
         )
 
-        with open(self.file_path, "w") as f:
+        with open(self.file_path, "w", encoding="utf-8") as f:
             f.writelines(updated_lines)
 
         return section_found

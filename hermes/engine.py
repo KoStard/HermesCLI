@@ -377,7 +377,7 @@ class Engine:
             self._backup_existing_file(file_path)
 
         self.notifications_printer.print_notification(f"Creating file {file_path}")
-        with open(file_path, "w") as file:
+        with open(file_path, "w", encoding="utf-8") as file:
             file.write(content)
 
     def _update_markdown_section(
@@ -424,7 +424,7 @@ class Engine:
         mode = "a" if os.path.exists(file_path) else "w"
         action = "Appending to" if mode == "a" else "Creating"
         self.notifications_printer.print_notification(f"{action} file {file_path}")
-        with open(file_path, mode) as file:
+        with open(file_path, mode, encoding="utf-8") as file:
             file.write(content)
 
     def _prepend_file(self, file_path: str, content: str) -> None:
@@ -437,16 +437,16 @@ class Engine:
         """
         if os.path.exists(file_path):
             # Read existing content
-            with open(file_path, "r") as file:
+            with open(file_path, "r", encoding="utf-8") as file:
                 existing_content = file.read()
             # Write new content followed by existing
-            with open(file_path, "w") as file:
+            with open(file_path, "w", encoding="utf-8") as file:
                 file.write(content + existing_content)
             self.notifications_printer.print_notification(
                 f"Prepending to file {file_path}"
             )
         else:
             # If file doesn't exist, just create it with the content
-            with open(file_path, "w") as file:
+            with open(file_path, "w", encoding="utf-8") as file:
                 file.write(content)
             self.notifications_printer.print_notification(f"Creating file {file_path}")

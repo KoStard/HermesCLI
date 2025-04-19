@@ -20,7 +20,7 @@ class Artifact:
 
     @staticmethod
     def load_from_file(file_path: Path) -> "Artifact":
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
         metadata, content = FrontmatterManager().extract_frontmatter(content)
         # Derive name from filename without extension
@@ -33,7 +33,7 @@ class Artifact:
         content = self.frontmatter_manager.add_frontmatter(
             self.content, {"name": self.name}
         )
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
 
 
@@ -420,14 +420,14 @@ class FileSystem:
             self._create_node_directories(node)
 
         # Write problem definition with front-matter
-        with open(node.path / "Problem Definition.md", "w") as f:
+        with open(node.path / "Problem Definition.md", "w", encoding="utf-8") as f:
             content = self.frontmatter_manager.add_frontmatter(
                 node.problem_definition, {"title": node.title}
             )
             f.write(content)
 
         # Write criteria (always create the file)
-        with open(node.path / "Criteria of Definition of Done.md", "w") as f:
+        with open(node.path / "Criteria of Definition of Done.md", "w", encoding="utf-8") as f:
             if node.criteria:
                 for i, (criterion, done) in enumerate(
                     zip(node.criteria, node.criteria_done)
@@ -436,7 +436,7 @@ class FileSystem:
                     f.write(f"{i+1}. {status} {criterion}\n")
 
         # Write breakdown structure (always create the file)
-        with open(node.path / "Breakdown Structure.md", "w") as f:
+        with open(node.path / "Breakdown Structure.md", "w", encoding="utf-8") as f:
             if node.subproblems:
                 for title, subproblem in node.subproblems.items():
                     f.write(f"## {title}\n\n")
@@ -464,7 +464,7 @@ class FileSystem:
         if not file_path.exists():
             return None, ""
 
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             full_content = f.read()
 
         metadata, content = self.frontmatter_manager.extract_frontmatter(full_content)
@@ -488,7 +488,7 @@ class FileSystem:
         criteria = []
         criteria_done = []
         if criteria_file.exists():
-            with open(criteria_file, "r") as f:
+            with open(criteria_file, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line and line[0].isdigit():
