@@ -67,8 +67,7 @@ def main():
     except KeyboardInterrupt:
         print("\nExiting application...")
     except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+        raise
 
 
 if __name__ == "__main__":
