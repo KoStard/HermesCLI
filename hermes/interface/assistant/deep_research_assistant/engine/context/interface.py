@@ -191,84 +191,27 @@ Remember, we work backwards from the root problem.
                 # Handle case where root_node might not be set yet but problem is defined
                 node_artifacts = self.collect_artifacts_recursively(current_node, current_node)
 
-        if not external_files and not node_artifacts:
-            return "<artifacts>\nNo artifacts available.\n</artifacts>"
-
-        result = "<artifacts>\n"
-
-        # Format external files
-        if external_files:
-            result += textwrap.dedent(
-                """<external_files_intro>
-                These are external files provided by the user at the start of this research. They contain important context for the problem and are always fully available.
-                </external_files_intro>
-                
-                """
-            )
-
-            for name, artifact in sorted(external_files.items()):
-                result += f"""<artifact name="{name}" type="external_file">
----
-type: External File
----
-{artifact.content}
-</artifact>
-"""
-
-            # Add separator if we also have node artifacts
-            if node_artifacts:
-                result += textwrap.dedent(
-                    """
-                    <separator>---------------------</separator>
-                    
-                    <node_artifacts_intro>
-                    These are artifacts created during the research process within specific problems.
-                    </node_artifacts_intro>
-                    
-                    """
-                )
-
-        # Format node-specific artifacts if not external_only
-        if not external_only and node_artifacts:
-            # Sort artifacts by owner then name for consistent display
-            node_artifacts.sort(key=lambda x: (x[0], x[1]))
-            for owner_title, name, content, is_fully_visible in node_artifacts:
-                if is_fully_visible:
-                    shown_content = content
-                else:
-                    # Use ContentTruncator for preview
-                    truncated_content = ContentTruncator.truncate(
-                        content,
-                        500,
-                        "Use 'open_artifact' command to view full content.",
-                    )  # Truncate to 500 chars
-                    shown_content = truncated_content
-                result += f"""<artifact name="{name}">
----
-owner: {owner_title}
----
-
-{shown_content}
-</artifact>
-"""
-
-        result += "</artifacts>"
-        return result.strip()
+        return self.template_manager.render_template(
+            'sections/dynamic/artifacts_content.mako',
+            external_files=external_files,
+            node_artifacts=node_artifacts,
+            truncator=ContentTruncator
+        )
 
     def _format_criteria(self, node: Node) -> str:
         """Format criteria for display"""
-        if not node.criteria:
-            return "No criteria defined yet."
-
-        result = ""
-        for i, (criterion, done) in enumerate(zip(node.criteria, node.criteria_done)):
-            status = "[✓]" if done else "[ ]"
-            result += f"{i+1}. {status} {criterion}\n"
-        return result.strip()
+        return self.template_manager.render_template(
+            'sections/dynamic/criteria_content.mako',
+            criteria=node.criteria,
+            criteria_done=node.criteria_done
+        )
 
     def _format_subproblems(self, node: Node) -> str:
         """Format breakdown structure for display"""
-        return self.hierarchy_formatter.format_subproblems(node)
+        return self.template_manager.render_template(
+            'sections/dynamic/subproblems.mako',
+            subproblems_content=self.hierarchy_formatter.format_subproblems(node)
+        )
 
     def collect_artifacts_recursively(
         self, node: Node, current_node: Node
@@ -302,11 +245,10 @@ owner: {owner_title}
 
     def _format_permanent_log(self, permanent_logs: list) -> str:
         """Format permanent history for display"""
-        if not permanent_logs:
-            return "<permanent_log>\nNo history entries yet.\n</permanent_log>"
-
-        entries = "\n".join(f"- {entry}" for entry in permanent_logs)
-        return f"<permanent_log>\n{entries}\n</permanent_log>"
+        return self.template_manager.render_template(
+            'sections/dynamic/permanent_logs.mako',
+            permanent_log_content="\n".join(f"- {entry}" for entry in permanent_logs) if permanent_logs else "No history entries yet."
+        )
 
     def _format_problem_path_hierarchy(self, node: Node) -> str:
         """Format the hierarchical path from root to current node for display"""
