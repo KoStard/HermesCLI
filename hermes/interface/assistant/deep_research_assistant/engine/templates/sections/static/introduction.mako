@@ -1,5 +1,4 @@
 <%namespace name="xml" file="/macros/xml.mako"/>
-
 ${'#'} Deep Research Interface (Static Section)
 
 ${'##'} Introduction

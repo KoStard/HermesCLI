@@ -1,5 +1,4 @@
 <%namespace name="xml" file="/macros/xml.mako"/>
-
 ======================
 ${'#'} Budget Information
 % if total is None or remaining is None:
