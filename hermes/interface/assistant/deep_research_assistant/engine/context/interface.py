@@ -43,61 +43,23 @@ class DeepResearcherInterface:
               6. Problem Path Hierarchy
               7. Goal
         """
-        # Format all artifacts (external and node-specific)
-        artifacts_section = self._format_artifacts_section(
-            external_only=False, current_node=target_node
-        )
-
-        # Format criteria
-        criteria_section = self._format_criteria(target_node)
-
-        # Format breakdown structure with status information
-        subproblems_sections = self._format_subproblems(target_node)
-
-        # Format permanent log
-        permanent_log_section = self._format_permanent_log(permanent_logs)
-
-        # Format problem path hierarchy
-        problem_path_hierarchy_section = self._format_problem_path_hierarchy(
-            target_node
-        )
-
-        # Format problem hierarchy - full tree with current node highlighted
-        problem_hierarchy = self.file_system.get_problem_hierarchy(target_node)
-
-        command_help = self._generate_command_help()
-
-        # Check if the current node is too deep and add a warning if needed
-        depth_warning = ""
-        if self.file_system.is_node_too_deep(target_node, 3):
-            depth_warning = f"""
-⚠️ **DEPTH WARNING** ⚠️
-You are currently at depth level {target_node.depth_from_root}, which exceeds the recommended maximum of 3 levels.
-Please avoid creating additional subproblems at this level. Instead:
-1. Try to solve the current problem directly
-2. Use `finish_problem` to allow the parent problem to resume
-3. If necessary, mark the current problem as failed using `fail_problem` command
-
-Excessive depth makes the problem hierarchy difficult to manage and can lead to scope creep.
-"""
-
         # Prepare context for the base template
         template_context = {
             'static_content': self._render_static_content(),
-            'dynamic_sections': self._render_dynamic_sections(
-                target_node=target_node,
-                permanent_logs=permanent_logs,
-                budget=budget,
-                remaining_budget=remaining_budget
-            ),
             'target_node': target_node,
             'budget': budget,
             'remaining_budget': remaining_budget
         }
         
         # Render the complete interface using the base template
-        rendered_interface = self.template_manager.render_template('base.mako', **template_context)
-        return rendered_interface, template_context['dynamic_sections']
+        static_section = self.template_manager.render_template('static.mako', **template_context)
+        dynamic_sections = self._render_dynamic_sections(
+            target_node=target_node,
+            permanent_logs=permanent_logs,
+            budget=budget,
+            remaining_budget=remaining_budget
+        )
+        return static_section, dynamic_sections
 
     def _render_static_content(self) -> str:
         """Render all static content sections"""
@@ -129,9 +91,7 @@ When you first join a problem, you'll see all sections. After that, you'll only 
 that have changed since your last message.""",
             
             # Section 1: Permanent Logs
-            f"""======================
-# Permanent Logs
-{permanent_log_section}""",
+            permanent_log_section,
             
             # Section 2: Budget Information
             self._format_budget_section(budget, remaining_budget),

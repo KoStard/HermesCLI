@@ -1,5 +1,4 @@
 <%namespace name="xml" file="/macros/xml.mako"/>
-
 ${'###'} Using the interface
 
 This interface helps you conduct thorough research by providing you with the necessary tools to collect information or to create subproblems assigned to your teammates.
