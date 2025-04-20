@@ -102,7 +102,8 @@ class DeepResearcherInterface:
             "parent_chain": self._get_parent_chain(target_node), # List of Nodes from root to target
             "file_system": self.file_system, # Used by problem_hierarchy.mako
             "template_manager": self.template_manager, # Used by dynamic_sections.mako itself
-            "ContentTruncator": ContentTruncator, # Used by artifacts.mako
+            "ContentTruncator": ContentTruncator, # Used by artifacts.mako and potentially others
+            "knowledge_base": self.file_system.get_knowledge_base(), # Add knowledge base data
         }
 
         # --- Render the main dynamic sections template ---

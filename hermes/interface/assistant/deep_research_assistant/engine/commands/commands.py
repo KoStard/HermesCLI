@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 
 from .command import Command, CommandType, register_command, DefineCommand
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import Artifact, ProblemStatus
+from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
 from .command_context import CommandContext
 
 
@@ -483,6 +484,45 @@ class ThinkCommand(Command):
         pass
 
 
+@register_command
+class AddKnowledgeCommand(Command):
+    def __init__(self):
+        super().__init__(
+            "add_knowledge",
+            "Add an entry to the shared knowledge base for all assistants.",
+            CommandType.BLOCK
+        )
+        self.add_section("content", True, "The main content of the knowledge entry.")
+        self.add_section("title", False, "Optional short title/summary for the entry.")
+        self.add_section("tag", False, "Optional tag for categorization (can be used multiple times).", allow_multiple=True)
+
+    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
+        """Add an entry to the shared knowledge base."""
+        current_node = context.current_node
+        if not current_node:
+            # Should ideally not happen if a problem is defined, but good practice
+            self.add_output(context, args, {"output": "Error: Cannot add knowledge without an active problem node."})
+            return
+
+        tags = args.get("tag", [])
+        # Ensure tags is a list, even if only one is provided
+        if isinstance(tags, str):
+            tags = [tags]
+
+        entry = KnowledgeEntry(
+            content=args.get("content"),
+            author_node_title=current_node.title,
+            title=args.get("title"),
+            tags=tags
+        )
+
+        context.file_system.add_knowledge_entry(entry)
+        # Provide confirmation output
+        entry_identifier = f"'{entry.title}'" if entry.title else "entry"
+        self.add_output(context, args, {"output": f"Knowledge {entry_identifier} added successfully."})
+
+
 def register_predefined_commands():
-    # Dummy command
+    # This function ensures that the command classes are imported and thus registered
+    # by the @register_command decorator when this module is imported.
     pass

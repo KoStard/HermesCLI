@@ -74,3 +74,23 @@ ${node_content(node, indent_level + 1)}
     % endif
 ${indent}</node>
 </%def>
+
+<%def name="knowledge_entry(entry, author_title_max_len=50)">
+    <%
+        # Truncate author title for display if needed
+        display_author = (entry.author_node_title[:author_title_max_len] + '...'
+                          if len(entry.author_node_title) > author_title_max_len
+                          else entry.author_node_title)
+    %>
+    <knowledge_entry timestamp="${entry.timestamp | x}" author_node="${display_author | x}">
+        % if entry.title:
+        <title>${entry.title | x}</title>
+        % endif
+        % if entry.tags:
+        <tags>${', '.join(entry.tags) | x}</tags>
+        % endif
+        <content>
+${entry.content | x}
+        </content>
+    </knowledge_entry>
+</%def>

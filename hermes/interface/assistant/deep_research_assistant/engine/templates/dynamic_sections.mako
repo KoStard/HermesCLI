@@ -20,4 +20,6 @@ ${separator}
 ${separator}
 <%include file="sections/dynamic/problem_path_hierarchy.mako"/>
 ${separator}
+<%include file="sections/dynamic/knowledge_base.mako" args="knowledge_base=knowledge_base"/>
+${separator}
 <%include file="sections/dynamic/goal.mako"/>

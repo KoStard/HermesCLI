@@ -1,13 +1,18 @@
+import json
 import os
 import threading
+import yaml
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
-from .frontmatter_manager import (
-    FrontmatterManager,
-)
+from .frontmatter_manager import FrontmatterManager
+from .knowledge_entry import KnowledgeEntry
+
+# Define a unique separator for knowledge base entries in the Markdown file
+_KNOWLEDGE_SEPARATOR = "\n\n<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->\n\n"
 
 
 @dataclass
@@ -135,23 +140,26 @@ class Node:
 
 class FileSystem:
     def __init__(self, root_dir: str = "research"):
-        self.root_dir = Path(root_dir).resolve()  # Use absolute path
+        self.root_dir = Path(root_dir).resolve()
         self.root_node: Optional[Node] = None
-        self._external_files: Dict[
-            str, Artifact
-        ] = {}  # Central storage for external files
-        self.lock = threading.RLock()  # Reentrant lock for thread safety
+        self._external_files: Dict[str, Artifact] = {}
+        self.knowledge_base: List[KnowledgeEntry] = []
+        self.lock = threading.RLock()
         self.frontmatter_manager = FrontmatterManager()
 
         # Ensure the root directory exists
         self.root_dir.mkdir(parents=True, exist_ok=True)
 
         # Create the external files directory
-        self.external_files_dir = self.root_dir / "ExternalFiles"
+        self.external_files_dir = self.root_dir / "_ExternalFiles" # Prefix with _ for clarity
         self.external_files_dir.mkdir(exist_ok=True)
 
-        # Load any existing external files on initialization
+        # Define path for the knowledge base file
+        self._knowledge_base_file = self.root_dir / "_knowledge_base.md"
+
+        # Load existing data
         self.load_external_files()
+        self.load_knowledge_base()
 
     def create_root_problem(self, title: str, content: str) -> Node:
         """Create the root problem"""
@@ -291,7 +299,75 @@ class FileSystem:
     def get_external_files(self) -> Dict[str, Artifact]:
         """Get the dictionary of loaded external files"""
         # Consider adding a check here to reload if needed, but __init__ load should suffice for now
-        return self._external_files
+        # Return a copy to prevent external modification
+        with self.lock:
+            return self._external_files.copy()
+
+    def load_knowledge_base(self) -> None:
+        """Load knowledge base entries from the Markdown file."""
+        with self.lock:
+            self.knowledge_base = []
+            if not self._knowledge_base_file.exists():
+                return  # No file, start with empty list
+
+            try:
+                full_content = self._knowledge_base_file.read_text(encoding="utf-8")
+                # Split entries using the defined separator
+                entry_blocks = full_content.split(_KNOWLEDGE_SEPARATOR)
+
+                for block in entry_blocks:
+                    block = block.strip()
+                    if not block:
+                        continue
+                    try:
+                        metadata, content = self.frontmatter_manager.extract_frontmatter(block)
+                        if metadata: # Ensure metadata was found
+                            entry = KnowledgeEntry.from_dict(metadata, content)
+                            self.knowledge_base.append(entry)
+                        else:
+                            print(f"Warning: Could not parse frontmatter for a knowledge block in {self._knowledge_base_file}")
+                    except Exception as e_parse:
+                        print(f"Warning: Error parsing knowledge entry block: {e_parse}\nBlock content:\n{block[:200]}...")
+
+            except FileNotFoundError:
+                pass # Expected if file doesn't exist yet
+            except Exception as e_read:
+                print(f"Error loading knowledge base file {self._knowledge_base_file}: {e_read}")
+                # Decide on recovery strategy: potentially backup old file, start fresh?
+                # For now, we start with an empty list if loading fails.
+                self.knowledge_base = []
+
+    def save_knowledge_base(self) -> None:
+        """Save the current knowledge base entries to the Markdown file."""
+        with self.lock:
+            try:
+                entry_strings = []
+                # Sort by timestamp before saving (optional, but keeps file consistent)
+                sorted_entries = sorted(self.knowledge_base, key=lambda x: x.timestamp)
+                for entry in sorted_entries:
+                    metadata = entry.to_dict()
+                    entry_string = self.frontmatter_manager.add_frontmatter(entry.content, metadata)
+                    entry_strings.append(entry_string)
+
+                # Join entries with the separator
+                full_content = _KNOWLEDGE_SEPARATOR.join(entry_strings)
+                self._knowledge_base_file.write_text(full_content, encoding="utf-8")
+
+            except Exception as e:
+                print(f"Error saving knowledge base file {self._knowledge_base_file}: {e}")
+
+    def add_knowledge_entry(self, entry: KnowledgeEntry) -> None:
+        """Add a new entry to the knowledge base and save immediately."""
+        with self.lock:
+            self.knowledge_base.append(entry)
+            # Save immediately to ensure persistence
+            self.save_knowledge_base()
+
+    def get_knowledge_base(self) -> List[KnowledgeEntry]:
+        """Get a copy of the current knowledge base entries."""
+        with self.lock:
+            # Return a copy to prevent external modification
+            return self.knowledge_base[:]
 
     def get_parent_chain(self, node: Node) -> List[Node]:
         """Get the parent chain including the given node"""
@@ -378,8 +454,9 @@ class FileSystem:
             if self.root_node:
                 # First ensure all directories exist
                 self._create_node_directories(self.root_node)
-                # Then write all files
+                # Then write all node-specific files
                 self._write_node_to_disk(self.root_node)
+                # Note: Knowledge base is saved separately by add_knowledge_entry
 
     def _create_node_directories(self, node: Node) -> None:
         """Create all necessary directories for a node"""
