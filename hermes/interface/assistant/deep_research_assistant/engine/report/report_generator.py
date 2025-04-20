@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem
 from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
@@ -22,7 +22,7 @@ class ReportGenerator:
         self.file_system = file_system
         self.template_manager = template_manager
 
-    def generate_final_report(self, interface) -> str:
+    def generate_final_report(self, interface, root_completion_message: Optional[str] = None) -> str:
         """
         Generate a summary of all artifacts created during the research using a template.
 
@@ -30,6 +30,7 @@ class ReportGenerator:
             interface: The DeepResearcherInterface instance (needed for _collect_artifacts_recursively).
                        Consider refactoring _collect_artifacts_recursively into FileSystem or a utility
                        to remove this dependency if possible in the future.
+            root_completion_message: Optional final message from the root node.
 
         Returns:
             A string containing the formatted final report.
@@ -56,6 +57,7 @@ class ReportGenerator:
         context = {
             'root_node': root_node,
             'artifacts_by_problem': artifacts_by_problem if artifacts_by_problem else None,
+            'root_completion_message': root_completion_message, # Add the message to the context
         }
 
         try:

@@ -295,6 +295,7 @@ class DeepResearchEngine:
         self.initial_budget = None  # Store the initial budget for reference
         self.message_cycles_used = 0
         self.budget_warning_shown = False
+        self.root_completion_message: Optional[str] = None # To store the final message from the root node
 
         # Check if problem already exists
         self.file_system.load_existing_problem()
@@ -731,7 +732,8 @@ class DeepResearchEngine:
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""
         report_generator = ReportGenerator(self.file_system, self.template_manager)
-        return report_generator.generate_final_report(self.interface)
+        # Pass the root completion message to the generator
+        return report_generator.generate_final_report(self.interface, self.root_completion_message)
 
     def focus_down(self, subproblem_title: str) -> bool:
         """
@@ -786,9 +788,11 @@ class DeepResearchEngine:
         if len(parent_chain) <= 1:
             # Mark the root node as FINISHED
             current_node.status = ProblemStatus.FINISHED
+            # Store the completion message if provided
+            if message:
+                self.root_completion_message = message
             self.file_system.update_files()
             self.finished = True
-            # Cannot pass message up from root, but the finish itself is successful
             return True
 
         # Mark the current node as FINISHED
@@ -861,9 +865,11 @@ class DeepResearchEngine:
         if len(parent_chain) <= 1:
             # Mark the root node as FAILED
             current_node.status = ProblemStatus.FAILED
+            # Store the failure message if provided
+            if message:
+                self.root_completion_message = message
             self.file_system.update_files()
             self.finished = True
-            # Cannot pass message up from root, but the fail itself is successful
             return True
 
         # Mark the current node as FAILED

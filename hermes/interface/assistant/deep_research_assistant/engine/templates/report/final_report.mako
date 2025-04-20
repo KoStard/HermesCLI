@@ -1,16 +1,22 @@
 % if not root_node:
 Research completed, but no root problem was defined or processed.
-% elif not artifacts_by_problem:
-# Deep Research Completed
-
-${'##'} Problem: ${root_node.title}
-
-Research completed, but no artifacts were generated.
-% else:
+% else: # Root node exists
 ${'#'} Deep Research Completed
 
 ${'##'} Problem: ${root_node.title}
 
+% if root_completion_message:
+${'##'} Final Message from Root Task
+
+${root_completion_message}
+
+% endif
+
+% if not artifacts_by_problem:
+${'##'} Summary of Generated Artifacts
+
+Research completed, but no artifacts were generated.
+% else:
 ${'##'} Summary of Generated Artifacts
 
 The research has been completed and the following artifacts have been created:
@@ -31,3 +37,4 @@ ${'###'} ${problem_title}
 These artifacts contain the valuable outputs of the research process. Each artifact represents
 a concrete piece of knowledge or analysis that contributes to solving the root problem.
 % endif
+% endif ## Closes the initial 'if not root_node' block
