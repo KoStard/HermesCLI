@@ -17,13 +17,6 @@ class CommandSection:
         self.allow_multiple = allow_multiple
 
 
-class CommandType(Enum):
-    """Types of commands supported by the system"""
-
-    BLOCK = "block"  # Commands with sections like ///title, ///content
-    SIMPLE = "simple"  # Commands without sections
-
-
 class Command(ABC):
     """Base class for all commands"""
 
@@ -31,11 +24,9 @@ class Command(ABC):
         self,
         name: str,
         help_text: str = "",
-        command_type: CommandType = CommandType.BLOCK,
     ):
         self.name = name
         self.help_text = help_text
-        self.command_type = command_type
         self.sections: List[CommandSection] = []
 
     def add_section(

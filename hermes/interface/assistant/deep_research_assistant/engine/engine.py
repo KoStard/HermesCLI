@@ -764,34 +764,58 @@ class DeepResearchEngine:
 
         return True
 
-    def focus_up(self) -> bool:
+    def focus_up(self, message: Optional[str] = None) -> bool:
         """
-        Schedule focus up to the parent problem after the current cycle is complete
+        Schedule focus up to the parent problem after the current cycle is complete.
+        Adds a standard notification and an optional custom message from the child
+        to the parent's auto-reply.
+
+        Args:
+            message: Optional custom message from the child node to the parent.
 
         Returns:
-            bool: True if successful, False otherwise
+            bool: True if successful, False otherwise (e.g., no current node).
         """
         if not self.current_node:
             return False
 
-        # Get the parent chain
-        parent_chain = self.file_system.get_parent_chain(self.current_node)
+        current_node = self.current_node # Keep a reference before potential change
+        parent_chain = self.file_system.get_parent_chain(current_node)
 
         # If this is the root node, we're done
         if len(parent_chain) <= 1:
             # Mark the root node as FINISHED
-            self.current_node.status = ProblemStatus.FINISHED
+            current_node.status = ProblemStatus.FINISHED
             self.file_system.update_files()
             self.finished = True
+            # Cannot pass message up from root, but the finish itself is successful
             return True
 
         # Mark the current node as FINISHED
-        self.current_node.status = ProblemStatus.FINISHED
-        current_node = self.current_node
+        current_node.status = ProblemStatus.FINISHED
 
-        # Get the parent node (second to last in the chain, as the last is the current node)
+        # Get the parent node (second to last in the chain)
         parent_node = parent_chain[-2]
 
+        # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
+        if parent_node: # Ensure parent exists before trying to add messages
+            parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+                parent_node.title
+            )
+
+            # 1. Always add the standard status message
+            parent_auto_reply_aggregator.add_internal_message_from(
+                "Task marked FINISHED, focusing back up.", current_node.title
+            )
+
+            # 2. If a custom message was provided, add it as well
+            if message:
+                # Prefix the custom message for clarity
+                parent_auto_reply_aggregator.add_internal_message_from(
+                    f"[Completion Message]: {message}", current_node.title
+                )
+
+        # --- Schedule the focus change ---
         # Check if there are queued siblings to activate
         if parent_node.title in self.children_queue and self.children_queue[parent_node.title]:
             # Get the next sibling from the queue
@@ -811,15 +835,8 @@ class DeepResearchEngine:
             # No queued siblings, focus up to parent
             self.next_node = parent_node
 
-        # Update files
+        # Update files (will save the FINISHED status of the current node)
         self.file_system.update_files()
-
-        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-            parent_node.title
-        )
-        parent_auto_reply_aggregator.add_internal_message_from(
-            "Task marked FINISHED, focusing back up.", current_node.title
-        )
 
         return True
 

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem
 from hermes.interface.assistant.deep_research_assistant.engine.context.history import ChatHistory
 
@@ -100,8 +100,9 @@ class CommandContext:
     def focus_down(self, subproblem_title: str) -> bool:
         return self._engine.focus_down(subproblem_title)
 
-    def focus_up(self) -> bool:
-        return self._engine.focus_up()
+    def focus_up(self, message: Optional[str] = None) -> bool:
+        # Pass the message to the engine's method
+        return self._engine.focus_up(message=message)
 
     def fail_and_focus_up(self) -> bool:
         return self._engine.fail_and_focus_up()

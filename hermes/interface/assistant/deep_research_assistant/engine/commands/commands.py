@@ -1,7 +1,7 @@
 import textwrap
 from typing import Dict, Any, List
 
-from .command import Command, CommandType, register_command, DefineCommand
+from .command import Command, register_command, DefineCommand
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import Artifact, ProblemStatus
 from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
 from .command_context import CommandContext
@@ -251,22 +251,39 @@ class FocusDownCommand(Command):
 @register_command
 class FocusUpCommand(Command):
     def __init__(self):
+        # Change to BLOCK type and update help text
         super().__init__(
             "finish_problem",
-            textwrap.dedent("""Finish the problem assigned to you. If there is a parent problem, it will become activated.
-            True for all commands, but especially here true: make sure you let the system to process your other commands before sending this command. Meaning don't send this alongside with other commands, as the interface is not interactive, you won't see the responses of other commands immediately, you need to send the message to receive the responses.
-            """),
-            CommandType.SIMPLE,
+            help_text=textwrap.dedent("""\
+            Finish the current problem. If there is a parent problem, it will become activated.
+            You can optionally provide a message to the parent task using the ///message section.
+            Ensure other commands are processed before sending this.
+            Example with message:
+            <<< finish_problem
+            /// message
+            Completed sub-analysis X, results attached in artifact Y.
+            >>>
+            Example without message:
+            <<< finish_problem
+            >>>
+            """)
         )
+        # Add the optional message section
+        self.add_section("message", required=False, help_text="Optional message to pass to the parent task upon completion.")
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
-        """Focus up to the parent problem"""
-        result = context.focus_up()
+        """Focus up to the parent problem, potentially passing a message."""
+        # Get the optional message from args
+        completion_message = args.get("message")
+
+        # Pass the message to the context method
+        result = context.focus_up(message=completion_message)
 
         if not result:
             raise ValueError("Failed to focus up to parent problem.")
 
     def should_be_last_in_message(self):
+        # This command changes focus, so it should still be last
         return True
 
 
@@ -276,7 +293,6 @@ class FailProblemAndFocusUpCommand(Command):
         super().__init__(
             "fail_problem",
             "Mark the current problem as failed. If there is a parent problem, it will become activated.",
-            CommandType.SIMPLE,
         )
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
@@ -493,8 +509,7 @@ class AddKnowledgeCommand(Command):
     def __init__(self):
         super().__init__(
             "add_knowledge",
-            "Add an entry to the shared knowledge base for all assistants.",
-            CommandType.BLOCK
+            "Add an entry to the shared knowledge base for all assistants."
         )
         self.add_section("content", True, "The main content of the knowledge entry.")
         self.add_section("title", False, "Optional short title/summary for the entry.")
