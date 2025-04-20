@@ -34,7 +34,6 @@ ${'###'} ${problem_title}
 
 % endfor
 
-These artifacts contain the valuable outputs of the research process. Each artifact represents
-a concrete piece of knowledge or analysis that contributes to solving the root problem.
+These artifacts contain the valuable outputs of the research process. Each artifact represents a concrete piece of knowledge or analysis that contributes to solving the root problem.
 % endif
 % endif ## Closes the initial 'if not root_node' block

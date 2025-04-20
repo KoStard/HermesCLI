@@ -7,7 +7,7 @@ from hermes.interface.assistant.deep_research_assistant.engine.commands.command_
 from hermes.interface.assistant.deep_research_assistant.engine.commands.command_context import CommandContext
 
 # Import commands to ensure they're registered
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, ProblemStatus
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, ProblemStatus, ProblemStatus
 from hermes.interface.assistant.deep_research_assistant.engine.context.history import ChatHistory, AutoReply, ChatMessage, HistoryBlock
 from hermes.interface.assistant.deep_research_assistant.engine.context.interface import DeepResearcherInterface
 # Import the registry creation function and type alias
@@ -65,9 +65,18 @@ class _CommandProcessor:
 
     def _handle_shutdown_request(self, text: str) -> bool:
         """Check for emergency shutdown code."""
-        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
-            self.engine.finished = True
+        # Only shut down if the current node is the root node
+        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() and self.current_node == self.engine.file_system.root_node:
+            print("Shutdown requested for root node. Engine will await new instructions.")
+            self.engine.awaiting_new_instruction = True
+            # Mark root as finished to signify completion of this phase
+            if self.current_node:
+                self.current_node.status = ProblemStatus.FINISHED
+                self.engine.file_system.update_files()
             return True
+        elif "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
+            print("Shutdown command ignored: Not currently focused on the root node.")
+            # Optionally add an error message to auto-reply here
         return False
 
     @property
@@ -279,7 +288,7 @@ class DeepResearchEngine:
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
         self.command_parser = CommandParser()
-        self.finished = False
+        self.awaiting_new_instruction = False # Replaces 'finished'
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
         self.current_node: Optional[Node] = None
@@ -288,10 +297,10 @@ class DeepResearchEngine:
         # When parent requests activation of multiple children sequentially, we'll track them here
         # Then when the child is finished, and wants to activate the parent again, we'll activate the next in the queue
         # It's a dict, as the child itself might activate other grandchildren
-        self.children_queue = defaultdict(list)
-        
+        self.children_queue = defaultdict(list) # Queue for activating siblings sequentially
+
         # Budget tracking
-        self.budget = None  # No budget by default
+        self.budget: Optional[int] = None  # No budget by default
         self.initial_budget = None  # Store the initial budget for reference
         self.message_cycles_used = 0
         self.budget_warning_shown = False
@@ -323,6 +332,10 @@ class DeepResearchEngine:
         # Update interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, self.template_manager)
 
+    def is_awaiting_instruction(self) -> bool:
+        """Check if the engine is waiting for a new instruction."""
+        return self.awaiting_new_instruction
+
     def is_root_problem_defined(self) -> bool:
         """Check if the root problem is already defined"""
         return self.file_system.root_node is not None
@@ -347,12 +360,46 @@ class DeepResearchEngine:
         self._print_current_status()
         return True
 
-    def execute(self) -> str:
-        """
-        Execute the deep research process after the root problem is defined and return the final report.
+    def prepare_for_new_instruction(self, instruction: str):
+        """Injects a new user instruction into the current node's context."""
+        if not self.awaiting_new_instruction:
+            print("Warning: prepare_for_new_instruction called when not awaiting.")
+            # Or raise an error? For now, just return.
+            return
 
-        Returns:
-            str: Final report
+        if not self.current_node:
+            print("Error: Cannot prepare for new instruction without an active node.")
+            # This shouldn't happen if awaiting_new_instruction is true after completion.
+            return
+
+        print(f"Preparing node '{self.current_node.title}' for new instruction.")
+        # Format the instruction using the template
+        formatted_instruction = self.template_manager.render_template(
+            "context/new_user_instruction.mako", instruction=instruction
+        )
+
+        # Add the formatted instruction as an internal message to the current node's auto-reply
+        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+            self._current_history_tag
+        )
+        auto_reply_aggregator.add_internal_message_from(
+            formatted_instruction, "USER MESSAGE"
+        )
+
+        # Reset the current node's status to IN_PROGRESS
+        self.current_node.status = ProblemStatus.IN_PROGRESS
+        self.file_system.update_files() # Save the status change
+
+        # Clear the flag
+        self.awaiting_new_instruction = False
+        print("Engine ready to execute new instruction.")
+
+
+    def execute(self) -> None:
+        """
+        Execute the deep research process. Runs until the current task is completed
+        (node finished/failed and focus returns to root, or budget exhausted, or shutdown)
+        and sets `awaiting_new_instruction` to True.
         """
         # Check if LLM interface is available
         if not self.llm_interface:
@@ -362,13 +409,15 @@ class DeepResearchEngine:
         if not self.is_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
 
-        initial_interface_content_by_node = defaultdict()
+        initial_interface_content_by_node = defaultdict(str)
 
-        while not self.finished:
+        # Loop should continue as long as we are not awaiting new instructions
+        while not self.awaiting_new_instruction:
             if not self.current_node:
-                 # Handle case where no node is active (e.g., after finishing root)
-                 print("No active node. Research finished or requires manual intervention.")
-                 break # Or implement logic to choose next node
+                 # This case should ideally not be reached if awaiting_new_instruction is managed correctly
+                 print("Error: No active node during execution loop. Stopping.")
+                 self.awaiting_new_instruction = True # Stop the loop
+                 break
 
             # --- 1. Gather Current Interface State ---
             # Get static content and the *data* for dynamic sections
@@ -542,11 +591,15 @@ class DeepResearchEngine:
                                 "SYSTEM"
                             )
                     else:
-                        print("Finishing research due to budget constraints.")
-                        self.finished = True
-                        
+                        print("Finishing research due to budget constraints. Engine will await new instructions.")
+                        self.awaiting_new_instruction = True
+                        # Mark current node as failed? Or just stop? Let's mark as failed.
+                        if self.current_node:
+                            self.current_node.status = ProblemStatus.FAILED
+                            self.file_system.update_files()
+
             # Check if approaching budget limit (within 10 cycles)
-            elif self.is_approaching_budget_limit() and not self.budget_warning_shown:
+            elif self.budget is not None and self.is_approaching_budget_limit() and not self.budget_warning_shown:
                 self.budget_warning_shown = True
                 print(f"\n===== BUDGET WARNING =====")
                 print(f"Approaching budget limit. {self.get_remaining_budget()} cycles remaining out of {self.budget}.")
@@ -569,10 +622,12 @@ class DeepResearchEngine:
 
             self._print_current_status()
 
-        # Generate the final report
-        return self._generate_final_report()
+        # End of the while loop (awaiting_new_instruction is True)
+        print(f"Engine execution cycle complete. Current node: {self.current_node.title if self.current_node else 'None'}. Awaiting new instruction.")
+
 
     def manually_choose_and_activate_node(self):
+        """Allows manual selection of the node to activate, typically used at the start if a problem exists."""
         all_nodes = self.file_system.get_all_nodes()
 
         if len(all_nodes) == 1:
@@ -676,7 +731,8 @@ class DeepResearchEngine:
         if self.budget is None:
             return False
         remaining = self.get_remaining_budget()
-        return 0 < remaining <= 10
+        # Ensure remaining is not None before comparison
+        return remaining is not None and 0 < remaining <= 10
 
     def activate_node(self, node: Node) -> None:
         """Set the current node and update chat history"""
@@ -726,11 +782,13 @@ class DeepResearchEngine:
                     print("Retrying LLM request...")
                 except KeyboardInterrupt:
                     print("\nExiting due to user request.")
-                    yield "Research terminated due to LLM interface error."
+                    # Set awaiting state on error? Maybe not, let the interface handle retry/exit.
+                    # self.awaiting_new_instruction = True
+                    yield "Research terminated due to LLM interface error." # Or re-raise?
                     break
 
     def _generate_final_report(self) -> str:
-        """Generate a summary of all artifacts created during the research"""
+        """Generate a summary of all artifacts created during the research. (Currently not called automatically)"""
         report_generator = ReportGenerator(self.file_system, self.template_manager)
         # Pass the root completion message to the generator
         return report_generator.generate_final_report(self.interface, self.root_completion_message)
@@ -789,13 +847,15 @@ class DeepResearchEngine:
             # Mark the root node as FINISHED
             current_node.status = ProblemStatus.FINISHED
             # Store the completion message if provided
+            # Root node finished. Set awaiting flag.
             if message:
-                self.root_completion_message = message
+                self.root_completion_message = message # Store final message if any
             self.file_system.update_files()
-            self.finished = True
+            self.awaiting_new_instruction = True
+            print(f"Root node '{current_node.title}' finished. Engine awaiting new instruction.")
             return True
 
-        # Mark the current node as FINISHED
+        # Mark the current non-root node as FINISHED
         current_node.status = ProblemStatus.FINISHED
 
         # Get the parent node (second to last in the chain)
@@ -866,13 +926,15 @@ class DeepResearchEngine:
             # Mark the root node as FAILED
             current_node.status = ProblemStatus.FAILED
             # Store the failure message if provided
+            # Root node failed. Set awaiting flag.
             if message:
-                self.root_completion_message = message
+                self.root_completion_message = message # Store final message if any
             self.file_system.update_files()
-            self.finished = True
+            self.awaiting_new_instruction = True
+            print(f"Root node '{current_node.title}' failed. Engine awaiting new instruction.")
             return True
 
-        # Mark the current node as FAILED
+        # Mark the current non-root node as FAILED
         current_node.status = ProblemStatus.FAILED
 
         # Get the parent node (second to last in the chain)

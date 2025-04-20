@@ -7,9 +7,8 @@ from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
-from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import (
-    ChatModelLLMInterface,
-)
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import ProblemStatus
+from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import ChatModelLLMInterface
 from hermes.interface.base import Interface
 from hermes.event import Event, MessageEvent
 from hermes.message import Message, TextMessage, TextualFileMessage
@@ -113,61 +112,96 @@ class DeepResearchAssistantInterface(Interface):
             if not filename and message.text_filepath:
                 filename = os.path.basename(message.text_filepath)
             if not filename:
-                filename = f"external_file_{hash(str(file_content))[:8]}"
+                filename = f"external_file_{hash(str(file_content))[:8]}.txt" # Add extension for clarity
 
             return filename, file_content
+        return None # Return None if no content
 
     def get_input(self) -> Generator[Event, None, None]:
-        """Process the instruction and generate a response"""
+        """
+        Process instructions and drive the Deep Research Engine execution cycles.
+        Yields status messages based on the engine's state.
+        """
         logger.debug("Processing instruction in Deep Research Assistant")
 
-        # The engine should already be initialized in render()
+        # Ensure engine is initialized (should be done by render)
         if not self._engine:
-            raise Exception("Render before running the deep research interface")
+            logger.error("Engine not initialized before get_input call.")
+            yield MessageEvent(TextMessage(author="assistant", text="Error: Deep Research Engine not initialized."))
+            return
 
         try:
-            # Check if root problem is defined
+            # --- Initial Problem Definition ---
             if not self._engine.is_root_problem_defined():
-                if not self.instruction:
-                    yield MessageEvent(
-                        TextMessage(
-                            author="assistant",
-                            text="Failed to define the root problem, as no instruction provided.",
-                        )
-                    )
-                    return
-                # Define the root problem first
-                success = self._engine.define_root_problem(self.instruction)
-                if not success:
-                    yield MessageEvent(
-                        TextMessage(
-                            author="assistant",
-                            text="Failed to define the root problem.",
-                        )
-                    )
-                    return
-            elif self.instruction:
-                self._engine.finished = False
-                new_message_text = f"""
-New instructions arrived from the user:
-<instruction>
-{self.instruction}
-</instruction>
-Take your time to run commands, check the results, the usual effort. When you are done, don't forget to mark it as complete to send again to the user through finish_problem command.
-"""
-                if self._engine.budget is not None:
-                    new_message_text += "\n\nThe budget has been extended with 20 additional cycles."
-                    self._engine.set_budget(self._engine.budget + 20)
-                self._engine.chat_history.get_auto_reply_aggregator(self._engine._current_history_tag).add_internal_message_from(new_message_text, "USER MESSAGE")
+                if self.instruction:
+                    logger.info("Defining root problem.")
+                    success = self._engine.define_root_problem(self.instruction)
+                    self.instruction = None # Clear instruction after use
+                    if not success:
+                        yield MessageEvent(TextMessage(author="assistant", text="Failed to define the root problem."))
+                        return
+                    else:
+                        # Root problem defined, start execution immediately
+                        logger.info("Executing initial research.")
+                        self._engine.execute() # Runs until awaiting_new_instruction is True
+                        # Check state after execution finishes
+                        if self._engine.is_awaiting_instruction():
+                            # Check if the root node finished/failed to generate the final report
+                            if self._engine.current_node == self._engine.file_system.root_node and \
+                                self._engine.current_node.status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]:
+                                logger.info("Generating final report.")
+                                final_report = self._engine._generate_final_report()
+                                yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                            # Always yield the waiting message after completion
+                            yield MessageEvent(TextMessage(author="assistant", text="Initial research complete. Waiting for next instruction..."))
+                        else:
+                            logger.error("Engine did not enter awaiting state after initial execution.")
+                            yield MessageEvent(TextMessage(author="assistant", text="Initial research finished unexpectedly. Please check logs."))
+                        return # End processing for this call
+                else:
+                    # No root problem and no instruction provided
+                    yield MessageEvent(TextMessage(author="assistant", text="Please provide an initial research instruction."))
+                    return # End processing for this call
 
-            # Now execute the engine with the defined problem
-            final_summary = self._engine.execute()
+            # --- Continuous Interaction Cycle ---
+            # Engine exists and root problem is defined. Check state.
+            if self._engine.is_awaiting_instruction():
+                if self.instruction:
+                    logger.info("Received new instruction. Preparing engine.")
+                    self._engine.prepare_for_new_instruction(self.instruction)
+                    self.instruction = None # Clear instruction after use
+                    logger.info("Executing new instruction.")
+                    self._engine.execute() # Runs until awaiting_new_instruction is True again
+                    # Check state after execution finishes
+                    if self._engine.is_awaiting_instruction():
+                         # Check if the root node finished/failed to generate the final report
+                        if self._engine.current_node == self._engine.file_system.root_node and \
+                            self._engine.current_node.status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]:
+                            logger.info("Generating final report after follow-up instruction.")
+                            final_report = self._engine._generate_final_report()
+                            yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                        # Always yield the waiting message after completion
+                        yield MessageEvent(TextMessage(author="assistant", text="Processing complete. Waiting for next instruction..."))
+                    else:
+                        logger.error("Engine did not enter awaiting state after processing new instruction.")
+                        yield MessageEvent(TextMessage(author="assistant", text="Processing finished unexpectedly. Please check logs."))
+                    return # End processing for this call
+                else:
+                    # Awaiting but no new instruction provided in this call
+                    logger.info("Engine is awaiting instruction.")
+                    yield MessageEvent(TextMessage(author="assistant", text="Research complete. Waiting for next instruction..."))
+                    return # End processing for this call
+            else:
+                # Engine is not awaiting instruction. This implies it might still be running
+                # from a previous call, or an error occurred.
+                # In a synchronous model where execute() blocks, this state shouldn't be reached
+                # unless get_input is called again before execute finishes.
+                logger.warning("get_input called while engine is not awaiting instruction.")
+                yield MessageEvent(TextMessage(author="assistant", text="Engine is currently processing. Please wait."))
+                return # End processing for this call
 
-            # Return the summary of artifacts as an event
-            yield MessageEvent(TextMessage(author="assistant", text=final_summary))
         except Exception as e:
-            logger.error(
-                f"Error during Deep Research engine execution: {e}", exc_info=True
+            logger.error(f"Error during Deep Research engine interaction: {e}", exc_info=True
             )
             yield MessageEvent(
                 TextMessage(
