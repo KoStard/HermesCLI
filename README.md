@@ -26,13 +26,20 @@ uv tool install git+https://github.com/KoStard/HermesCLI --upgrade --python 3.11
 
 ### Configuration
 
-Before using Hermes, you'll need to configure your API keys for the LLMs you intend to use. Hermes looks for its configuration file (`config.ini`) in the standard user configuration directory for your operating system.
+Before using Hermes, you'll need to configure your API keys. Hermes looks for its configuration file (`config.ini`) and `extensions` directory in a specific location based on your operating system.
 
-First, create the application's configuration directory:
-*   **Linux:** `~/.config/HermesCLI/`
-*   **macOS:** `~/Library/Application Support/HermesCLI/`
-*   **Windows:** `C:\Users\<YourUsername>\AppData\Roaming\HermesCLI\HermesCLI\`
-    *(Note: The exact path might vary slightly based on your Windows version and configuration. `%APPDATA%\HermesCLI\HermesCLI\` is the general location)*
+**Configuration Directory Locations:**
+
+*   **Linux & macOS:** `~/.config/hermes/`
+*   **Windows:** `C:\Users\<YourUsername>\AppData\Roaming\hermes\`
+    *(Note: The exact Windows path might vary slightly. `%APPDATA%\hermes\` is the general location)*
+
+**Setup:**
+
+First, ensure the configuration directory for your OS exists:
+
+*   **Linux & macOS:** `mkdir -p ~/.config/hermes/`
+*   **Windows:** Create the `hermes` folder in your `%APPDATA%` directory (e.g., `C:\Users\<YourUsername>\AppData\Roaming\hermes\`)
 
 Then, inside that directory, create a file named `config.ini` with the following format:
 
@@ -147,13 +154,13 @@ The same way as you (the user) has access to commands in Hermes, the LLM has acc
 
 ## Extending Hermes
 
-Hermes can be extended by adding custom commands. Extensions are loaded from the `extensions` subdirectory within the Hermes configuration directory (see the Configuration section above for the location on your OS). Each extension should be in its own subdirectory and contain an `extension.py` file.
+Hermes can be extended by adding custom commands. Extensions are loaded from the `extensions` subdirectory within the configuration root directory specified in the Configuration section above for your OS. Each extension should be in its own subdirectory and contain an `extension.py` file.
 
 ### Extension Structure
 
-Example for Linux:
+Example for Linux/macOS:
 ```
-~/.config/HermesCLI/
+~/.config/hermes/
 ├── config.ini
 └── extensions/
     └── my_extension/
@@ -162,7 +169,7 @@ Example for Linux:
 
 Example for Windows:
 ```
-C:\Users\<YourUsername>\AppData\Roaming\HermesCLI\HermesCLI\
+C:\Users\<YourUsername>\AppData\Roaming\hermes\
 ├── config.ini
 └── extensions\
     └── my_extension\

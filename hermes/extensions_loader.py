@@ -6,26 +6,17 @@
 # Use module import logic to import the extension
 
 import importlib.util
+import importlib.util
 import sys
 from pathlib import Path
 from typing import List, Optional, Type
 import logging
-from appdirs import user_config_dir # Added for cross-platform config directory
+# Removed appdirs import
+from hermes.config_utils import get_extensions_dir_path
 from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
 from hermes.interface.assistant.deep_research_assistant.engine.commands.command import Command
 
 
-def get_extensions_dir() -> Path:
-    """Get the path to the extensions directory in a cross-platform way"""
-    # Define app name and author (consistent with main.py)
-    app_name = "HermesCLI"
-    app_author = "HermesCLI" # Optional, but good practice
-
-    # Get the platform-specific user config directory
-    config_dir = Path(user_config_dir(appname=app_name, appauthor=app_author))
-
-    # Return the path to the 'extensions' subdirectory
-    return config_dir / "extensions"
 
 
 def load_extension_module(extension_path: Path) -> Optional[object]:
@@ -83,8 +74,9 @@ def load_extensions() -> (
     utils_builders = []
     deep_research_commands = []
 
-    extensions_dir = get_extensions_dir()
+    extensions_dir = get_extensions_dir_path()
     if not extensions_dir.exists():
+        logging.info(f"Extensions directory not found at {extensions_dir}, skipping extension loading.")
         return [], [], [], []
 
     # Scan for extension.py files in subdirectories

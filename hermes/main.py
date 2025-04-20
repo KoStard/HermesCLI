@@ -24,8 +24,9 @@ from hermes.exa_client import ExaClient
 from hermes.participants import DebugParticipant, LLMParticipant, UserParticipant
 import configparser
 import os
+import sys
 from pathlib import Path
-from appdirs import user_config_dir
+from hermes.config_utils import get_config_path
 
 
 def build_cli_interface(
@@ -130,24 +131,17 @@ def build_cli_interface(
 
 def main():
     config = load_config()
-
-    # Read command status overrides from config
     command_status_overrides = {}
     if "BASE" in config and "llm_command_status_overrides" in config["BASE"]:
         try:
-            # Parse the overrides string into a dict
             raw_overrides = config["BASE"]["llm_command_status_overrides"].strip()
             if raw_overrides:
-                # Format should be: command_id:status,command_id2:status2
                 for override in raw_overrides.split(","):
                     command_id, status = override.split(":")
-                    command_status_overrides[command_id.strip()] = (
-                        status.strip().upper()
-                    )
+                    command_status_overrides[command_id.strip()] = status.strip().upper()
         except Exception as e:
-            print(
-                f"Warning: Failed to parse llm_command_status_overrides from config: {e}"
-            )
+            print(f"Warning: Failed to parse llm_command_status_overrides from config: {e}")
+
 
     notifications_printer = CLINotificationsPrinter()
 
@@ -391,22 +385,20 @@ def execute_utils_command(cli_args, config, extension_utils_visitors):
         for extension_util_visitor in extension_utils_visitors:
             extension_util_visitor(cli_args, config)
 def load_config():
-    # Define app name and author (used for directory structure)
-    app_name = "HermesCLI"
-    app_author = "HermesCLI" # Optional, but good practice
-
-    # Get the platform-specific user config directory
-    config_dir = Path(user_config_dir(appname=app_name, appauthor=app_author))
-
-    # Define the full path to the config file
-    config_path = config_dir / "config.ini"
+    config_path = get_config_path()
 
     if not config_path.exists():
-        # Update the error message to be more informative
-        raise ValueError(
-            f"Configuration file not found. Please create it at: {config_path}\n"
-            "Go to https://github.com/KoStard/HermesCLI/ and follow the setup steps."
+        # Construct a specific error message based on the determined path
+        expected_path_str = str(config_path)
+
+        error_message = (
+            f"Configuration file not found.\n"
+            f"Hermes expects it at the following location for your OS ({sys.platform}):\n"
+            f"  -> {expected_path_str}\n\n"
+            f"Please create the directory and the 'config.ini' file.\n"
+            "Refer to the documentation for setup instructions: https://github.com/KoStard/HermesCLI/"
         )
+        raise ValueError(error_message)
 
     config = configparser.ConfigParser()
     config.read(config_path)
