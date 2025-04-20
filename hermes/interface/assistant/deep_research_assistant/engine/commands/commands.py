@@ -295,7 +295,7 @@ class CancelSubproblemCommand(Command):
     def __init__(self):
         super().__init__(
             "cancel_subproblem",
-            "Mark a subproblem as cancelled",
+            "Mark a subproblem as cancelled, if you no longer want to start it. It's a way to delete a subtask that you created but haven't yet started.",
         )
         self.add_section("title", True, "Title of the subproblem to cancel")
 

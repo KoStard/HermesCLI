@@ -322,9 +322,6 @@ class DeepResearchEngine:
         # Update interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, self.template_manager)
 
-        # Print initial status
-        self._print_current_status()
-
     def is_root_problem_defined(self) -> bool:
         """Check if the root problem is already defined"""
         return self.file_system.root_node is not None

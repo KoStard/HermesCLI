@@ -105,7 +105,7 @@ class Node:
 
     def append_to_problem_definition(self, content: str) -> None:
         """Append to the problem definition"""
-        self.problem_definition += "\n\n" + content
+        self.problem_definition += "\n\nUPDATE\n" + content
 
     def get_criteria_met_count(self) -> int:
         """Get the number of criteria met"""

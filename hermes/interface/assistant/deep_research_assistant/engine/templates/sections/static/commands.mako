@@ -36,6 +36,7 @@ ${'###'} Commands FAQ
 ${'####'} Q: What to do if I don't see any results
 
 A: If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for the engine to process the whole message. Just finish your message and wait.
+The concept of sending a full message for processing and receiving a consolidated response requires a shift from interactive interfaces but allows for batch processing of commands
 
 ${'####'} Q: How many commands to send at once?
 
