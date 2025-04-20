@@ -19,7 +19,6 @@ from hermes.interface.assistant.deep_research_assistant.llm_interface import LLM
 from hermes.interface.assistant.deep_research_assistant.engine.files.logger import DeepResearchLogger
 from hermes.interface.assistant.deep_research_assistant.engine.report.status_printer import StatusPrinter
 from hermes.interface.assistant.deep_research_assistant.engine.report.report_generator import ReportGenerator
-from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.data import DynamicSectionData
 
 
 class _CommandProcessor:

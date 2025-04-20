@@ -26,8 +26,8 @@ ${content}
             "criteriaProgress": getattr(node_data, 'criteria_status', f"[{sum(getattr(node_data, 'criteria_done', []))}/{len(getattr(node_data, 'criteria', []))} criteria met]"),
             "artifacts": getattr(node_data, 'artifacts_count', '?'),
         }
-    %>
-${' '.join(f'{k}="{v}"' for k, v in attrs.items())}
+    %> \
+${' '.join(f'{k}="{v}"' for k, v in attrs.items())}\
 </%def>
 
 <%def name="node_content_primitive(node_data, indent_level=1)">
@@ -35,14 +35,14 @@ ${' '.join(f'{k}="{v}"' for k, v in attrs.items())}
         # Renders definition and criteria from primitive data
         # Works with PrimitiveNodePathData or PrimitiveSubproblemData
         indent = "  " * indent_level
-    %>
-    ${indent}<problem_definition>${node_data.problem_definition}</problem_definition>
+    %> \
+    ${indent}<problem_definition>${node_data.problem_definition}</problem_definition>\
     % if node_data.criteria:
-    ${indent}<criteria>
+    ${indent}<criteria>\
     %   for i, (criterion, done) in enumerate(zip(node_data.criteria, node_data.criteria_done)):
-        ${indent}  <criterion status="${'✓' if done else '□'}">${criterion}</criterion>
+        ${indent}  <criterion status="${'✓' if done else '□'}">${criterion}</criterion>\
     %   endfor
-    ${indent}</criteria>
+    ${indent}</criteria>\
     % endif
 </%def>
 
@@ -50,18 +50,18 @@ ${' '.join(f'{k}="{v}"' for k, v in attrs.items())}
     <%
         # Renders a full summary from PrimitiveSubproblemData
         indent = "  " * indent_level
-    %>
-${indent}<subproblem ${node_attributes_primitive(subproblem_data)}>
-${node_content_primitive(subproblem_data, indent_level + 1)}
-${indent}</subproblem>
+    %> \
+${indent}<subproblem ${node_attributes_primitive(subproblem_data)}>\
+${node_content_primitive(subproblem_data, indent_level + 1)}\
+${indent}</subproblem>\
 </%def>
 
 <%def name="subproblem_reference_primitive(subproblem_data, indent_level=0)">
     <%
         # Renders a reference (attributes only) from PrimitiveSubproblemData
         indent = "  " * indent_level
-    %>
-${indent}<subproblem ${node_attributes_primitive(subproblem_data)} inPath="false" />
+    %> \
+${indent}<subproblem ${node_attributes_primitive(subproblem_data)} inPath="false" />\
 </%def>
 
 <%def name="render_path_node_primitive(path_nodes_data, current_index, target_depth, indent_level=0)">
@@ -70,21 +70,21 @@ ${indent}<subproblem ${node_attributes_primitive(subproblem_data)} inPath="false
         indent = "  " * indent_level
         node_data = path_nodes_data[current_index]
         is_target_node = (current_index == target_depth)
-    %>
-${indent}<node ${node_attributes_primitive(node_data)} isCurrent="${str(is_target_node).lower()}">
-${node_content_primitive(node_data, indent_level + 1)}
+    %> \
+${indent}<node ${node_attributes_primitive(node_data)} isCurrent="${str(is_target_node).lower()}">\
+${node_content_primitive(node_data, indent_level + 1)}\
     % if not is_target_node:
-        <% next_node_in_path_data = path_nodes_data[current_index + 1] %>
-        ${indent}  <subproblems>
+        <% next_node_in_path_data = path_nodes_data[current_index + 1] %> \
+        ${indent}  <subproblems>\
         % for sibling_data in node_data.sibling_subproblems:
             ## Render siblings that are not the next node in the path as references
-            ${subproblem_reference_primitive(sibling_data, indent_level + 2)}
+            ${subproblem_reference_primitive(sibling_data, indent_level + 2)}\
         % endfor
         ## Render the next node in the path recursively
-        ${render_path_node_primitive(path_nodes_data, current_index + 1, target_depth, indent_level + 2)}
-        ${indent}  </subproblems>
+        ${render_path_node_primitive(path_nodes_data, current_index + 1, target_depth, indent_level + 2)}\
+        ${indent}  </subproblems>\
     % endif
-${indent}</node>
+${indent}</node>\
 </%def>
 
 

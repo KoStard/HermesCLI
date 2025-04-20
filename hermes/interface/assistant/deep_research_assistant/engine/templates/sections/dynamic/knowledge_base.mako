@@ -13,10 +13,8 @@ No knowledge entries added yet. Use the 'add_knowledge' command to contribute.
     <knowledge_intro>
     Entries added by all assistants working on this research project. Sorted newest first.
     </knowledge_intro>
-    ${xml.separator()}
-    % for entry_data in knowledge_entries_data: ## Already sorted by factory method
+    % for entry_data in knowledge_entries_data:
         ${xml.knowledge_entry_primitive(entry_data)}
-        ${xml.separator() if not loop.last else ""}
     % endfor
 </knowledge_base>
 % endif

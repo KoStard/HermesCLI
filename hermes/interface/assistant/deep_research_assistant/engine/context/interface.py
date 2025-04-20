@@ -5,22 +5,26 @@ from hermes.interface.assistant.deep_research_assistant.engine.commands.command 
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, Artifact
 from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import register_predefined_commands
 from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
-# Removed ContentTruncator import, now handled by renderer
-# Import the new data classes and factory methods
-from .dynamic_sections.data import (
-    DynamicSectionData, HeaderSectionData, PermanentLogsData, BudgetSectionData,
-    ArtifactsSectionData, ProblemHierarchyData, CriteriaSectionData, SubproblemsSectionData,
-    ProblemPathHierarchyData, KnowledgeBaseData, GoalSectionData,
-    # Primitive types are not directly used here but factories are
-)
-# Import types needed for factory methods
+# Import base data class and specific section data classes/factories from their new locations
+from .dynamic_sections.base import DynamicSectionData
+from .dynamic_sections.header import HeaderSectionData
+from .dynamic_sections.permanent_logs import PermanentLogsData
+from .dynamic_sections.budget import BudgetSectionData
+from .dynamic_sections.artifacts import ArtifactsSectionData
+from .dynamic_sections.problem_hierarchy import ProblemHierarchyData
+from .dynamic_sections.criteria import CriteriaSectionData
+from .dynamic_sections.subproblems import SubproblemsSectionData
+from .dynamic_sections.problem_path_hierarchy import ProblemPathHierarchyData
+from .dynamic_sections.knowledge_base import KnowledgeBaseData
+from .dynamic_sections.goal import GoalSectionData
+
+# Import types needed for factory methods (still required here for _gather_dynamic_section_data)
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
 from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
 
 register_predefined_commands()
 
-# Define the consistent order of dynamic sections
-# This replaces the implicit order in dynamic_sections.mako
+# Define the consistent order of dynamic sections using the imported types
 DYNAMIC_SECTION_ORDER: List[Type[DynamicSectionData]] = [
     HeaderSectionData,
     PermanentLogsData,

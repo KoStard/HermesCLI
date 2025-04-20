@@ -30,10 +30,10 @@ from hermes.interface.assistant.deep_research_assistant.engine.context.history i
 from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
 # Import new dynamic section components
 from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import RendererRegistry, create_renderer_registry
-from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.data import (
+from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.base import (
     DynamicSectionData, HeaderSectionData, PermanentLogsData, BudgetSectionData, KnowledgeBaseData # Add others as needed
 )
-from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.renderers import DynamicSectionRenderer
+from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.base import DynamicSectionRenderer
 
 
 @pytest.fixture(scope="module")
