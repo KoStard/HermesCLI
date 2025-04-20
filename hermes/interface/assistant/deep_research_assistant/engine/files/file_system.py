@@ -1,5 +1,7 @@
+import hashlib
 import json
 import os
+import re
 import threading
 import yaml
 from collections import deque
@@ -466,7 +468,7 @@ class FileSystem:
                 subproblems_dir = node.parent.path / "Subproblems"
                 subproblems_dir.mkdir(exist_ok=True)
 
-                # Create directory for this subproblem
+                # Create directory for this subproblem using the sanitized title
                 node_dir = subproblems_dir / self._sanitize_filename(node.title)
                 node_dir.mkdir(exist_ok=True)
 
@@ -547,19 +549,77 @@ class FileSystem:
         metadata, content = self.frontmatter_manager.extract_frontmatter(full_content)
         return metadata.get("title"), content
 
-    def _sanitize_filename(self, filename: str) -> str:
-        """Sanitize a filename to be valid on the filesystem"""
-        # Replace invalid characters with underscores
-        invalid_chars = '<>:"/\\|?*'
-        for char in invalid_chars:
-            filename = filename.replace(char, "_")
+    def _sanitize_filename(self, original_filename: str) -> str:
+        """
+        Sanitizes a filename or directory name component to be safe for the filesystem,
+        significantly shorter to avoid MAX_PATH issues, and reasonably unique.
 
-        # Ensure the filename isn't too long
-        if len(filename) > 255:
-            name, ext = os.path.splitext(filename)
-            filename = name[:250] + ext
+        - Replaces invalid characters.
+        - Removes leading/trailing whitespace and periods.
+        - Replaces multiple consecutive underscores with a single one.
+        - Truncates the base name to a fixed length.
+        - Appends a short hash of the original name for uniqueness.
+        - Preserves the original file extension.
+        """
+        _MAX_COMPONENT_BASE_LENGTH = 50 # Max length for the base name part (excluding hash and extension)
+        _HASH_LENGTH = 8 # Length of the hash suffix
 
-        return filename
+        original_filename = original_filename.strip()
+        if not original_filename:
+            # Return a default name with a hash of something unique if possible,
+            # or a fixed string if not. Using a fixed string for simplicity here.
+            return "_empty_" + hashlib.sha1(os.urandom(16)).hexdigest()[:_HASH_LENGTH]
+
+        # Separate base name and extension
+        base_name, extension = os.path.splitext(original_filename)
+        extension = extension.lower() # Normalize extension
+
+        # Generate hash from the original full name (before any modification)
+        hasher = hashlib.sha1(original_filename.encode('utf-8', 'ignore')) # Use ignore for robustness
+        unique_suffix = hasher.hexdigest()[:_HASH_LENGTH]
+
+        # Basic sanitization: replace invalid chars, collapse spaces/underscores
+        sanitized_base = re.sub(r'[<>:"/\\|?*]+', '_', base_name) # Replace strictly invalid chars
+        sanitized_base = re.sub(r'\s+', '_', sanitized_base) # Replace whitespace with underscore
+        sanitized_base = re.sub(r'_+', '_', sanitized_base) # Collapse multiple underscores
+        # Remove most non-alphanumeric characters, keeping underscores and hyphens
+        sanitized_base = re.sub(r'[^a-zA-Z0-9_-]+', '', sanitized_base)
+        # Remove leading/trailing underscores/hyphens/periods
+        sanitized_base = re.sub(r'^[._-]+|[._-]+$', '', sanitized_base)
+
+        # Handle cases where sanitization results in an empty string
+        if not sanitized_base:
+            sanitized_base = "sanitized" # Fallback name
+
+        # Truncate the sanitized base name if it's too long
+        if len(sanitized_base) > _MAX_COMPONENT_BASE_LENGTH:
+            sanitized_base = sanitized_base[:_MAX_COMPONENT_BASE_LENGTH]
+            # Ensure it doesn't end with an underscore/hyphen after truncation
+            sanitized_base = sanitized_base.rstrip('_-')
+
+        # Re-check for empty string after potential stripping
+        if not sanitized_base:
+            sanitized_base = "truncated" # Another fallback
+
+        # Combine truncated base, hash suffix, and original extension
+        # Format: {truncated_base}_{hash}{.extension}
+        final_filename = f"{sanitized_base}_{unique_suffix}{extension}"
+
+        # Final check on total length (less critical than component length, but good practice)
+        # Windows max filename length is often 255 in practice for NTFS
+        _MAX_FILENAME_LEN = 255
+        if len(final_filename) > _MAX_FILENAME_LEN:
+             # If even after truncation and hashing it's too long (very unlikely), truncate brutally
+             # Keep the hash and extension if possible
+             keep_len = _MAX_FILENAME_LEN - len(unique_suffix) - len(extension) -1 # -1 for the underscore
+             if keep_len > 0:
+                 final_filename = f"{sanitized_base[:keep_len]}_{unique_suffix}{extension}"
+             else:
+                 # Extremely unlikely: hash + extension is already too long. Just truncate the whole thing.
+                 final_filename = final_filename[:_MAX_FILENAME_LEN]
+
+
+        return final_filename
 
     def _read_criteria_file(self, criteria_file: Path):
         criteria = []
