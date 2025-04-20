@@ -1,4 +1,3 @@
-## -*- coding: utf-8 -*-
 <%namespace name="xml" file="/macros/xml.mako"/>
 <%
 # Define the separator used by Python code to split sections

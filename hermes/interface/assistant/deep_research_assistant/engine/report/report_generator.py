@@ -1,58 +1,73 @@
+from typing import Dict, List
+
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem
+from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+# Assuming 'interface' provides access to _collect_artifacts_recursively
+# from hermes.interface.assistant.deep_research_assistant.engine.context.interface import DeepResearcherInterface
 
 
 class ReportGenerator:
     """
-    Responsible for generating reports based on the research data.
-    This class handles all report formatting and generation.
+    Responsible for generating reports based on the research data using Mako templates.
     """
 
-    def __init__(self, file_system: FileSystem):
+    def __init__(self, file_system: FileSystem, template_manager: TemplateManager):
+        """
+        Initialize ReportGenerator.
+
+        Args:
+            file_system: The FileSystem instance containing research data.
+            template_manager: An instance of TemplateManager to render templates.
+        """
         self.file_system = file_system
+        self.template_manager = template_manager
 
     def generate_final_report(self, interface) -> str:
-        """Generate a summary of all artifacts created during the research"""
-        if not self.file_system.root_node:
-            return "Research completed, but no artifacts were generated."
+        """
+        Generate a summary of all artifacts created during the research using a template.
 
-        # Collect all artifacts from the entire problem hierarchy
-        all_artifacts = interface._collect_artifacts_recursively(
-            self.file_system.root_node, self.file_system.root_node
-        )
+        Args:
+            interface: The DeepResearcherInterface instance (needed for _collect_artifacts_recursively).
+                       Consider refactoring _collect_artifacts_recursively into FileSystem or a utility
+                       to remove this dependency if possible in the future.
 
-        if not all_artifacts:
-            return "Research completed, but no artifacts were generated."
+        Returns:
+            A string containing the formatted final report.
+        """
+        root_node = self.file_system.root_node
+        artifacts_by_problem: Dict[str, List[str]] = {}
 
-        # Group artifacts by problem
-        artifacts_by_problem = {}
-        for owner_title, name, content, is_visible in all_artifacts:
-            if owner_title not in artifacts_by_problem:
-                artifacts_by_problem[owner_title] = []
-            artifacts_by_problem[owner_title].append(name)
+        if root_node:
+            # Collect all artifacts from the entire problem hierarchy
+            # TODO: Consider moving _collect_artifacts_recursively to FileSystem or a helper
+            # to avoid passing the full interface here.
+            all_artifacts = interface._collect_artifacts_recursively(
+                root_node, root_node # Pass root twice for initial call
+            )
 
-        # Generate the report
-        result = f"""# Deep Research Completed
+            if all_artifacts:
+                # Group artifact names by problem title
+                for owner_title, name, content, is_visible in all_artifacts:
+                    if owner_title not in artifacts_by_problem:
+                        artifacts_by_problem[owner_title] = []
+                    artifacts_by_problem[owner_title].append(name)
 
-## Problem: {self.file_system.root_node.title}
+        # Prepare context for the template
+        context = {
+            'root_node': root_node,
+            'artifacts_by_problem': artifacts_by_problem if artifacts_by_problem else None,
+        }
 
-## Summary of Generated Artifacts
-
-The research has been completed and the following artifacts have been created:
-
-"""
-
-        # List all artifacts with their filepaths
-        for problem_title, artifact_names in artifacts_by_problem.items():
-            result += f"### {problem_title}\n\n"
-            for name in artifact_names:
-                # Construct the relative filepath, ensuring .md extension
-                filepath = f"Artifacts/{name}.md"
-                result += f"- `{filepath}`: {name}\n"
-            result += "\n"
-
-        result += """
-These artifacts contain the valuable outputs of the research process. Each artifact represents
-a concrete piece of knowledge or analysis that contributes to solving the root problem.
-"""
-
-        return result
+        try:
+            # Render the final report template
+            return self.template_manager.render_template("report/final_report.mako", **context)
+        except Exception as e:
+            print(f"Error generating final report: {e}")
+            # Return a fallback error message
+            fallback_report = "# Deep Research Report Generation Failed\n\n"
+            fallback_report += f"An error occurred while generating the final report: {e}\n"
+            if root_node:
+                fallback_report += f"Root Problem: {root_node.title}\n"
+            if artifacts_by_problem:
+                fallback_report += f"Found artifacts for {len(artifacts_by_problem)} problems.\n"
+            return fallback_report

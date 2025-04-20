@@ -10,6 +10,7 @@ from hermes.interface.assistant.deep_research_assistant.engine.commands.command_
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, ProblemStatus
 from hermes.interface.assistant.deep_research_assistant.engine.context.history import ChatHistory, AutoReply, ChatMessage
 from hermes.interface.assistant.deep_research_assistant.engine.context.interface import DeepResearcherInterface
+from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
 from hermes.interface.assistant.deep_research_assistant.llm_interface import LLMInterface
 from hermes.interface.assistant.deep_research_assistant.engine.files.logger import DeepResearchLogger
 from hermes.interface.assistant.deep_research_assistant.engine.report.status_printer import StatusPrinter
@@ -311,8 +312,9 @@ class DeepResearchEngine:
 
         self._extension_commands = extension_commands
 
+        self.template_manager = TemplateManager()
         # Update interface with the file system
-        self.interface = DeepResearcherInterface(self.file_system)
+        self.interface = DeepResearcherInterface(self.file_system, self.template_manager)
 
         # Print initial status
         self._print_current_status()
@@ -590,7 +592,7 @@ class DeepResearchEngine:
 
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
-        status_printer = StatusPrinter()
+        status_printer = StatusPrinter(self.template_manager)
         status_printer.print_status(
             self.is_root_problem_defined(), self.current_node, self.file_system
         )
@@ -686,7 +688,7 @@ class DeepResearchEngine:
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research"""
-        report_generator = ReportGenerator(self.file_system)
+        report_generator = ReportGenerator(self.file_system, self.template_manager)
         return report_generator.generate_final_report(self.interface)
 
     def focus_down(self, subproblem_title: str) -> bool:

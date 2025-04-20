@@ -18,9 +18,9 @@ class DeepResearcherInterface:
     This class handles all string formatting and presentation logic.
     """
 
-    def __init__(self, file_system: FileSystem):
+    def __init__(self, file_system: FileSystem, template_manager: TemplateManager):
         self.file_system = file_system
-        self.template_manager = TemplateManager()
+        self.template_manager = template_manager
 
     def _get_parent_chain(self, node: Node) -> List[Node]:
         """Helper to get the parent chain including the given node"""
