@@ -840,45 +840,60 @@ class DeepResearchEngine:
 
         return True
 
-    def fail_and_focus_up(self) -> bool:
+    def fail_and_focus_up(self, message: Optional[str] = None) -> bool:
         """
-        Mark the current problem as failed and schedule focus up after the current cycle is complete
+        Mark the current problem as FAILED, schedule focus up, and add notifications
+        (standard and optional custom) to the parent's auto-reply.
+
+        Args:
+            message: Optional custom message explaining the failure.
 
         Returns:
-            bool: True if successful, False otherwise
+            bool: True if successful, False otherwise (e.g., no current node).
         """
         if not self.current_node:
             return False
 
-        # Get the parent chain
-        parent_chain = self.file_system.get_parent_chain(self.current_node)
+        current_node = self.current_node # Keep a reference
+        parent_chain = self.file_system.get_parent_chain(current_node)
 
         # If this is the root node, we're done
         if len(parent_chain) <= 1:
             # Mark the root node as FAILED
-            self.current_node.status = ProblemStatus.FAILED
+            current_node.status = ProblemStatus.FAILED
             self.file_system.update_files()
             self.finished = True
+            # Cannot pass message up from root, but the fail itself is successful
             return True
 
         # Mark the current node as FAILED
-        self.current_node.status = ProblemStatus.FAILED
-        current_node = self.current_node
+        current_node.status = ProblemStatus.FAILED
 
-        # Get the parent node (second to last in the chain, as the last is the current node)
+        # Get the parent node (second to last in the chain)
         parent_node = parent_chain[-2]
 
-        # Schedule the focus change
+        # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
+        if parent_node: # Ensure parent exists
+            parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
+                parent_node.title
+            )
+
+            # 1. Always add the standard status message
+            parent_auto_reply_aggregator.add_internal_message_from(
+                "Task marked FAILED, focusing back up.", current_node.title
+            )
+
+            # 2. If a custom failure message was provided, add it as well
+            if message:
+                # Prefix the custom message for clarity
+                parent_auto_reply_aggregator.add_internal_message_from(
+                    f"[Failure Message]: {message}", current_node.title
+                )
+
+        # --- Schedule the focus change ---
         self.next_node = parent_node
 
-        # Update files
+        # Update files (will save the FAILED status of the current node)
         self.file_system.update_files()
-
-        parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-            parent_node.title
-        )
-        parent_auto_reply_aggregator.add_internal_message_from(
-            "Task marked FAILED, focusing back up.", current_node.title
-        )
 
         return True

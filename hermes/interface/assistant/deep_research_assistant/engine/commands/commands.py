@@ -292,15 +292,43 @@ class FailProblemAndFocusUpCommand(Command):
     def __init__(self):
         super().__init__(
             "fail_problem",
-            "Mark the current problem as failed. If there is a parent problem, it will become activated.",
+            help_text=textwrap.dedent("""\
+            Mark the current problem as FAILED. If there is a parent problem, it will become activated.
+            You can optionally provide a message to the parent task using the ///message section explaining the failure.
+            Ensure other commands are processed before sending this.
+            Example with message:
+            <<< fail_problem
+            /// message
+            Could not proceed due to missing external data source X.
+            >>>
+            Example without message:
+            <<< fail_problem
+            >>>
+            """),
         )
+        # Add the optional message section
+        self.add_section("message", required=False, help_text="Optional message to pass to the parent task explaining the failure.")
+
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
-        """Mark problem as failed and focus up"""
-        result = context.fail_and_focus_up()
+        """Mark problem as failed and focus up, potentially passing a message."""
+        # Get the optional message from args
+        failure_message = args.get("message")
+
+        # Pass the message to the context method
+        result = context.fail_and_focus_up(message=failure_message)
 
         if not result:
-            raise ValueError("Failed to mark problem as failed and focus up.")
+            # Keep existing error handling, refine slightly for root node case
+            current_node_title = context.current_node.title if context.current_node else "Unknown"
+            if context.current_node and not context.current_node.parent:
+                 # Specific error if it's the root node trying to fail with a message meant for a parent
+                 if failure_message:
+                      raise ValueError(f"Cannot pass a failure message from the root node '{current_node_title}' as there is no parent.")
+                 # else: Standard fail for root is handled by context.fail_and_focus_up returning True and engine setting finished=True
+            else:
+                 # General failure case if not root or root without message
+                 raise ValueError(f"Failed to mark problem as failed and focus up from node '{current_node_title}'.")
 
     def should_be_last_in_message(self):
         return True

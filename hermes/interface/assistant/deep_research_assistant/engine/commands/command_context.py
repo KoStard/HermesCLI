@@ -104,5 +104,6 @@ class CommandContext:
         # Pass the message to the engine's method
         return self._engine.focus_up(message=message)
 
-    def fail_and_focus_up(self) -> bool:
-        return self._engine.fail_and_focus_up()
+    def fail_and_focus_up(self, message: Optional[str] = None) -> bool:
+        # Pass the message to the engine's method
+        return self._engine.fail_and_focus_up(message=message)
