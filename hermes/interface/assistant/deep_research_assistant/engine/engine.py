@@ -390,9 +390,17 @@ class DeepResearchEngine:
                 self._current_history_tag
             )
 
+            # Print the latest auto-reply to the console if it exists
             if current_auto_reply:
-                print(current_auto_reply.generate_auto_reply())
+                # Render with full content for console display
+                print(
+                    current_auto_reply.generate_auto_reply(
+                        template_manager=self.template_manager,
+                        per_command_output_maximum_length=None, # Show full content on console
+                    )
+                )
 
+            # Prepare history messages for LLM, handling auto-reply rendering and truncation
             for block in self.chat_history.get_compiled_blocks(
                 self._current_history_tag
             )[::-1]:  # Reverse to handle auto reply contraction
@@ -410,13 +418,13 @@ class DeepResearchEngine:
                             auto_reply_max_length = max(
                                 auto_reply_max_length // 2, 300
                             )
+                    # Render the auto-reply using the template manager
+                    auto_reply_content = block.generate_auto_reply(
+                        template_manager=self.template_manager,
+                        per_command_output_maximum_length=auto_reply_max_length,
+                    )
                     history_messages.append(
-                        {
-                            "author": "user",
-                            "content": block.generate_auto_reply(
-                                auto_reply_max_length
-                            ),
-                        }
+                        {"author": "user", "content": auto_reply_content}
                     )
 
             history_messages = history_messages[

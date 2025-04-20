@@ -6,8 +6,11 @@ from mako.template import Template
 class TemplateManager:
     """Manages loading and rendering of Mako templates for the Deep Research interface"""
 
-    def __init__(self):
-        self.template_dir = Path(__file__).parent
+    def __init__(self, template_dir=None):
+        if not template_dir:
+            self.template_dir = Path(__file__).parent
+        else:
+            self.template_dir = template_dir
         self.lookup = TemplateLookup(
             directories=[str(self.template_dir)],
             module_directory='/tmp/mako_modules',  # For template caching

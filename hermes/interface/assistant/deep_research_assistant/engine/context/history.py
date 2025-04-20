@@ -2,9 +2,8 @@ from abc import ABC
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from hermes.interface.assistant.deep_research_assistant.engine.context.content_truncator import (
-    ContentTruncator,
-)
+from hermes.interface.assistant.deep_research_assistant.engine.context.content_truncator import ContentTruncator
+from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
 
 
 class HistoryBlock(ABC):
@@ -34,69 +33,36 @@ class AutoReply(HistoryBlock):
         self.confirmation_request = confirmation_request
         self.dynamic_sections = dynamic_sections or []
 
-    def generate_auto_reply(self, per_command_output_maximum_length: int = None) -> str:
+    def generate_auto_reply(
+        self,
+        template_manager: TemplateManager,
+        per_command_output_maximum_length: Optional[int] = None,
+    ) -> str:
         """
-        Generate an automatic reply based on command execution results
+        Generate an automatic reply based on command execution results using a Mako template.
 
         Args:
-            per_command_output_maximum_length: Optional maximum length for command outputs
+            template_manager: The template manager instance.
+            per_command_output_maximum_length: Optional maximum length for command outputs.
 
         Returns:
-            Formatted automatic reply string
+            Formatted automatic reply string.
+
+        Raises:
+            Exception: If template rendering fails.
         """
-        auto_reply = """
-# Automatic Reply
+        context = {
+            "confirmation_request": self.confirmation_request,
+            "error_report": self.error_report,
+            "command_outputs": self.command_outputs,
+            "messages": self.messages,
+            "dynamic_sections": self.dynamic_sections,
+            "per_command_output_maximum_length": per_command_output_maximum_length,
+            "ContentTruncator": ContentTruncator,  # Pass the class itself
+        }
 
-If there are commands you sent in your message and they have any errors or outputs, you'll see them below.
-If you don't see a command report, then no commands were executed!
-"""
-
-        # Add confirmation request if present
-        if self.confirmation_request:
-            auto_reply += f"\n\n### Confirmation Required\n{self.confirmation_request}"
-
-        # Add error report if any
-        if self.error_report:
-            auto_reply += f"\n\n{self.error_report}"
-
-        # Add command outputs if any
-        auto_reply += "\n\n### Command Outputs\n"
-        if self.command_outputs:
-            for cmd_name, output_data in self.command_outputs:
-                auto_reply += f"\n#### <<< {cmd_name}\n"
-                # Format arguments
-                args_str = ", ".join(
-                    f"{k}: {v}" for k, v in output_data["args"].items()
-                )
-                if args_str:
-                    auto_reply += f"Arguments: {args_str}\n\n"
-                # Add the output
-                if not per_command_output_maximum_length:
-                    truncated_output = output_data["output"]
-                else:
-                    truncated_output = ContentTruncator.truncate(
-                        output_data["output"],
-                        per_command_output_maximum_length,
-                        additional_help="To see the full content again, rerun the command.",
-                    )
-                auto_reply += f"```\n{truncated_output}\n```\n"
-        else:
-            auto_reply += "\nNo command outputs\n"
-
-        if self.messages:
-            auto_reply += "\n\n### Internal Automatic Messages\n"
-            for message, origin_node_title in self.messages:
-                auto_reply += f"\n#### From: {origin_node_title}\n```\n{message}\n```\n"
-
-        # Add any changed dynamic sections
-        if self.dynamic_sections:
-            auto_reply += "\n\n### Updated Interface Sections\n"
-            auto_reply += "\nThe following interface sections have been updated:\n"
-            
-            for section_index, content in self.dynamic_sections:
-                auto_reply += f"\n{content}\n"
-
-        return auto_reply
+        # Let exceptions propagate if rendering fails
+        return template_manager.render_template("context/auto_reply.mako", **context)
 
 
 class AutoReplyAggregator:
