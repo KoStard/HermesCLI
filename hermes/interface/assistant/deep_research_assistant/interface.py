@@ -7,9 +7,6 @@ from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
-from hermes.interface.assistant.deep_research_assistant.engine.context.hierarchy_formatter import (
-    HierarchyFormatter,
-)
 from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import (
     ChatModelLLMInterface,
 )
@@ -34,7 +31,6 @@ class DeepResearchAssistantInterface(Interface):
         self.research_dir = research_path if research_path else str(Path.cwd())
         self.extension_commands = extension_commands or []
         self._engine: Optional[DeepResearchEngine] = None
-        self.hierarchy_formatter = HierarchyFormatter()
         self.instruction = None
         self._pending_budget = None  # Store budget until engine is initialized
 

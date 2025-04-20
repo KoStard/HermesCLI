@@ -1,11 +1,12 @@
 import textwrap
 from typing import List, Optional, Tuple
 
+from typing import List, Optional, Tuple
+
 from hermes.interface.assistant.deep_research_assistant.engine.commands.command import CommandRegistry
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
 from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import register_predefined_commands
 from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
-from .hierarchy_formatter import HierarchyFormatter
 from .content_truncator import ContentTruncator
 
 register_predefined_commands()
@@ -19,8 +20,16 @@ class DeepResearcherInterface:
 
     def __init__(self, file_system: FileSystem):
         self.file_system = file_system
-        self.hierarchy_formatter = HierarchyFormatter()
         self.template_manager = TemplateManager()
+
+    def _get_parent_chain(self, node: Node) -> List[Node]:
+        """Helper to get the parent chain including the given node"""
+        chain = []
+        current = node
+        while current:
+            chain.append(current)
+            current = current.parent
+        return list(reversed(chain))
 
     def render_problem_defined(
         self, target_node: Node, permanent_logs: List[str], budget: Optional[int], remaining_budget: Optional[int]
@@ -89,11 +98,11 @@ class DeepResearcherInterface:
             "budget": budget,
             "remaining_budget": remaining_budget,
             "external_files": external_files,
-            "node_artifacts": node_artifacts,
-            "file_system": self.file_system,
-            "hierarchy_formatter": self.hierarchy_formatter,
-            "template_manager": self.template_manager,
-            "ContentTruncator": ContentTruncator,
+            "node_artifacts": node_artifacts, # List of (owner_title, name, content, is_visible)
+            "parent_chain": self._get_parent_chain(target_node), # List of Nodes from root to target
+            "file_system": self.file_system, # Used by problem_hierarchy.mako
+            "template_manager": self.template_manager, # Used by dynamic_sections.mako itself
+            "ContentTruncator": ContentTruncator, # Used by artifacts.mako
         }
 
         # --- Render the main dynamic sections template ---

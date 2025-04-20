@@ -16,7 +16,7 @@ class ReportGenerator:
             return "Research completed, but no artifacts were generated."
 
         # Collect all artifacts from the entire problem hierarchy
-        all_artifacts = interface.collect_artifacts_recursively(
+        all_artifacts = interface._collect_artifacts_recursively(
             self.file_system.root_node, self.file_system.root_node
         )
 
