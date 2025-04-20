@@ -1,9 +1,12 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type, Any
+import traceback
 
 from hermes.interface.assistant.deep_research_assistant.engine.context.content_truncator import ContentTruncator
 from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+from .dynamic_sections.data import DynamicSectionData
+from .dynamic_sections import RendererRegistry # Use the type alias
 
 
 class HistoryBlock(ABC):
@@ -25,54 +28,108 @@ class AutoReply(HistoryBlock):
         command_outputs: List[Tuple[str, dict]],
         messages: List[Tuple[str, str]],
         confirmation_request: Optional[str] = None,
-        dynamic_sections: Optional[List[Tuple[int, str]]] = None,
+        dynamic_sections: Optional[List[Tuple[int, DynamicSectionData]]] = None,
     ):
-        self.error_report = error_report
-        self.command_outputs = command_outputs
-        self.messages = messages
-        self.confirmation_request = confirmation_request
-        self.dynamic_sections = dynamic_sections or []
+        self.error_report: str = error_report
+        self.command_outputs: List[Tuple[str, dict]] = command_outputs
+        self.messages: List[Tuple[str, str]] = messages
+        self.confirmation_request: Optional[str] = confirmation_request
+        # Store the data objects, not rendered strings
+        self.dynamic_sections: List[Tuple[int, DynamicSectionData]] = dynamic_sections or []
 
     def generate_auto_reply(
         self,
         template_manager: TemplateManager,
+        renderer_registry: RendererRegistry,
+        future_changes_map: Dict[int, int],
         per_command_output_maximum_length: Optional[int] = None,
     ) -> str:
         """
-        Generate an automatic reply based on command execution results using a Mako template.
+        Generate an automatic reply using a Mako template, rendering dynamic sections on the fly.
 
         Args:
             template_manager: The template manager instance.
-            per_command_output_maximum_length: Optional maximum length for command outputs.
+            renderer_registry: Maps data types to renderer instances.
+            future_changes_map: Maps section index to its future change count.
+            per_command_output_maximum_length: Optional max length for command outputs.
 
         Returns:
             Formatted automatic reply string.
-
-        Raises:
-            Exception: If template rendering fails.
         """
+        # --- Render Dynamic Sections ---
+        rendered_dynamic_sections: List[Tuple[int, str]] = []
+        for index, data_instance in self.dynamic_sections:
+            data_type = type(data_instance)
+            renderer = renderer_registry.get(data_type)
+            future_changes = future_changes_map.get(index, 0)
+            rendered_content = ""
+
+            if renderer:
+                try:
+                    # Pass future_changes count to the renderer
+                    rendered_content = renderer.render(data_instance, future_changes)
+                except Exception:
+                    # Error handling as requested: print stack trace and generate message
+                    print(f"\n--- ERROR RENDERING DYNAMIC SECTION (Index: {index}, Type: {data_type.__name__}) ---")
+                    tb_str = traceback.format_exc()
+                    print(tb_str)
+                    print("--- END ERROR ---")
+                    # Corrected f-string for artifact name
+                    artifact_name = f"render_error_section_{index}_{data_type.__name__}"
+                    rendered_content = (
+                        f"<error context=\"Rendering dynamic section index {index} ({data_type.__name__})\">\n"
+                        f"**SYSTEM ERROR:** Failed to render this section. "
+                        f"Please create an artifact named '{artifact_name}' "
+                        f"with the following content:\n```\n{tb_str}\n```\n"
+                        "Then, inform the administrator.\n"
+                        "</error>"
+                    )
+            else:
+                # Handle case where renderer is missing (shouldn't happen with proper registry)
+                print(f"Warning: No renderer found for dynamic section type {data_type.__name__}")
+                rendered_content = f"<error>No renderer found for section type {data_type.__name__}</error>"
+
+            rendered_dynamic_sections.append((index, rendered_content))
+
+        # --- Prepare Context for Mako Template ---
         context = {
             "confirmation_request": self.confirmation_request,
             "error_report": self.error_report,
             "command_outputs": self.command_outputs,
             "messages": self.messages,
-            "dynamic_sections": self.dynamic_sections,
+            "rendered_dynamic_sections": rendered_dynamic_sections, # Pass rendered strings
             "per_command_output_maximum_length": per_command_output_maximum_length,
-            "ContentTruncator": ContentTruncator,  # Pass the class itself
+            "ContentTruncator": ContentTruncator, # Still needed for command output truncation
         }
 
-        # Let exceptions propagate if rendering fails
-        return template_manager.render_template("context/auto_reply.mako", **context)
+        # --- Render the Main Auto-Reply Template ---
+        try:
+            return template_manager.render_template("context/auto_reply.mako", **context)
+        except Exception:
+            # Handle potential errors in the main auto_reply.mako template itself
+            print("\n--- ERROR RENDERING auto_reply.mako ---")
+            tb_str = traceback.format_exc()
+            print(tb_str)
+            print("--- END ERROR ---")
+            # Return a fallback error message if the main template fails
+            return (
+                f"# Automatic Reply\n\n"
+                f"**SYSTEM ERROR:** Failed to render the main auto-reply structure.\n"
+                f"Please report this error to the administrator.\n\n"
+                f"Details:\n```\n{tb_str}\n```"
+            )
 
 
 class AutoReplyAggregator:
     def __init__(self):
         self.error_reports = []
         self.command_outputs = []
-        self.internal_messages = []
-        self.confirmation_requests = []
-        self.dynamic_sections = []
-        self.last_dynamic_sections = []
+        self.internal_messages: List[Tuple[str, str]] = []
+        self.confirmation_requests: List[str] = []
+        # Stores the *data* objects for changed sections and their original index
+        self.dynamic_sections_to_report: List[Tuple[int, DynamicSectionData]] = []
+        # Stores the last known state of *all* dynamic section data objects
+        self.last_dynamic_sections_state: List[DynamicSectionData] = []
 
     def add_error_report(self, error_report: str):
         self.error_reports.append(error_report)
@@ -86,46 +143,59 @@ class AutoReplyAggregator:
     def add_internal_message_from(self, message: str, origin_node_title: str):
         self.internal_messages.append((message, origin_node_title))
 
-    def update_dynamic_sections(self, new_sections: List[str]):
+    def update_dynamic_sections(self, new_sections_data: List[DynamicSectionData]):
         """
-        Update tracked dynamic sections, identifying which ones have changed
-        
+        Compare new dynamic section data with the last known state and track changes.
+
         Args:
-            new_sections: List of all current dynamic sections
+            new_sections_data: List of data objects for all current dynamic sections.
         """
-        changed_section_indices = []
-        
-        # Initialize last_dynamic_sections if empty
-        if not self.last_dynamic_sections and new_sections:
-            # If the last dynamic sections has not been initialized, not considering anything changed
-            self.last_dynamic_sections = new_sections.copy()
-        
-        # Compare new sections with last known sections to find changes
-        for i, content in enumerate(new_sections):
-            if (i >= len(self.last_dynamic_sections) or 
-                self.last_dynamic_sections[i] != content):
-                changed_section_indices.append(i)
-        
-        # Store the changed sections to include in the next auto-reply
-        self.dynamic_sections = [(i, new_sections[i]) for i in changed_section_indices]
-        
-        # Update last known state for all sections
-        self.last_dynamic_sections = new_sections.copy()
+        changed_sections_with_indices: List[Tuple[int, DynamicSectionData]] = []
+
+        # Ensure lengths match for comparison, handle initialization
+        if not self.last_dynamic_sections_state:
+            # First time seeing sections, consider all as 'changed' for the initial view,
+            # but don't report them in the *first* auto-reply unless explicitly needed.
+            # For simplicity now, just initialize the state. The first auto-reply won't
+            # list "updated sections" unless something else triggers it.
+            self.last_dynamic_sections_state = new_sections_data[:] # Use slicing for a copy
+        elif len(new_sections_data) != len(self.last_dynamic_sections_state):
+            # This indicates a structural change (sections added/removed), which
+            # the current design doesn't handle dynamically. Treat all as changed.
+            # Or log an error/warning. For now, assume fixed structure.
+            print("Warning: Number of dynamic sections changed. Re-evaluating all.")
+            for i, data_instance in enumerate(new_sections_data):
+                 # Check against old state if index exists, otherwise it's new/changed
+                 if i >= len(self.last_dynamic_sections_state) or data_instance != self.last_dynamic_sections_state[i]:
+                     changed_sections_with_indices.append((i, data_instance))
+        else:
+            # Compare data objects element-wise using dataclass equality (__eq__)
+            for i, current_data in enumerate(new_sections_data):
+                if current_data != self.last_dynamic_sections_state[i]:
+                    changed_sections_with_indices.append((i, current_data))
+
+        # Store the changed sections (data + index) to be included in the *next* auto-reply
+        self.dynamic_sections_to_report = changed_sections_with_indices
+
+        # Update the last known state for *all* sections
+        self.last_dynamic_sections_state = new_sections_data[:] # Use slicing for a copy
 
     def clear(self):
         self.error_reports = []
         self.command_outputs = []
         self.internal_messages = []
         self.confirmation_requests = []
-        self.dynamic_sections = []  # Keep last_dynamic_sections for comparison
+        self.dynamic_sections_to_report = []
+        # Keep last_dynamic_sections_state for comparison
 
     def is_empty(self):
+        """Check if there's anything to report in the auto-reply."""
         return (
             not self.error_reports
             and not self.command_outputs
             and not self.internal_messages
             and not self.confirmation_requests
-            and not self.dynamic_sections
+            and not self.dynamic_sections_to_report # Check the changed sections list
         )
 
     def compile_and_clear(self) -> AutoReply:
@@ -140,9 +210,9 @@ class AutoReplyAggregator:
             self.command_outputs,
             self.internal_messages,
             confirmation_request,
-            self.dynamic_sections,
+            self.dynamic_sections_to_report, # Pass the changed sections data
         )
-        self.clear()
+        self.clear() # Clears reports, outputs, messages, requests, and changed sections list
         return auto_reply
 
 

@@ -8,13 +8,18 @@ from hermes.interface.assistant.deep_research_assistant.engine.commands.command_
 
 # Import commands to ensure they're registered
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, ProblemStatus
-from hermes.interface.assistant.deep_research_assistant.engine.context.history import ChatHistory, AutoReply, ChatMessage
+from hermes.interface.assistant.deep_research_assistant.engine.context.history import ChatHistory, AutoReply, ChatMessage, HistoryBlock
 from hermes.interface.assistant.deep_research_assistant.engine.context.interface import DeepResearcherInterface
+# Import the registry creation function and type alias
+from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import (
+    create_renderer_registry, RendererRegistry
+)
 from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
 from hermes.interface.assistant.deep_research_assistant.llm_interface import LLMInterface
 from hermes.interface.assistant.deep_research_assistant.engine.files.logger import DeepResearchLogger
 from hermes.interface.assistant.deep_research_assistant.engine.report.status_printer import StatusPrinter
 from hermes.interface.assistant.deep_research_assistant.engine.report.report_generator import ReportGenerator
+from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.data import DynamicSectionData
 
 
 class _CommandProcessor:
@@ -313,6 +318,8 @@ class DeepResearchEngine:
         self._extension_commands = extension_commands
 
         self.template_manager = TemplateManager()
+        # Create the renderer registry
+        self.renderer_registry: RendererRegistry = create_renderer_registry(self.template_manager)
         # Update interface with the file system
         self.interface = DeepResearcherInterface(self.file_system, self.template_manager)
 
@@ -361,49 +368,56 @@ class DeepResearchEngine:
         initial_interface_content_by_node = defaultdict()
 
         while not self.finished:
-            # Get the interface content - now returns static content and a list of dynamic sections
-            static_interface_content, dynamic_sections = (
+            if not self.current_node:
+                 # Handle case where no node is active (e.g., after finishing root)
+                 print("No active node. Research finished or requires manual intervention.")
+                 break # Or implement logic to choose next node
+
+            # --- 1. Gather Current Interface State ---
+            # Get static content and the *data* for dynamic sections
+            static_interface_content, current_dynamic_data = (
                 self.interface.render_problem_defined(
                     self.current_node, self.permanent_log, self.budget, self.get_remaining_budget()
                 )
             )
 
-            if self._current_history_tag not in initial_interface_content_by_node or not initial_interface_content_by_node[self._current_history_tag]:
-                initial_interface_content_by_node[self._current_history_tag] = "\n\n".join([
-                    static_interface_content,
-                    *dynamic_sections
-                ])
+            # Store the initial full interface view if not already done for this node
+            if self._current_history_tag not in initial_interface_content_by_node:
+                 # Render the initial dynamic sections *without* future changes for the first message
+                 initial_rendered_dynamics = []
+                 for i, data_instance in enumerate(current_dynamic_data):
+                     renderer = self.renderer_registry.get(type(data_instance))
+                     if renderer:
+                         # Render with future_changes=0 for the initial static view
+                         initial_rendered_dynamics.append(renderer.render(data_instance, 0))
+                     else:
+                         initial_rendered_dynamics.append(f"<error>Missing renderer for {type(data_instance).__name__}</error>")
 
-            # Update auto reply aggregator with the new dynamic sections
+                 initial_interface_content_by_node[self._current_history_tag] = "\n\n".join(
+                     [static_interface_content] + initial_rendered_dynamics
+                 )
+
+
+            # --- 2. Update History & Auto-Reply Aggregator ---
             current_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
                 self._current_history_tag
             )
-            current_auto_reply_aggregator.update_dynamic_sections(dynamic_sections)
+            # Compare current data with last state and update aggregator's list of *changed* sections
+            current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
 
-            # Convert history messages to dict format for the LLM interface
-            history_messages = []
-
-            auto_reply_counter = 0
-            auto_reply_max_length = None
-
-            current_auto_reply = self.chat_history.commit_and_get_auto_reply(
+            # Commit changes (errors, commands, messages, changed sections) to a new AutoReply block
+            # This clears the aggregator for the next cycle.
+            current_auto_reply_block = self.chat_history.commit_and_get_auto_reply(
                 self._current_history_tag
             )
 
-            # Print the latest auto-reply to the console if it exists
-            if current_auto_reply:
-                # Render with full content for console display
-                print(
-                    current_auto_reply.generate_auto_reply(
-                        template_manager=self.template_manager,
-                        per_command_output_maximum_length=None, # Show full content on console
-                    )
-                )
+            # --- 3. Prepare History for LLM (Render Auto-Replies) ---
+            history_messages = []
+            compiled_blocks = self.chat_history.get_compiled_blocks(self._current_history_tag)
+            auto_reply_counter = 0
+            auto_reply_max_length = None # Reset truncation for each LLM request
 
-            # Prepare history messages for LLM, handling auto-reply rendering and truncation
-            for block in self.chat_history.get_compiled_blocks(
-                self._current_history_tag
-            )[::-1]:  # Reverse to handle auto reply contraction
+            for i, block in enumerate(compiled_blocks):
                 if isinstance(block, ChatMessage):
                     history_messages.append(
                         {"author": block.author, "content": block.content}
@@ -411,25 +425,49 @@ class DeepResearchEngine:
                 elif isinstance(block, AutoReply):
                     auto_reply_counter += 1
 
+                    # --- Calculate Future Changes for this AutoReply ---
+                    future_changes_map: Dict[int, int] = defaultdict(int)
+                    # Look ahead in the *rest* of the compiled blocks
+                    for future_block in compiled_blocks[i+1:]:
+                        if isinstance(future_block, AutoReply):
+                            for section_index, _ in future_block.dynamic_sections:
+                                future_changes_map[section_index] += 1
+
+                    # --- Apply Auto-Reply Truncation Logic ---
+                    # (This logic might need refinement based on desired behavior)
+                    current_max_len = None
+                    # Example: Start truncating after 3 auto-replies
                     if auto_reply_counter > 3:
-                        if not auto_reply_max_length:
-                            auto_reply_max_length = 5_000
-                        else:
-                            auto_reply_max_length = max(
-                                auto_reply_max_length // 2, 300
-                            )
-                    # Render the auto-reply using the template manager
+                         if auto_reply_max_length is None:
+                             auto_reply_max_length = 5_000 # Initial truncation length
+                         else:
+                             # Reduce length for older replies
+                             auto_reply_max_length = max(auto_reply_max_length // 2, 300)
+                         current_max_len = auto_reply_max_length
+
+
+                    # --- Render the AutoReply block ---
+                    # Pass registry, future changes, and truncation length
                     auto_reply_content = block.generate_auto_reply(
                         template_manager=self.template_manager,
-                        per_command_output_maximum_length=auto_reply_max_length,
+                        renderer_registry=self.renderer_registry,
+                        future_changes_map=future_changes_map,
+                        per_command_output_maximum_length=current_max_len,
                     )
                     history_messages.append(
-                        {"author": "user", "content": auto_reply_content}
+                        {"author": "user", "content": auto_reply_content} # Auto-replies are from 'user' perspective for LLM
                     )
 
-            history_messages = history_messages[
-                ::-1
-            ]  # Reverse to maintain chronological order
+            # --- 4. Print Latest Auto-Reply to Console (Optional) ---
+            # Render the *last* auto-reply added (if any) for console view, without future changes/truncation
+            if current_auto_reply_block:
+                 console_auto_reply = current_auto_reply_block.generate_auto_reply(
+                     template_manager=self.template_manager,
+                     renderer_registry=self.renderer_registry,
+                     future_changes_map={}, # No future changes for console view
+                     per_command_output_maximum_length=None, # No truncation for console
+                 )
+                 print(console_auto_reply)
 
             # Get the current node path for logging
             current_node_path = (

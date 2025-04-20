@@ -5,7 +5,7 @@
 ## - error_report: str
 ## - command_outputs: List[Tuple[str, dict]]  (dict has 'args', 'output')
 ## - messages: List[Tuple[str, str]] (message, origin_node_title)
-## - dynamic_sections: List[Tuple[int, str]] (section_index, content)
+## - rendered_dynamic_sections: List[Tuple[int, str]] (section_index, rendered_content_or_error)
 ## - per_command_output_maximum_length: Optional[int]
 ## - ContentTruncator: class (for calling static truncate method)
 ${'#'} Automatic Reply
@@ -54,12 +54,12 @@ ${message}
 %   endfor
 % endif
 
-% if dynamic_sections:
+% if rendered_dynamic_sections:
 ${'###'} Updated Interface Sections
 
 The following interface sections have been updated:
-%   for section_index, content in dynamic_sections:
-
-${content}
+%   for section_index, rendered_content in rendered_dynamic_sections:
+## --- Section Index ${section_index} ---
+${rendered_content}
 %   endfor
 % endif

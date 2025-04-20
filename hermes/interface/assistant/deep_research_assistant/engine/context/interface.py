@@ -1,15 +1,38 @@
 import textwrap
-from typing import List, Optional, Tuple
-
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any, Type
 
 from hermes.interface.assistant.deep_research_assistant.engine.commands.command import CommandRegistry
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, Artifact
 from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import register_predefined_commands
 from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
-from .content_truncator import ContentTruncator
+# Removed ContentTruncator import, now handled by renderer
+# Import the new data classes and factory methods
+from .dynamic_sections.data import (
+    DynamicSectionData, HeaderSectionData, PermanentLogsData, BudgetSectionData,
+    ArtifactsSectionData, ProblemHierarchyData, CriteriaSectionData, SubproblemsSectionData,
+    ProblemPathHierarchyData, KnowledgeBaseData, GoalSectionData,
+    # Primitive types are not directly used here but factories are
+)
+# Import types needed for factory methods
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
+from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
 
 register_predefined_commands()
+
+# Define the consistent order of dynamic sections
+# This replaces the implicit order in dynamic_sections.mako
+DYNAMIC_SECTION_ORDER: List[Type[DynamicSectionData]] = [
+    HeaderSectionData,
+    PermanentLogsData,
+    BudgetSectionData,
+    ArtifactsSectionData,
+    ProblemHierarchyData,
+    CriteriaSectionData,
+    SubproblemsSectionData,
+    ProblemPathHierarchyData,
+    KnowledgeBaseData,
+    GoalSectionData,
+]
 
 
 class DeepResearcherInterface:
@@ -22,8 +45,10 @@ class DeepResearcherInterface:
         self.file_system = file_system
         self.template_manager = template_manager
 
-    def _get_parent_chain(self, node: Node) -> List[Node]:
+    def _get_parent_chain(self, node: Optional[Node]) -> List[Node]:
         """Helper to get the parent chain including the given node"""
+        if not node:
+            return []
         chain = []
         current = node
         while current:
@@ -33,27 +58,27 @@ class DeepResearcherInterface:
 
     def render_problem_defined(
         self, target_node: Node, permanent_logs: List[str], budget: Optional[int], remaining_budget: Optional[int]
-    ) -> Tuple[str, List[str]]:
+    ) -> Tuple[str, List[DynamicSectionData]]:
         """
-        Render the interface when a problem is defined
-        
+        Prepare the interface content when a problem is defined.
+
         Returns:
             A tuple containing:
-            - static_content (str): Fixed interface content that doesn't change
-            - dynamic_sections (List[str]): List of interface sections that may change, with consistent indices
-              
-              The order and content of dynamic sections are controlled by the
-              `dynamic_sections.mako` template.
+            - static_content (str): Fixed interface content that doesn't change.
+            - dynamic_sections_data (List[DynamicSectionData]): List of data objects
+              representing the state of each dynamic section, in a consistent order.
         """
-        # Render static and dynamic sections separately
-        static_section = self._render_static_content(target_node)
-        dynamic_sections = self._render_dynamic_sections(
+        # Render static content (remains the same)
+        static_content = self._render_static_content(target_node)
+
+        # Gather data for dynamic sections
+        dynamic_sections_data = self._gather_dynamic_section_data(
             target_node=target_node,
             permanent_logs=permanent_logs,
             budget=budget,
             remaining_budget=remaining_budget,
         )
-        return static_section, dynamic_sections
+        return static_content, dynamic_sections_data
 
     def _render_static_content(self, target_node: Node) -> str:
         """Render the static content by rendering the main static.mako template."""
@@ -67,61 +92,77 @@ class DeepResearcherInterface:
         
         return self.template_manager.render_template("static.mako", **context)
 
-    def _render_dynamic_sections(
+    def _gather_dynamic_section_data(
         self,
         target_node: Node,
         permanent_logs: List[str],
         budget: Optional[int],
         remaining_budget: Optional[int],
-    ) -> List[str]:
-        """Render all dynamic sections by rendering the main dynamic_sections.mako template and splitting the result."""
-        # --- Prepare context data needed by the main dynamic sections template ---
-        # Artifacts Data (Raw)
+    ) -> List[DynamicSectionData]:
+        """Gathers data required for each dynamic section and returns a list of data objects."""
+        all_data = {} # Store data keyed by type for easy access
+
+        # --- Gather data for each section type ---
+
+        # Header: No data needed
+        all_data[HeaderSectionData] = HeaderSectionData()
+
+        # Permanent Logs
+        all_data[PermanentLogsData] = PermanentLogsData(permanent_logs=permanent_logs)
+
+        # Budget
+        all_data[BudgetSectionData] = BudgetSectionData(budget=budget, remaining_budget=remaining_budget)
+
+        # Artifacts
         external_files = self.file_system.get_external_files()
-        node_artifacts = []
-        # Collect artifacts recursively starting from the root to get correct ownership info
-        if self.file_system.root_node:
-            node_artifacts = self._collect_artifacts_recursively(
-                self.file_system.root_node, target_node
-            )
-        else:
-            # Handle case where root_node might not be set yet but problem is defined
-            node_artifacts = self._collect_artifacts_recursively(
-                target_node, target_node
-            )
-
-        # --- Consolidate context for the main template ---
-        # Pass raw data and helper objects/classes needed by the template
-        context = {
-            "target_node": target_node,
-            "permanent_logs": permanent_logs,
-            "budget": budget,
-            "remaining_budget": remaining_budget,
-            "external_files": external_files,
-            "node_artifacts": node_artifacts, # List of (owner_title, name, content, is_visible)
-            "parent_chain": self._get_parent_chain(target_node), # List of Nodes from root to target
-            "file_system": self.file_system, # Used by problem_hierarchy.mako
-            "template_manager": self.template_manager, # Used by dynamic_sections.mako itself
-            "ContentTruncator": ContentTruncator, # Used by artifacts.mako and potentially others
-            "knowledge_base": self.file_system.get_knowledge_base(), # Add knowledge base data
-        }
-
-        # --- Render the main dynamic sections template ---
-        # The template itself will now handle formatting/rendering of internal pieces
-        full_dynamic_content = self.template_manager.render_template(
-            "dynamic_sections.mako", **context
+        node_artifacts_list = []
+        # Use target_node directly if root is not yet defined (e.g., during initial define_problem)
+        start_node_for_artifacts = self.file_system.root_node or target_node
+        if start_node_for_artifacts:
+             node_artifacts_list = self._collect_artifacts_recursively(
+                 start_node_for_artifacts, target_node
+             )
+        # Use factory method for ArtifactsSectionData
+        all_data[ArtifactsSectionData] = ArtifactsSectionData.from_artifact_lists(
+            external_files_dict=external_files,
+            node_artifacts_list=node_artifacts_list
         )
 
-        # --- Split the rendered content by the separator ---
-        # Use a unique separator defined within the template or here
-        separator = "<!-- DYNAMIC_SECTION_SEPARATOR -->"
-        dynamic_sections = [
-            section.strip()
-            for section in full_dynamic_content.split(separator)
-            if section.strip()  # Remove empty sections resulting from split
-        ]
+        # Problem Hierarchy (Short) - Use factory method
+        all_data[ProblemHierarchyData] = ProblemHierarchyData.from_filesystem_and_node(
+            fs=self.file_system,
+            target_node=target_node
+        )
 
-        return dynamic_sections
+        # Criteria - Use factory method
+        all_data[CriteriaSectionData] = CriteriaSectionData.from_node(target_node=target_node)
+
+        # Subproblems - Use factory method
+        all_data[SubproblemsSectionData] = SubproblemsSectionData.from_node(target_node=target_node)
+
+        # Problem Path Hierarchy - Use factory method
+        parent_chain = self._get_parent_chain(target_node)
+        all_data[ProblemPathHierarchyData] = ProblemPathHierarchyData.from_parent_chain(
+            parent_chain=parent_chain,
+            current_node=target_node
+        )
+
+        # Knowledge Base - Use factory method
+        knowledge_base = self.file_system.get_knowledge_base()
+        all_data[KnowledgeBaseData] = KnowledgeBaseData.from_knowledge_base(knowledge_base=knowledge_base)
+
+        # Goal: No data needed
+        all_data[GoalSectionData] = GoalSectionData()
+
+        # --- Return data objects in the defined order ---
+        ordered_data = [all_data[section_type] for section_type in DYNAMIC_SECTION_ORDER if section_type in all_data]
+
+        # Sanity check: Ensure all expected sections were populated
+        if len(ordered_data) != len(DYNAMIC_SECTION_ORDER):
+             print("Warning: Mismatch between expected dynamic sections and gathered data.")
+             # Potentially raise an error or log more details
+
+        return ordered_data
 
     def _collect_artifacts_recursively(
         self, node: Node, current_node: Node
@@ -142,10 +183,38 @@ class DeepResearcherInterface:
 
         # Add this node's artifacts
         for name, artifact in node.artifacts.items():
-            is_visible = current_node.visible_artifacts.get(name, False) or artifact.is_external
-            artifacts.append(
-                (node.title, name, artifact.content, is_visible)
-            )
+            # Check visibility based on the current_node's perspective
+            # An artifact is visible if:
+            # 1. It's external OR
+            # 2. It belongs to the current_node OR
+            # 3. It belongs to an ancestor of the current_node OR
+            # 4. It belongs to a descendant and current_node explicitly marked it visible
+            is_owned_by_current = node == current_node
+            is_owned_by_ancestor = node in self._get_parent_chain(current_node)[:-1] # Exclude current node itself
+
+            # Determine if the artifact *should* be visible based on ownership/ancestry
+            # External files are always visible conceptually.
+            should_be_visible = artifact.is_external or is_owned_by_current or is_owned_by_ancestor
+
+            # Check if the current_node has explicitly set visibility (overrides default visibility)
+            # True means "show full", False means "show truncated", None means "use default"
+            explicit_visibility = current_node.visible_artifacts.get(name)
+
+            # Determine final visibility state
+            if explicit_visibility is True:
+                is_fully_visible = True
+            elif explicit_visibility is False:
+                is_fully_visible = False
+            else: # explicit_visibility is None, use default logic
+                # Default: Visible if owned by current/ancestor or external. Not fully visible otherwise (implies descendant)
+                is_fully_visible = should_be_visible
+
+            # Only add the artifact to the list if it should be visible at all
+            # (Owned by current/ancestor, external, or explicitly marked visible by current node)
+            if should_be_visible or explicit_visibility is not None:
+                 artifacts.append(
+                     (node.title, name, artifact.content, is_fully_visible)
+                 )
 
         # Recursively collect artifacts from all subproblems
         for title, subproblem in node.subproblems.items():

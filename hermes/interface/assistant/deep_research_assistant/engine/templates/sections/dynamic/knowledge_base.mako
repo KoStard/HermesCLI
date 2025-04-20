@@ -1,8 +1,10 @@
 ## Renders the shared knowledge base
+## Context:
+## - knowledge_entries_data: Tuple[PrimitiveKnowledgeEntryData]
 <%namespace name="xml" file="/macros/xml.mako"/>
 ${'#'} Shared Knowledge Base
 
-% if not knowledge_base:
+% if not knowledge_entries_data:
 <knowledge_base>
 No knowledge entries added yet. Use the 'add_knowledge' command to contribute.
 </knowledge_base>
@@ -12,8 +14,8 @@ No knowledge entries added yet. Use the 'add_knowledge' command to contribute.
     Entries added by all assistants working on this research project. Sorted newest first.
     </knowledge_intro>
     ${xml.separator()}
-    % for entry in sorted(knowledge_base, key=lambda x: x.timestamp, reverse=True):
-        ${xml.knowledge_entry(entry)}
+    % for entry_data in knowledge_entries_data: ## Already sorted by factory method
+        ${xml.knowledge_entry_primitive(entry_data)}
         ${xml.separator() if not loop.last else ""}
     % endfor
 </knowledge_base>

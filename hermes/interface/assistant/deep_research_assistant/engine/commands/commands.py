@@ -357,7 +357,8 @@ class OpenArtifactCommand(Command):
 
         # Check current node's artifacts
         if artifact_name in current_node.artifacts:
-            current_node.artifacts[artifact_name].is_fully_visible = True
+            # Modify the visibility flag on the *current_node* perspective
+            current_node.visible_artifacts[artifact_name] = True
             self.add_output(
                 context,
                 args,
@@ -366,11 +367,12 @@ class OpenArtifactCommand(Command):
             context.update_files()
             return
 
-        # Check parent chain
+        # Check parent chain - visibility is controlled by the current node's perspective
         parent_chain = context.file_system.get_parent_chain(current_node)
         for node in parent_chain:
             if artifact_name in node.artifacts:
-                node.artifacts[artifact_name].is_fully_visible = True
+                # Modify the visibility flag on the *current_node* perspective
+                current_node.visible_artifacts[artifact_name] = True
                 self.add_output(
                     context,
                     args,
@@ -424,7 +426,8 @@ class HalfCloseArtifactCommand(Command):
 
         # Check current node's artifacts
         if artifact_name in current_node.artifacts:
-            current_node.artifacts[artifact_name].is_fully_visible = False
+            # Modify the visibility flag on the *current_node* perspective
+            current_node.visible_artifacts[artifact_name] = False
             self.add_output(
                 context,
                 args,
@@ -433,11 +436,12 @@ class HalfCloseArtifactCommand(Command):
             context.update_files()
             return
 
-        # Check parent chain
+        # Check parent chain - visibility is controlled by the current node's perspective
         parent_chain = context.file_system.get_parent_chain(current_node)
         for node in parent_chain:
             if artifact_name in node.artifacts:
-                node.artifacts[artifact_name].is_fully_visible = False
+                # Modify the visibility flag on the *current_node* perspective
+                current_node.visible_artifacts[artifact_name] = False
                 self.add_output(
                     context,
                     args,
