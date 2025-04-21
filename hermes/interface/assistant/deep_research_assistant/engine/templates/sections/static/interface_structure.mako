@@ -17,3 +17,7 @@ If you need to create subproblems and activate them, you reply with a partial me
 If you are working on a big problem and want to solve it piece by piece, reply with partial messages as many times as you want.
 Only after you have completely finished the task, you resolve the current problem. Reminder that the commands from the current message will be executed only after you finish it. So it's a good practice to not have regular commands (information gathering, criteria change, etc) in the same message as problem resolution (finish or fail) or subproblem activation.
 You need to send the whole message which contains the commands you want to be executed to receive responses.
+
+Notice that the system will not contact the user until you finish or fail the root problem.
+When you are done, the user will read the artifacts, and send you additional instructions if needed.
+If you lack information, you can write an artifact listing your questions and allowing the user to fill the answers before continuing. This interface is your workstation for investigating the problem, but the user is not actively present, the user will be informed, only after you finish.
