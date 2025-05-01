@@ -77,12 +77,6 @@ class Command(ABC):
         return False
 
 
-class DefineCommand(Command):
-    """Base class for commands that define or modify problems"""
-
-    pass
-
-
 class CommandRegistry:
     """Registry for all available commands"""
 
@@ -102,12 +96,11 @@ class CommandRegistry:
         """Get a command by name"""
         return self._commands.get(name)
 
-    def get_problem_defined_interface_commands(self) -> Dict[str, Command]:
+    def get_interface_commands(self) -> Dict[str, Command]:
         """Get all registered commands"""
         return {
             name: command
             for name, command in self._commands.items()
-            if not isinstance(command, DefineCommand)
         }
 
     def get_command_names(self) -> List[str]:

@@ -1,28 +1,11 @@
 import textwrap
 from typing import Dict, Any, List
 
-from .command import Command, register_command, DefineCommand
+from .command import Command, register_command
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import Artifact, ProblemStatus
 from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
 from .command_context import CommandContext
 
-
-@register_command
-class DefineProblemCommand(DefineCommand):
-    def __init__(self):
-        super().__init__(
-            "define_problem",
-            "Define the initial problem to research",
-        )
-        self.add_section("title", True, "Title of the problem")
-        self.add_section("content", True, "Content of the problem definition")
-
-    def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
-        """Create the root problem"""
-        context.file_system.create_root_problem(args["title"], args["content"])
-
-        # Ensure file system is fully updated
-        context.update_files()
 
 
 @register_command

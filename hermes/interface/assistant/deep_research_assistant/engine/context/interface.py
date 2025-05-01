@@ -87,7 +87,7 @@ class DeepResearcherInterface:
     def _render_static_content(self, target_node: Node) -> str:
         """Render the static content by rendering the main static.mako template."""
         # Get commands to pass to the template context
-        commands = CommandRegistry().get_problem_defined_interface_commands()
+        commands = CommandRegistry().get_interface_commands()
         
         context = {
             'target_node': target_node,
@@ -231,7 +231,7 @@ class DeepResearcherInterface:
     def _generate_command_help(self) -> str:
         """Generate help text for all registered commands by rendering the command_help template."""
         # Get all registered commands suitable for the problem-defined interface
-        commands = CommandRegistry().get_problem_defined_interface_commands()
+        commands = CommandRegistry().get_interface_commands()
         
         # Render the command help template
         return self.template_manager.render_template(
