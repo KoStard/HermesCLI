@@ -5,8 +5,12 @@ from .base import DynamicSectionData, DynamicSectionRenderer
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
-    from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import Node
-    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+    from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
+        Node,
+    )
+    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
+        TemplateManager,
+    )
 
 
 # --- Data ---
@@ -20,7 +24,7 @@ class CriteriaSectionData(DynamicSectionData):
     def from_node(target_node: "Node") -> "CriteriaSectionData":
         return CriteriaSectionData(
             criteria=tuple(target_node.criteria),
-            criteria_done=tuple(target_node.criteria_done)
+            criteria_done=tuple(target_node.criteria_done),
         )
 
 
@@ -32,7 +36,7 @@ class CriteriaSectionRenderer(DynamicSectionRenderer):
     def render(self, data: CriteriaSectionData, future_changes: int) -> str:
         # Pass the primitive tuples
         context = {
-            "criteria_list": data.criteria, # Tuple[str]
-            "criteria_done_list": data.criteria_done, # Tuple[bool]
+            "criteria_list": data.criteria,  # Tuple[str]
+            "criteria_done_list": data.criteria_done,  # Tuple[bool]
         }
         return self._render_template(context)

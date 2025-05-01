@@ -1,6 +1,8 @@
 from typing import Dict, List, Optional
 
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
+    FileSystem,
+)
 from hermes.interface.templates.template_manager import TemplateManager
 
 
@@ -20,7 +22,9 @@ class ReportGenerator:
         self.file_system = file_system
         self.template_manager = template_manager
 
-    def generate_final_report(self, interface, root_completion_message: Optional[str] = None) -> str:
+    def generate_final_report(
+        self, interface, root_completion_message: Optional[str] = None
+    ) -> str:
         """
         Generate a summary of all artifacts created during the research using a template.
 
@@ -41,7 +45,8 @@ class ReportGenerator:
             # TODO: Consider moving _collect_artifacts_recursively to FileSystem or a helper
             # to avoid passing the full interface here.
             all_artifacts = interface._collect_artifacts_recursively(
-                root_node, root_node # Pass root twice for initial call
+                root_node,
+                root_node,  # Pass root twice for initial call
             )
 
             if all_artifacts:
@@ -53,21 +58,29 @@ class ReportGenerator:
 
         # Prepare context for the template
         context = {
-            'root_node': root_node,
-            'artifacts_by_problem': artifacts_by_problem if artifacts_by_problem else None,
-            'root_completion_message': root_completion_message, # Add the message to the context
+            "root_node": root_node,
+            "artifacts_by_problem": artifacts_by_problem
+            if artifacts_by_problem
+            else None,
+            "root_completion_message": root_completion_message,  # Add the message to the context
         }
 
         try:
             # Render the final report template
-            return self.template_manager.render_template("report/final_report.mako", **context)
+            return self.template_manager.render_template(
+                "report/final_report.mako", **context
+            )
         except Exception as e:
             print(f"Error generating final report: {e}")
             # Return a fallback error message
             fallback_report = "# Deep Research Report Generation Failed\n\n"
-            fallback_report += f"An error occurred while generating the final report: {e}\n"
+            fallback_report += (
+                f"An error occurred while generating the final report: {e}\n"
+            )
             if root_node:
                 fallback_report += f"Root Problem: {root_node.title}\n"
             if artifacts_by_problem:
-                fallback_report += f"Found artifacts for {len(artifacts_by_problem)} problems.\n"
+                fallback_report += (
+                    f"Found artifacts for {len(artifacts_by_problem)} problems.\n"
+                )
             return fallback_report

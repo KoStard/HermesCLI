@@ -3,7 +3,9 @@ from typing import Dict, Type, TYPE_CHECKING
 if TYPE_CHECKING:
     # Import base classes for type hinting
     from .base import DynamicSectionData, DynamicSectionRenderer
-    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
+        TemplateManager,
+    )
 
 
 # Type alias for the registry
@@ -20,7 +22,10 @@ def create_renderer_registry(template_manager: "TemplateManager") -> RendererReg
     from .problem_hierarchy import ProblemHierarchyData, ProblemHierarchyRenderer
     from .criteria import CriteriaSectionData, CriteriaSectionRenderer
     from .subproblems import SubproblemsSectionData, SubproblemsSectionRenderer
-    from .problem_path_hierarchy import ProblemPathHierarchyData, ProblemPathHierarchyRenderer
+    from .problem_path_hierarchy import (
+        ProblemPathHierarchyData,
+        ProblemPathHierarchyRenderer,
+    )
     from .knowledge_base import KnowledgeBaseData, KnowledgeBaseRenderer
     from .goal import GoalSectionData, GoalSectionRenderer
 

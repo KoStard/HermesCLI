@@ -11,12 +11,11 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Type
 import logging
+
 # Removed appdirs import
 from hermes.config_utils import get_extensions_dir_path
 from hermes.interface.commands.command import Command
 from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
-
-
 
 
 def load_extension_module(extension_path: Path) -> Optional[object]:
@@ -76,7 +75,9 @@ def load_extensions() -> (
 
     extensions_dir = get_extensions_dir_path()
     if not extensions_dir.exists():
-        logging.info(f"Extensions directory not found at {extensions_dir}, skipping extension loading.")
+        logging.info(
+            f"Extensions directory not found at {extensions_dir}, skipping extension loading."
+        )
         return [], [], [], []
 
     # Scan for extension.py files in subdirectories

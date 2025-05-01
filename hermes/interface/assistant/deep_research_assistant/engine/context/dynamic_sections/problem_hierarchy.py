@@ -5,8 +5,13 @@ from .base import DynamicSectionData, DynamicSectionRenderer
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
-    from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
-    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+    from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
+        FileSystem,
+        Node,
+    )
+    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
+        TemplateManager,
+    )
 
 
 # --- Data ---
@@ -17,11 +22,12 @@ class ProblemHierarchyData(DynamicSectionData):
     target_node_title: str
 
     @staticmethod
-    def from_filesystem_and_node(fs: "FileSystem", target_node: "Node") -> "ProblemHierarchyData":
+    def from_filesystem_and_node(
+        fs: "FileSystem", target_node: "Node"
+    ) -> "ProblemHierarchyData":
         hierarchy_str = fs.get_problem_hierarchy(target_node)
         return ProblemHierarchyData(
-            file_system_hierarchy_str=hierarchy_str,
-            target_node_title=target_node.title
+            file_system_hierarchy_str=hierarchy_str, target_node_title=target_node.title
         )
 
 
@@ -34,6 +40,6 @@ class ProblemHierarchyRenderer(DynamicSectionRenderer):
         # Pass the pre-rendered string and title
         context = {
             "file_system_hierarchy_str": data.file_system_hierarchy_str,
-            "target_node_title": data.target_node_title # Pass title instead of node
+            "target_node_title": data.target_node_title,  # Pass title instead of node
         }
         return self._render_template(context)

@@ -33,7 +33,7 @@ class ChatModel(ABC):
     @abstractmethod
     def get_provider() -> str:
         pass
-    
+
     @classmethod
     def get_config_section_name(cls) -> str:
         return cls.get_provider()

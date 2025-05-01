@@ -1,6 +1,10 @@
 from typing import Dict, Optional
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem
-from hermes.interface.assistant.deep_research_assistant.engine.context.history import ChatHistory
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
+    FileSystem,
+)
+from hermes.interface.assistant.deep_research_assistant.engine.context.history import (
+    ChatHistory,
+)
 
 
 class CommandContext:

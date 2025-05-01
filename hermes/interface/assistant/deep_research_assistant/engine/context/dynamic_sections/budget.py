@@ -4,7 +4,9 @@ from typing import Optional, TYPE_CHECKING
 from .base import DynamicSectionData, DynamicSectionRenderer
 
 if TYPE_CHECKING:
-    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
+        TemplateManager,
+    )
 
 
 # --- Data ---

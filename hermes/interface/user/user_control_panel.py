@@ -46,7 +46,7 @@ class UserControlPanel(ControlPanel):
         extra_commands: list[ControlPanelCommand] = None,
         exa_client: Optional[ExaClient] = None,
         llm_control_panel=None,
-        is_deep_research_mode=False
+        is_deep_research_mode=False,
     ):
         super().__init__()
         self.tree_generator = TreeGenerator()
@@ -170,7 +170,7 @@ class UserControlPanel(ControlPanel):
                     TextualFileMessage(
                         author="user", text_filepath=line, textual_content=None
                     )
-                )
+                ),
             )
         )
 
@@ -322,7 +322,7 @@ class UserControlPanel(ControlPanel):
                 parser=lambda line: ThinkingLevelEvent(level=line.strip().lower()),
             )
         )
-        
+
         self._register_command(
             ControlPanelCommand(
                 command_id="set_deep_research_budget",
@@ -330,7 +330,7 @@ class UserControlPanel(ControlPanel):
                 description="Set a soft budget limit for Deep Research Assistant (number of message cycles)",
                 short_description="Set Deep Research budget",
                 parser=self._parse_set_deep_research_budget_command,
-                is_deep_research=True
+                is_deep_research=True,
             )
         )
         self._register_command(
@@ -384,7 +384,7 @@ class UserControlPanel(ControlPanel):
         self.notifications_printer.print_notification("\n".join(output))
 
         return None
-        
+
     def _parse_set_deep_research_budget_command(self, content: str) -> Event:
         """Parse the /set_deep_research_budget command"""
         try:
@@ -397,7 +397,8 @@ class UserControlPanel(ControlPanel):
             return DeepResearchBudgetEvent(budget=budget)
         except ValueError:
             self.notifications_printer.print_notification(
-                "Invalid budget value. Please provide a positive integer.", CLIColors.RED
+                "Invalid budget value. Please provide a positive integer.",
+                CLIColors.RED,
             )
             return None
 
@@ -425,12 +426,15 @@ class UserControlPanel(ControlPanel):
     def render(self):
         results = []
         for command in self.commands:
-            if self.commands[command].is_deep_research and not self.is_deep_research_mode:
+            if (
+                self.commands[command].is_deep_research
+                and not self.is_deep_research_mode
+            ):
                 continue
             if not self.commands[command].visible_from_interface:
                 continue
             results.append(self._render_command_in_control_panel(command))
-        
+
         return "\n".join(results)
 
     def break_down_and_execute_message(

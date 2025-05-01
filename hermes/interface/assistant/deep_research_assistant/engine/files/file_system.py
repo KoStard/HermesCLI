@@ -22,7 +22,7 @@ class Artifact:
     name: str
     content: str
     is_external: bool = False
-    
+
     frontmatter_manager = FrontmatterManager()
 
     @staticmethod
@@ -65,7 +65,9 @@ class Node:
     path: Optional[Path] = None
     status: ProblemStatus = ProblemStatus.NOT_STARTED
     depth_from_root: int = 0
-    visible_artifacts: Dict[str, bool] = field(default_factory=dict)  # Track visibility state for all artifacts
+    visible_artifacts: Dict[str, bool] = field(
+        default_factory=dict
+    )  # Track visibility state for all artifacts
 
     def add_criteria(self, criteria: str) -> int:
         """Add criteria and return its index"""
@@ -101,9 +103,7 @@ class Node:
 
     def add_artifact(self, name: str, content: str) -> None:
         """Add an artifact"""
-        self.artifacts[name] = Artifact(
-            name=name, content=content
-        )
+        self.artifacts[name] = Artifact(name=name, content=content)
 
     def append_to_problem_definition(self, content: str) -> None:
         """Append to the problem definition"""
@@ -153,7 +153,9 @@ class FileSystem:
         self.root_dir.mkdir(parents=True, exist_ok=True)
 
         # Create the external files directory
-        self.external_files_dir = self.root_dir / "_ExternalFiles" # Prefix with _ for clarity
+        self.external_files_dir = (
+            self.root_dir / "_ExternalFiles"
+        )  # Prefix with _ for clarity
         self.external_files_dir.mkdir(exist_ok=True)
 
         # Define path for the knowledge base file
@@ -322,19 +324,27 @@ class FileSystem:
                     if not block:
                         continue
                     try:
-                        metadata, content = self.frontmatter_manager.extract_frontmatter(block)
-                        if metadata: # Ensure metadata was found
+                        metadata, content = (
+                            self.frontmatter_manager.extract_frontmatter(block)
+                        )
+                        if metadata:  # Ensure metadata was found
                             entry = KnowledgeEntry.from_dict(metadata, content)
                             self.knowledge_base.append(entry)
                         else:
-                            print(f"Warning: Could not parse frontmatter for a knowledge block in {self._knowledge_base_file}")
+                            print(
+                                f"Warning: Could not parse frontmatter for a knowledge block in {self._knowledge_base_file}"
+                            )
                     except Exception as e_parse:
-                        print(f"Warning: Error parsing knowledge entry block: {e_parse}\nBlock content:\n{block[:200]}...")
+                        print(
+                            f"Warning: Error parsing knowledge entry block: {e_parse}\nBlock content:\n{block[:200]}..."
+                        )
 
             except FileNotFoundError:
-                pass # Expected if file doesn't exist yet
+                pass  # Expected if file doesn't exist yet
             except Exception as e_read:
-                print(f"Error loading knowledge base file {self._knowledge_base_file}: {e_read}")
+                print(
+                    f"Error loading knowledge base file {self._knowledge_base_file}: {e_read}"
+                )
                 # Decide on recovery strategy: potentially backup old file, start fresh?
                 # For now, we start with an empty list if loading fails.
                 self.knowledge_base = []
@@ -348,7 +358,9 @@ class FileSystem:
                 sorted_entries = sorted(self.knowledge_base, key=lambda x: x.timestamp)
                 for entry in sorted_entries:
                     metadata = entry.to_dict()
-                    entry_string = self.frontmatter_manager.add_frontmatter(entry.content, metadata)
+                    entry_string = self.frontmatter_manager.add_frontmatter(
+                        entry.content, metadata
+                    )
                     entry_strings.append(entry_string)
 
                 # Join entries with the separator
@@ -356,7 +368,9 @@ class FileSystem:
                 self._knowledge_base_file.write_text(full_content, encoding="utf-8")
 
             except Exception as e:
-                print(f"Error saving knowledge base file {self._knowledge_base_file}: {e}")
+                print(
+                    f"Error saving knowledge base file {self._knowledge_base_file}: {e}"
+                )
 
     def add_knowledge_entry(self, entry: KnowledgeEntry) -> None:
         """Add a new entry to the knowledge base and save immediately."""
@@ -506,7 +520,9 @@ class FileSystem:
             f.write(content)
 
         # Write criteria (always create the file)
-        with open(node.path / "Criteria of Definition of Done.md", "w", encoding="utf-8") as f:
+        with open(
+            node.path / "Criteria of Definition of Done.md", "w", encoding="utf-8"
+        ) as f:
             if node.criteria:
                 for i, (criterion, done) in enumerate(
                     zip(node.criteria, node.criteria_done)
@@ -561,8 +577,10 @@ class FileSystem:
         - Appends a short hash of the original name for uniqueness.
         - Preserves the original file extension.
         """
-        _MAX_COMPONENT_BASE_LENGTH = 50 # Max length for the base name part (excluding hash and extension)
-        _HASH_LENGTH = 8 # Length of the hash suffix
+        _MAX_COMPONENT_BASE_LENGTH = (
+            50  # Max length for the base name part (excluding hash and extension)
+        )
+        _HASH_LENGTH = 8  # Length of the hash suffix
 
         original_filename = original_filename.strip()
         if not original_filename:
@@ -572,34 +590,42 @@ class FileSystem:
 
         # Separate base name and extension
         base_name, extension = os.path.splitext(original_filename)
-        extension = extension.lower() # Normalize extension
+        extension = extension.lower()  # Normalize extension
 
         # Generate hash from the original full name (before any modification)
-        hasher = hashlib.sha1(original_filename.encode('utf-8', 'ignore')) # Use ignore for robustness
+        hasher = hashlib.sha1(
+            original_filename.encode("utf-8", "ignore")
+        )  # Use ignore for robustness
         unique_suffix = hasher.hexdigest()[:_HASH_LENGTH]
 
         # Basic sanitization: replace invalid chars, collapse spaces/underscores
-        sanitized_base = re.sub(r'[<>:"/\\|?*]+', '_', base_name) # Replace strictly invalid chars
-        sanitized_base = re.sub(r'\s+', '_', sanitized_base) # Replace whitespace with underscore
-        sanitized_base = re.sub(r'_+', '_', sanitized_base) # Collapse multiple underscores
+        sanitized_base = re.sub(
+            r'[<>:"/\\|?*]+', "_", base_name
+        )  # Replace strictly invalid chars
+        sanitized_base = re.sub(
+            r"\s+", "_", sanitized_base
+        )  # Replace whitespace with underscore
+        sanitized_base = re.sub(
+            r"_+", "_", sanitized_base
+        )  # Collapse multiple underscores
         # Remove most non-alphanumeric characters, keeping underscores and hyphens
-        sanitized_base = re.sub(r'[^a-zA-Z0-9_-]+', '', sanitized_base)
+        sanitized_base = re.sub(r"[^a-zA-Z0-9_-]+", "", sanitized_base)
         # Remove leading/trailing underscores/hyphens/periods
-        sanitized_base = re.sub(r'^[._-]+|[._-]+$', '', sanitized_base)
+        sanitized_base = re.sub(r"^[._-]+|[._-]+$", "", sanitized_base)
 
         # Handle cases where sanitization results in an empty string
         if not sanitized_base:
-            sanitized_base = "sanitized" # Fallback name
+            sanitized_base = "sanitized"  # Fallback name
 
         # Truncate the sanitized base name if it's too long
         if len(sanitized_base) > _MAX_COMPONENT_BASE_LENGTH:
             sanitized_base = sanitized_base[:_MAX_COMPONENT_BASE_LENGTH]
             # Ensure it doesn't end with an underscore/hyphen after truncation
-            sanitized_base = sanitized_base.rstrip('_-')
+            sanitized_base = sanitized_base.rstrip("_-")
 
         # Re-check for empty string after potential stripping
         if not sanitized_base:
-            sanitized_base = "truncated" # Another fallback
+            sanitized_base = "truncated"  # Another fallback
 
         # Combine truncated base, hash suffix, and original extension
         # Format: {truncated_base}_{hash}{.extension}
@@ -609,15 +635,18 @@ class FileSystem:
         # Windows max filename length is often 255 in practice for NTFS
         _MAX_FILENAME_LEN = 255
         if len(final_filename) > _MAX_FILENAME_LEN:
-             # If even after truncation and hashing it's too long (very unlikely), truncate brutally
-             # Keep the hash and extension if possible
-             keep_len = _MAX_FILENAME_LEN - len(unique_suffix) - len(extension) -1 # -1 for the underscore
-             if keep_len > 0:
-                 final_filename = f"{sanitized_base[:keep_len]}_{unique_suffix}{extension}"
-             else:
-                 # Extremely unlikely: hash + extension is already too long. Just truncate the whole thing.
-                 final_filename = final_filename[:_MAX_FILENAME_LEN]
-
+            # If even after truncation and hashing it's too long (very unlikely), truncate brutally
+            # Keep the hash and extension if possible
+            keep_len = (
+                _MAX_FILENAME_LEN - len(unique_suffix) - len(extension) - 1
+            )  # -1 for the underscore
+            if keep_len > 0:
+                final_filename = (
+                    f"{sanitized_base[:keep_len]}_{unique_suffix}{extension}"
+                )
+            else:
+                # Extremely unlikely: hash + extension is already too long. Just truncate the whole thing.
+                final_filename = final_filename[:_MAX_FILENAME_LEN]
 
         return final_filename
 

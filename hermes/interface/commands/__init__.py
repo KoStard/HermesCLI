@@ -13,7 +13,7 @@ __all__ = [
     "CommandSection",
     "CommandRegistry",
     "CommandParser",
-    "CommandError", 
+    "CommandError",
     "ParseResult",
     "CommandHelpGenerator",
 ]

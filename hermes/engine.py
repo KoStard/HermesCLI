@@ -267,7 +267,7 @@ class Engine:
                     else:
                         self.notifications_printer.print_notification(
                             "Budget setting is only available for Deep Research Assistant",
-                            CLIColors.YELLOW
+                            CLIColors.YELLOW,
                         )
                 elif isinstance(event, FileEditEvent):
                     if event.mode == "create":

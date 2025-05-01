@@ -131,6 +131,7 @@ class ThinkingLevelEvent(EngineCommandEvent):
 @dataclass
 class DeepResearchBudgetEvent(EngineCommandEvent):
     """Event for setting a budget for Deep Research Assistant"""
+
     budget: int
 
 

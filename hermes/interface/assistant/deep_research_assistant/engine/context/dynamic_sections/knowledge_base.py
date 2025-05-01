@@ -5,19 +5,24 @@ from .base import DynamicSectionData, DynamicSectionRenderer
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
-    from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
-    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+    from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import (
+        KnowledgeEntry,
+    )
+    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
+        TemplateManager,
+    )
 
 
 # --- Primitive Data Structure ---
 @dataclass(frozen=True)
 class PrimitiveKnowledgeEntryData:
     """Immutable, primitive representation of a KnowledgeEntry."""
+
     content: str
     author_node_title: str
     timestamp: str
     title: Optional[str]
-    tags: Tuple[str, ...] # Use tuple for immutability
+    tags: Tuple[str, ...]  # Use tuple for immutability
 
     @staticmethod
     def from_entry(entry: "KnowledgeEntry") -> "PrimitiveKnowledgeEntryData":
@@ -26,7 +31,7 @@ class PrimitiveKnowledgeEntryData:
             author_node_title=entry.author_node_title,
             timestamp=entry.timestamp,
             title=entry.title,
-            tags=tuple(entry.tags) # Convert list to tuple
+            tags=tuple(entry.tags),  # Convert list to tuple
         )
 
 
@@ -37,7 +42,9 @@ class KnowledgeBaseData(DynamicSectionData):
     knowledge_entries: Tuple[PrimitiveKnowledgeEntryData, ...]
 
     @staticmethod
-    def from_knowledge_base(knowledge_base: List["KnowledgeEntry"]) -> "KnowledgeBaseData":
+    def from_knowledge_base(
+        knowledge_base: List["KnowledgeEntry"],
+    ) -> "KnowledgeBaseData":
         entry_data = tuple(
             PrimitiveKnowledgeEntryData.from_entry(entry)
             # Sort by timestamp descending for consistent order (newest first)
@@ -60,5 +67,7 @@ class KnowledgeBaseRenderer(DynamicSectionRenderer):
             # Alternatively, return "" if we want it completely hidden.
 
         # Pass the primitive tuple of knowledge entry data
-        context = {"knowledge_entries_data": data.knowledge_entries} # Tuple[PrimitiveKnowledgeEntryData]
+        context = {
+            "knowledge_entries_data": data.knowledge_entries
+        }  # Tuple[PrimitiveKnowledgeEntryData]
         return self._render_template(context)

@@ -1,7 +1,11 @@
 import unittest
 from typing import Any, Dict, List
 from hermes.interface.commands.command import Command, CommandRegistry
-from hermes.interface.commands.command_parser import CommandParser, CommandError, ParseResult
+from hermes.interface.commands.command_parser import (
+    CommandParser,
+    CommandError,
+    ParseResult,
+)
 
 
 class TestParserCommand(Command[str]):
@@ -9,16 +13,21 @@ class TestParserCommand(Command[str]):
         super().__init__("test_cmd", "Test command help text")
         self.add_section("required_sec", required=True, help_text="Required section")
         self.add_section("optional_sec", required=False, help_text="Optional section")
-        self.add_section("multi_sec", required=False, help_text="Multiple section", allow_multiple=True)
+        self.add_section(
+            "multi_sec",
+            required=False,
+            help_text="Multiple section",
+            allow_multiple=True,
+        )
 
     def execute(self, context: str, args: Dict[str, Any]) -> None:
         pass
-        
+
     def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
         if "transform_sec" in args:
             args["transform_sec"] = args["transform_sec"].upper()
         return args
-        
+
     def validate(self, args: Dict[str, Any]) -> List[str]:
         errors = super().validate(args)
         if "optional_sec" in args and len(args["optional_sec"]) < 3:
@@ -33,11 +42,11 @@ class FaultyTransformCommand(Command[str]):
 
     def execute(self, context: str, args: Dict[str, Any]) -> None:
         pass
-        
+
     def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
         # This will raise an exception during transformation
         raise ValueError("Transformation failed on purpose")
-        
+
     def validate(self, args: Dict[str, Any]) -> List[str]:
         return super().validate(args)
 
@@ -73,7 +82,9 @@ class CommandParserTest(unittest.TestCase):
         self.assertEqual(len(result.errors), 0)
         self.assertEqual(result.args["required_sec"], "This is required content.")
         self.assertEqual(result.args["optional_sec"], "Optional stuff.")
-        self.assertEqual(result.args["multi_sec"], ["First multi value.", "Second multi value."])
+        self.assertEqual(
+            result.args["multi_sec"], ["First multi value.", "Second multi value."]
+        )
 
     def test_parse_unknown_command(self):
         """Test parsing an unknown command."""
@@ -251,9 +262,9 @@ class CommandParserTest(unittest.TestCase):
                 CommandError("test_cmd", "Error message 2", 20, True),
             ],
             has_block_syntax_error=True,
-            block_start_line_index=5
+            block_start_line_index=5,
         )
-        
+
         report = CommandParser.generate_error_report([result])
         self.assertIn("Command Parsing Errors Report:", report)
         self.assertIn("Error message 1", report)

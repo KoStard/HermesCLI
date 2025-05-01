@@ -28,7 +28,7 @@ class DeepResearchMockApp:
             self.llm_interface,
             # deep_research_commands,
         )
-        
+
         self.engine.set_budget(2)
 
         self.instruction = instruction

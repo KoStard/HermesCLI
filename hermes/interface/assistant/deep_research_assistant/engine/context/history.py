@@ -3,11 +3,14 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Type, Any
 import traceback
 
-from hermes.interface.assistant.deep_research_assistant.engine.context.content_truncator import ContentTruncator
+from hermes.interface.assistant.deep_research_assistant.engine.context.content_truncator import (
+    ContentTruncator,
+)
 from hermes.interface.templates.template_manager import TemplateManager
+
 # Import base data class from its new location
 from .dynamic_sections.base import DynamicSectionData
-from .dynamic_sections import RendererRegistry # Use the type alias
+from .dynamic_sections import RendererRegistry  # Use the type alias
 
 
 class HistoryBlock(ABC):
@@ -36,7 +39,9 @@ class AutoReply(HistoryBlock):
         self.messages: List[Tuple[str, str]] = messages
         self.confirmation_request: Optional[str] = confirmation_request
         # Store the data objects, not rendered strings
-        self.dynamic_sections: List[Tuple[int, DynamicSectionData]] = dynamic_sections or []
+        self.dynamic_sections: List[Tuple[int, DynamicSectionData]] = (
+            dynamic_sections or []
+        )
 
     def generate_auto_reply(
         self,
@@ -71,14 +76,16 @@ class AutoReply(HistoryBlock):
                     rendered_content = renderer.render(data_instance, future_changes)
                 except Exception:
                     # Error handling as requested: print stack trace and generate message
-                    print(f"\n--- ERROR RENDERING DYNAMIC SECTION (Index: {index}, Type: {data_type.__name__}) ---")
+                    print(
+                        f"\n--- ERROR RENDERING DYNAMIC SECTION (Index: {index}, Type: {data_type.__name__}) ---"
+                    )
                     tb_str = traceback.format_exc()
                     print(tb_str)
                     print("--- END ERROR ---")
                     # Corrected f-string for artifact name
                     artifact_name = f"render_error_section_{index}_{data_type.__name__}"
                     rendered_content = (
-                        f"<error context=\"Rendering dynamic section index {index} ({data_type.__name__})\">\n"
+                        f'<error context="Rendering dynamic section index {index} ({data_type.__name__})">\n'
                         f"**SYSTEM ERROR:** Failed to render this section. "
                         f"Please create an artifact named '{artifact_name}' "
                         f"with the following content:\n```\n{tb_str}\n```\n"
@@ -87,7 +94,9 @@ class AutoReply(HistoryBlock):
                     )
             else:
                 # Handle case where renderer is missing (shouldn't happen with proper registry)
-                print(f"Warning: No renderer found for dynamic section type {data_type.__name__}")
+                print(
+                    f"Warning: No renderer found for dynamic section type {data_type.__name__}"
+                )
                 rendered_content = f"<error>No renderer found for section type {data_type.__name__}</error>"
 
             rendered_dynamic_sections.append((index, rendered_content))
@@ -98,14 +107,16 @@ class AutoReply(HistoryBlock):
             "error_report": self.error_report,
             "command_outputs": self.command_outputs,
             "messages": self.messages,
-            "rendered_dynamic_sections": rendered_dynamic_sections, # Pass rendered strings
+            "rendered_dynamic_sections": rendered_dynamic_sections,  # Pass rendered strings
             "per_command_output_maximum_length": per_command_output_maximum_length,
-            "ContentTruncator": ContentTruncator, # Still needed for command output truncation
+            "ContentTruncator": ContentTruncator,  # Still needed for command output truncation
         }
 
         # --- Render the Main Auto-Reply Template ---
         try:
-            return template_manager.render_template("context/auto_reply.mako", **context)
+            return template_manager.render_template(
+                "context/auto_reply.mako", **context
+            )
         except Exception:
             # Handle potential errors in the main auto_reply.mako template itself
             print("\n--- ERROR RENDERING auto_reply.mako ---")
@@ -159,16 +170,21 @@ class AutoReplyAggregator:
             # but don't report them in the *first* auto-reply unless explicitly needed.
             # For simplicity now, just initialize the state. The first auto-reply won't
             # list "updated sections" unless something else triggers it.
-            self.last_dynamic_sections_state = new_sections_data[:] # Use slicing for a copy
+            self.last_dynamic_sections_state = new_sections_data[
+                :
+            ]  # Use slicing for a copy
         elif len(new_sections_data) != len(self.last_dynamic_sections_state):
             # This indicates a structural change (sections added/removed), which
             # the current design doesn't handle dynamically. Treat all as changed.
             # Or log an error/warning. For now, assume fixed structure.
             print("Warning: Number of dynamic sections changed. Re-evaluating all.")
             for i, data_instance in enumerate(new_sections_data):
-                 # Check against old state if index exists, otherwise it's new/changed
-                 if i >= len(self.last_dynamic_sections_state) or data_instance != self.last_dynamic_sections_state[i]:
-                     changed_sections_with_indices.append((i, data_instance))
+                # Check against old state if index exists, otherwise it's new/changed
+                if (
+                    i >= len(self.last_dynamic_sections_state)
+                    or data_instance != self.last_dynamic_sections_state[i]
+                ):
+                    changed_sections_with_indices.append((i, data_instance))
         else:
             # Compare data objects element-wise using dataclass equality (__eq__)
             for i, current_data in enumerate(new_sections_data):
@@ -179,7 +195,9 @@ class AutoReplyAggregator:
         self.dynamic_sections_to_report = changed_sections_with_indices
 
         # Update the last known state for *all* sections
-        self.last_dynamic_sections_state = new_sections_data[:] # Use slicing for a copy
+        self.last_dynamic_sections_state = new_sections_data[
+            :
+        ]  # Use slicing for a copy
 
     def clear(self):
         self.error_reports = []
@@ -196,7 +214,7 @@ class AutoReplyAggregator:
             and not self.command_outputs
             and not self.internal_messages
             and not self.confirmation_requests
-            and not self.dynamic_sections_to_report # Check the changed sections list
+            and not self.dynamic_sections_to_report  # Check the changed sections list
         )
 
     def compile_and_clear(self) -> AutoReply:
@@ -211,9 +229,9 @@ class AutoReplyAggregator:
             self.command_outputs,
             self.internal_messages,
             confirmation_request,
-            self.dynamic_sections_to_report, # Pass the changed sections data
+            self.dynamic_sections_to_report,  # Pass the changed sections data
         )
-        self.clear() # Clears reports, outputs, messages, requests, and changed sections list
+        self.clear()  # Clears reports, outputs, messages, requests, and changed sections list
         return auto_reply
 
 
@@ -242,7 +260,10 @@ class ChatHistory:
 
     def commit_and_get_auto_reply(self, node_title: str) -> Optional[AutoReply]:
         auto_reply_aggregator = self.node_auto_reply_aggregators[node_title]
-        if not auto_reply_aggregator.is_empty() or len(self.node_blocks[node_title]) > 0:
+        if (
+            not auto_reply_aggregator.is_empty()
+            or len(self.node_blocks[node_title]) > 0
+        ):
             auto_reply = auto_reply_aggregator.compile_and_clear()
             self.node_blocks[node_title].append(auto_reply)
             return auto_reply

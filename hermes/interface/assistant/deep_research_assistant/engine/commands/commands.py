@@ -3,8 +3,14 @@ from typing import Dict, Any, List
 
 # Import the new generic base command and registry
 from hermes.interface.commands.command import Command as BaseCommand, CommandRegistry
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import Artifact, ProblemStatus
-from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
+    Artifact,
+    ProblemStatus,
+)
+from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import (
+    KnowledgeEntry,
+)
+
 # Import the specific context for Deep Research
 from .command_context import CommandContext
 
@@ -31,7 +37,9 @@ class AddCriteriaCommand(BaseCommand[CommandContext]):
         current_node.add_criteria(criteria_text)
         context.update_files()
         # Add confirmation output
-        context.add_command_output(self.name, args, f"Criteria '{criteria_text}' added.")
+        context.add_command_output(
+            self.name, args, f"Criteria '{criteria_text}' added."
+        )
 
 
 class MarkCriteriaAsDoneCommand(BaseCommand[CommandContext]):
@@ -54,7 +62,9 @@ class MarkCriteriaAsDoneCommand(BaseCommand[CommandContext]):
         if success:
             context.update_files()
             # Add confirmation output
-            context.add_command_output(self.name, args, f"Criteria {args['criteria_number']} marked as done.")
+            context.add_command_output(
+                self.name, args, f"Criteria {args['criteria_number']} marked as done."
+            )
 
     def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Convert criteria_number to zero-based index"""
@@ -185,7 +195,9 @@ class AddCriteriaToSubproblemCommand(BaseCommand[CommandContext]):
 
         subproblem.add_criteria(criteria_text)
         # Add confirmation output
-        context.add_command_output(self.name, args, f"Criteria added to subproblem '{title}'.")
+        context.add_command_output(
+            self.name, args, f"Criteria added to subproblem '{title}'."
+        )
         context.update_files()
 
 
@@ -195,14 +207,16 @@ class FocusDownCommand(BaseCommand[CommandContext]):
             "activate_subproblems_and_wait",
             "Activate subproblems and wait for them to be finished before continuing. Multiple titles are allowed, they will be executed sequentially.",
         )
-        self.add_section("title", True, "Title of the subproblem to activate", allow_multiple=True)
+        self.add_section(
+            "title", True, "Title of the subproblem to activate", allow_multiple=True
+        )
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus down to a subproblem"""
         titles = args["title"]
         if not isinstance(titles, list):
             titles = [titles]  # Handle single title case
-            
+
         if not titles:
             raise ValueError("No subproblems specified to activate")
 
@@ -253,10 +267,14 @@ class FocusUpCommand(BaseCommand[CommandContext]):
             Example without message:
             <<< finish_problem
             >>>
-            """)
+            """),
         )
         # Add the optional message section
-        self.add_section("message", required=False, help_text="Optional message to pass to the parent task upon completion.")
+        self.add_section(
+            "message",
+            required=False,
+            help_text="Optional message to pass to the parent task upon completion.",
+        )
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Focus up to the parent problem, potentially passing a message."""
@@ -294,8 +312,11 @@ class FailProblemAndFocusUpCommand(BaseCommand[CommandContext]):
             """),
         )
         # Add the optional message section
-        self.add_section("message", required=False, help_text="Optional message to pass to the parent task explaining the failure.")
-
+        self.add_section(
+            "message",
+            required=False,
+            help_text="Optional message to pass to the parent task explaining the failure.",
+        )
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Mark problem as failed and focus up, potentially passing a message."""
@@ -307,15 +328,21 @@ class FailProblemAndFocusUpCommand(BaseCommand[CommandContext]):
 
         if not result:
             # Keep existing error handling, refine slightly for root node case
-            current_node_title = context.current_node.title if context.current_node else "Unknown"
+            current_node_title = (
+                context.current_node.title if context.current_node else "Unknown"
+            )
             if context.current_node and not context.current_node.parent:
-                 # Specific error if it's the root node trying to fail with a message meant for a parent
-                 if failure_message:
-                      raise ValueError(f"Cannot pass a failure message from the root node '{current_node_title}' as there is no parent.")
-                 # else: Standard fail for root is handled by context.fail_and_focus_up returning True and engine setting finished=True
+                # Specific error if it's the root node trying to fail with a message meant for a parent
+                if failure_message:
+                    raise ValueError(
+                        f"Cannot pass a failure message from the root node '{current_node_title}' as there is no parent."
+                    )
+                # else: Standard fail for root is handled by context.fail_and_focus_up returning True and engine setting finished=True
             else:
-                 # General failure case if not root or root without message
-                 raise ValueError(f"Failed to mark problem as failed and focus up from node '{current_node_title}'.")
+                # General failure case if not root or root without message
+                raise ValueError(
+                    f"Failed to mark problem as failed and focus up from node '{current_node_title}'."
+                )
 
     def should_be_last_in_message(self):
         # No output needed here, handled by engine/context focus change messages
@@ -524,18 +551,27 @@ class AddKnowledgeCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "add_knowledge",
-            "Add an entry to the shared knowledge base for all assistants."
+            "Add an entry to the shared knowledge base for all assistants.",
         )
         self.add_section("content", True, "The main content of the knowledge entry.")
         self.add_section("title", False, "Optional short title/summary for the entry.")
-        self.add_section("tag", False, "Optional tag for categorization (can be used multiple times).", allow_multiple=True)
+        self.add_section(
+            "tag",
+            False,
+            "Optional tag for categorization (can be used multiple times).",
+            allow_multiple=True,
+        )
 
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Add an entry to the shared knowledge base."""
         current_node = context.current_node
         if not current_node:
             # Should ideally not happen if a problem is defined, but good practice
-            context.add_command_output(self.name, args, "Error: Cannot add knowledge without an active problem node.")
+            context.add_command_output(
+                self.name,
+                args,
+                "Error: Cannot add knowledge without an active problem node.",
+            )
             return
 
         tags = args.get("tag", [])
@@ -547,13 +583,15 @@ class AddKnowledgeCommand(BaseCommand[CommandContext]):
             content=args.get("content"),
             author_node_title=current_node.title,
             title=args.get("title"),
-            tags=tags
+            tags=tags,
         )
 
         context.file_system.add_knowledge_entry(entry)
         # Provide confirmation output using context
         entry_identifier = f"'{entry.title}'" if entry.title else "entry"
-        context.add_command_output(self.name, args, f"Knowledge {entry_identifier} added successfully.")
+        context.add_command_output(
+            self.name, args, f"Knowledge {entry_identifier} added successfully."
+        )
 
 
 # Explicitly register all commands defined in this file

@@ -96,9 +96,7 @@ class ModelFactory:
         config_section_name = model_class.get_config_section_name()
         config_section = get_config_section(config, config_section_name)
         # Use first matching class
-        return model_class(
-            config_section, model_tag, self.notifications_printer
-        )
+        return model_class(config_section, model_tag, self.notifications_printer)
 
 
 def get_config_section(config: ConfigParser, provider: str):

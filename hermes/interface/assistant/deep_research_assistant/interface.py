@@ -4,15 +4,22 @@ from typing import Generator, List, Optional
 from pathlib import Path
 
 from hermes.interface.assistant.chat_models.base import ChatModel
+
 # Import core command components
 from hermes.interface.commands import CommandRegistry, Command
+
 # Import Deep Research specific components
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import ProblemStatus
-from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import ChatModelLLMInterface
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
+    ProblemStatus,
+)
+from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import (
+    ChatModelLLMInterface,
+)
 from hermes.interface.base import Interface
+
 # Import other necessary types
 from hermes.event import Event, MessageEvent
 from hermes.message import Message, TextMessage, TextualFileMessage
@@ -95,10 +102,13 @@ class DeepResearchAssistantInterface(Interface):
                     try:
                         registry.register(cmd_def())
                     except Exception as e:
-                         logger.error(f"Failed to instantiate and register extension command {cmd_def.__name__}: {e}")
+                        logger.error(
+                            f"Failed to instantiate and register extension command {cmd_def.__name__}: {e}"
+                        )
                 else:
-                    logger.warning(f"Ignoring invalid extension command definition: {cmd_def}")
-
+                    logger.warning(
+                        f"Ignoring invalid extension command definition: {cmd_def}"
+                    )
 
             # Apply any pending budget
             if self._pending_budget is not None:
@@ -134,10 +144,10 @@ class DeepResearchAssistantInterface(Interface):
             if not filename and message.text_filepath:
                 filename = os.path.basename(message.text_filepath)
             if not filename:
-                filename = f"external_file_{hash(str(file_content))[:8]}.txt" # Add extension for clarity
+                filename = f"external_file_{hash(str(file_content))[:8]}.txt"  # Add extension for clarity
 
             return filename, file_content
-        return None # Return None if no content
+        return None  # Return None if no content
 
     def get_input(self) -> Generator[Event, None, None]:
         """
@@ -149,7 +159,12 @@ class DeepResearchAssistantInterface(Interface):
         # Ensure engine is initialized (should be done by render)
         if not self._engine:
             logger.error("Engine not initialized before get_input call.")
-            yield MessageEvent(TextMessage(author="assistant", text="Error: Deep Research Engine not initialized."))
+            yield MessageEvent(
+                TextMessage(
+                    author="assistant",
+                    text="Error: Deep Research Engine not initialized.",
+                )
+            )
             return
 
         try:
@@ -158,32 +173,60 @@ class DeepResearchAssistantInterface(Interface):
                 if self.instruction:
                     logger.info("Defining root problem.")
                     success = self._engine.define_root_problem(self.instruction)
-                    self.instruction = None # Clear instruction after use
+                    self.instruction = None  # Clear instruction after use
                     if not success:
-                        yield MessageEvent(TextMessage(author="assistant", text="Failed to define the root problem."))
+                        yield MessageEvent(
+                            TextMessage(
+                                author="assistant",
+                                text="Failed to define the root problem.",
+                            )
+                        )
                         return
                     else:
                         # Root problem defined, start execution immediately
                         logger.info("Executing initial research.")
-                        self._engine.execute() # Runs until awaiting_new_instruction is True
+                        self._engine.execute()  # Runs until awaiting_new_instruction is True
                         # Check state after execution finishes
                         if self._engine.is_awaiting_instruction():
                             # Check if the root node finished/failed to generate the final report
-                            if self._engine.current_node == self._engine.file_system.root_node and \
-                                self._engine.current_node.status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]:
+                            if (
+                                self._engine.current_node
+                                == self._engine.file_system.root_node
+                                and self._engine.current_node.status
+                                in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
+                            ):
                                 logger.info("Generating final report.")
                                 final_report = self._engine._generate_final_report()
-                                yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                                yield MessageEvent(
+                                    TextMessage(author="assistant", text=final_report)
+                                )
                             # Always yield the waiting message after completion
-                            yield MessageEvent(TextMessage(author="assistant", text="Initial research complete. Waiting for next instruction..."))
+                            yield MessageEvent(
+                                TextMessage(
+                                    author="assistant",
+                                    text="Initial research complete. Waiting for next instruction...",
+                                )
+                            )
                         else:
-                            logger.error("Engine did not enter awaiting state after initial execution.")
-                            yield MessageEvent(TextMessage(author="assistant", text="Initial research finished unexpectedly. Please check logs."))
-                        return # End processing for this call
+                            logger.error(
+                                "Engine did not enter awaiting state after initial execution."
+                            )
+                            yield MessageEvent(
+                                TextMessage(
+                                    author="assistant",
+                                    text="Initial research finished unexpectedly. Please check logs.",
+                                )
+                            )
+                        return  # End processing for this call
                 else:
                     # No root problem and no instruction provided
-                    yield MessageEvent(TextMessage(author="assistant", text="Please provide an initial research instruction."))
-                    return # End processing for this call
+                    yield MessageEvent(
+                        TextMessage(
+                            author="assistant",
+                            text="Please provide an initial research instruction.",
+                        )
+                    )
+                    return  # End processing for this call
 
             # --- Continuous Interaction Cycle ---
             # Engine exists and root problem is defined. Check state.
@@ -191,39 +234,72 @@ class DeepResearchAssistantInterface(Interface):
                 if self.instruction:
                     logger.info("Received new instruction. Preparing engine.")
                     self._engine.prepare_for_new_instruction(self.instruction)
-                    self.instruction = None # Clear instruction after use
+                    self.instruction = None  # Clear instruction after use
                     logger.info("Executing new instruction.")
-                    self._engine.execute() # Runs until awaiting_new_instruction is True again
+                    self._engine.execute()  # Runs until awaiting_new_instruction is True again
                     # Check state after execution finishes
                     if self._engine.is_awaiting_instruction():
-                         # Check if the root node finished/failed to generate the final report
-                        if self._engine.current_node == self._engine.file_system.root_node and \
-                            self._engine.current_node.status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]:
-                            logger.info("Generating final report after follow-up instruction.")
+                        # Check if the root node finished/failed to generate the final report
+                        if (
+                            self._engine.current_node
+                            == self._engine.file_system.root_node
+                            and self._engine.current_node.status
+                            in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
+                        ):
+                            logger.info(
+                                "Generating final report after follow-up instruction."
+                            )
                             final_report = self._engine._generate_final_report()
-                            yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                            yield MessageEvent(
+                                TextMessage(author="assistant", text=final_report)
+                            )
                         # Always yield the waiting message after completion
-                        yield MessageEvent(TextMessage(author="assistant", text="Processing complete. Waiting for next instruction..."))
+                        yield MessageEvent(
+                            TextMessage(
+                                author="assistant",
+                                text="Processing complete. Waiting for next instruction...",
+                            )
+                        )
                     else:
-                        logger.error("Engine did not enter awaiting state after processing new instruction.")
-                        yield MessageEvent(TextMessage(author="assistant", text="Processing finished unexpectedly. Please check logs."))
-                    return # End processing for this call
+                        logger.error(
+                            "Engine did not enter awaiting state after processing new instruction."
+                        )
+                        yield MessageEvent(
+                            TextMessage(
+                                author="assistant",
+                                text="Processing finished unexpectedly. Please check logs.",
+                            )
+                        )
+                    return  # End processing for this call
                 else:
                     # Awaiting but no new instruction provided in this call
                     logger.info("Engine is awaiting instruction.")
-                    yield MessageEvent(TextMessage(author="assistant", text="Research complete. Waiting for next instruction..."))
-                    return # End processing for this call
+                    yield MessageEvent(
+                        TextMessage(
+                            author="assistant",
+                            text="Research complete. Waiting for next instruction...",
+                        )
+                    )
+                    return  # End processing for this call
             else:
                 # Engine is not awaiting instruction. This implies it might still be running
                 # from a previous call, or an error occurred.
                 # In a synchronous model where execute() blocks, this state shouldn't be reached
                 # unless get_input is called again before execute finishes.
-                logger.warning("get_input called while engine is not awaiting instruction.")
-                yield MessageEvent(TextMessage(author="assistant", text="Engine is currently processing. Please wait."))
-                return # End processing for this call
+                logger.warning(
+                    "get_input called while engine is not awaiting instruction."
+                )
+                yield MessageEvent(
+                    TextMessage(
+                        author="assistant",
+                        text="Engine is currently processing. Please wait.",
+                    )
+                )
+                return  # End processing for this call
 
         except Exception as e:
-            logger.error(f"Error during Deep Research engine interaction: {e}", exc_info=True
+            logger.error(
+                f"Error during Deep Research engine interaction: {e}", exc_info=True
             )
             yield MessageEvent(
                 TextMessage(
@@ -243,7 +319,7 @@ class DeepResearchAssistantInterface(Interface):
     def change_thinking_level(self, level: str):
         if hasattr(self.model, "set_thinking_level"):
             self.model.set_thinking_level(level)
-            
+
     def set_budget(self, budget: int):
         """Set the budget for the Deep Research Assistant"""
         if self._engine:

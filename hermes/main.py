@@ -138,10 +138,13 @@ def main():
             if raw_overrides:
                 for override in raw_overrides.split(","):
                     command_id, status = override.split(":")
-                    command_status_overrides[command_id.strip()] = status.strip().upper()
+                    command_status_overrides[command_id.strip()] = (
+                        status.strip().upper()
+                    )
         except Exception as e:
-            print(f"Warning: Failed to parse llm_command_status_overrides from config: {e}")
-
+            print(
+                f"Warning: Failed to parse llm_command_status_overrides from config: {e}"
+            )
 
     notifications_printer = CLINotificationsPrinter()
 
@@ -208,7 +211,6 @@ def main():
 
     is_deep_research_mode = bool(cli_args.deep_research)
     user_control_panel.is_deep_research_mode = is_deep_research_mode
-    
 
     user_interface = UserInterface(
         control_panel=user_control_panel,
@@ -216,7 +218,7 @@ def main():
         markdown_highlighter=markdown_highlighter,
         stt_input_handler=stt_input_handler_optional,
         notifications_printer=notifications_printer,
-        user_input_from_cli=user_input_from_cli
+        user_input_from_cli=user_input_from_cli,
     )
     user_participant = UserParticipant(user_interface)
 
@@ -384,6 +386,8 @@ def execute_utils_command(cli_args, config, extension_utils_visitors):
     else:
         for extension_util_visitor in extension_utils_visitors:
             extension_util_visitor(cli_args, config)
+
+
 def load_config():
     config_path = get_config_path()
 

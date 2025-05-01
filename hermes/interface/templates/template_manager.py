@@ -11,33 +11,33 @@ class TemplateManager:
     def __init__(self, template_dir):
         """
         Initialize the template manager with a specific template directory.
-        
+
         Args:
             template_dir: Path to directory containing template files
         """
         self.template_dir = Path(template_dir)
         self.lookup = TemplateLookup(
             directories=[str(self.template_dir)],
-            module_directory='/tmp/mako_modules',  # For template caching
-            input_encoding='utf-8',
-            output_encoding='utf-8',
-            encoding_errors='replace'
+            module_directory="/tmp/mako_modules",  # For template caching
+            input_encoding="utf-8",
+            output_encoding="utf-8",
+            encoding_errors="replace",
         )
 
     def render_template(self, template_name: str, **context: Any) -> str:
         """
         Render a template with the given context.
-        
+
         Args:
             template_name: Name of the template file (e.g. 'base.mako')
             **context: Template context variables
-            
+
         Returns:
             Rendered template as string
         """
         try:
             template = self.lookup.get_template(template_name)
-            return template.render(**context).decode('utf-8')
+            return template.render(**context).decode("utf-8")
         except Exception as e:
             # For now return a basic error message, we'll improve error handling later
             print(f"Error rendering template {template_name}: {str(e)}")
@@ -46,10 +46,10 @@ class TemplateManager:
     def get_template(self, template_name: str) -> Optional[Template]:
         """
         Get a template object for the given template name.
-        
+
         Args:
             template_name: Name of the template file
-            
+
         Returns:
             Template object or None if not found
         """

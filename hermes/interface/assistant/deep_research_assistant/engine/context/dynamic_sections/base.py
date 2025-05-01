@@ -3,17 +3,21 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
+        TemplateManager,
+    )
 
 
 @dataclass(frozen=True)
 class DynamicSectionData:
     """Base class for dynamic section data. Frozen makes instances hashable."""
+
     pass
 
 
 class DynamicSectionRenderer(ABC):
     """Base class for rendering dynamic sections."""
+
     def __init__(self, template_manager: "TemplateManager", template_name: str):
         self.template_manager = template_manager
         self.template_name = template_name
@@ -38,6 +42,7 @@ class DynamicSectionRenderer(ABC):
         # Import traceback locally within the method to avoid potential circular dependencies
         # if this base class were to be imported widely, although less likely now.
         import traceback
+
         try:
             return self.template_manager.render_template(self.template_name, **context)
         except Exception as e:
@@ -55,4 +60,4 @@ class DynamicSectionRenderer(ABC):
             )
             # We might want to wrap this in XML tags appropriate for the interface
             # For now, return the raw error message for inclusion.
-            return f"<error context=\"Rendering {self.template_name}\">\n{error_message}\n</error>"
+            return f'<error context="Rendering {self.template_name}">\n{error_message}\n</error>'
