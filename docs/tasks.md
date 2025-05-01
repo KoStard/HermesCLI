@@ -56,3 +56,29 @@ Extract the core template management logic from `hermes.interface.assistant.deep
 
 **Rationale:**
 Follows the "Don't Repeat Yourself" (DRY) principle and promotes code reuse. Allows for consistent template management across different parts of the Hermes application. Improves separation of concerns, making the core template management logic independent of specific interfaces.
+
+## Task 3: Migrate ChatAssistant to New Command Model
+
+**Status:** Completed
+
+**Description:**
+Migrate the ChatAssistant interface to use the new Command model system created in Task 1. This involves replacing the old `///command...` syntax with the new generic command model (`<<< ... >>>`) while preserving all existing functionality.
+
+**Acceptance Criteria:**
+- [X] 1. Create command classes for all existing ChatAssistant commands that inherit from the base Command class
+- [X] 2. Update the command parsing logic to use the new CommandParser
+- [X] 3. Preserve all existing command functionality (file operations, markdown editing, utility commands, agent commands)
+- [X] 4. Update the control panel to register and use these commands
+- [X] 5. Update the message processing logic to properly handle the new command syntax
+- [X] 6. Ensure proper command context for execution
+- [X] 7. Comprehensive help text for all commands
+- [X] 8. Support for examples using "#" prefix
+- [X] 9. Maintain backward compatibility with existing code that uses ChatAssistantControlPanel
+
+**Components Created/Modified:**
+* `hermes/interface/assistant/chat_assistant/commands.py`: New file containing all command implementations
+* `hermes/interface/assistant/chat_assistant/control_panel.py`: Updated to use the new command model
+* `hermes/interface/commands/templates/command_help.mako`: Template for rendering command help
+
+**Rationale:**
+This migration standardizes command handling across the Hermes application, making it easier to maintain and extend. The new command model provides better error handling, validation, and help text generation. It also simplifies the addition of new commands in the future.
