@@ -1,9 +1,7 @@
 from typing import Dict, List, Optional
 
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem
-from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
-# Assuming 'interface' provides access to _collect_artifacts_recursively
-# from hermes.interface.assistant.deep_research_assistant.engine.context.interface import DeepResearcherInterface
+from hermes.interface.templates.template_manager import TemplateManager
 
 
 class ReportGenerator:

@@ -29,3 +29,30 @@ Extract the core command processing logic from `hermes.interface.assistant.deep_
 
 **Rationale:**
 Follows the "Don't Repeat Yourself" (DRY) principle and promotes code reuse. Allows for consistent command handling across different parts of the Hermes application. Improves separation of concerns, making the core command logic independent of specific execution environments.
+
+## Task 2: Refactor Template Management into a Reusable Subpackage
+
+**Status:** Completed
+
+**Description:**
+Extract the core template management logic from `hermes.interface.assistant.deep_research_assistant.engine.templates` into a new, reusable top-level subpackage, `hermes.interface.templates`. This aims to create a generic framework for template management that can be used across different interfaces within Hermes, similar to the command processing refactoring.
+
+**Acceptance Criteria:**
+- [X] 1. A new subpackage (`hermes.interface.templates`) is created.
+- [X] 2. Core template management class (`TemplateManager`) is moved to the new subpackage.
+- [X] 3. The moved components are generalized, removing dependencies specific to the Deep Research Assistant.
+- [X] 4. The template loading and rendering logic resides within the new package.
+- [X] 5. The Deep Research Assistant's template system is refactored to *use* the new `hermes.interface.templates` package.
+- [X] 6. Template files (`.mako`) remain in Deep Research as they contain interface-specific content.
+- [X] 7. Existing template functionality within Deep Research remains unchanged from a user/LLM perspective.
+- [X] 8. Unit tests are created for the new core template package.
+
+**Components to Move (Examples):**
+*   `template_manager.py`: `TemplateManager`
+
+**Components to Keep/Adapt (Examples):**
+*   Template files (`.mako`) stay in Deep Research
+*   Deep Research-specific template rendering and contexts
+
+**Rationale:**
+Follows the "Don't Repeat Yourself" (DRY) principle and promotes code reuse. Allows for consistent template management across different parts of the Hermes application. Improves separation of concerns, making the core template management logic independent of specific interfaces.

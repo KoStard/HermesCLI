@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Dict, Any, Type
 
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, Artifact
 from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import register_deep_research_commands
-from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+from hermes.interface.templates import TemplateManager
 from hermes.interface.commands.command import CommandRegistry
 # Import base data class and specific section data classes/factories from their new locations
 from .dynamic_sections.base import DynamicSectionData

@@ -20,11 +20,11 @@ from hermes.interface.assistant.deep_research_assistant.engine.context.interface
 from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import (
     create_renderer_registry, RendererRegistry
 )
-from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
 from hermes.interface.assistant.deep_research_assistant.llm_interface import LLMInterface
 from hermes.interface.assistant.deep_research_assistant.engine.files.logger import DeepResearchLogger
 from hermes.interface.assistant.deep_research_assistant.engine.report.status_printer import StatusPrinter
 from hermes.interface.assistant.deep_research_assistant.engine.report.report_generator import ReportGenerator
+from hermes.interface.templates.template_manager import TemplateManager
 
 
 class _CommandProcessor:
@@ -327,7 +327,9 @@ class DeepResearchEngine:
         if self.is_root_problem_defined():
             self.manually_choose_and_activate_node()
 
-        self.template_manager = TemplateManager()
+        # Use the templates directory from the Deep Research Assistant package
+        templates_dir = Path(__file__).parent / "templates"
+        self.template_manager = TemplateManager(templates_dir)
         # Create the renderer registry
         self.renderer_registry: RendererRegistry = create_renderer_registry(self.template_manager)
         # Update interface with the file system

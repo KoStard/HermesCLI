@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple, Type, Any
 import traceback
 
 from hermes.interface.assistant.deep_research_assistant.engine.context.content_truncator import ContentTruncator
-from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+from hermes.interface.templates.template_manager import TemplateManager
 # Import base data class from its new location
 from .dynamic_sections.base import DynamicSectionData
 from .dynamic_sections import RendererRegistry # Use the type alias

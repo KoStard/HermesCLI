@@ -1,16 +1,21 @@
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
+
 from mako.lookup import TemplateLookup
 from mako.template import Template
 
-class TemplateManager:
-    """Manages loading and rendering of Mako templates for the Deep Research interface"""
 
-    def __init__(self, template_dir=None):
-        if not template_dir:
-            self.template_dir = Path(__file__).parent
-        else:
-            self.template_dir = template_dir
+class TemplateManager:
+    """Manages loading and rendering of Mako templates for Hermes interfaces"""
+
+    def __init__(self, template_dir):
+        """
+        Initialize the template manager with a specific template directory.
+        
+        Args:
+            template_dir: Path to directory containing template files
+        """
+        self.template_dir = Path(template_dir)
         self.lookup = TemplateLookup(
             directories=[str(self.template_dir)],
             module_directory='/tmp/mako_modules',  # For template caching

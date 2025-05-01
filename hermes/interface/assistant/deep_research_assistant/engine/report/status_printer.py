@@ -1,7 +1,7 @@
 from typing import Optional
 
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
-from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+from hermes.interface.templates.template_manager import TemplateManager
 
 
 class StatusPrinter:
