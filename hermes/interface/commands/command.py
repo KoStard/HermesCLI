@@ -67,7 +67,7 @@ class Command(ABC, Generic[ContextType]):
         return ""
 
     @abstractmethod
-    def execute(self, context: ContextType, args: Dict[str, Any]) -> None:
+    def execute(self, context: ContextType, args: Dict[str, Any]):
         """
         Execute the command with the given arguments and a context object
         provided by the calling interface.
@@ -77,6 +77,9 @@ class Command(ABC, Generic[ContextType]):
             args: A dictionary containing the parsed arguments for the command,
                   where keys are section names and values are the section content
                   (or a list of contents if allow_multiple=True).
+        
+        Returns:
+            Generator of events produced by command execution.
         """
         pass
 

@@ -376,7 +376,6 @@ class Engine:
         if os.path.exists(file_path):
             self._backup_existing_file(file_path)
 
-        self.notifications_printer.print_notification(f"Creating file {file_path}")
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(content)
 

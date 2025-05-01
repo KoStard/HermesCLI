@@ -241,7 +241,7 @@ class CommandParser:
         # It captures the name (group 1) and the content (group 2)
         # (?s) makes . match newlines. Non-greedy .*? ensures it stops at the first ///
         section_matches = re.finditer(
-            r"///(\w+)\s*(.*?)(?=\s*///|$)", content, re.MULTILINE | re.DOTALL
+            r"///(\w+)\s*(.*?)(?=\s*///|\Z)", content, re.MULTILINE | re.DOTALL
         )
 
         sections_found: Dict[str, List[Tuple[str, int]]] = defaultdict(list)

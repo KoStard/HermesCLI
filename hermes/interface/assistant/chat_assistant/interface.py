@@ -9,7 +9,7 @@ from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
 )
-
+from hermes.interface.commands import CommandRegistry
 from hermes.interface.base import Interface
 from hermes.event import (
     Event,
