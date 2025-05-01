@@ -247,7 +247,7 @@ class FocusUpCommand(BaseCommand[CommandContext]):
             Ensure other commands are processed before sending this.
             Example with message:
             <<< finish_problem
-            /// message
+            ///message
             Completed sub-analysis X, results attached in artifact Y.
             >>>
             Example without message:
@@ -285,7 +285,7 @@ class FailProblemAndFocusUpCommand(BaseCommand[CommandContext]):
             Ensure other commands are processed before sending this.
             Example with message:
             <<< fail_problem
-            /// message
+            ///message
             Could not proceed due to missing external data source X.
             >>>
             Example without message:

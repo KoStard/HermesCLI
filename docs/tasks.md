@@ -1,6 +1,6 @@
 ## Task 1: Refactor Command Processing into a Reusable Subpackage
 
-**Status:** In Progress
+**Status:** Completed
 
 **Description:**
 Extract the core command processing logic from `hermes.interface.assistant.deep_research_assistant.engine.commands` into a new, reusable top-level subpackage, `hermes.interface.commands`. This aims to create a generic framework for defining, registering, parsing, and validating commands that can be used across different interfaces within Hermes (e.g., Deep Research Assistant, also replacing the current Chat Assistant command processing).
@@ -16,7 +16,7 @@ Extract the core command processing logic from `hermes.interface.assistant.deep_
 - [X] 8. `CommandContext` remains within Deep Research and is passed to the `execute` method.
 - [x] 9. Existing command functionality within Deep Research remains unchanged from a user/LLM perspective (Needs testing).
 - [x] 10. Help text generation/access mechanisms are part of the core package.
-- [ ] 11. Unit tests are created for the new core command package.
+- [x] 11. Unit tests are created for the new core command package.
 - [x] 12. Unit tests for the Deep Research command integration are updated.
 
 **Components to Move (Examples):**

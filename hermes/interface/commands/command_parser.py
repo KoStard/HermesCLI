@@ -31,7 +31,7 @@ class ParseResult:
 
 
 class CommandParser:
-    """Parses text containing command blocks (<<< ... >>>) with sections (/// ...)."""
+    """Parses text containing command blocks (<<< ... >>>) with sections (///...)."""
 
     def __init__(self):
         # Get the singleton instance of the registry
@@ -164,7 +164,7 @@ class CommandParser:
             )
             return result # Cannot parse sections or validate if command is unknown
 
-        # Parse sections (/// section_name ...)
+        # Parse sections (///section_name ...)
         args, section_errors = self._parse_command_sections(
             command_content,
             block_start_index + 1, # Line number offset for content
@@ -223,10 +223,10 @@ class CommandParser:
         """
         args: Dict[str, Any] = {}
         errors: List[CommandError] = []
-        # Regex to find sections: ///name content (until next /// or end)
+        # Regex to find sections: ///name content (until next ///or end)
         # It captures the name (group 1) and the content (group 2)
         # (?s) makes . match newlines. Non-greedy .*? ensures it stops at the first ///
-        section_matches = re.finditer(r"^\s*///(\w+)\s*(.*?)(?=\s*///|\Z)", content, re.MULTILINE | re.DOTALL)
+        section_matches = re.finditer(r"///(\w+)\s*(.*?)(?=\s*///|$)", content, re.MULTILINE | re.DOTALL)
 
         sections_found: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
         last_pos = 0
@@ -236,47 +236,48 @@ class CommandParser:
         if first_marker_match:
             content_before_first_marker = content[:first_marker_match.start()].strip()
             if content_before_first_marker:
-                 errors.append(CommandError(
-                     command_name=command.name,
-                     message="Content found before the first '/// section' marker.",
-                     line_number=content_start_line # Approximate line number
-                 ))
+                errors.append(CommandError(
+                    command_name=command.name,
+                    message="Content found before the first '///section' marker.",
+                    line_number=content_start_line # Approximate line number
+                ))
 
         for match in section_matches:
             section_name = match.group(1)
             section_content = match.group(2).strip()
             # Calculate approximate line number within the block content
             line_num = content_start_line + content.count('\n', 0, match.start())
+            
+            last_pos = match.end()
 
             if section_name not in command.get_all_sections():
-                 errors.append(CommandError(
-                     command_name=command.name,
-                     message=f"Unknown section '///{section_name}' for command '{command.name}'.",
-                     line_number=line_num
-                 ))
-                 continue # Skip processing this unknown section
+                errors.append(CommandError(
+                    command_name=command.name,
+                    message=f"Unknown section '///{section_name}' for command '{command.name}'.",
+                    line_number=line_num
+                ))
+                continue # Skip processing this unknown section
 
             if not section_content:
-                 errors.append(CommandError(
-                     command_name=command.name,
-                     message=f"Section '///{section_name}' cannot be empty.",
-                     line_number=line_num
-                 ))
-                 # Store empty content anyway? Or skip? Let's skip storing empty.
-                 continue
+                errors.append(CommandError(
+                    command_name=command.name,
+                    message=f"Section '///{section_name}' cannot be empty.",
+                    line_number=line_num
+                ))
+                # Store empty content anyway? Or skip? Let's skip storing empty.
+                continue
 
             sections_found[section_name].append((section_content, line_num))
-            last_pos = match.end()
 
         # Check for content after the last section marker
         content_after_last_marker = content[last_pos:].strip()
         if content_after_last_marker:
-             line_num = content_start_line + content.count('\n', 0, last_pos)
-             errors.append(CommandError(
-                 command_name=command.name,
-                 message="Content found after the last '/// section' marker.",
-                 line_number=line_num
-             ))
+            line_num = content_start_line + content.count('\n', 0, last_pos)
+            errors.append(CommandError(
+                command_name=command.name,
+                message="Content found after the last '///section' marker.",
+                line_number=line_num
+            ))
 
 
         # Process found sections based on command definition (allow_multiple)
@@ -357,135 +358,3 @@ class CommandParser:
              )
 
         return "\n".join(report_parts)
-
-
-# Example usage for testing during development
-if __name__ == "__main__":
-    # Dummy command for testing parser
-    class TestCommand(Command[None]):
-        def __init__(self):
-            super().__init__("test_cmd", "A test command")
-            self.add_section("required_sec", required=True, help_text="Must be provided")
-            self.add_section("optional_sec", required=False)
-            self.add_section("multi_sec", required=False, allow_multiple=True)
-            self.add_section("transform_sec", required=False)
-
-        def execute(self, context: None, args: Dict[str, Any]) -> None:
-            print(f"Executing TestCommand with context={context} and args={args}")
-
-        def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
-             if "transform_sec" in args:
-                  args["transform_sec"] = args["transform_sec"].upper()
-             return args
-
-        def validate(self, args: Dict[str, Any]) -> List[str]:
-             errors = super().validate(args)
-             if "optional_sec" in args and len(args["optional_sec"]) < 3:
-                  errors.append("Optional section must be at least 3 chars long if provided.")
-             return errors
-
-
-    # Register the dummy command
-    registry = CommandRegistry()
-    registry.clear() # Ensure clean state for test
-    registry.register(TestCommand())
-
-    parser = CommandParser()
-
-    test_text_ok = """
-Some introductory text.
-
-<<< test_cmd
-/// required_sec
-This is required content.
-/// optional_sec
-Optional stuff.
-/// multi_sec
-First multi value.
-/// multi_sec
-Second multi value.
-/// transform_sec
-make me uppercase
->>>
-
-More text after.
-"""
-
-    test_text_errors = """
-<<< test_cmd
-/// optional_sec
-no
-/// multi_sec
-val1
->>>
-
-<<< unknown_cmd
-/// data
-some data
->>>
-
-<<< test_cmd
-/// required_sec
-Good required.
-/// multi_sec
-multi 1
-/// multi_sec
-multi 2
-/// multi_sec
-multi 3 but multiple not allowed by default? No, it is allowed.
->>>
-
-Text before section.
-<<< test_cmd
-/// required_sec
-Required.
->>>
-
-<<< test_cmd
-/// required_sec
-Required.
-/// unknown_section
-This should cause an error.
->>>
-
-<<< test_cmd
-/// required_sec
-
-/// optional_sec
-Data after empty required.
->>>
-
-<<< test_cmd
-/// required_sec
-Content here
-/// required_sec
-Duplicate required section.
->>>
-
-<<< dangling_open
-
->>> closing_without_open
-
-<<< nested_open
-<<< another_open
->>>
->>>
-
-"""
-
-    print("--- PARSING OK TEXT ---")
-    results_ok = parser.parse_text(test_text_ok)
-    print(f"Results: {results_ok}")
-    print(f"Error Report:\n{parser.generate_error_report(results_ok)}")
-    # Execute the valid command
-    for res in results_ok:
-        if not res.errors and res.command_name:
-             cmd = registry.get_command(res.command_name)
-             if cmd:
-                  cmd.execute(None, res.args)
-
-
-    print("\n--- PARSING ERROR TEXT ---")
-    results_err = parser.parse_text(test_text_errors)
-    # print(f"Results: {results_err}") # Might be too verbose
-    print(f"Error Report:\n{parser.generate_error_report(results_err)}")

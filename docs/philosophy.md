@@ -1,3 +1,5 @@
+This document captures the development philosophy you should follow throughout all the stages of work.
+
 ## Generic
 - This codebase follows Daoism. The code should flow like water, non-doing, not forced, natural code.
 - The code should remain flexible. Don't repeat, don't create many tests for the same capability, keep things lean, to easily adjust and change
@@ -39,6 +41,7 @@
 - Create a class per test file, add the unit tests inside the class
 - Prefer automated tests over manual tests
 - Test files should mimic the source code directory structure. A/B/C.py will be tested in tests/A/B/test_C.py
+- Write minimum number of tests, while making sure all features/capabilities are covered. Use black box testing approach, testing the contract through the public methods. Test internals only in rare cases when it's an important logic hard to test from outside.
 
 ## Implementation
 
