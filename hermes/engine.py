@@ -421,8 +421,6 @@ class Engine:
             content: Content to append to the file
         """
         mode = "a" if os.path.exists(file_path) else "w"
-        action = "Appending to" if mode == "a" else "Creating"
-        self.notifications_printer.print_notification(f"{action} file {file_path}")
         with open(file_path, mode, encoding="utf-8") as file:
             file.write(content)
 
@@ -441,11 +439,7 @@ class Engine:
             # Write new content followed by existing
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(content + existing_content)
-            self.notifications_printer.print_notification(
-                f"Prepending to file {file_path}"
-            )
         else:
             # If file doesn't exist, just create it with the content
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(content)
-            self.notifications_printer.print_notification(f"Creating file {file_path}")
