@@ -26,7 +26,7 @@ class DeepResearchMockApp:
         self.engine = DeepResearchEngine(
             root_dir,
             self.llm_interface,
-            deep_research_commands,
+            # deep_research_commands,
         )
         
         self.engine.set_budget(2)
@@ -43,14 +43,14 @@ class DeepResearchMockApp:
         print("Type 'END_RESPONSE' on a new line when you've finished your response.")
 
         # Print information about loaded extensions
-        if self.engine._extension_commands:
-            print(
-                f"\nLoaded {len(self.engine._extension_commands)} extension commands:"
-            )
-            for cmd_class in self.engine._extension_commands:
-                print(f"- {cmd_class.__name__}")
-        else:
-            print("\nNo extension commands loaded.")
+        # if self.engine._extension_commands:
+        #     print(
+        #         f"\nLoaded {len(self.engine._extension_commands)} extension commands:"
+        #     )
+        #     for cmd_class in self.engine._extension_commands:
+        #         print(f"- {cmd_class.__name__}")
+        # else:
+        #     print("\nNo extension commands loaded.")
 
         if not self.engine.is_root_problem_defined():
             success = self.engine.define_root_problem(self.instruction)
