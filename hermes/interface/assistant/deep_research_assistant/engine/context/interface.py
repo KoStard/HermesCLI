@@ -1,10 +1,10 @@
 import textwrap
 from typing import List, Optional, Tuple, Dict, Any, Type
 
-from hermes.interface.assistant.deep_research_assistant.engine.commands.command import CommandRegistry
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, Artifact
-from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import register_predefined_commands
+from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import register_deep_research_commands
 from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import TemplateManager
+from hermes.interface.commands.command import CommandRegistry
 # Import base data class and specific section data classes/factories from their new locations
 from .dynamic_sections.base import DynamicSectionData
 from .dynamic_sections.header import HeaderSectionData
@@ -22,7 +22,7 @@ from .dynamic_sections.goal import GoalSectionData
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node
 from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
 
-register_predefined_commands()
+register_deep_research_commands()
 
 # Define the consistent order of dynamic sections using the imported types
 DYNAMIC_SECTION_ORDER: List[Type[DynamicSectionData]] = [
@@ -87,7 +87,7 @@ class DeepResearcherInterface:
     def _render_static_content(self, target_node: Node) -> str:
         """Render the static content by rendering the main static.mako template."""
         # Get commands to pass to the template context
-        commands = CommandRegistry().get_interface_commands()
+        commands = CommandRegistry().get_all_commands()
         
         context = {
             'target_node': target_node,

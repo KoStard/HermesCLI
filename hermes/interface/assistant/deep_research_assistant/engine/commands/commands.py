@@ -1,15 +1,15 @@
 import textwrap
 from typing import Dict, Any, List
 
-from .command import Command, register_command
+# Import the new generic base command and registry
+from hermes.interface.commands.command import Command as BaseCommand, CommandRegistry
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import Artifact, ProblemStatus
 from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import KnowledgeEntry
+# Import the specific context for Deep Research
 from .command_context import CommandContext
 
 
-
-@register_command
-class AddCriteriaCommand(Command):
+class AddCriteriaCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "add_criteria",
@@ -30,10 +30,11 @@ class AddCriteriaCommand(Command):
 
         current_node.add_criteria(criteria_text)
         context.update_files()
+        # Add confirmation output
+        context.add_command_output(self.name, args, f"Criteria '{criteria_text}' added.")
 
 
-@register_command
-class MarkCriteriaAsDoneCommand(Command):
+class MarkCriteriaAsDoneCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "mark_criteria_as_done",
@@ -52,6 +53,8 @@ class MarkCriteriaAsDoneCommand(Command):
         success = current_node.mark_criteria_as_done(args["index"])
         if success:
             context.update_files()
+            # Add confirmation output
+            context.add_command_output(self.name, args, f"Criteria {args['criteria_number']} marked as done.")
 
     def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Convert criteria_number to zero-based index"""
@@ -79,8 +82,7 @@ class MarkCriteriaAsDoneCommand(Command):
         return errors
 
 
-@register_command
-class AddSubproblemCommand(Command):
+class AddSubproblemCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "add_subproblem",
@@ -105,11 +107,12 @@ class AddSubproblemCommand(Command):
         subproblem.status = ProblemStatus.NOT_STARTED
         # Create directories for the new subproblem
         context.file_system._create_node_directories(subproblem)
+        # Add confirmation output
+        context.add_command_output(self.name, args, f"Subproblem '{title}' added.")
         context.update_files()
 
 
-@register_command
-class AddArtifactCommand(Command):
+class AddArtifactCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "add_artifact",
@@ -128,11 +131,12 @@ class AddArtifactCommand(Command):
             name=args["name"], content=args["content"], is_external=True
         )
         current_node.artifacts[args["name"]] = artifact
+        # Add confirmation output
+        context.add_command_output(self.name, args, f"Artifact '{args['name']}' added.")
         context.update_files()
 
 
-@register_command
-class AppendToProblemDefinitionCommand(Command):
+class AppendToProblemDefinitionCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "append_to_problem_definition",
@@ -147,11 +151,12 @@ class AppendToProblemDefinitionCommand(Command):
             return
 
         current_node.append_to_problem_definition(args["content"])
+        # Add confirmation output
+        context.add_command_output(self.name, args, "Problem definition updated.")
         context.update_files()
 
 
-@register_command
-class AddCriteriaToSubproblemCommand(Command):
+class AddCriteriaToSubproblemCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "add_criteria_to_subproblem",
@@ -179,11 +184,12 @@ class AddCriteriaToSubproblemCommand(Command):
             return
 
         subproblem.add_criteria(criteria_text)
+        # Add confirmation output
+        context.add_command_output(self.name, args, f"Criteria added to subproblem '{title}'.")
         context.update_files()
 
 
-@register_command
-class FocusDownCommand(Command):
+class FocusDownCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "activate_subproblems_and_wait",
@@ -214,8 +220,8 @@ class FocusDownCommand(Command):
         if len(titles) > 1:
             context.children_queue[current_node.title].extend(titles[1:])
 
-        self.add_output(
-            context,
+        context.add_command_output(
+            self.name,
             args,
             f"Focusing on {titles[0]}.",
         )
@@ -231,10 +237,8 @@ class FocusDownCommand(Command):
         return True
 
 
-@register_command
-class FocusUpCommand(Command):
+class FocusUpCommand(BaseCommand[CommandContext]):
     def __init__(self):
-        # Change to BLOCK type and update help text
         super().__init__(
             "finish_problem",
             help_text=textwrap.dedent("""\
@@ -267,11 +271,11 @@ class FocusUpCommand(Command):
 
     def should_be_last_in_message(self):
         # This command changes focus, so it should still be last
+        # No output needed here, handled by engine/context focus change messages
         return True
 
 
-@register_command
-class FailProblemAndFocusUpCommand(Command):
+class FailProblemAndFocusUpCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "fail_problem",
@@ -314,11 +318,11 @@ class FailProblemAndFocusUpCommand(Command):
                  raise ValueError(f"Failed to mark problem as failed and focus up from node '{current_node_title}'.")
 
     def should_be_last_in_message(self):
+        # No output needed here, handled by engine/context focus change messages
         return True
 
 
-@register_command
-class CancelSubproblemCommand(Command):
+class CancelSubproblemCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "cancel_subproblem",
@@ -343,11 +347,12 @@ class CancelSubproblemCommand(Command):
         subproblem.status = ProblemStatus.CANCELLED
 
         # Update the file system
+        # Add confirmation output
+        context.add_command_output(self.name, args, f"Subproblem '{title}' cancelled.")
         context.update_files()
 
 
-@register_command
-class AddLogEntryCommand(Command):
+class AddLogEntryCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "add_log_entry",
@@ -360,10 +365,11 @@ class AddLogEntryCommand(Command):
         content = args.get("content", "")
         if content:
             context.add_to_permanent_log(content)
+            # Add confirmation output
+            context.add_command_output(self.name, args, "Log entry added.")
 
 
-@register_command
-class OpenArtifactCommand(Command):
+class OpenArtifactCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "open_artifact",
@@ -386,8 +392,8 @@ class OpenArtifactCommand(Command):
         if artifact_name in current_node.artifacts:
             # Modify the visibility flag on the *current_node* perspective
             current_node.visible_artifacts[artifact_name] = True
-            self.add_output(
-                context,
+            context.add_command_output(
+                self.name,
                 args,
                 f"Artifact '{artifact_name}' is now fully visible.",
             )
@@ -400,8 +406,8 @@ class OpenArtifactCommand(Command):
             if artifact_name in node.artifacts:
                 # Modify the visibility flag on the *current_node* perspective
                 current_node.visible_artifacts[artifact_name] = True
-                self.add_output(
-                    context,
+                context.add_command_output(
+                    self.name,
                     args,
                     f"Artifact '{artifact_name}' is now fully visible.",
                 )
@@ -419,8 +425,8 @@ class OpenArtifactCommand(Command):
             return False
 
         if search_subproblems(context.file_system.root_node):
-            self.add_output(
-                context,
+            context.add_command_output(
+                self.name,
                 args,
                 f"Artifact '{artifact_name}' is now fully visible.",
             )
@@ -431,8 +437,7 @@ class OpenArtifactCommand(Command):
         raise ValueError(f"Artifact '{artifact_name}' not found")
 
 
-@register_command
-class HalfCloseArtifactCommand(Command):
+class HalfCloseArtifactCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "half_close_artifact",
@@ -455,8 +460,8 @@ class HalfCloseArtifactCommand(Command):
         if artifact_name in current_node.artifacts:
             # Modify the visibility flag on the *current_node* perspective
             current_node.visible_artifacts[artifact_name] = False
-            self.add_output(
-                context,
+            context.add_command_output(
+                self.name,
                 args,
                 f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
             )
@@ -469,8 +474,8 @@ class HalfCloseArtifactCommand(Command):
             if artifact_name in node.artifacts:
                 # Modify the visibility flag on the *current_node* perspective
                 current_node.visible_artifacts[artifact_name] = False
-                self.add_output(
-                    context,
+                context.add_command_output(
+                    self.name,
                     args,
                     f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
                 )
@@ -488,8 +493,8 @@ class HalfCloseArtifactCommand(Command):
             return False
 
         if search_subproblems(context.file_system.root_node):
-            self.add_output(
-                context,
+            context.add_command_output(
+                self.name,
                 args,
                 f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
             )
@@ -500,8 +505,7 @@ class HalfCloseArtifactCommand(Command):
         raise ValueError(f"Artifact '{artifact_name}' not found")
 
 
-@register_command
-class ThinkCommand(Command):
+class ThinkCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "think",
@@ -512,11 +516,11 @@ class ThinkCommand(Command):
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """This is a dummy command that doesn't trigger any actions"""
         # This command doesn't do anything, it's just a place for the assistant to think
+        # No output needed for think command
         pass
 
 
-@register_command
-class AddKnowledgeCommand(Command):
+class AddKnowledgeCommand(BaseCommand[CommandContext]):
     def __init__(self):
         super().__init__(
             "add_knowledge",
@@ -531,7 +535,7 @@ class AddKnowledgeCommand(Command):
         current_node = context.current_node
         if not current_node:
             # Should ideally not happen if a problem is defined, but good practice
-            self.add_output(context, args, {"output": "Error: Cannot add knowledge without an active problem node."})
+            context.add_command_output(self.name, args, "Error: Cannot add knowledge without an active problem node.")
             return
 
         tags = args.get("tag", [])
@@ -547,12 +551,31 @@ class AddKnowledgeCommand(Command):
         )
 
         context.file_system.add_knowledge_entry(entry)
-        # Provide confirmation output
+        # Provide confirmation output using context
         entry_identifier = f"'{entry.title}'" if entry.title else "entry"
-        self.add_output(context, args, {"output": f"Knowledge {entry_identifier} added successfully."})
+        context.add_command_output(self.name, args, f"Knowledge {entry_identifier} added successfully.")
 
 
-def register_predefined_commands():
-    # This function ensures that the command classes are imported and thus registered
-    # by the @register_command decorator when this module is imported.
-    pass
+# Explicitly register all commands defined in this file
+def register_deep_research_commands():
+    """Registers all built-in Deep Research commands."""
+    registry = CommandRegistry()
+    commands_to_register = [
+        AddCriteriaCommand(),
+        MarkCriteriaAsDoneCommand(),
+        AddSubproblemCommand(),
+        AddArtifactCommand(),
+        AppendToProblemDefinitionCommand(),
+        AddCriteriaToSubproblemCommand(),
+        FocusDownCommand(),
+        FocusUpCommand(),
+        FailProblemAndFocusUpCommand(),
+        CancelSubproblemCommand(),
+        AddLogEntryCommand(),
+        OpenArtifactCommand(),
+        HalfCloseArtifactCommand(),
+        ThinkCommand(),
+        AddKnowledgeCommand(),
+    ]
+    for cmd in commands_to_register:
+        registry.register(cmd)

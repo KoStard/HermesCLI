@@ -1,0 +1,491 @@
+import re
+from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple
+
+# Use relative import within the same package
+from .command import CommandRegistry, Command
+
+
+@dataclass
+class CommandError:
+    """Represents an error encountered during command parsing or validation."""
+
+    command_name: Optional[str] # Name of the command where error occurred
+    message: str              # Description of the error
+    line_number: Optional[int] = None # Line number where the error was detected
+    is_syntax_error: bool = False     # True if it's a block syntax error (<<< >>>)
+
+
+@dataclass
+class ParseResult:
+    """Result of parsing a single command block."""
+
+    command_name: Optional[str] = None
+    args: Dict[str, Any] = field(default_factory=dict)
+    errors: List[CommandError] = field(default_factory=list)
+    # Indicates if this specific block had a <<< >>> syntax error preventing parsing
+    has_block_syntax_error: bool = False
+    # Start line index (0-based) of the command block in the original text
+    block_start_line_index: Optional[int] = None
+
+
+class CommandParser:
+    """Parses text containing command blocks (<<< ... >>>) with sections (/// ...)."""
+
+    def __init__(self):
+        # Get the singleton instance of the registry
+        self.registry = CommandRegistry()
+
+    def parse_text(self, text: str) -> List[ParseResult]:
+        """
+        Parse all command blocks from the input text.
+
+        Args:
+            text: The raw text potentially containing command blocks.
+
+        Returns:
+            A list of ParseResult objects, one for each detected command block
+            (even those with syntax errors). Includes results for syntax errors
+            detected outside specific blocks (e.g., dangling tags).
+        """
+        results: List[ParseResult] = []
+        lines = text.split("\n")
+
+        # 1. Find potential command blocks and check overall block syntax
+        potential_blocks, block_syntax_errors = self._find_blocks_and_check_syntax(lines)
+
+        # Add block syntax errors as separate ParseResult entries
+        for error in block_syntax_errors:
+            results.append(ParseResult(errors=[error], has_block_syntax_error=True))
+
+        # 2. Parse valid blocks
+        for block_start_index, block_lines in potential_blocks:
+            result = self._parse_single_block(block_start_index, block_lines)
+            results.append(result)
+
+        # Sort results by line number for predictable order
+        results.sort(key=lambda r: r.block_start_line_index if r.block_start_line_index is not None else -1)
+
+        return results
+
+    def _find_blocks_and_check_syntax(
+        self, lines: List[str]
+    ) -> Tuple[List[Tuple[int, List[str]]], List[CommandError]]:
+        """
+        Identifies potential command blocks (<<< ... >>>) and checks for syntax errors
+        like mismatched or nested tags.
+
+        Returns:
+            A tuple containing:
+            - A list of valid blocks: `[(start_line_index, block_lines), ...]`.
+            - A list of `CommandError` objects for syntax issues.
+        """
+        blocks = []
+        errors = []
+        open_tag_index: Optional[int] = None
+
+        for i, line in enumerate(lines):
+            stripped_line = line.strip()
+            is_opening_tag = re.match(r"<<<\s*(\w+)", stripped_line)
+            is_closing_tag = stripped_line == ">>>"
+
+            if is_opening_tag:
+                if open_tag_index is not None:
+                    # Error: Found an opening tag while another was already open
+                    errors.append(
+                        CommandError(
+                            command_name=None, # Error is about structure, not a specific command yet
+                            message="Found opening tag '<<<' before the previous one was closed with '>>>'.",
+                            line_number=i + 1,
+                            is_syntax_error=True,
+                        )
+                    )
+                    # Treat the previous opening tag as implicitly closed to allow parsing later blocks
+                    open_tag_index = i # Start a new potential block
+                else:
+                    # Found a valid opening tag
+                    open_tag_index = i
+            elif is_closing_tag:
+                if open_tag_index is not None:
+                    # Found a closing tag matching an open one
+                    block_lines = lines[open_tag_index : i + 1]
+                    blocks.append((open_tag_index, block_lines))
+                    open_tag_index = None # Reset for the next block
+                else:
+                    # Error: Found a closing tag without a preceding open tag
+                    errors.append(
+                        CommandError(
+                            command_name=None,
+                            message="Found closing tag '>>>' without a matching opening tag '<<<'.",
+                            line_number=i + 1,
+                            is_syntax_error=True,
+                        )
+                    )
+
+        # After checking all lines, see if a block was left open
+        if open_tag_index is not None:
+            errors.append(
+                CommandError(
+                    command_name=None,
+                    message="Command block starting on this line was never closed with '>>>'.",
+                    line_number=open_tag_index + 1,
+                    is_syntax_error=True,
+                )
+            )
+
+        return blocks, errors
+
+
+    def _parse_single_block(self, block_start_index: int, block_lines: List[str]) -> ParseResult:
+        """Parses the content of a single, syntactically valid command block."""
+        result = ParseResult(block_start_line_index=block_start_index)
+        opening_line = block_lines[0].strip()
+        command_content_lines = block_lines[1:-1]
+        command_content = "\n".join(command_content_lines)
+
+        match = re.match(r"<<<\s*(\w+)", opening_line)
+        if not match: # Should not happen if _find_blocks_and_check_syntax is correct
+             result.errors.append(CommandError(None, "Invalid block opening line format.", block_start_index + 1, True))
+             result.has_block_syntax_error = True
+             return result
+
+        command_name = match.group(1)
+        result.command_name = command_name
+
+        command = self.registry.get_command(command_name)
+        if not command:
+            result.errors.append(
+                CommandError(
+                    command_name=command_name,
+                    message=f"Unknown command: '{command_name}'",
+                    line_number=block_start_index + 1,
+                )
+            )
+            return result # Cannot parse sections or validate if command is unknown
+
+        # Parse sections (/// section_name ...)
+        args, section_errors = self._parse_command_sections(
+            command_content,
+            block_start_index + 1, # Line number offset for content
+            command,
+        )
+        result.errors.extend(section_errors)
+
+        # Apply argument transformations (e.g., type conversion) defined in the command
+        try:
+            transformed_args = command.transform_args(args)
+            result.args = transformed_args
+        except Exception as e:
+             result.errors.append(
+                 CommandError(
+                    command_name=command_name,
+                    message=f"Error during argument transformation: {e}",
+                    line_number=block_start_index + 1 # Error relates to the whole block
+                 )
+             )
+             # Continue with original args for validation if transformation fails? Or stop?
+             # Let's stop processing this command further if transform fails.
+             return result
+
+
+        # Validate arguments against command definition (required sections, etc.)
+        # This uses the *transformed* args
+        validation_errors = command.validate(result.args)
+        for error_msg in validation_errors:
+            result.errors.append(
+                CommandError(
+                    command_name=command_name,
+                    message=error_msg,
+                    line_number=block_start_index + 1, # Validation error applies to the block
+                )
+            )
+
+        return result
+
+
+    @staticmethod
+    def _parse_command_sections(
+        content: str, content_start_line: int, command: Command[Any]
+    ) -> Tuple[Dict[str, Any], List[CommandError]]:
+        """
+        Helper to parse ///section delimiters within command content.
+
+        Args:
+            content: The string content between <<< and >>>.
+            content_start_line: The line number where the content starts.
+            command: The Command instance being parsed.
+
+        Returns:
+            A tuple containing:
+            - A dictionary of arguments: `{section_name: content_or_list_of_content}`.
+            - A list of `CommandError` for section-related issues.
+        """
+        args: Dict[str, Any] = {}
+        errors: List[CommandError] = []
+        # Regex to find sections: ///name content (until next /// or end)
+        # It captures the name (group 1) and the content (group 2)
+        # (?s) makes . match newlines. Non-greedy .*? ensures it stops at the first ///
+        section_matches = re.finditer(r"^\s*///(\w+)\s*(.*?)(?=\s*///|\Z)", content, re.MULTILINE | re.DOTALL)
+
+        sections_found: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
+        last_pos = 0
+
+        # Check for content before the first section marker
+        first_marker_match = re.search(r"^\s*///", content, re.MULTILINE)
+        if first_marker_match:
+            content_before_first_marker = content[:first_marker_match.start()].strip()
+            if content_before_first_marker:
+                 errors.append(CommandError(
+                     command_name=command.name,
+                     message="Content found before the first '/// section' marker.",
+                     line_number=content_start_line # Approximate line number
+                 ))
+
+        for match in section_matches:
+            section_name = match.group(1)
+            section_content = match.group(2).strip()
+            # Calculate approximate line number within the block content
+            line_num = content_start_line + content.count('\n', 0, match.start())
+
+            if section_name not in command.get_all_sections():
+                 errors.append(CommandError(
+                     command_name=command.name,
+                     message=f"Unknown section '///{section_name}' for command '{command.name}'.",
+                     line_number=line_num
+                 ))
+                 continue # Skip processing this unknown section
+
+            if not section_content:
+                 errors.append(CommandError(
+                     command_name=command.name,
+                     message=f"Section '///{section_name}' cannot be empty.",
+                     line_number=line_num
+                 ))
+                 # Store empty content anyway? Or skip? Let's skip storing empty.
+                 continue
+
+            sections_found[section_name].append((section_content, line_num))
+            last_pos = match.end()
+
+        # Check for content after the last section marker
+        content_after_last_marker = content[last_pos:].strip()
+        if content_after_last_marker:
+             line_num = content_start_line + content.count('\n', 0, last_pos)
+             errors.append(CommandError(
+                 command_name=command.name,
+                 message="Content found after the last '/// section' marker.",
+                 line_number=line_num
+             ))
+
+
+        # Process found sections based on command definition (allow_multiple)
+        allow_multiple_dict = {
+            section.name: section.allow_multiple for section in command.sections
+        }
+
+        for name, content_list in sections_found.items():
+            allows_multiple = allow_multiple_dict.get(name, False) # Default to False if section somehow not in command.sections
+            if len(content_list) > 1 and not allows_multiple:
+                # Report error for the second occurrence onwards
+                for _, line_num in content_list[1:]:
+                    errors.append(
+                        CommandError(
+                            command_name=command.name,
+                            message=f"Multiple instances of section '///{name}' found, but only one is allowed.",
+                            line_number=line_num,
+                        )
+                    )
+                # Store only the first value found if multiple aren't allowed
+                args[name] = content_list[0][0]
+            elif allows_multiple:
+                # Store all values as a list
+                args[name] = [content for content, _ in content_list]
+            else:
+                # Store the single value
+                args[name] = content_list[0][0]
+
+        return args, errors
+
+    @staticmethod
+    def generate_error_report(parse_results: List[ParseResult]) -> str:
+        """
+        Generate a formatted error report string from a list of ParseResult objects.
+
+        Args:
+            parse_results: The list of results from `parse_text`.
+
+        Returns:
+            A formatted markdown string summarizing the errors, or an empty string
+            if no errors were found.
+        """
+        all_errors: List[CommandError] = []
+        for result in parse_results:
+            all_errors.extend(result.errors)
+
+        if not all_errors:
+            return ""
+
+        # Sort errors primarily by line number, then by message
+        all_errors.sort(key=lambda e: (e.line_number if e.line_number is not None else -1, e.message))
+
+        report_parts = ["### Command Parsing Errors Report:"]
+        syntax_errors_found = False
+        other_errors_found = False
+
+        for i, error in enumerate(all_errors, 1):
+            line_info = f" (near line {error.line_number})" if error.line_number else ""
+            cmd_info = f" in command '{error.command_name}'" if error.command_name else ""
+
+            error_type = "Syntax Error" if error.is_syntax_error else "Error"
+            report_parts.append(f"#### {error_type} {i}{line_info}{cmd_info}:")
+            report_parts.append(f"- {error.message}")
+
+            if error.is_syntax_error:
+                syntax_errors_found = True
+            else:
+                other_errors_found = True
+
+        report_parts.append("---")
+        if syntax_errors_found:
+             report_parts.append(
+                 "**Note:** Commands with block syntax errors (<<< >>> issues) were not parsed or executed."
+             )
+        if other_errors_found:
+             report_parts.append(
+                 "**Note:** Commands with other errors (e.g., unknown command, missing/invalid sections) might be skipped during execution."
+             )
+
+        return "\n".join(report_parts)
+
+
+# Example usage for testing during development
+if __name__ == "__main__":
+    # Dummy command for testing parser
+    class TestCommand(Command[None]):
+        def __init__(self):
+            super().__init__("test_cmd", "A test command")
+            self.add_section("required_sec", required=True, help_text="Must be provided")
+            self.add_section("optional_sec", required=False)
+            self.add_section("multi_sec", required=False, allow_multiple=True)
+            self.add_section("transform_sec", required=False)
+
+        def execute(self, context: None, args: Dict[str, Any]) -> None:
+            print(f"Executing TestCommand with context={context} and args={args}")
+
+        def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
+             if "transform_sec" in args:
+                  args["transform_sec"] = args["transform_sec"].upper()
+             return args
+
+        def validate(self, args: Dict[str, Any]) -> List[str]:
+             errors = super().validate(args)
+             if "optional_sec" in args and len(args["optional_sec"]) < 3:
+                  errors.append("Optional section must be at least 3 chars long if provided.")
+             return errors
+
+
+    # Register the dummy command
+    registry = CommandRegistry()
+    registry.clear() # Ensure clean state for test
+    registry.register(TestCommand())
+
+    parser = CommandParser()
+
+    test_text_ok = """
+Some introductory text.
+
+<<< test_cmd
+/// required_sec
+This is required content.
+/// optional_sec
+Optional stuff.
+/// multi_sec
+First multi value.
+/// multi_sec
+Second multi value.
+/// transform_sec
+make me uppercase
+>>>
+
+More text after.
+"""
+
+    test_text_errors = """
+<<< test_cmd
+/// optional_sec
+no
+/// multi_sec
+val1
+>>>
+
+<<< unknown_cmd
+/// data
+some data
+>>>
+
+<<< test_cmd
+/// required_sec
+Good required.
+/// multi_sec
+multi 1
+/// multi_sec
+multi 2
+/// multi_sec
+multi 3 but multiple not allowed by default? No, it is allowed.
+>>>
+
+Text before section.
+<<< test_cmd
+/// required_sec
+Required.
+>>>
+
+<<< test_cmd
+/// required_sec
+Required.
+/// unknown_section
+This should cause an error.
+>>>
+
+<<< test_cmd
+/// required_sec
+
+/// optional_sec
+Data after empty required.
+>>>
+
+<<< test_cmd
+/// required_sec
+Content here
+/// required_sec
+Duplicate required section.
+>>>
+
+<<< dangling_open
+
+>>> closing_without_open
+
+<<< nested_open
+<<< another_open
+>>>
+>>>
+
+"""
+
+    print("--- PARSING OK TEXT ---")
+    results_ok = parser.parse_text(test_text_ok)
+    print(f"Results: {results_ok}")
+    print(f"Error Report:\n{parser.generate_error_report(results_ok)}")
+    # Execute the valid command
+    for res in results_ok:
+        if not res.errors and res.command_name:
+             cmd = registry.get_command(res.command_name)
+             if cmd:
+                  cmd.execute(None, res.args)
+
+
+    print("\n--- PARSING ERROR TEXT ---")
+    results_err = parser.parse_text(test_text_errors)
+    # print(f"Results: {results_err}") # Might be too verbose
+    print(f"Error Report:\n{parser.generate_error_report(results_err)}")

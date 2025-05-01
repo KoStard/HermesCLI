@@ -4,12 +4,16 @@ from typing import Generator, List, Optional
 from pathlib import Path
 
 from hermes.interface.assistant.chat_models.base import ChatModel
+# Import core command components
+from hermes.interface.commands import CommandRegistry, Command
+# Import Deep Research specific components
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import ProblemStatus
 from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import ChatModelLLMInterface
 from hermes.interface.base import Interface
+# Import other necessary types
 from hermes.event import Event, MessageEvent
 from hermes.message import Message, TextMessage, TextualFileMessage
 from hermes.history import History
@@ -28,7 +32,8 @@ class DeepResearchAssistantInterface(Interface):
         self.model = model
         self.model.initialize()
         self.research_dir = research_path if research_path else str(Path.cwd())
-        self.extension_commands = extension_commands or []
+        # Store extension command *classes* or *instances*
+        self.extension_command_defs = extension_commands or []
         self._engine: Optional[DeepResearchEngine] = None
         self.instruction = None
         self._pending_budget = None  # Store budget until engine is initialized
@@ -72,12 +77,29 @@ class DeepResearchAssistantInterface(Interface):
             # Create LLM interface
             llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
 
+            # Create the engine *without* passing extension commands initially
             self._engine = DeepResearchEngine(
                 self.research_dir,
                 llm_interface,
-                self.extension_commands,
             )
-            
+
+            # Register extension commands *after* engine creation
+            # This ensures the core commands are registered first by the engine's command module import
+            registry = CommandRegistry()
+            for cmd_def in self.extension_command_defs:
+                if isinstance(cmd_def, Command):
+                    # If it's already an instance
+                    registry.register(cmd_def)
+                elif isinstance(cmd_def, type) and issubclass(cmd_def, Command):
+                    # If it's a class, instantiate and register
+                    try:
+                        registry.register(cmd_def())
+                    except Exception as e:
+                         logger.error(f"Failed to instantiate and register extension command {cmd_def.__name__}: {e}")
+                else:
+                    logger.warning(f"Ignoring invalid extension command definition: {cmd_def}")
+
+
             # Apply any pending budget
             if self._pending_budget is not None:
                 self._engine.set_budget(self._pending_budget)

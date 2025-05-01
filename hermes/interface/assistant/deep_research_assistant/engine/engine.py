@@ -1,13 +1,19 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
-from hermes.interface.assistant.deep_research_assistant.engine.commands.command import Command, CommandRegistry
-from hermes.interface.assistant.deep_research_assistant.engine.commands.command_parser import CommandParser, ParseResult
+# Import core command components from the new location
+from hermes.interface.commands import (
+    Command,
+    CommandRegistry,
+    CommandParser,
+    ParseResult,
+)
+# Import the specific context for Deep Research
 from hermes.interface.assistant.deep_research_assistant.engine.commands.command_context import CommandContext
 
-# Import commands to ensure they're registered
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, ProblemStatus, ProblemStatus
+# Import other necessary components
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, ProblemStatus
 from hermes.interface.assistant.deep_research_assistant.engine.context.history import ChatHistory, AutoReply, ChatMessage, HistoryBlock
 from hermes.interface.assistant.deep_research_assistant.engine.context.interface import DeepResearcherInterface
 # Import the registry creation function and type alias
@@ -176,11 +182,13 @@ class _CommandProcessor:
         command_name = result.command_name
         args = result.args
         error = None
-        command = None
+        command: Optional[Command[CommandContext]] = None # Type hint for clarity
 
         try:
+            # Use the singleton registry instance directly
             registry = CommandRegistry()
-            command = registry.get_command(command_name)
+            # Cast the retrieved command to the specific type expected
+            command = registry.get_command(command_name) # type: ignore
 
             if not command:
                 # This should ideally be caught during parsing, but handle defensively
@@ -283,10 +291,10 @@ class DeepResearchEngine:
         self,
         root_dir: str = "research",
         llm_interface: LLMInterface = None,
-        extension_commands: List = None,
     ):
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
+        # Use the CommandParser from the core package
         self.command_parser = CommandParser()
         self.awaiting_new_instruction = False # Replaces 'finished'
         self.logger = DeepResearchLogger(Path(root_dir))
@@ -318,13 +326,6 @@ class DeepResearchEngine:
         # Set current node to root node if problem is already defined
         if self.is_root_problem_defined():
             self.manually_choose_and_activate_node()
-
-        # Register any extension commands
-        if extension_commands:
-            for command_class in extension_commands:
-                CommandRegistry().register(command_class())
-
-        self._extension_commands = extension_commands
 
         self.template_manager = TemplateManager()
         # Create the renderer registry
