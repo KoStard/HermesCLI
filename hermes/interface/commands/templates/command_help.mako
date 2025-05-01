@@ -1,5 +1,3 @@
-<%namespace name="xml" file="/macros/xml.mako"/>
-
 % for name, cmd in sorted(commands.items()):
 <<< ${name}
 %   for section in cmd.sections:

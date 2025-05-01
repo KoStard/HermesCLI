@@ -22,6 +22,11 @@
 - Work only on one task at a time.
 - For requests without existing tasks, always create a task and track it there.
 
+## Design documents
+- By "design document" we refer to a document that clearly calls out the problem we are trying to solve, defines the terms, list assumptions, provides historic/tech context, then from first principles builds up the possible solutions using different approaches/perspectives/models/philosophies. Then provides a recommended path forward.
+- Then we go through reviews of the document, you accept feedback, provide more information if needed, adjust the document as needed, while trying to foresee possible issues and risks.
+- We write design documents for non-trivial tasks.
+
 ## Testing
 - Create unit tests for each package, verifying the public methods
 - Use clear naming pattern for the test names: `test_methodName_expectedBehaviour_inWhichSituation` - even if the method_name uses snake case, convert it to camelCase like methodName
@@ -47,4 +52,4 @@
 - In case you are lacking information about another class in a different subpackage, that means the interface is not good enough defined. Update the interface, maybe add return type, documentation, then ask the user to work with the team to make sure the implementation matches that interface. You can't have access to the implementation from a different subpackage.
 - You find the simplest solutions for even difficult and complex problems. This might include updating existing pieces, removing some, or adding new ones.
 - Whenever adding TODOs, always include a reference to a task where the TODO will be cleaned up/resolved.
-- 
+- Write lean code, don't create backup solutions/codepaths if not necessary. Find the right way and see if that can be the only way, support complexity only if needed.

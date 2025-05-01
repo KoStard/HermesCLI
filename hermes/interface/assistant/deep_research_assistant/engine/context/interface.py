@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple, Dict, Any, Type
 
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import FileSystem, Node, Artifact
 from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import register_deep_research_commands
+from hermes.interface.commands.help_generator import CommandHelpGenerator
 from hermes.interface.templates import TemplateManager
 from hermes.interface.commands.command import CommandRegistry
 # Import base data class and specific section data classes/factories from their new locations
@@ -45,9 +46,10 @@ class DeepResearcherInterface:
     This class handles all string formatting and presentation logic.
     """
 
-    def __init__(self, file_system: FileSystem, template_manager: TemplateManager):
+    def __init__(self, file_system: FileSystem, template_manager: TemplateManager, commands_help_generator: CommandHelpGenerator):
         self.file_system = file_system
         self.template_manager = template_manager
+        self.commands_help_generator = commands_help_generator
 
     def _get_parent_chain(self, node: Optional[Node]) -> List[Node]:
         """Helper to get the parent chain including the given node"""
@@ -91,7 +93,8 @@ class DeepResearcherInterface:
         
         context = {
             'target_node': target_node,
-            'commands': commands  # Pass the commands dictionary directly
+            'commands': commands,  # Pass the commands dictionary directly
+            "commands_help_content": self._generate_command_help()
         }
         
         return self.template_manager.render_template("static.mako", **context)
@@ -231,9 +234,6 @@ class DeepResearcherInterface:
     def _generate_command_help(self) -> str:
         """Generate help text for all registered commands by rendering the command_help template."""
         # Get all registered commands suitable for the problem-defined interface
-        commands = CommandRegistry().get_interface_commands()
+        commands = CommandRegistry().get_all_commands()
         
-        # Render the command help template
-        return self.template_manager.render_template(
-            "sections/static/command_help.mako", commands=commands
-        )
+        return self.commands_help_generator.generate_help(commands)

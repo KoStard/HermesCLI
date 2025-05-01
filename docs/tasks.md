@@ -15,7 +15,7 @@ Extract the core command processing logic from `hermes.interface.assistant.deep_
 - [X] 7. Specific command implementations (e.g., `AddCriteriaCommand`) remain in Deep Research but inherit from the new core `Command` class.
 - [X] 8. `CommandContext` remains within Deep Research and is passed to the `execute` method.
 - [x] 9. Existing command functionality within Deep Research remains unchanged from a user/LLM perspective (Needs testing).
-- [ ] 10. Help text generation/access mechanisms are part of the core package.
+- [x] 10. Help text generation/access mechanisms are part of the core package.
 - [ ] 11. Unit tests are created for the new core command package.
 - [x] 12. Unit tests for the Deep Research command integration are updated.
 

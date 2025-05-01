@@ -24,6 +24,7 @@ from hermes.interface.assistant.deep_research_assistant.llm_interface import LLM
 from hermes.interface.assistant.deep_research_assistant.engine.files.logger import DeepResearchLogger
 from hermes.interface.assistant.deep_research_assistant.engine.report.status_printer import StatusPrinter
 from hermes.interface.assistant.deep_research_assistant.engine.report.report_generator import ReportGenerator
+from hermes.interface.commands.help_generator import CommandHelpGenerator
 from hermes.interface.templates.template_manager import TemplateManager
 
 
@@ -332,8 +333,10 @@ class DeepResearchEngine:
         self.template_manager = TemplateManager(templates_dir)
         # Create the renderer registry
         self.renderer_registry: RendererRegistry = create_renderer_registry(self.template_manager)
+        
+        commands_help_generator = CommandHelpGenerator()
         # Update interface with the file system
-        self.interface = DeepResearcherInterface(self.file_system, self.template_manager)
+        self.interface = DeepResearcherInterface(self.file_system, self.template_manager, commands_help_generator)
 
     def is_awaiting_instruction(self) -> bool:
         """Check if the engine is waiting for a new instruction."""
