@@ -5,7 +5,6 @@ from typing import Any, Dict, Generator
 from hermes.event import (
     AssistantDoneEvent,
     Event,
-    FileEditEvent,
     MessageEvent,
 )
 from hermes.interface.commands import Command
@@ -15,6 +14,7 @@ from hermes.message import (
     TextMessage,
     TextualFileMessage,
     UrlMessage,
+    AssistantNotificationMessage
 )
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.filepath import prepare_filepath
@@ -22,6 +22,9 @@ from hermes.utils.tree_generator import TreeGenerator
 
 logger = logging.getLogger(__name__)
 
+
+import shutil
+from datetime import datetime
 
 class ChatAssistantCommandContext:
     """Context for executing ChatAssistant commands."""
@@ -39,6 +42,135 @@ class ChatAssistantCommandContext:
     def get_cwd(self) -> str:
         """Get the current working directory."""
         return self._cwd
+        
+    def create_assistant_notification(self, message: str, name: str = None) -> MessageEvent:
+        """Create a notification that's only visible to the assistant."""
+        return MessageEvent(AssistantNotificationMessage(text=message, name=name))
+        
+    def ensure_directory_exists(self, file_path: str) -> None:
+        """Create directory structure for the given file path if it doesn't exist."""
+        directory = os.path.dirname(file_path)
+        if directory and not os.path.exists(directory):
+            self.print_notification(f"Creating directory structure: {directory}")
+            os.makedirs(directory, exist_ok=True)
+    
+    def confirm_file_overwrite_with_user(self, file_path: str) -> bool:
+        """Ask user for confirmation before overwriting an existing file.
+        
+        Args:
+            file_path: The path to the file that would be overwritten
+            
+        Returns:
+            bool: True if user confirms overwrite, False otherwise
+        """
+        # Check if file exists first
+        if not os.path.exists(file_path):
+            return True  # No need for confirmation if file doesn't exist
+            
+        # Ask user for confirmation
+        self.print_notification(f"File '{file_path}' already exists. Overwrite? (y/n): ")
+        
+        while True:
+            try:
+                # Read directly from stdin to get immediate response
+                response = input().strip().lower()
+                
+                if response in ['y', 'yes']:
+                    return True
+                elif response in ['n', 'no']:
+                    self.print_notification(f"File overwrite declined for: {file_path}", CLIColors.YELLOW)
+                    return False
+                else:
+                    self.print_notification("Please enter 'y' or 'n': ")
+            except (KeyboardInterrupt, EOFError):
+                # If user interrupts (Ctrl+C), treat as "no"
+                self.print_notification("\nFile overwrite cancelled", CLIColors.YELLOW)
+                return False
+
+    def backup_existing_file(self, file_path: str) -> None:
+        """Backup the existing file to prevent possible data loss."""
+        if not os.path.exists(file_path):
+            return
+
+        # Create backup directory
+        backup_dir = os.path.join("/tmp", "hermes", "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+
+        # Generate backup filename with timestamp
+        filename = os.path.basename(file_path)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = os.path.join(backup_dir, f"{filename}_{timestamp}.bak")
+
+        # Create the backup
+        shutil.copy2(file_path, backup_path)
+        self.print_notification(f"Created backup at {backup_path}")
+        
+    def create_file(self, file_path: str, content: str) -> bool:
+        """Create a file with the given content. If file exists, create a backup first."""
+        try:
+            if os.path.exists(file_path):
+                self.backup_existing_file(file_path)
+                
+            self.ensure_directory_exists(file_path)
+            with open(file_path, "w", encoding="utf-8") as file:
+                file.write(content)
+            return True
+        except Exception as e:
+            self.print_notification(f"Error creating file {file_path}: {str(e)}", CLIColors.RED)
+            return False
+            
+    def append_file(self, file_path: str, content: str) -> bool:
+        """Append content to a file. Create if doesn't exist."""
+        try:
+            self.ensure_directory_exists(file_path)
+            mode = "a" if os.path.exists(file_path) else "w"
+            with open(file_path, mode, encoding="utf-8") as file:
+                file.write(content)
+            return True
+        except Exception as e:
+            self.print_notification(f"Error appending to file {file_path}: {str(e)}", CLIColors.RED)
+            return False
+            
+    def prepend_file(self, file_path: str, content: str) -> bool:
+        """Prepend content to a file. Create if doesn't exist."""
+        try:
+            self.ensure_directory_exists(file_path)
+            if os.path.exists(file_path):
+                # Read existing content
+                with open(file_path, "r", encoding="utf-8") as file:
+                    existing_content = file.read()
+                # Write new content followed by existing
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(content + existing_content)
+            else:
+                # If file doesn't exist, just create it with the content
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(content)
+            return True
+        except Exception as e:
+            self.print_notification(f"Error prepending to file {file_path}: {str(e)}", CLIColors.RED)
+            return False
+            
+    def update_markdown_section(self, file_path: str, section_path: list[str], new_content: str, submode: str) -> bool:
+        """Update a specific section in a markdown file."""
+        try:
+            from hermes.interface.markdown.document_updater import MarkdownDocumentUpdater
+            
+            self.ensure_directory_exists(file_path)
+            updater = MarkdownDocumentUpdater(file_path)
+            was_updated = updater.update_section(section_path, new_content, submode)
+            
+            if was_updated:
+                return True
+            else:
+                self.print_notification(
+                    f"Warning: Section {' > '.join(section_path)} not found in {file_path}. No changes made.",
+                    color=CLIColors.YELLOW,
+                )
+                return False
+        except Exception as e:
+            self.print_notification(f"Error updating markdown section: {str(e)}", CLIColors.RED)
+            return False
 
 
 class CreateFileCommand(Command[ChatAssistantCommandContext]):
@@ -67,8 +199,33 @@ If any of the folders in the filepath don't exist, the folders will be automatic
         file_path = prepare_filepath(remove_quotes(args["path"]))
         content = args["content"]
 
+        if os.path.exists(file_path):
+            # Check if user allows overwriting the file
+            if not context.confirm_file_overwrite_with_user(file_path):
+                yield context.create_assistant_notification(
+                    f"File creation aborted: File with same path existed and user declined to overwrite {file_path}",
+                    "File Creation Cancelled"
+                )
+                return
+            
+            yield context.create_assistant_notification(
+                f"File {file_path} already exists. Creating backup before overwriting.",
+                "File Creation"
+            )
+        
         context.print_notification(f"Creating file: {file_path}")
-        yield FileEditEvent(file_path=file_path, content=content, mode="create")
+        success = context.create_file(file_path, content)
+        
+        if success:
+            yield context.create_assistant_notification(
+                f"Successfully created file: {file_path}",
+                "File Creation"
+            )
+        else:
+            yield context.create_assistant_notification(
+                f"Failed to create file: {file_path}",
+                "File Creation Error"
+            )
 
 
 class AppendFileCommand(Command[ChatAssistantCommandContext]):
@@ -90,7 +247,18 @@ If the file doesn't exist yet, it will be created."""
         content = args["content"]
 
         context.print_notification(f"Appending to file: {file_path}")
-        yield FileEditEvent(file_path=file_path, content=content, mode="append")
+        success = context.append_file(file_path, content)
+        
+        if success:
+            yield context.create_assistant_notification(
+                f"Successfully appended to file: {file_path}",
+                "File Append"
+            )
+        else:
+            yield context.create_assistant_notification(
+                f"Failed to append to file: {file_path}",
+                "File Append Error"
+            )
 
 
 class PrependFileCommand(Command[ChatAssistantCommandContext]):
@@ -112,7 +280,18 @@ If the file doesn't exist yet, it will be created."""
         content = args["content"]
 
         context.print_notification(f"Prepending to file: {file_path}")
-        yield FileEditEvent(file_path=file_path, content=content, mode="prepend")
+        success = context.prepend_file(file_path, content)
+        
+        if success:
+            yield context.create_assistant_notification(
+                f"Successfully prepended to file: {file_path}",
+                "File Prepend"
+            )
+        else:
+            yield context.create_assistant_notification(
+                f"Failed to prepend to file: {file_path}",
+                "File Prepend Error"
+            )
 
 
 class MarkdownUpdateSectionCommand(Command[ChatAssistantCommandContext]):
@@ -176,13 +355,24 @@ Some more content here.
         content = args["content"]
 
         context.print_notification(f"Updating markdown section in: {file_path}")
-        yield FileEditEvent(
-            file_path=file_path,
-            content=content,
-            mode="update_markdown_section",
-            submode="update_markdown_section",
-            section_path=section_path
+        success = context.update_markdown_section(
+            file_path=file_path, 
+            section_path=section_path, 
+            new_content=content, 
+            submode="update_markdown_section"
         )
+        
+        action_name = "updated"
+        if success:
+            yield context.create_assistant_notification(
+                f"Successfully {action_name} markdown section '{' > '.join(section_path)}' in {file_path}",
+                "Markdown Update"
+            )
+        else:
+            yield context.create_assistant_notification(
+                f"Failed to {action_name} markdown section '{' > '.join(section_path)}' in {file_path}",
+                "Markdown Update Error"
+            )
 
 
 class MarkdownAppendSectionCommand(Command[ChatAssistantCommandContext]):
@@ -240,13 +430,24 @@ This command doesn't work on non-markdown files."""
         content = args["content"]
 
         context.print_notification(f"Appending to markdown section in: {file_path}")
-        yield FileEditEvent(
-            file_path=file_path,
-            content=content,
-            mode="update_markdown_section",
-            submode="append_markdown_section",
-            section_path=section_path
+        success = context.update_markdown_section(
+            file_path=file_path, 
+            section_path=section_path, 
+            new_content=content, 
+            submode="append_markdown_section"
         )
+        
+        action_name = "appended to" 
+        if success:
+            yield context.create_assistant_notification(
+                f"Successfully {action_name} markdown section '{' > '.join(section_path)}' in {file_path}",
+                "Markdown Append"
+            )
+        else:
+            yield context.create_assistant_notification(
+                f"Failed to {action_name} markdown section '{' > '.join(section_path)}' in {file_path}",
+                "Markdown Append Error"
+            )
 
 
 class TreeCommand(Command[ChatAssistantCommandContext]):
@@ -289,12 +490,17 @@ If no depth is specified, the complete tree will be generated."""
 
         try:
             tree_generator = TreeGenerator()
+            context.print_notification(f"Generating tree for: {path}")
             tree_string = tree_generator.generate_tree(path, depth)
             yield MessageEvent(LLMRunCommandOutput(text=tree_string, name="Directory Tree"))
+            yield context.create_assistant_notification(
+                f"Tree structure generated for path: {path}",
+                "Directory Tree"
+            )
         except Exception as e:
             error_msg = f"Error generating tree for {path}: {str(e)}"
             context.print_notification(error_msg, CLIColors.RED)
-            yield MessageEvent(LLMRunCommandOutput(text=error_msg, name="Directory Tree Error"))
+            yield context.create_assistant_notification(error_msg, "Directory Tree Error")
 
 
 class OpenFileCommand(Command[ChatAssistantCommandContext]):
@@ -323,21 +529,30 @@ If the file doesn't exist or cannot be read due to permissions, an error message
         if not os.path.exists(file_path):
             error_msg = f"Error: File not found at {file_path}"
             context.print_notification(error_msg, CLIColors.RED)
-            yield MessageEvent(LLMRunCommandOutput(text=error_msg, name="File Error"))
+            yield context.create_assistant_notification(error_msg, "File Error")
         elif not os.access(file_path, os.R_OK):
             error_msg = f"Error: Permission denied reading {file_path}"
             context.print_notification(error_msg, CLIColors.RED)
-            yield MessageEvent(LLMRunCommandOutput(text=error_msg, name="File Error"))
+            yield context.create_assistant_notification(error_msg, "File Error")
         else:
             context.print_notification(f"Reading file: {file_path}")
-            yield MessageEvent(
-                TextualFileMessage(
-                    author="user",
-                    text_filepath=file_path,
-                    textual_content=None,
-                    file_role="CommandOutput",
+            try:
+                yield MessageEvent(
+                    TextualFileMessage(
+                        author="user",
+                        text_filepath=file_path,
+                        textual_content=None,
+                        file_role="CommandOutput",
+                    )
                 )
-            )
+                yield context.create_assistant_notification(
+                    f"Successfully read file: {file_path}",
+                    "File Read"
+                )
+            except Exception as e:
+                error_msg = f"Error reading file {file_path}: {str(e)}"
+                context.print_notification(error_msg, CLIColors.RED)
+                yield context.create_assistant_notification(error_msg, "File Error")
 
 
 class DoneCommand(Command[ChatAssistantCommandContext]):
@@ -435,18 +650,17 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
         if not context.exa_client:
             error_msg = "Error: Exa client not configured"
             context.print_notification(error_msg, CLIColors.RED)
-            yield MessageEvent(LLMRunCommandOutput(text=error_msg, name="Web Search Error"))
+            yield context.create_assistant_notification(error_msg, "Web Search Error")
             return
 
         try:
+            context.print_notification(f"Performing web search for: {query}")
             results = context.exa_client.search(query, num_results=10)
 
             if not results:
-                yield MessageEvent(
-                    LLMRunCommandOutput(
-                        text=f"No results found for: {query}",
-                        name=f"Web Search: {query}",
-                    )
+                yield context.create_assistant_notification(
+                    f"No results found for: {query}",
+                    "Web Search Results"
                 )
                 return
 
@@ -471,10 +685,15 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
                 )
             )
 
+            yield context.create_assistant_notification(
+                f"Completed web search for: {query}",
+                "Web Search Complete"
+            )
+
         except Exception as e:
             error_msg = f"Error performing web search: {str(e)}"
             context.print_notification(error_msg, CLIColors.RED)
-            yield MessageEvent(LLMRunCommandOutput(text=error_msg, name="Web Search Error"))
+            yield context.create_assistant_notification(error_msg, "Web Search Error")
     
     def get_additional_information(self):
         return {
@@ -503,7 +722,7 @@ If Exa API is configured, it will be used to get enhanced content."""
         if not url:
             error_msg = "Error: No URL provided"
             context.print_notification(error_msg, CLIColors.RED)
-            yield MessageEvent(LLMRunCommandOutput(text=error_msg, name="URL Error"))
+            yield context.create_assistant_notification(error_msg, "URL Error")
             return
 
         context.print_notification(f"Opening URL: {url}")

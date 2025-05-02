@@ -673,6 +673,40 @@ class ThinkingAndResponseGeneratorMessage(Message):
         return msg
 
 
+@dataclass(init=False)
+class AssistantNotificationMessage(TextMessage):
+    """Class for notifications visible only to the assistant, not the user"""
+
+    def __init__(
+        self, *, text: str, timestamp: Optional[datetime] = None, name: Optional[str] = None
+    ):
+        super().__init__(
+            author="user", 
+            text=text, 
+            timestamp=timestamp, 
+            is_directly_entered=True,
+            name=name,
+            text_role="notification"
+        )
+
+    def get_content_for_user(self) -> str:
+        # Not visible to the user
+        return ""
+
+    def to_json(self) -> dict:
+        data = super().to_json()
+        data["type"] = "assistant_notification"
+        return data
+
+    @staticmethod
+    def from_json(json_data: dict) -> "AssistantNotificationMessage":
+        return AssistantNotificationMessage(
+            text=json_data["text"],
+            timestamp=datetime.fromisoformat(json_data["timestamp"]),
+            name=json_data.get("name"),
+        )
+
+
 DESERIALIZATION_KEYMAP = {
     "llm_run_command_output": LLMRunCommandOutput.from_json,
     "text": TextMessage.from_json,
@@ -686,4 +720,5 @@ DESERIALIZATION_KEYMAP = {
     "textual_file": TextualFileMessage.from_json,
     "url": UrlMessage.from_json,
     "thinking_and_response_generator": ThinkingAndResponseGeneratorMessage.from_json,
+    "assistant_notification": AssistantNotificationMessage.from_json,
 }

@@ -17,6 +17,7 @@ This document captures the development philosophy you should follow throughout a
 
 ## Task Management
 - Follow Kanban principles: Address tasks from `tasks.md` sequentially, one at a time. Focus on completing a task before starting the next.
+- When the user asks to create a task, add it to the tasks.md file.
 - Update task status in `tasks.md` upon completion or if blocked.
 - Ensure code changes directly address the acceptance criteria of the current task.
 - For complex tasks requiring planning or design, create draft documents (e.g., markdown files) within `docs/tasks/{task_id}/` for review or clarification before implementation.

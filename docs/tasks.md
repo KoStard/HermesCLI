@@ -82,3 +82,38 @@ Migrate the ChatAssistant interface to use the new Command model system created 
 
 **Rationale:**
 This migration standardizes command handling across the Hermes application, making it easier to maintain and extend. The new command model provides better error handling, validation, and help text generation. It also simplifies the addition of new commands in the future.
+
+## Task 4: Simplify Command Processing by Moving Execution to Control Panel
+
+**Status:** Completed
+
+**Description:**
+Simplify the command processing flow by moving execution logic from the engine to the control panel. Currently, the control panel parses commands and creates Events that are sent to the engine, which then performs the actual operations. We want to eliminate this indirection by having the control panel directly execute commands and provide feedback to the assistant, without going through the engine.
+
+**Acceptance Criteria:**
+- [ ] 1. Move execution logic from the engine to the control panel for all assistant commands. Keep the user control panel as is for now.
+- [ ] 2. Implement a notification system specifically for the assistant that doesn't appear in the user interface. These should be saved in the history, so a new type of message.
+- [ ] 3. Maintain all existing functionality and command capabilities
+- [ ] 4. Ensure proper error handling at the control panel level
+- [ ] 5. Maintain file path security and validation
+- [ ] 6. Preserve file backup mechanisms
+- [ ] 7. Commands that affect the engine state can continue using events.
+
+**Risks and Considerations:**
+1. **Separation of Concerns**: Moving execution to the control panel blurs the line between UI and business logic
+2. **Error Handling**: Need robust error handling directly in the control panel
+3. **File System Operations**: Need to replicate file backup mechanisms and security checks
+4. **Engine State Synchronization**: Some commands affect the engine's state
+5. **History Tracking**: Need to ensure bypassing the engine doesn't affect history recording
+6. **Permission Checks**: Need to replicate any engine-level permission validations
+7. **Testing Impact**: Changes may affect existing tests
+
+**Questions for Clarification:**
+1. Should we maintain any event emission for tracking/history purposes? yes
+2. How should we handle commands that change system state (Done, AskTheUser)? still use events
+3. Is there any existing notification system we can leverage for assistant-only notifications? yes, create a new class (or reuse) of messages that are visible only to the assistant
+4. Are there engine-level permissions or validations that need to be maintained? no
+5. Should we create a common utility library for file operations that both the engine and control panel can use? not yet
+
+**Rationale:**
+This change simplifies the architecture by removing an unnecessary layer of indirection. It should make the code more maintainable, easier to understand, and potentially more performant by eliminating the event passing overhead.

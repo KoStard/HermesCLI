@@ -70,19 +70,22 @@ class UserInterface(Interface):
 
             if isinstance(message, TextMessage):
                 did_author_change = message.author != last_author
-                last_author = message.author
+                content_for_user = message.get_content_for_user()
+                if not content_for_user:
+                    continue
                 if did_author_change:
+                    last_author = message.author
                     self.print_author(message.author)
                 if self.markdown_highlighter:
                     self.markdown_highlighter.process_markdown(
-                        iter(message.get_content_for_user())
+                        iter(content_for_user)
                     )
                 else:
-                    print(message.get_content_for_user())
+                    print(content_for_user)
             elif isinstance(message, TextGeneratorMessage):
                 did_author_change = message.author != last_author
-                last_author = message.author
                 if did_author_change:
+                    last_author = message.author
                     self.print_author(message.author)
                 if self.markdown_highlighter:
                     self.markdown_highlighter.process_markdown(
