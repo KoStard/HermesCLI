@@ -64,7 +64,7 @@ class ChatAssistantControlPanel(ControlPanel):
         # Add any extra commands provided
         if extra_commands:
             for command in extra_commands:
-                self._register_command(command)
+                self.command_registry.register(command)
 
         # Map of command ID to command status override
         # Possible status values: ON, OFF, AGENT_ONLY
@@ -129,22 +129,6 @@ class ChatAssistantControlPanel(ControlPanel):
 
         self._add_help_content(
             textwrap.dedent(f"""
-            If you are specifying a filepath that has spaces, you should enclose the path in double quotes. For example:
-            <<< create_file
-            ///path
-            "path with spaces/file.txt"
-            ///content
-            File content goes here
-            >>>
-            
-            While if you are specifying a filepath that doesn't have spaces, you can skip the quotes. For example:
-            <<< create_file
-            ///path
-            path_without_spaces/file.txt
-            ///content
-            File content goes here
-            >>>
-            
             **CURRENT WORKING DIRECTORY:** {os.getcwd()}
             All relative paths will be resolved from this location.
             """)
@@ -239,9 +223,9 @@ class ChatAssistantControlPanel(ControlPanel):
             # 2. Agent mode requirements (for agent commands)
             is_enabled = False
             
-            is_agent_command = name in [
-                "done", "ask_the_user", "web_search", "open_url"
-            ]
+            additional_information = command.get_additional_information()
+            
+            is_agent_command = additional_information.get('is_agent_only')
             
             if command_status_override == "OFF":
                 is_enabled = False

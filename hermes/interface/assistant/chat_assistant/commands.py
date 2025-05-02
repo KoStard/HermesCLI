@@ -141,7 +141,19 @@ How the section path works:
 
 The section path must exactly match the headers in the document.
 Sections are identified by their markdown headers (##, ###, etc).
-This command doesn't work on non-markdown files."""
+This command doesn't work on non-markdown files.
+
+Examples:
+<<< markdown_update_section
+///path
+path/to/My document.md
+///section_path
+Introduction > Overview
+///content
+This is some for the Overview section under Introduction.
+Some more content here.
+>>>
+"""
         )
         self.add_section("path", True, "Path to the markdown file")
         self.add_section("section_path", True, "Section path (e.g., 'Header 1 > Subheader')")
@@ -358,6 +370,11 @@ Make sure you have finished and read through all the command outputs before mark
                 name="Task Completion Report",
             )
         )
+    
+    def get_additional_information(self):
+        return {
+            "is_agent_only": True
+        }
 
 
 class AskTheUserCommand(Command[ChatAssistantCommandContext]):
@@ -389,6 +406,11 @@ Running this command will end your current turn and wait for the user's response
                 name="Task Related Question",
             )
         )
+    
+    def get_additional_information(self):
+        return {
+            "is_agent_only": True
+        }
 
 
 class WebSearchCommand(Command[ChatAssistantCommandContext]):
@@ -453,6 +475,11 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
             error_msg = f"Error performing web search: {str(e)}"
             context.print_notification(error_msg, CLIColors.RED)
             yield MessageEvent(LLMRunCommandOutput(text=error_msg, name="Web Search Error"))
+    
+    def get_additional_information(self):
+        return {
+            "is_agent_only": True
+        }
 
 
 class OpenUrlCommand(Command[ChatAssistantCommandContext]):
@@ -481,3 +508,8 @@ If Exa API is configured, it will be used to get enhanced content."""
 
         context.print_notification(f"Opening URL: {url}")
         yield MessageEvent(UrlMessage(author="user", url=url))
+    
+    def get_additional_information(self):
+        return {
+            "is_agent_only": True
+        }

@@ -110,6 +110,13 @@ class Command(ABC, Generic[ContextType]):
         Default is False.
         """
         return False
+    
+    def get_additional_information(self) -> Dict[Any, Any]:
+        """
+        Returns a dictionary with additional information about the command.
+        Default is an empty dictionary.
+        """
+        return {}
 
 
 class CommandRegistry:
