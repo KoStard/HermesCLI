@@ -463,7 +463,7 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
 
             yield MessageEvent(
                 TextualFileMessage(
-                    author="assistant",
+                    author="user",
                     text_filepath=None,
                     textual_content="\n".join(result_text),
                     file_role="WebSearchResults",

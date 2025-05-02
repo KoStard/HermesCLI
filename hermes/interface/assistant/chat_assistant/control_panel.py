@@ -86,7 +86,13 @@ class ChatAssistantControlPanel(ControlPanel):
             The command syntax should be used literally, symbol-by-symbol correctly.
             The commands will be parsed and executed only after you send the full message. You'll receive the responses in the next message.
             
-            The command syntax uses a block format with `<<<` and `>>>` delimiters:
+            Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break. The commands should start from an empty line, from first symbol in the line. Don't put anything else in the lines of the commands.
+            
+            You write down the commands you want to send in this interface.
+            
+            ⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses, then consider the next steps.
+            
+            Notice that we use <<< for opening the commands, >>> for closing, and /// for arguments. Make sure you use the exact syntax.
 
             ```
             <<< command_name
@@ -121,8 +127,7 @@ class ChatAssistantControlPanel(ControlPanel):
             
             Note that below, you'll have only the "direct commands" listed, but if you are making an example, you can use the example syntax.
             
-            **Getting the output of the commands**
-            You'll see the results of the command after you send your final message.
+            In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". If the system detects this code anywhere in your response it will halt the system and the admin will check it.
             """
             )
         )
@@ -205,6 +210,31 @@ class ChatAssistantControlPanel(ControlPanel):
             
             ⚠️ IMPORTANT: Commands are executed ONLY AFTER your complete message is sent.
             Do NOT expect immediate results while writing your message.
+            
+            ### Commands FAQ
+            
+            #### Q: What to do if I don't see any results
+            
+            A: If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for the engine to process the whole message. Just finish your message and wait.
+            The concept of sending a full message for processing and receiving a consolidated response requires a shift from interactive interfaces but allows for batch processing of commands
+            
+            #### Q: How many commands to send at once?
+            
+            A: If you already know that you'll need multiple pieces of information, and getting the results of part of them won't influence the need for others, send a command for all of them, don't spend another message/response cycle. Commands are parallelizable! You can go even with 20-30 commands without worry, you'll then receive all of their outputs in the response.
+            
+            #### Q: How to input same argument multiple times for a command?
+            
+            A: You need to put `///section_name` each time, example:
+            <<< command_with_multiple_inputs
+            ///title
+            title 1
+            ///title
+            title 2
+            >>>
+            
+            #### Q: When to finish problem?
+            
+            A: You should always verify the results (not details, but the completeness) before finishing the task.
             """
             ),
             is_agent_only=True,
@@ -296,7 +326,7 @@ class ChatAssistantControlPanel(ControlPanel):
                         self.notifications_printer.print_notification(error_msg, CLIColors.RED)
                         yield MessageEvent(
                             TextMessage(
-                                author="assistant",
+                                author="user",
                                 text=error_msg,
                                 text_role="command_failure",
                             )
@@ -310,7 +340,7 @@ class ChatAssistantControlPanel(ControlPanel):
                     )
                     yield MessageEvent(
                         TextMessage(
-                            author="assistant", 
+                            author="user", 
                             text=f"Command parsing error:\n{error_report}",
                             text_role="command_failure"
                         )
