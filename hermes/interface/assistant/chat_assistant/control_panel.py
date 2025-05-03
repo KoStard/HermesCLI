@@ -289,20 +289,23 @@ class ChatAssistantControlPanel(ControlPanel):
             )
             return
             
-        # Extract the raw text content from the message
-        content_lines = []
-        for line in self._lines_from_message(message):
-            yield MessageEvent(
-                TextMessage(
-                    author="assistant",
-                    text=line.rstrip('\n'),
-                )
+        
+        accumulated_content = ""
+        def _yield_generator_and_accumulate():
+            for content in message.get_content_for_user():
+                yield content
+                nonlocal accumulated_content
+                accumulated_content += content
+        
+        yield MessageEvent(
+            TextGeneratorMessage(
+                author="assistant",
+                text_generator=_yield_generator_and_accumulate(),
             )
-            content_lines.append(line)
-        content = "\n".join(content_lines)
+        )
             
         # Parse commands using the new command parser
-        parse_results = self.command_parser.parse_text(content)
+        parse_results = self.command_parser.parse_text(accumulated_content)
         
         # Sort parse_results by their position in the text
         sorted_results = sorted(
