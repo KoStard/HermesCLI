@@ -1,4 +1,3 @@
-from asyncio import Event
 import json
 import os
 import socket
@@ -7,6 +6,7 @@ import platform
 import sys
 from typing import Generator
 
+from hermes.event import Event
 from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,

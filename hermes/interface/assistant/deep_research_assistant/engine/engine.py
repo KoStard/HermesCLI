@@ -3,11 +3,13 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Type
 
 # Import core command components from the new location
-from hermes.interface.commands import (
+from hermes.interface.commands.command import (
     Command,
     CommandRegistry,
+)
+from hermes.interface.commands.command_parser import (
     CommandParser,
-    ParseResult,
+    ParseResult
 )
 
 # Import the specific context for Deep Research

@@ -7,8 +7,8 @@ from hermes.event import (
     Event,
     MessageEvent,
 )
-from hermes.interface.commands import Command
-from hermes.interface.helpers import CLIColors
+from hermes.interface.commands.command import Command
+from hermes.interface.helpers.cli_notifications import CLIColors
 from hermes.message import (
     LLMRunCommandOutput,
     TextMessage,

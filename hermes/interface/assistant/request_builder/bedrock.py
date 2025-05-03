@@ -1,4 +1,3 @@
-import requests
 from typing import Optional
 from hermes.interface.assistant.request_builder.all_messages_aggregator import (
     AllMessagesAggregator,
@@ -148,6 +147,7 @@ class BedrockRequestBuilder(RequestBuilder):
         return file_extension
 
     def handle_image_url_message(self, url: str, author: str, message_id: int):
+        import requests
         image_content = requests.get(url).content
         self._add_content(
             {

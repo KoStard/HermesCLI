@@ -1,8 +1,6 @@
 import time
 from typing import Generator
 
-from botocore.config import Config
-from botocore.exceptions import ClientError
 from hermes.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
     ThinkingLLMResponse,
@@ -17,11 +15,13 @@ from .base import ChatModel
 
 class BedrockModel(ChatModel):
     def initialize(self):
+        from botocore.config import Config
+        import boto3
+
         self.request_builder = BedrockRequestBuilder(
             self.model_tag, self.notifications_printer, SimplePromptBuilderFactory()
         )
 
-        import boto3
 
         aws_region = self.config.get("aws_region")
         aws_profile_name = self.config.get("aws_profile_name")
@@ -65,6 +65,7 @@ class BedrockModel(ChatModel):
                 break
 
     def _call_and_retry_if_needed(self, request, tries=1):
+        from botocore.exceptions import ClientError
         try:
             response = self.client.converse_stream(**request)
         except ClientError as e:

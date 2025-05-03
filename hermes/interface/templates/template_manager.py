@@ -1,8 +1,11 @@
 from pathlib import Path
 from typing import Any, Optional
 
-from mako.lookup import TemplateLookup
-from mako.template import Template
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mako.template import Template
+    from mako.lookup import TemplateLookup
 
 
 class TemplateManager:
@@ -16,13 +19,21 @@ class TemplateManager:
             template_dir: Path to directory containing template files
         """
         self.template_dir = Path(template_dir)
-        self.lookup = TemplateLookup(
-            directories=[str(self.template_dir)],
-            module_directory="/tmp/mako_modules",  # For template caching
-            input_encoding="utf-8",
-            output_encoding="utf-8",
-            encoding_errors="replace",
-        )
+        self._lookup = None
+    
+    @property
+    def lookup(self) -> "TemplateLookup":
+        from mako.lookup import TemplateLookup
+        if self._lookup is None:
+            self._lookup = TemplateLookup(
+                directories=[str(self.template_dir)],
+                module_directory="/tmp/mako_modules",  # For template caching
+                input_encoding="utf-8",
+                output_encoding="utf-8",
+                encoding_errors="replace",
+            )
+        return self._lookup
+
 
     def render_template(self, template_name: str, **context: Any) -> str:
         """
@@ -43,7 +54,7 @@ class TemplateManager:
             print(f"Error rendering template {template_name}: {str(e)}")
             raise
 
-    def get_template(self, template_name: str) -> Optional[Template]:
+    def get_template(self, template_name: str) -> Optional["Template"]:
         """
         Get a template object for the given template name.
 

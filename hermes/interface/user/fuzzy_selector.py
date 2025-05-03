@@ -1,9 +1,6 @@
 import os
 from pathlib import Path
 from typing import List
-from InquirerPy import prompt
-from InquirerPy.base.control import Choice
-from InquirerPy.separator import Separator
 
 
 class FuzzyFilesSelector:
@@ -47,6 +44,7 @@ class FuzzyFilesSelector:
 
         # Show the prompt and get the selection
         try:
+            from InquirerPy import prompt
             result = prompt(questions)
 
             # Return the selected files as absolute paths

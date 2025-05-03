@@ -6,7 +6,7 @@ from pathlib import Path
 from hermes.interface.assistant.chat_models.base import ChatModel
 
 # Import core command components
-from hermes.interface.commands import CommandRegistry, Command
+from hermes.interface.commands.command import CommandRegistry, Command
 
 # Import Deep Research specific components
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (

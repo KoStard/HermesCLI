@@ -3,9 +3,7 @@ from typing import Dict, Type, TYPE_CHECKING
 if TYPE_CHECKING:
     # Import base classes for type hinting
     from .base import DynamicSectionData, DynamicSectionRenderer
-    from hermes.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
-        TemplateManager,
-    )
+    from hermes.interface.templates.template_manager import TemplateManager
 
 
 # Type alias for the registry

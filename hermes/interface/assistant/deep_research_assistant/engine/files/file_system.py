@@ -3,7 +3,6 @@ import json
 import os
 import re
 import threading
-import yaml
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
