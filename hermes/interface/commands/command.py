@@ -77,7 +77,7 @@ class Command(ABC, Generic[ContextType]):
             args: A dictionary containing the parsed arguments for the command,
                   where keys are section names and values are the section content
                   (or a list of contents if allow_multiple=True).
-        
+
         Returns:
             Generator of events produced by command execution.
         """
@@ -110,7 +110,7 @@ class Command(ABC, Generic[ContextType]):
         Default is False.
         """
         return False
-    
+
     def get_additional_information(self) -> Dict[Any, Any]:
         """
         Returns a dictionary with additional information about the command.

@@ -56,14 +56,12 @@ def get_extension_commands(
     return []
 
 
-def load_extensions() -> (
-    tuple[
-        List[ControlPanelCommand],
-        List[ControlPanelCommand],
-        List[callable],
-        List[Type[Command]],
-    ]
-):
+def load_extensions() -> tuple[
+    List[ControlPanelCommand],
+    List[ControlPanelCommand],
+    List[callable],
+    List[Type[Command]],
+]:
     """
     Load all extensions and return their commands and utils
     Returns: (user_commands, llm_commands, utils_builders, deep_research_commands)

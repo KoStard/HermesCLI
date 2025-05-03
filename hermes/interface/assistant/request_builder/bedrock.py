@@ -148,6 +148,7 @@ class BedrockRequestBuilder(RequestBuilder):
 
     def handle_image_url_message(self, url: str, author: str, message_id: int):
         import requests
+
         image_content = requests.get(url).content
         self._add_content(
             {

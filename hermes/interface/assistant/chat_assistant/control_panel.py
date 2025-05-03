@@ -46,16 +46,16 @@ class ChatAssistantControlPanel(ControlPanel):
         self.exa_client = exa_client
         self._agent_mode = False
         self._commands_parsing_status = True
-        
+
         # Create a command context that will be passed to commands during execution
         self.command_context = ChatAssistantCommandContext(self)
-        
+
         # Get the global command registry
         self.command_registry = CommandRegistry()
-        
+
         # Create the command parser
         self.command_parser = CommandParser()
-        
+
         # Add help content
         self._add_initial_help_content()
 
@@ -148,19 +148,19 @@ class ChatAssistantControlPanel(ControlPanel):
             AppendFileCommand(),
             PrependFileCommand(),
         ]
-        
+
         # Markdown commands
         markdown_commands = [
             MarkdownUpdateSectionCommand(),
             MarkdownAppendSectionCommand(),
         ]
-        
+
         # Utility commands
         utility_commands = [
             TreeCommand(),
             OpenFileCommand(),
         ]
-        
+
         # Agent commands
         agent_commands = [
             DoneCommand(),
@@ -168,11 +168,13 @@ class ChatAssistantControlPanel(ControlPanel):
             WebSearchCommand(),
             OpenUrlCommand(),
         ]
-        
+
         # Register all commands
-        for command in file_commands + markdown_commands + utility_commands + agent_commands:
+        for command in (
+            file_commands + markdown_commands + utility_commands + agent_commands
+        ):
             self.command_registry.register(command)
-            
+
         # Add help content for agent commands
         self._add_help_content(
             textwrap.dedent(
@@ -248,16 +250,16 @@ class ChatAssistantControlPanel(ControlPanel):
         commands = self.command_registry.get_all_commands()
         for name, command in sorted(commands.items()):
             command_status_override = self._command_status_overrides.get(name)
-            
+
             # Determine if command should be displayed based on:
             # 1. Status override if present
             # 2. Agent mode requirements (for agent commands)
             is_enabled = False
-            
+
             additional_information = command.get_additional_information()
-            
-            is_agent_command = additional_information.get('is_agent_only')
-            
+
+            is_agent_command = additional_information.get("is_agent_only")
+
             if command_status_override == "OFF":
                 is_enabled = False
             elif command_status_override == "ON":
@@ -272,7 +274,7 @@ class ChatAssistantControlPanel(ControlPanel):
 
             if is_enabled:
                 content.append(self._render_command_help(name, command))
-        
+
         return "\n".join(content)
 
     def break_down_and_execute_message(
@@ -288,31 +290,31 @@ class ChatAssistantControlPanel(ControlPanel):
                 )
             )
             return
-            
-        
+
         accumulated_content = ""
+
         def _yield_generator_and_accumulate():
             for content in message.get_content_for_user():
                 yield content
                 nonlocal accumulated_content
                 accumulated_content += content
-        
+
         yield MessageEvent(
             TextGeneratorMessage(
                 author="assistant",
                 text_generator=_yield_generator_and_accumulate(),
             )
         )
-            
+
         # Parse commands using the new command parser
         parse_results = self.command_parser.parse_text(accumulated_content)
-        
+
         # Sort parse_results by their position in the text
         sorted_results = sorted(
             [r for r in parse_results if r.block_start_line_index is not None],
-            key=lambda r: r.block_start_line_index
+            key=lambda r: r.block_start_line_index,
         )
-        
+
         for result in sorted_results:
             # Check if this is a valid command
             if result.command_name and not result.errors:
@@ -327,7 +329,9 @@ class ChatAssistantControlPanel(ControlPanel):
                             yield event
                     except Exception as e:
                         error_msg = f"Command '{result.command_name}' failed: {str(e)}"
-                        self.notifications_printer.print_notification(error_msg, CLIColors.RED)
+                        self.notifications_printer.print_notification(
+                            error_msg, CLIColors.RED
+                        )
                         yield MessageEvent(
                             TextMessage(
                                 author="user",
@@ -344,9 +348,9 @@ class ChatAssistantControlPanel(ControlPanel):
                     )
                     yield MessageEvent(
                         TextMessage(
-                            author="user", 
+                            author="user",
                             text=f"Command parsing error:\n{error_report}",
-                            text_role="command_failure"
+                            text_role="command_failure",
                         )
                     )
 
@@ -385,7 +389,7 @@ class ChatAssistantControlPanel(ControlPanel):
         """
         return self._command_status_overrides.copy()
 
-# All command-specific parsing methods are now handled by Command implementations
+    # All command-specific parsing methods are now handled by Command implementations
 
     def enable_agent_mode(self):
         self._agent_mode = True
@@ -400,5 +404,6 @@ class ChatAssistantControlPanel(ControlPanel):
     def _render_command_help(self, name: str, command: Command) -> str:
         """Render help for a specific command."""
         from hermes.interface.commands.help_generator import CommandHelpGenerator
+
         help_generator = CommandHelpGenerator()
         return help_generator.generate_help({name: command})

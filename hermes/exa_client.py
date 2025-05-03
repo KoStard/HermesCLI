@@ -24,6 +24,7 @@ class ExaSearchResult:
 class ExaClient:
     def __init__(self, api_key: str):
         from exa_py import Exa
+
         self.client = Exa(api_key=api_key)
 
     def get_contents(self, url: str, text: bool = True) -> List[ExaContentResult]:
