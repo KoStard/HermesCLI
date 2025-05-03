@@ -4,7 +4,8 @@ import textwrap
 from typing import Generator
 
 from hermes.event import Event, MessageEvent
-from hermes.interface.commands import Command, CommandParser, CommandRegistry
+from hermes.interface.commands.command import Command, CommandRegistry
+from hermes.interface.commands.command_parser import CommandParser
 from hermes.interface.control_panel.base_control_panel import ControlPanel
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.interface.helpers.terminal_coloring import CLIColors
@@ -395,6 +396,6 @@ class ChatAssistantControlPanel(ControlPanel):
 
     def _render_command_help(self, name: str, command: Command) -> str:
         """Render help for a specific command."""
-        from hermes.interface.commands import CommandHelpGenerator
+        from hermes.interface.commands.help_generator import CommandHelpGenerator
         help_generator = CommandHelpGenerator()
         return help_generator.generate_help({name: command})

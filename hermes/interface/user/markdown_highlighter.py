@@ -1,14 +1,10 @@
-import mistune
-from mistune.renderers.markdown import MarkdownRenderer
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name, MarkdownLexer
-from pygments.formatters import Terminal256Formatter
 from typing import Generator
-import pygments
 
 
 class MarkdownHighlighter:
     def __init__(self):
+        import mistune
+        from mistune.renderers.markdown import MarkdownRenderer
         self.renderer = MarkdownRenderer()
         self.state = mistune.BlockState()
 
@@ -17,6 +13,8 @@ class MarkdownHighlighter:
         return rendered
 
     def get_lexer(self, element):
+        from pygments.lexers import get_lexer_by_name, MarkdownLexer
+        import pygments
         info = element.get("attrs", {}).get("info", "")
         if info:
             try:
@@ -27,6 +25,8 @@ class MarkdownHighlighter:
             return MarkdownLexer()
 
     def print_markdown(self, text, lexer):
+        from pygments.formatters import Terminal256Formatter
+        from pygments import highlight
         highlighted = highlight(text, lexer, Terminal256Formatter())
         print(highlighted, end="")
 
@@ -43,6 +43,7 @@ class MarkdownHighlighter:
             yield buffer
 
     def process_markdown(self, markdown_generator: Generator[str, None, None]):
+        import mistune
         ast = mistune.create_markdown(renderer="ast")
 
         def _iter_render(tokens, state):

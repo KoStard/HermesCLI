@@ -1,5 +1,4 @@
 from typing import Generator
-from google.genai.types import Tool, GenerateContentConfig, GoogleSearch, Part, Content
 
 from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
@@ -12,18 +11,12 @@ from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.gemini2 import Gemini2RequestBuilder
 from .base import ChatModel
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
-from google.genai.errors import ClientError
 
 
 class Gemini2Model(ChatModel):
     def initialize(self):
         from google import genai
+        from google.genai.types import Tool, GoogleSearch
 
         api_key = self.config.get("api_key")
         if not api_key:
@@ -47,6 +40,15 @@ class Gemini2Model(ChatModel):
         return "thinking" in self.model_tag
 
     def send_request(self, request: any) -> Generator[str, None, None]:
+        from google.genai.types import GenerateContentConfig
+        from google.genai.errors import ClientError
+        from tenacity import (
+            retry,
+            stop_after_attempt,
+            wait_exponential,
+            retry_if_exception_type,
+        )
+        
         @retry(
             stop=stop_after_attempt(5),
             wait=wait_exponential(multiplier=1, max=60),

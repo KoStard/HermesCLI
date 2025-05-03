@@ -3,11 +3,10 @@ History keeps track of the messages in the conversation.
 """
 
 import json
-from asyncio import Event
 from dataclasses import dataclass
 from typing import List
 
-from hermes.event import MessageEvent, RawContentForHistoryEvent
+from hermes.event import MessageEvent, RawContentForHistoryEvent, Event
 from hermes.message import (
     Message,
     DESERIALIZATION_KEYMAP,

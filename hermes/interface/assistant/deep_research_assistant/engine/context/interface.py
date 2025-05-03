@@ -10,7 +10,7 @@ from hermes.interface.assistant.deep_research_assistant.engine.commands.commands
     register_deep_research_commands,
 )
 from hermes.interface.commands.help_generator import CommandHelpGenerator
-from hermes.interface.templates import TemplateManager
+from hermes.interface.templates.template_manager import TemplateManager
 from hermes.interface.commands.command import CommandRegistry
 
 # Import base data class and specific section data classes/factories from their new locations

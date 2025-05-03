@@ -7,12 +7,9 @@ from hermes.history import History
 from hermes.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
 )
-from hermes.interface.assistant.deep_research_assistant.interface import (
-    DeepResearchAssistantInterface,
-)
 from hermes.interface.assistant.model_factory import ModelFactory
 from hermes.interface.user.command_completer import CommandCompleter
-from hermes.interface.control_panel import CommandsLister
+from hermes.interface.control_panel.commands_lister import CommandsLister
 from hermes.interface.debug.debug_interface import DebugInterface
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -25,7 +22,6 @@ from hermes.participants import DebugParticipant, LLMParticipant, UserParticipan
 import configparser
 import os
 import sys
-from pathlib import Path
 from hermes.config_utils import get_config_path
 
 
@@ -251,6 +247,9 @@ def main():
         elif is_deep_research_mode:
             # Use the Deep Research Assistant interface with the specified path
             research_path = os.path.abspath(cli_args.deep_research)
+            from hermes.interface.assistant.deep_research_assistant.interface import (
+                DeepResearchAssistantInterface,
+            )
             deep_research_interface = DeepResearchAssistantInterface(
                 model=model,
                 research_path=research_path,

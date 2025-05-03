@@ -20,12 +20,12 @@ from hermes.event import (
     NotificationEvent,
     RawContentForHistoryEvent,
 )
-from hermes.interface.helpers import (
+from hermes.interface.helpers.cli_notifications import (
     CLINotificationsPrinter,
     CLIColors,
     colorize_text,
-    print_colored_text,
 )
+from hermes.interface.helpers.terminal_coloring import print_colored_text
 from hermes.interface.user.command_completer import CommandCompleter
 
 

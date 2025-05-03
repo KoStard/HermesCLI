@@ -1,4 +1,3 @@
-from asyncio import Event
 import os
 import logging
 from typing import Generator
@@ -17,6 +16,7 @@ from hermes.event import (
     AgentModeEvent,
     LLMCommandsExecutionEvent,
     ThinkingLevelEvent,
+    Event
 )
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.interface.helpers.peekable_generator import PeekableGenerator
