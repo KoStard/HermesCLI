@@ -8,8 +8,7 @@ from dataclasses import dataclass
 from typing import Callable, Generator, Optional, List
 
 from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
-from ..helpers.peekable_generator import PeekableGenerator
-from hermes.message import Message, TextMessage, TextGeneratorMessage
+from hermes.message import Message
 from hermes.event import Event
 
 

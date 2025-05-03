@@ -11,7 +11,6 @@ The mock uses STDOUT/STDIN to simulate the interaction between the system and th
 """
 
 import os
-import sys
 import argparse
 from pathlib import Path
 from .mock_app import DeepResearchMockApp
@@ -66,7 +65,7 @@ def main():
         app.start()
     except KeyboardInterrupt:
         print("\nExiting application...")
-    except Exception as e:
+    except Exception:
         raise
 
 

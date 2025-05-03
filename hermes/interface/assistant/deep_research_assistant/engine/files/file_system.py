@@ -1,9 +1,7 @@
 import hashlib
-import json
 import os
 import re
 import threading
-from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple

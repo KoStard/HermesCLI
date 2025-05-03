@@ -1,6 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple
 
 # Import core command components from the new location
 from hermes.interface.commands.command import (
@@ -24,7 +24,6 @@ from hermes.interface.assistant.deep_research_assistant.engine.context.history i
     ChatHistory,
     AutoReply,
     ChatMessage,
-    HistoryBlock,
 )
 from hermes.interface.assistant.deep_research_assistant.engine.context.interface import (
     DeepResearcherInterface,
@@ -599,14 +598,14 @@ class DeepResearchEngine:
             if self.is_budget_exhausted():
                 if not self.budget_warning_shown:
                     self.budget_warning_shown = True
-                    print(f"\n===== BUDGET ALERT =====")
+                    print("\n===== BUDGET ALERT =====")
                     print(f"Budget of {self.budget} message cycles has been exhausted.")
                     print(f"Current usage: {self.message_cycles_used} cycles")
 
                     # Add a buffer of 10 cycles
                     self.budget += 10
                     print(f"Adding a buffer of 10 cycles. New budget: {self.budget}")
-                    print(f"The assistant will be notified to wrap up quickly.")
+                    print("The assistant will be notified to wrap up quickly.")
 
                     # Add a warning message to the current node's auto reply
                     if self.current_node:
@@ -623,7 +622,7 @@ class DeepResearchEngine:
                         )
                 elif self.message_cycles_used >= self.budget:
                     # Buffer is also exhausted
-                    print(f"\n===== BUDGET COMPLETELY EXHAUSTED =====")
+                    print("\n===== BUDGET COMPLETELY EXHAUSTED =====")
                     print(f"Initial budget: {self.initial_budget} cycles")
                     print(
                         f"Current usage: {self.message_cycles_used} cycles (including buffer)"
@@ -672,7 +671,7 @@ class DeepResearchEngine:
                 and not self.budget_warning_shown
             ):
                 self.budget_warning_shown = True
-                print(f"\n===== BUDGET WARNING =====")
+                print("\n===== BUDGET WARNING =====")
                 print(
                     f"Approaching budget limit. {self.get_remaining_budget()} cycles remaining out of {self.budget}."
                 )

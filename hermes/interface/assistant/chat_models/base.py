@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Generator
 
-from hermes.interface.assistant.prompt_builder.base import PromptBuilder
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 

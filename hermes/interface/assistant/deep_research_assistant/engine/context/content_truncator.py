@@ -15,7 +15,7 @@ class ContentTruncator:
         if max_length is None or len(content) <= max_length:
             return content
 
-        if type(max_length) != int:
+        if type(max_length) is int:
             max_length = int(max_length)
 
         # Find the last line break before max_length

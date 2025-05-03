@@ -408,7 +408,6 @@ class OpenArtifactCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Execute the command to open an artifact"""
         artifact_name = args.get("name", "")
-        reason = args.get("reason", "")
 
         # Find the artifact in the current node or its ancestors
         current_node = context.current_node
@@ -476,7 +475,6 @@ class HalfCloseArtifactCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: Dict[str, Any]) -> None:
         """Execute the command to half-close an artifact"""
         artifact_name = args.get("name", "")
-        reason = args.get("reason", "")
 
         # Find the artifact in the current node or its ancestors
         current_node = context.current_node

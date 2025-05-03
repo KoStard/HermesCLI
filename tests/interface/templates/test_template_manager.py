@@ -1,7 +1,4 @@
-import os
 import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 from hermes.interface.templates.template_manager import TemplateManager
 

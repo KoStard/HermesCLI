@@ -6,7 +6,6 @@
 # Use module import logic to import the extension
 
 import importlib.util
-import importlib.util
 import sys
 from pathlib import Path
 from typing import List, Optional, Type
