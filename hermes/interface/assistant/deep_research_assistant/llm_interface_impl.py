@@ -1,19 +1,19 @@
+import logging
+from collections.abc import Generator
 from pathlib import Path
-from typing import Dict, Generator, List
 
 from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
 )
 from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.deep_research_assistant.llm_interface import (
-    LLMInterface,
-)
 from hermes.interface.assistant.deep_research_assistant.engine.files.logger import (
     DeepResearchLogger,
 )
+from hermes.interface.assistant.deep_research_assistant.llm_interface import (
+    LLMInterface,
+)
 from hermes.message import TextMessage
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +29,9 @@ class ChatModelLLMInterface(LLMInterface):
     def generate_request(
         self,
         help_interface: str,
-        history_messages: List[dict],
+        history_messages: list[dict],
         node_path: Path,
-    ) -> Dict:
+    ) -> dict:
         """Generate a request for the LLM based on the rendered interface and history"""
         request_builder = self.model.get_request_builder()
 
@@ -44,9 +44,7 @@ class ChatModelLLMInterface(LLMInterface):
 
         # Add history messages
         for message in history_messages:
-            rendered_messages.append(
-                TextMessage(author=message["author"], text=message["content"])
-            )
+            rendered_messages.append(TextMessage(author=message["author"], text=message["content"]))
 
         # Build and return the request
         request = request_builder.build_request(rendered_messages)
@@ -55,12 +53,10 @@ class ChatModelLLMInterface(LLMInterface):
 
         return request
 
-    def send_request(self, request: Dict) -> Generator[str, None, None]:
+    def send_request(self, request: dict) -> Generator[str, None, None]:
         """Send a request to the LLM and get a generator of responses"""
         # Process the LLM response and handle thinking vs text tokens
-        llm_responses_generator = self._handle_string_output(
-            self.model.send_request(request)
-        )
+        llm_responses_generator = self._handle_string_output(self.model.send_request(request))
 
         # Collect the response
         llm_response = []
@@ -95,11 +91,10 @@ class ChatModelLLMInterface(LLMInterface):
         """Log an LLM response"""
         self.deep_research_logger.log_llm_response(node_path, response)
 
-    def _handle_string_output(
-        self, llm_response_generator: Generator[str, None, None]
-    ) -> Generator[BaseLLMResponse, None, None]:
+    def _handle_string_output(self, llm_response_generator: Generator[str, None, None]) -> Generator[BaseLLMResponse, None, None]:
         """
-        This is implemented for backwards compatibility, as not all models support thinking tokens yet and they currently just return string.
+        This is implemented for backwards compatibility, as not all models support thinking tokens yet 
+        and they currently just return string.
         """
         for response in llm_response_generator:
             if isinstance(response, str):

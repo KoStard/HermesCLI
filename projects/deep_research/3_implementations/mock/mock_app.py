@@ -1,9 +1,8 @@
-from typing import List
-
 from hermes.extensions_loader import load_extensions
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
+
 from .mock_llm_interface import MockLLMInterface
 
 
@@ -13,7 +12,7 @@ class DeepResearchMockApp:
     def __init__(
         self,
         instruction: str,
-        initial_attachments: List[str] = None,
+        initial_attachments: list[str] = None,
         root_dir: str = "research",
     ):
         # Load extensions
@@ -37,9 +36,7 @@ class DeepResearchMockApp:
         """Start the mock application"""
         print("\nStarting Deep Research Mock Application...")
         print("You will play the role of the AI assistant.")
-        print(
-            "The system will show you the interface and you'll respond as if you were the AI."
-        )
+        print("The system will show you the interface and you'll respond as if you were the AI.")
         print("Type 'END_RESPONSE' on a new line when you've finished your response.")
 
         # Print information about loaded extensions

@@ -1,4 +1,4 @@
-from typing import Dict, Generator, List
+from collections.abc import Generator
 
 from hermes.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,
@@ -18,9 +18,9 @@ class MockLLMInterface(LLMInterface):
     def generate_request(
         self,
         help_interface: str,
-        history_messages: List[dict],
+        history_messages: list[dict],
         current_node_path,
-    ) -> Dict:
+    ) -> dict:
         """
         Generate a request for the LLM based on the rendered interface and history
 
@@ -37,7 +37,7 @@ class MockLLMInterface(LLMInterface):
             "history": history_messages,
         }
 
-    def send_request(self, request: Dict) -> Generator[str, None, None]:
+    def send_request(self, request: dict) -> Generator[str, None, None]:
         """
         Send a request to the LLM and get a generator of responses.
         In this mock implementation, it prints the interface to STDOUT
@@ -71,9 +71,7 @@ class MockLLMInterface(LLMInterface):
                 print("-" * 50)
 
         print("\n" + "=" * 100)
-        print(
-            "ENTER YOUR RESPONSE AS THE AI ASSISTANT (type END_RESPONSE on a new line when finished):"
-        )
+        print("ENTER YOUR RESPONSE AS THE AI ASSISTANT (type END_RESPONSE on a new line when finished):")
         print("=" * 100 + "\n")
 
         # Collect the response from STDIN

@@ -6,10 +6,9 @@
 # Use module import logic to import the extension
 
 import importlib.util
+import logging
 import sys
 from pathlib import Path
-from typing import List, Optional, Type
-import logging
 
 # Removed appdirs import
 from hermes.config_utils import get_extensions_dir_path
@@ -17,12 +16,10 @@ from hermes.interface.commands.command import Command
 from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
 
 
-def load_extension_module(extension_path: Path) -> Optional[object]:
+def load_extension_module(extension_path: Path) -> object | None:
     """Load a Python module from a file path"""
     try:
-        spec = importlib.util.spec_from_file_location(
-            f"hermes_extension_{extension_path.parent.name}", extension_path
-        )
+        spec = importlib.util.spec_from_file_location(f"hermes_extension_{extension_path.parent.name}", extension_path)
         if spec is None or spec.loader is None:
             logging.warning(f"Failed to load extension spec from {extension_path}")
             return None
@@ -36,9 +33,7 @@ def load_extension_module(extension_path: Path) -> Optional[object]:
         return None
 
 
-def get_extension_commands(
-    module: object, function_name: str
-) -> List[ControlPanelCommand]:
+def get_extension_commands(module: object, function_name: str) -> list[ControlPanelCommand]:
     """Get commands from an extension module using the specified function"""
     try:
         if hasattr(module, function_name):
@@ -47,19 +42,17 @@ def get_extension_commands(
             if isinstance(commands, list):
                 return commands
         else:
-            logging.warning(
-                f"Function {function_name} not found in extension module", module
-            )
+            logging.warning(f"Function {function_name} not found in extension module", module)
     except Exception as e:
         logging.warning(f"Failed to get commands from {function_name}: {str(e)}")
     return []
 
 
 def load_extensions() -> tuple[
-    List[ControlPanelCommand],
-    List[ControlPanelCommand],
-    List[callable],
-    List[Type[Command]],
+    list[ControlPanelCommand],
+    list[ControlPanelCommand],
+    list[callable],
+    list[type[Command]],
 ]:
     """
     Load all extensions and return their commands and utils
@@ -72,9 +65,7 @@ def load_extensions() -> tuple[
 
     extensions_dir = get_extensions_dir_path()
     if not extensions_dir.exists():
-        logging.info(
-            f"Extensions directory not found at {extensions_dir}, skipping extension loading."
-        )
+        logging.info(f"Extensions directory not found at {extensions_dir}, skipping extension loading.")
         return [], [], [], []
 
     # Scan for extension.py files in subdirectories

@@ -1,19 +1,18 @@
-from abc import ABC
-from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
 import traceback
+from collections import defaultdict
 
 from hermes.interface.assistant.deep_research_assistant.engine.context.content_truncator import (
     ContentTruncator,
 )
 from hermes.interface.templates.template_manager import TemplateManager
 
-# Import base data class from its new location
-from .dynamic_sections.base import DynamicSectionData
 from .dynamic_sections import RendererRegistry  # Use the type alias
 
+# Import base data class from its new location
+from .dynamic_sections.base import DynamicSectionData
 
-class HistoryBlock(ABC):
+
+class HistoryBlock:
     pass
 
 
@@ -29,26 +28,24 @@ class AutoReply(HistoryBlock):
     def __init__(
         self,
         error_report: str,
-        command_outputs: List[Tuple[str, dict]],
-        messages: List[Tuple[str, str]],
-        confirmation_request: Optional[str] = None,
-        dynamic_sections: Optional[List[Tuple[int, DynamicSectionData]]] = None,
+        command_outputs: list[tuple[str, dict]],
+        messages: list[tuple[str, str]],
+        confirmation_request: str | None = None,
+        dynamic_sections: list[tuple[int, DynamicSectionData]] | None = None,
     ):
         self.error_report: str = error_report
-        self.command_outputs: List[Tuple[str, dict]] = command_outputs
-        self.messages: List[Tuple[str, str]] = messages
-        self.confirmation_request: Optional[str] = confirmation_request
+        self.command_outputs: list[tuple[str, dict]] = command_outputs
+        self.messages: list[tuple[str, str]] = messages
+        self.confirmation_request: str | None = confirmation_request
         # Store the data objects, not rendered strings
-        self.dynamic_sections: List[Tuple[int, DynamicSectionData]] = (
-            dynamic_sections or []
-        )
+        self.dynamic_sections: list[tuple[int, DynamicSectionData]] = dynamic_sections or []
 
     def generate_auto_reply(
         self,
         template_manager: TemplateManager,
         renderer_registry: RendererRegistry,
-        future_changes_map: Dict[int, int],
-        per_command_output_maximum_length: Optional[int] = None,
+        future_changes_map: dict[int, int],
+        per_command_output_maximum_length: int | None = None,
     ) -> str:
         """
         Generate an automatic reply using a Mako template, rendering dynamic sections on the fly.
@@ -63,7 +60,7 @@ class AutoReply(HistoryBlock):
             Formatted automatic reply string.
         """
         # --- Render Dynamic Sections ---
-        rendered_dynamic_sections: List[Tuple[int, str]] = []
+        rendered_dynamic_sections: list[tuple[int, str]] = []
         for index, data_instance in self.dynamic_sections:
             data_type = type(data_instance)
             renderer = renderer_registry.get(data_type)
@@ -76,9 +73,7 @@ class AutoReply(HistoryBlock):
                     rendered_content = renderer.render(data_instance, future_changes)
                 except Exception:
                     # Error handling as requested: print stack trace and generate message
-                    print(
-                        f"\n--- ERROR RENDERING DYNAMIC SECTION (Index: {index}, Type: {data_type.__name__}) ---"
-                    )
+                    print(f"\n--- ERROR RENDERING DYNAMIC SECTION (Index: {index}, Type: {data_type.__name__}) ---")
                     tb_str = traceback.format_exc()
                     print(tb_str)
                     print("--- END ERROR ---")
@@ -94,9 +89,7 @@ class AutoReply(HistoryBlock):
                     )
             else:
                 # Handle case where renderer is missing (shouldn't happen with proper registry)
-                print(
-                    f"Warning: No renderer found for dynamic section type {data_type.__name__}"
-                )
+                print(f"Warning: No renderer found for dynamic section type {data_type.__name__}")
                 rendered_content = f"<error>No renderer found for section type {data_type.__name__}</error>"
 
             rendered_dynamic_sections.append((index, rendered_content))
@@ -114,9 +107,7 @@ class AutoReply(HistoryBlock):
 
         # --- Render the Main Auto-Reply Template ---
         try:
-            return template_manager.render_template(
-                "context/auto_reply.mako", **context
-            )
+            return template_manager.render_template("context/auto_reply.mako", **context)
         except Exception:
             # Handle potential errors in the main auto_reply.mako template itself
             print("\n--- ERROR RENDERING auto_reply.mako ---")
@@ -136,12 +127,12 @@ class AutoReplyAggregator:
     def __init__(self):
         self.error_reports = []
         self.command_outputs = []
-        self.internal_messages: List[Tuple[str, str]] = []
-        self.confirmation_requests: List[str] = []
+        self.internal_messages: list[tuple[str, str]] = []
+        self.confirmation_requests: list[str] = []
         # Stores the *data* objects for changed sections and their original index
-        self.dynamic_sections_to_report: List[Tuple[int, DynamicSectionData]] = []
+        self.dynamic_sections_to_report: list[tuple[int, DynamicSectionData]] = []
         # Stores the last known state of *all* dynamic section data objects
-        self.last_dynamic_sections_state: List[DynamicSectionData] = []
+        self.last_dynamic_sections_state: list[DynamicSectionData] = []
 
     def add_error_report(self, error_report: str):
         self.error_reports.append(error_report)
@@ -155,14 +146,14 @@ class AutoReplyAggregator:
     def add_internal_message_from(self, message: str, origin_node_title: str):
         self.internal_messages.append((message, origin_node_title))
 
-    def update_dynamic_sections(self, new_sections_data: List[DynamicSectionData]):
+    def update_dynamic_sections(self, new_sections_data: list[DynamicSectionData]):
         """
         Compare new dynamic section data with the last known state and track changes.
 
         Args:
             new_sections_data: List of data objects for all current dynamic sections.
         """
-        changed_sections_with_indices: List[Tuple[int, DynamicSectionData]] = []
+        changed_sections_with_indices: list[tuple[int, DynamicSectionData]] = []
 
         # Ensure lengths match for comparison, handle initialization
         if not self.last_dynamic_sections_state:
@@ -170,9 +161,7 @@ class AutoReplyAggregator:
             # but don't report them in the *first* auto-reply unless explicitly needed.
             # For simplicity now, just initialize the state. The first auto-reply won't
             # list "updated sections" unless something else triggers it.
-            self.last_dynamic_sections_state = new_sections_data[
-                :
-            ]  # Use slicing for a copy
+            self.last_dynamic_sections_state = new_sections_data[:]  # Use slicing for a copy
         elif len(new_sections_data) != len(self.last_dynamic_sections_state):
             # This indicates a structural change (sections added/removed), which
             # the current design doesn't handle dynamically. Treat all as changed.
@@ -180,10 +169,7 @@ class AutoReplyAggregator:
             print("Warning: Number of dynamic sections changed. Re-evaluating all.")
             for i, data_instance in enumerate(new_sections_data):
                 # Check against old state if index exists, otherwise it's new/changed
-                if (
-                    i >= len(self.last_dynamic_sections_state)
-                    or data_instance != self.last_dynamic_sections_state[i]
-                ):
+                if i >= len(self.last_dynamic_sections_state) or data_instance != self.last_dynamic_sections_state[i]:
                     changed_sections_with_indices.append((i, data_instance))
         else:
             # Compare data objects element-wise using dataclass equality (__eq__)
@@ -195,9 +181,7 @@ class AutoReplyAggregator:
         self.dynamic_sections_to_report = changed_sections_with_indices
 
         # Update the last known state for *all* sections
-        self.last_dynamic_sections_state = new_sections_data[
-            :
-        ]  # Use slicing for a copy
+        self.last_dynamic_sections_state = new_sections_data[:]  # Use slicing for a copy
 
     def clear(self):
         self.error_reports = []
@@ -219,11 +203,7 @@ class AutoReplyAggregator:
 
     def compile_and_clear(self) -> AutoReply:
         error_report = "\n".join(self.error_reports)
-        confirmation_request = (
-            "\n".join(self.confirmation_requests)
-            if self.confirmation_requests
-            else None
-        )
+        confirmation_request = "\n".join(self.confirmation_requests) if self.confirmation_requests else None
         auto_reply = AutoReply(
             error_report,
             self.command_outputs,
@@ -240,10 +220,8 @@ class ChatHistory:
 
     def __init__(self):
         # Map of node_title -> list of messages
-        self.node_blocks: Dict[str, List[HistoryBlock]] = defaultdict(list)
-        self.node_auto_reply_aggregators: Dict[str, AutoReplyAggregator] = defaultdict(
-            AutoReplyAggregator
-        )
+        self.node_blocks: dict[str, list[HistoryBlock]] = defaultdict(list)
+        self.node_auto_reply_aggregators: dict[str, AutoReplyAggregator] = defaultdict(AutoReplyAggregator)
 
     def add_message(self, author: str, content: str, node_title: str) -> None:
         """Add a message to the current node's history"""
@@ -258,17 +236,14 @@ class ChatHistory:
         """Clear only the current node's history"""
         self.node_blocks[node_title] = []
 
-    def commit_and_get_auto_reply(self, node_title: str) -> Optional[AutoReply]:
+    def commit_and_get_auto_reply(self, node_title: str) -> AutoReply | None:
         auto_reply_aggregator = self.node_auto_reply_aggregators[node_title]
-        if (
-            not auto_reply_aggregator.is_empty()
-            or len(self.node_blocks[node_title]) > 0
-        ):
+        if not auto_reply_aggregator.is_empty() or len(self.node_blocks[node_title]) > 0:
             auto_reply = auto_reply_aggregator.compile_and_clear()
             self.node_blocks[node_title].append(auto_reply)
             return auto_reply
         return None
 
-    def get_compiled_blocks(self, node_title: str) -> List[HistoryBlock]:
+    def get_compiled_blocks(self, node_title: str) -> list[HistoryBlock]:
         """Get all history blocks for a specific node"""
         return self.node_blocks[node_title]

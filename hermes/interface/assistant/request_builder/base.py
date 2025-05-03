@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
-from typing import Optional
+import logging
 import os
+from abc import ABC, abstractmethod
 
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -21,13 +21,12 @@ from hermes.message import (
 )
 from hermes.utils.file_reader import FileReader
 
-import logging
-
 logger = logging.getLogger(__name__)
 
 """
 RequestBuilder is responsible for building the actual API request to the LLM provider.
-It should be able to handle all the model details, the API requirements, translate the internal message format to the provider's message format.
+It should be able to handle all the model details, the API requirements, 
+translate the internal message format to the provider's message format.
 """
 
 
@@ -60,31 +59,9 @@ class RequestBuilder(ABC):
                             name=message.name,
                             text_role=message.text_role,
                         )
-            elif isinstance(message, TextGeneratorMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    content = content.strip()
-                    if content:
-                        self.handle_text_message(
-                            content,
-                            message.author,
-                            id(message),
-                            message.name,
-                            message.text_role,
-                        )
-            elif isinstance(message, ThinkingAndResponseGeneratorMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    content = content.strip()
-                    if content:
-                        self.handle_text_message(
-                            content,
-                            message.author,
-                            id(message),
-                            message.name,
-                            message.text_role,
-                        )
-            elif isinstance(message, InvisibleMessage):
+            elif (
+                isinstance(message, TextGeneratorMessage | ThinkingAndResponseGeneratorMessage | InvisibleMessage)
+            ):
                 content = message.get_content_for_assistant()
                 if content:
                     content = content.strip()
@@ -152,9 +129,7 @@ class RequestBuilder(ABC):
                         name=message.name,
                     )
             else:
-                self.notifications_printer.print_error(
-                    f"Unsupported message type: {type(message)}. Discarding message."
-                )
+                self.notifications_printer.print_error(f"Unsupported message type: {type(message)}. Discarding message.")
                 continue
 
         return self.compile_request()
@@ -167,51 +142,33 @@ class RequestBuilder(ABC):
         name: str = None,
         text_role: str = None,
     ):
-        self.notifications_printer.print_error(
-            f"Text message not supported by {self.model_tag}. Discarding message."
-        )
+        self.notifications_printer.print_error(f"Text message not supported by {self.model_tag}. Discarding message.")
 
     def handle_image_url_message(self, url: str, author: str, message_id: int):
-        self.notifications_printer.print_error(
-            f"Image URL message not supported by {self.model_tag}. Discarding message."
-        )
+        self.notifications_printer.print_error(f"Image URL message not supported by {self.model_tag}. Discarding message.")
 
     def handle_image_message(self, image_path: str, author: str, message_id: int):
-        self.notifications_printer.print_error(
-            f"Image message not supported by {self.model_tag}. Discarding message."
-        )
+        self.notifications_printer.print_error(f"Image message not supported by {self.model_tag}. Discarding message.")
 
     def handle_audio_file_message(self, audio_path: str, author: str, message_id: int):
-        self.notifications_printer.print_error(
-            f"Audio file message not supported by {self.model_tag}. Discarding message."
-        )
+        self.notifications_printer.print_error(f"Audio file message not supported by {self.model_tag}. Discarding message.")
 
     def handle_video_message(self, video_path: str, author: str, message_id: int):
-        self.notifications_printer.print_error(
-            f"Video message not supported by {self.model_tag}. Discarding message."
-        )
+        self.notifications_printer.print_error(f"Video message not supported by {self.model_tag}. Discarding message.")
 
-    def handle_embedded_pdf_message(
-        self, pdf_path: str, pages: list[int], author: str, message_id: int
-    ):
-        self.notifications_printer.print_error(
-            f"PDF message not supported by {self.model_tag}. Discarding message."
-        )
+    def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
+        self.notifications_printer.print_error(f"PDF message not supported by {self.model_tag}. Discarding message.")
 
     def handle_textual_file_message(
         self,
         text_filepath: str,
         author: str,
         message_id: int,
-        file_role: Optional[str] = None,
+        file_role: str | None = None,
     ):
-        self.notifications_printer.print_error(
-            f"Textual file message not supported by {self.model_tag}. Discarding message."
-        )
+        self.notifications_printer.print_error(f"Textual file message not supported by {self.model_tag}. Discarding message.")
 
-    def handle_llm_run_command_output(
-        self, text: str, author: str, message_id: int, name: Optional[str] = None
-    ):
+    def handle_llm_run_command_output(self, text: str, author: str, message_id: int, name: str | None = None):
         """Handle LLM-run command output messages by converting them to text messages with CommandExecutionOutput role"""
         self.handle_text_message(
             text=text,
@@ -222,9 +179,7 @@ class RequestBuilder(ABC):
         )
 
     def handle_url_message(self, url: str, author: str, message_id: int):
-        self.notifications_printer.print_error(
-            f"URL message not supported by {self.model_tag}. Discarding message."
-        )
+        self.notifications_printer.print_error(f"URL message not supported by {self.model_tag}. Discarding message.")
 
     @abstractmethod
     def compile_request(self) -> any:
@@ -242,20 +197,20 @@ class RequestBuilder(ABC):
 
         markdown_content = self._get_url_text_content(url, message_id)
         if markdown_content is not None:
-            self.handle_text_message(
-                markdown_content, author, message_id, name=url, text_role="webpage"
-            )
+            self.handle_text_message(markdown_content, author, message_id, name=url, text_role="webpage")
 
     def _get_url_text_content(self, url: str, message_id: int) -> str:
         if message_id in self._url_contents:
             return self._url_contents[message_id]
         try:
-            from markitdown import MarkItDown
             import requests
+            from markitdown import MarkItDown
 
             headers = {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "User-Agent": 
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Accept": 
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
                 "Accept-Language": "en-US,en;q=0.9",
                 "Upgrade-Insecure-Requests": "1",
                 "Sec-Fetch-Dest": "document",
@@ -270,9 +225,7 @@ class RequestBuilder(ABC):
             markdown_content = conversion_result.text_content
             if not markdown_content:
                 markdown_content = "No content found in the URL"
-                self.notifications_printer.print_error(
-                    f"No content found in the URL {url}"
-                )
+                self.notifications_printer.print_error(f"No content found in the URL {url}")
             self._url_contents[message_id] = markdown_content
             return markdown_content
         except Exception as e:
@@ -302,7 +255,7 @@ class RequestBuilder(ABC):
         text_filepath: str,
         author: str,
         message_id: int,
-        file_role: Optional[str] = None,
+        file_role: str | None = None,
     ):
         """
         Read the content of the file or traverse directory, and create text messages with the content.
@@ -333,9 +286,7 @@ class RequestBuilder(ABC):
                         text_role=role,
                     )
                 except Exception as e:
-                    self.notifications_printer.print_error(
-                        f"Error processing file {full_path}: {e}"
-                    )
+                    self.notifications_printer.print_error(f"Error processing file {full_path}: {e}")
             return
 
         # If it's a single file, process it directly
@@ -346,7 +297,7 @@ class RequestBuilder(ABC):
         text_filepath: str,
         author: str,
         message_id: int,
-        file_role: Optional[str] = None,
+        file_role: str | None = None,
     ):
         """
         Process a single file and send its content as a message.
@@ -374,9 +325,7 @@ class RequestBuilder(ABC):
             )
         else:
             # Handle error case
-            self.notifications_printer.print_error(
-                f"Failed to read file: {text_filepath}"
-            )
+            self.notifications_printer.print_error(f"Failed to read file: {text_filepath}")
             self.handle_text_message(
                 text=file_content,  # This will contain the error message
                 author=author,
@@ -387,11 +336,13 @@ class RequestBuilder(ABC):
 
     def _extract_pages_from_pdf(self, pdf_path: str, pages: list[int]) -> str:
         """
-        Extract the specified pages from the PDF, create a temporary pdf file with the extracted pages and return the path to the temporary file.
+        Extract the specified pages from the PDF, create a temporary pdf file with the extracted pages and return the path 
+        to the temporary file.
         If a given page is not present, skip it.
         """
         try:
             import tempfile
+
             from PyPDF2 import PdfReader, PdfWriter
 
             # Create a PDF reader object
@@ -408,22 +359,15 @@ class RequestBuilder(ABC):
                 if 0 <= idx < total_pages:
                     writer.add_page(reader.pages[idx])
                 else:
-                    self.notifications_printer.print_error(
-                        f"Page {page_num} not found in PDF. Skipping."
-                    )
+                    self.notifications_printer.print_error(f"Page {page_num} not found in PDF. Skipping.")
 
             # Create a temporary file
-            temp_file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-            temp_path = temp_file.name
-
-            # Write the selected pages to the temporary file
-            with open(temp_path, "wb") as output_file:
-                writer.write(output_file)
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, mode="wb") as temp_file:
+                temp_path = temp_file.name
+                writer.write(temp_file)
 
             return temp_path
 
         except Exception as e:
-            self.notifications_printer.print_error(
-                f"Error extracting pages from PDF {pdf_path}, sending whole file: {e}"
-            )
+            self.notifications_printer.print_error(f"Error extracting pages from PDF {pdf_path}, sending whole file: {e}")
             return pdf_path  # Return original file path if extraction fails

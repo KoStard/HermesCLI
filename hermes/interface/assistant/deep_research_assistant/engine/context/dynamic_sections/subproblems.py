@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .base import DynamicSectionData, DynamicSectionRenderer
 
@@ -21,8 +21,8 @@ class PrimitiveSubproblemData:
     # Fields needed for summary rendering parity
     title: str
     problem_definition: str
-    criteria: Tuple[str, ...]
-    criteria_done: Tuple[bool, ...]
+    criteria: tuple[str, ...]
+    criteria_done: tuple[bool, ...]
     artifacts_count: int
     status_emoji: str
     status_label: str
@@ -46,15 +46,13 @@ class PrimitiveSubproblemData:
 @dataclass(frozen=True)
 class SubproblemsSectionData(DynamicSectionData):
     # Store primitive representations of subproblems
-    subproblems: Tuple[PrimitiveSubproblemData, ...]
+    subproblems: tuple[PrimitiveSubproblemData, ...]
 
     @staticmethod
     def from_node(target_node: "Node") -> "SubproblemsSectionData":
         subproblem_data = tuple(
             PrimitiveSubproblemData.from_node(subproblem)
-            for title, subproblem in sorted(
-                target_node.subproblems.items()
-            )  # Sort for consistent order
+            for title, subproblem in sorted(target_node.subproblems.items())  # Sort for consistent order
         )
         return SubproblemsSectionData(subproblems=subproblem_data)
 
@@ -66,7 +64,5 @@ class SubproblemsSectionRenderer(DynamicSectionRenderer):
 
     def render(self, data: SubproblemsSectionData, future_changes: int) -> str:
         # Pass the primitive tuple of subproblem data
-        context = {
-            "subproblems_data": data.subproblems
-        }  # Tuple[PrimitiveSubproblemData]
+        context = {"subproblems_data": data.subproblems}  # Tuple[PrimitiveSubproblemData]
         return self._render_template(context)

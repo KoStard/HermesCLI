@@ -1,6 +1,7 @@
 import os
-import sys
 import select
+import sys
+
 from hermes.utils.overriding_printer import OverridingPrinter
 
 
@@ -15,10 +16,11 @@ class STTInputHandler:
         return text
 
     def record_audio(self) -> str:
+        import uuid
+
+        import numpy as np
         import sounddevice as sd
         import soundfile as sf
-        import numpy as np
-        import uuid
 
         samplerate = 44100
         # Initialize recording flag
@@ -86,7 +88,8 @@ class STTInputHandler:
             transcript = client.audio.transcriptions.create(
                 file=(audio_file, audio),
                 model="whisper-large-v3-turbo",
-                prompt="This is a recording of a human message in a chat, please transcribe it as accurately as possible, capture if the user has a question",
+                prompt="This is a recording of a human message in a chat, please transcribe it as accurately as possible, capture " \
+                "if the user has a question",
                 temperature=0,
                 response_format="text",
             )

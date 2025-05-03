@@ -1,8 +1,5 @@
-from typing import Tuple
-
-
 class FrontmatterManager:
-    def extract_frontmatter(self, full_content: str) -> Tuple[dict, str]:
+    def extract_frontmatter(self, full_content: str) -> tuple[dict, str]:
         """
         Provided with the full content of the markdown file, extract the front-matter into a dict and return the rest of the content.
 
@@ -45,7 +42,8 @@ class FrontmatterManager:
 
     def add_frontmatter(self, content: str, metadata: dict) -> str:
         """
-        Given with the future content of the markdown file and the metadata for it, add the metadata as a front-matter and return the final content
+        Given with the future content of the markdown file and the metadata for it, 
+        add the metadata as a front-matter and return the final content
 
         Args:
             content: The markdown content without frontmatter
@@ -61,9 +59,7 @@ class FrontmatterManager:
             return content
 
         # Convert metadata to YAML format
-        frontmatter_yaml = yaml.dump(
-            metadata, default_flow_style=False, sort_keys=False
-        )
+        frontmatter_yaml = yaml.dump(metadata, default_flow_style=False, sort_keys=False)
 
         # Combine frontmatter with content
         result = f"---\n{frontmatter_yaml}---\n\n{content.lstrip()}"

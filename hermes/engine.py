@@ -1,35 +1,36 @@
-import os
 import logging
-from typing import Generator
+import os
+import shutil
+from collections.abc import Generator
+from datetime import datetime
+from itertools import chain
+
 from hermes.event import (
+    AgentModeEvent,
     AssistantDoneEvent,
     ClearHistoryEvent,
     DeepResearchBudgetEvent,
-    FileEditEvent,
     EngineCommandEvent,
+    Event,
     ExitEvent,
+    FileEditEvent,
+    LLMCommandsExecutionEvent,
     LoadHistoryEvent,
     MessageEvent,
     OnceEvent,
     RawContentForHistoryEvent,
     SaveHistoryEvent,
-    AgentModeEvent,
-    LLMCommandsExecutionEvent,
     ThinkingLevelEvent,
-    Event,
 )
+from hermes.history import History
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
-from hermes.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.interface.helpers.cli_notifications import (
-    CLINotificationsPrinter,
     CLIColors,
+    CLINotificationsPrinter,
 )
+from hermes.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.message import TextMessage
 from hermes.participants import Participant
-from hermes.history import History
-from itertools import chain
-from datetime import datetime
-import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -95,23 +96,15 @@ class Engine:
             except EOFError as e:
                 raise e
             except Exception as e:
-                self.notifications_printer.print_notification(
-                    f"Assistant request failed with {e}", CLIColors.RED
-                )
+                self.notifications_printer.print_notification(f"Assistant request failed with {e}", CLIColors.RED)
                 import traceback
 
                 print(traceback.format_exc())
 
-    def _run_user(
-        self, assistant_events: Generator[Event, None, None]
-    ) -> Generator[Event, None, None]:
+    def _run_user(self, assistant_events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """Handle user events and engine commands"""
-        history_snapshot = self.history.get_history_for(
-            self.user_participant.get_name()
-        )
-        consumption_events = self.user_participant.consume_events(
-            history_snapshot, self._save_to_history(assistant_events)
-        )
+        history_snapshot = self.history.get_history_for(self.user_participant.get_name())
+        consumption_events = self.user_participant.consume_events(history_snapshot, self._save_to_history(assistant_events))
 
         self.history.commit()
 
@@ -135,38 +128,28 @@ class Engine:
         user_events = list(self._handle_engine_commands_from_stream(events_stream))
         return user_events
 
-    def _run_assistant(
-        self, user_events: Generator[Event, None, None]
-    ) -> Generator[Event, None, None]:
+    def _run_assistant(self, user_events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """Handle assistant events and agent mode continuation"""
         is_first_cycle = True
         is_llm_turn = True
-        is_chat_intarface = isinstance(
-            self.assistant_participant.interface, ChatAssistantInterface
-        )
+        is_chat_intarface = isinstance(self.assistant_participant.interface, ChatAssistantInterface)
 
         while is_llm_turn:
             # Add continuation prompt if in agent mode, in all cycles except the first
-            if (
-                is_chat_intarface
-                and self.assistant_participant.interface.control_panel._agent_mode
-            ):
+            if is_chat_intarface and self.assistant_participant.interface.control_panel._agent_mode:
                 if not is_first_cycle:
                     continuation_msg = TextMessage(
                         author="user",
-                        text="AUTOMATIC RESPONSE: No ///done command found in your repsonse. Please continue, and use ///done command when you finish with the whole task.",
+                        text="AUTOMATIC RESPONSE: No ///done command found in your repsonse. "
+                        "Please continue, and use ///done command when you finish with the whole task.",
                         is_directly_entered=True,
                     )
                     user_events = [MessageEvent(continuation_msg)]
                 is_first_cycle = False
 
-            history_snapshot = self.history.get_history_for(
-                self.assistant_participant.get_name()
-            )
+            history_snapshot = self.history.get_history_for(self.assistant_participant.get_name())
 
-            consumption_events = self.assistant_participant.consume_events(
-                history_snapshot, self._save_to_history(user_events)
-            )
+            consumption_events = self.assistant_participant.consume_events(history_snapshot, self._save_to_history(user_events))
             action_events_stream = self.assistant_participant.act()
             events_stream = chain(consumption_events, action_events_stream)
 
@@ -177,10 +160,7 @@ class Engine:
             yield from self._handle_engine_commands_from_stream(events_stream)
 
             # Check if we should continue in agent mode
-            if (
-                not is_chat_intarface
-                or not self.assistant_participant.interface.control_panel._agent_mode
-            ):
+            if not is_chat_intarface or not self.assistant_participant.interface.control_panel._agent_mode:
                 is_llm_turn = False
 
             # Check if we received an AssistantDoneEvent
@@ -188,9 +168,7 @@ class Engine:
                 self._received_assistant_done_event = False
                 is_llm_turn = False
 
-    def _save_to_history(
-        self, events: Generator[Event, None, None]
-    ) -> Generator[Event, None, None]:
+    def _save_to_history(self, events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         for event in events:
             if isinstance(event, MessageEvent):
                 self.history.add_message(event.get_message())
@@ -198,9 +176,7 @@ class Engine:
                 self.history.add_raw_content(event)
             yield event
 
-    def _handle_engine_commands_from_stream(
-        self, stream: Generator[Event, None, None]
-    ) -> Generator[Event, None, None]:
+    def _handle_engine_commands_from_stream(self, stream: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """
         Handles engine commands from the stream and emits the rest of the events.
         """
@@ -214,9 +190,7 @@ class Engine:
                 elif isinstance(event, SaveHistoryEvent):
                     self._handle_save_history_event(event)
                 elif isinstance(event, LoadHistoryEvent):
-                    self.notifications_printer.print_notification(
-                        f"Loading history from {event.filepath}"
-                    )
+                    self.notifications_printer.print_notification(f"Loading history from {event.filepath}")
                     self.history.load(event.filepath)
                     for participant in self.participants:
                         participant.initialize_from_history(self.history)
@@ -225,45 +199,29 @@ class Engine:
                 elif isinstance(event, AgentModeEvent):
                     if event.enabled:
                         self.assistant_participant.interface.control_panel.enable_agent_mode()
-                        self.notifications_printer.print_notification(
-                            "Agent mode enabled"
-                        )
+                        self.notifications_printer.print_notification("Agent mode enabled")
                     else:
                         self.assistant_participant.interface.control_panel.disable_agent_mode()
-                        self.notifications_printer.print_notification(
-                            "Agent mode disabled"
-                        )
+                        self.notifications_printer.print_notification("Agent mode disabled")
                 elif isinstance(event, AssistantDoneEvent):
-                    self.notifications_printer.print_notification(
-                        "Assistant marked task as done"
-                    )
+                    self.notifications_printer.print_notification("Assistant marked task as done")
                     self._received_assistant_done_event = True
                     # TODO: Handle the completion report and any cleanup
                 elif isinstance(event, LLMCommandsExecutionEvent):
-                    self.assistant_participant.interface.control_panel.set_commands_parsing_status(
-                        event.enabled
-                    )
+                    self.assistant_participant.interface.control_panel.set_commands_parsing_status(event.enabled)
                     status = "enabled" if event.enabled else "disabled"
-                    self.notifications_printer.print_notification(
-                        f"LLM command execution {status}"
-                    )
+                    self.notifications_printer.print_notification(f"LLM command execution {status}")
                 elif isinstance(event, OnceEvent):
                     self._once_mode = event.enabled
                     status = "enabled" if event.enabled else "disabled"
                     self.notifications_printer.print_notification(f"Once mode {status}")
                 elif isinstance(event, ThinkingLevelEvent):
-                    self.assistant_participant.interface.change_thinking_level(
-                        event.level
-                    )
-                    self.notifications_printer.print_notification(
-                        f"Thinking level set to {event.level}"
-                    )
+                    self.assistant_participant.interface.change_thinking_level(event.level)
+                    self.notifications_printer.print_notification(f"Thinking level set to {event.level}")
                 elif isinstance(event, DeepResearchBudgetEvent):
                     if hasattr(self.assistant_participant.interface, "set_budget"):
                         self.assistant_participant.interface.set_budget(event.budget)
-                        self.notifications_printer.print_notification(
-                            f"Deep Research budget set to {event.budget} message cycles"
-                        )
+                        self.notifications_printer.print_notification(f"Deep Research budget set to {event.budget} message cycles")
                     else:
                         self.notifications_printer.print_notification(
                             "Budget setting is only available for Deep Research Assistant",
@@ -295,9 +253,7 @@ class Engine:
             yield event
 
     def _handle_save_history_event(self, event: SaveHistoryEvent):
-        self.notifications_printer.print_notification(
-            f"Saving history to {event.filepath}"
-        )
+        self.notifications_printer.print_notification(f"Saving history to {event.filepath}")
         self.history.save(event.filepath)
 
     def _handle_exit_event(self):
@@ -314,14 +270,10 @@ class Engine:
             bool: True if file should be created, False otherwise
         """
         if os.path.exists(file_path):
-            self.notifications_printer.print_notification(
-                f"File {file_path} already exists."
-            )
+            self.notifications_printer.print_notification(f"File {file_path} already exists.")
             response = input("Do you want to overwrite it? [y/N] ").strip().lower()
             if response != "y":
-                self.notifications_printer.print_notification(
-                    "File creation cancelled."
-                )
+                self.notifications_printer.print_notification("File creation cancelled.")
                 return False
         return True
 
@@ -347,9 +299,7 @@ class Engine:
 
         # Create the backup
         shutil.copy2(file_path, backup_path)
-        self.notifications_printer.print_notification(
-            f"Created backup at {backup_path}"
-        )
+        self.notifications_printer.print_notification(f"Created backup at {backup_path}")
 
     def _ensure_directory_exists(self, file_path: str) -> None:
         """
@@ -360,9 +310,7 @@ class Engine:
         """
         directory = os.path.dirname(file_path)
         if directory and not os.path.exists(directory):
-            self.notifications_printer.print_notification(
-                f"Creating directory structure: {directory}"
-            )
+            self.notifications_printer.print_notification(f"Creating directory structure: {directory}")
             os.makedirs(directory, exist_ok=True)
 
     def _create_file(self, file_path: str, content: str) -> None:
@@ -379,9 +327,7 @@ class Engine:
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(content)
 
-    def _update_markdown_section(
-        self, file_path: str, section_path: list[str], new_content: str, submode: str
-    ) -> None:
+    def _update_markdown_section(self, file_path: str, section_path: list[str], new_content: str, submode: str) -> None:
         """
         Update a specific section in a markdown file.
 
@@ -397,12 +343,8 @@ class Engine:
         try:
             was_updated = updater.update_section(section_path, new_content, submode)
             if was_updated:
-                action = (
-                    "Updated" if submode == "update_markdown_section" else "Appended to"
-                )
-                self.notifications_printer.print_notification(
-                    f"{action} section {' > '.join(section_path)} in {file_path}"
-                )
+                action = "Updated" if submode == "update_markdown_section" else "Appended to"
+                self.notifications_printer.print_notification(f"{action} section {' > '.join(section_path)} in {file_path}")
             else:
                 self.notifications_printer.print_notification(
                     f"Warning: Section {' > '.join(section_path)} not found in {file_path}. No changes made.",
@@ -434,7 +376,7 @@ class Engine:
         """
         if os.path.exists(file_path):
             # Read existing content
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(file_path, encoding="utf-8") as file:
                 existing_content = file.read()
             # Write new content followed by existing
             with open(file_path, "w", encoding="utf-8") as file:

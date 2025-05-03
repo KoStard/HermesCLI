@@ -1,17 +1,23 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
-# Import core command components from the new location
-from hermes.interface.commands.command import (
-    Command,
-    CommandRegistry,
-)
-from hermes.interface.commands.command_parser import CommandParser, ParseResult
 
 # Import the specific context for Deep Research
 from hermes.interface.assistant.deep_research_assistant.engine.commands.command_context import (
     CommandContext,
+)
+
+# Import the registry creation function and type alias
+from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import (
+    RendererRegistry,
+    create_renderer_registry,
+)
+from hermes.interface.assistant.deep_research_assistant.engine.context.history import (
+    AutoReply,
+    ChatHistory,
+    ChatMessage,
+)
+from hermes.interface.assistant.deep_research_assistant.engine.context.interface import (
+    DeepResearcherInterface,
 )
 
 # Import other necessary components
@@ -20,32 +26,25 @@ from hermes.interface.assistant.deep_research_assistant.engine.files.file_system
     Node,
     ProblemStatus,
 )
-from hermes.interface.assistant.deep_research_assistant.engine.context.history import (
-    ChatHistory,
-    AutoReply,
-    ChatMessage,
-)
-from hermes.interface.assistant.deep_research_assistant.engine.context.interface import (
-    DeepResearcherInterface,
-)
-
-# Import the registry creation function and type alias
-from hermes.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import (
-    create_renderer_registry,
-    RendererRegistry,
-)
-from hermes.interface.assistant.deep_research_assistant.llm_interface import (
-    LLMInterface,
-)
 from hermes.interface.assistant.deep_research_assistant.engine.files.logger import (
     DeepResearchLogger,
-)
-from hermes.interface.assistant.deep_research_assistant.engine.report.status_printer import (
-    StatusPrinter,
 )
 from hermes.interface.assistant.deep_research_assistant.engine.report.report_generator import (
     ReportGenerator,
 )
+from hermes.interface.assistant.deep_research_assistant.engine.report.status_printer import (
+    StatusPrinter,
+)
+from hermes.interface.assistant.deep_research_assistant.llm_interface import (
+    LLMInterface,
+)
+
+# Import core command components from the new location
+from hermes.interface.commands.command import (
+    Command,
+    CommandRegistry,
+)
+from hermes.interface.commands.command_parser import CommandParser, ParseResult
 from hermes.interface.commands.help_generator import CommandHelpGenerator
 from hermes.interface.templates.template_manager import TemplateManager
 
@@ -68,7 +67,7 @@ class _CommandProcessor:
         self._execution_failed_commands = []
         self._finish_or_fail_skipped = False
 
-    def process(self, text: str) -> Tuple[bool, str, Dict]:
+    def process(self, text: str) -> tuple[bool, str, dict]:
         """
         Process commands from text.
 
@@ -95,13 +94,8 @@ class _CommandProcessor:
     def _handle_shutdown_request(self, text: str) -> bool:
         """Check for emergency shutdown code."""
         # Only shut down if the current node is the root node
-        if (
-            "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower()
-            and self.current_node == self.engine.file_system.root_node
-        ):
-            print(
-                "Shutdown requested for root node. Engine will await new instructions."
-            )
+        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() and self.current_node == self.engine.file_system.root_node:
+            print("Shutdown requested for root node. Engine will await new instructions.")
             self.engine.awaiting_new_instruction = True
             # Mark root as finished to signify completion of this phase
             if self.current_node:
@@ -124,23 +118,19 @@ class _CommandProcessor:
         """Add the assistant's message to history for the current node."""
         self.chat_history.add_message("assistant", text, self._current_history_tag)
 
-    def _parse_and_validate_commands(self, text: str) -> List[ParseResult]:
+    def _parse_and_validate_commands(self, text: str) -> list[ParseResult]:
         """Parse commands, handle syntax errors, and perform initial validation."""
         parse_results = self.command_parser.parse_text(text)
 
         # Generate report for any non-syntax parsing errors (e.g., missing sections)
-        self._parsing_error_report = self.command_parser.generate_error_report(
-            parse_results
-        )
+        self._parsing_error_report = self.command_parser.generate_error_report(parse_results)
 
         return parse_results
 
-    def _execute_commands(self, parse_results: List[ParseResult]):
+    def _execute_commands(self, parse_results: list[ParseResult]):
         """Execute valid commands and track status."""
         command_that_should_be_last_reached = False
-        has_parsing_errors = bool(
-            self._parsing_error_report
-        )  # Check if initial parsing found errors
+        has_parsing_errors = bool(self._parsing_error_report)  # Check if initial parsing found errors
 
         for i, result in enumerate(parse_results):
             # Skip execution if the command itself had parsing errors (e.g., missing required section)
@@ -162,9 +152,7 @@ class _CommandProcessor:
                 "finish_problem",
                 "fail_problem",
             ]
-            has_any_errors_so_far = has_parsing_errors or bool(
-                self._execution_failed_commands
-            )
+            has_any_errors_so_far = has_parsing_errors or bool(self._execution_failed_commands)
 
             if is_finish_or_fail and has_any_errors_so_far:
                 self._finish_or_fail_skipped = True
@@ -180,9 +168,7 @@ class _CommandProcessor:
 
             # --- Update Status ---
             cmd_key = f"{result.command_name}_{i}"
-            line_num = (
-                result.errors[0].line_number if result.errors else None
-            )  # Should be None here
+            line_num = result.errors[0].line_number if result.errors else None  # Should be None here
 
             if execution_error:
                 failed_info = {
@@ -203,14 +189,12 @@ class _CommandProcessor:
                     command_that_should_be_last_reached = True
             # else: command was None (e.g., unknown command, handled during parsing)
 
-    def _execute_single_command(
-        self, result: ParseResult
-    ) -> Tuple[Optional[Command], Optional[Exception]]:
+    def _execute_single_command(self, result: ParseResult) -> tuple[Command | None, Exception | None]:
         """Execute a single command and return the command object and any execution error."""
         command_name = result.command_name
         args = result.args
         error = None
-        command: Optional[Command[CommandContext]] = None  # Type hint for clarity
+        command: Command[CommandContext] | None = None  # Type hint for clarity
 
         try:
             # Use the singleton registry instance directly
@@ -222,13 +206,8 @@ class _CommandProcessor:
                 # This should ideally be caught during parsing, but handle defensively
                 raise ValueError(f"Command '{command_name}' not found in registry.")
 
-            if (
-                not self.engine.is_root_problem_defined()
-                and command_name != "define_problem"
-            ):
-                raise ValueError(
-                    "Only 'define_problem' command is allowed before a problem is defined."
-                )
+            if not self.engine.is_root_problem_defined() and command_name != "define_problem":
+                raise ValueError("Only 'define_problem' command is allowed before a problem is defined.")
 
             # Update command context before execution
             self.command_context.refresh_from_engine()
@@ -274,19 +253,14 @@ class _CommandProcessor:
             self.final_error_report = execution_report.strip()
         else:
             # Add separator if there were also parsing errors
-            if (
-                self._parsing_error_report
-                and "### Errors report:" in self._parsing_error_report
-            ):
+            if self._parsing_error_report and "### Errors report:" in self._parsing_error_report:
                 self.final_error_report += "\n---\n" + execution_report
             else:  # Only execution errors or syntax errors
                 self.final_error_report += "\n" + execution_report
 
     def _update_auto_reply(self):
         """Add error reports and confirmation requests to the auto-reply aggregator."""
-        auto_reply_generator = self.chat_history.get_auto_reply_aggregator(
-            self._current_history_tag
-        )
+        auto_reply_generator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
 
         # Add confirmation request if finish/fail was skipped
         if self._finish_or_fail_skipped:
@@ -302,10 +276,7 @@ class _CommandProcessor:
         # Add the combined error report
         if self.final_error_report:
             # Ensure the report starts with the expected header if only execution errors are present
-            if (
-                "### Errors report:" not in self.final_error_report
-                and "### Execution Status Report:" not in self.final_error_report
-            ):
+            if "### Errors report:" not in self.final_error_report and "### Execution Status Report:" not in self.final_error_report:
                 report_to_add = "### Errors report:\n" + self.final_error_report
             else:
                 report_to_add = self.final_error_report
@@ -327,24 +298,20 @@ class DeepResearchEngine:
         self.awaiting_new_instruction = False  # Replaces 'finished'
         self.logger = DeepResearchLogger(Path(root_dir))
         self.llm_interface = llm_interface
-        self.current_node: Optional[Node] = None
-        self.next_node: Optional[Node] = None  # Tracks scheduled focus changes
+        self.current_node: Node | None = None
+        self.next_node: Node | None = None  # Tracks scheduled focus changes
         self.revision_index = 1
         # When parent requests activation of multiple children sequentially, we'll track them here
         # Then when the child is finished, and wants to activate the parent again, we'll activate the next in the queue
         # It's a dict, as the child itself might activate other grandchildren
-        self.children_queue = defaultdict(
-            list
-        )  # Queue for activating siblings sequentially
+        self.children_queue = defaultdict(list)  # Queue for activating siblings sequentially
 
         # Budget tracking
-        self.budget: Optional[int] = None  # No budget by default
+        self.budget: int | None = None  # No budget by default
         self.initial_budget = None  # Store the initial budget for reference
         self.message_cycles_used = 0
         self.budget_warning_shown = False
-        self.root_completion_message: Optional[str] = (
-            None  # To store the final message from the root node
-        )
+        self.root_completion_message: str | None = None  # To store the final message from the root node
 
         # Check if problem already exists
         self.file_system.load_existing_problem()
@@ -363,15 +330,11 @@ class DeepResearchEngine:
         templates_dir = Path(__file__).parent / "templates"
         self.template_manager = TemplateManager(templates_dir)
         # Create the renderer registry
-        self.renderer_registry: RendererRegistry = create_renderer_registry(
-            self.template_manager
-        )
+        self.renderer_registry: RendererRegistry = create_renderer_registry(self.template_manager)
 
         commands_help_generator = CommandHelpGenerator()
         # Update interface with the file system
-        self.interface = DeepResearcherInterface(
-            self.file_system, self.template_manager, commands_help_generator
-        )
+        self.interface = DeepResearcherInterface(self.file_system, self.template_manager, commands_help_generator)
 
     def is_awaiting_instruction(self) -> bool:
         """Check if the engine is waiting for a new instruction."""
@@ -415,17 +378,11 @@ class DeepResearchEngine:
 
         print(f"Preparing node '{self.current_node.title}' for new instruction.")
         # Format the instruction using the template
-        formatted_instruction = self.template_manager.render_template(
-            "context/new_user_instruction.mako", instruction=instruction
-        )
+        formatted_instruction = self.template_manager.render_template("context/new_user_instruction.mako", instruction=instruction)
 
         # Add the formatted instruction as an internal message to the current node's auto-reply
-        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-            self._current_history_tag
-        )
-        auto_reply_aggregator.add_internal_message_from(
-            formatted_instruction, "USER MESSAGE"
-        )
+        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+        auto_reply_aggregator.add_internal_message_from(formatted_instruction, "USER MESSAGE")
 
         # Reset the current node's status to IN_PROGRESS
         self.current_node.status = ProblemStatus.IN_PROGRESS
@@ -461,66 +418,52 @@ class DeepResearchEngine:
 
             # --- 1. Gather Current Interface State ---
             # Get static content and the *data* for dynamic sections
-            static_interface_content, current_dynamic_data = (
-                self.interface.render_problem_defined(
-                    self.current_node,
-                    self.permanent_log,
-                    self.budget,
-                    self.get_remaining_budget(),
-                )
+            static_interface_content, current_dynamic_data = self.interface.render_problem_defined(
+                self.current_node,
+                self.permanent_log,
+                self.budget,
+                self.get_remaining_budget(),
             )
 
             # Store the initial full interface view if not already done for this node
             if self._current_history_tag not in initial_interface_content_by_node:
                 # Render the initial dynamic sections *without* future changes for the first message
                 initial_rendered_dynamics = []
-                for i, data_instance in enumerate(current_dynamic_data):
+                for data_instance in current_dynamic_data:
                     renderer = self.renderer_registry.get(type(data_instance))
                     if renderer:
                         # Render with future_changes=0 for the initial static view
-                        initial_rendered_dynamics.append(
-                            renderer.render(data_instance, 0)
-                        )
+                        initial_rendered_dynamics.append(renderer.render(data_instance, 0))
                     else:
-                        initial_rendered_dynamics.append(
-                            f"<error>Missing renderer for {type(data_instance).__name__}</error>"
-                        )
+                        initial_rendered_dynamics.append(f"<error>Missing renderer for {type(data_instance).__name__}</error>")
 
-                initial_interface_content_by_node[self._current_history_tag] = (
-                    "\n\n".join([static_interface_content] + initial_rendered_dynamics)
+                initial_interface_content_by_node[self._current_history_tag] = "\n\n".join(
+                    [static_interface_content] + initial_rendered_dynamics
                 )
 
             # --- 2. Update History & Auto-Reply Aggregator ---
-            current_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-                self._current_history_tag
-            )
+            current_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
             # Compare current data with last state and update aggregator's list of *changed* sections
             current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
 
             # Commit changes (errors, commands, messages, changed sections) to a new AutoReply block
             # This clears the aggregator for the next cycle.
-            current_auto_reply_block = self.chat_history.commit_and_get_auto_reply(
-                self._current_history_tag
-            )
+            current_auto_reply_block = self.chat_history.commit_and_get_auto_reply(self._current_history_tag)
 
             # --- 3. Prepare History for LLM (Render Auto-Replies) ---
             history_messages = []
-            compiled_blocks = self.chat_history.get_compiled_blocks(
-                self._current_history_tag
-            )
+            compiled_blocks = self.chat_history.get_compiled_blocks(self._current_history_tag)
             auto_reply_counter = 0
-            auto_reply_max_length = None  # Reset truncation for each LLM request
+            auto_reply_max_length = 5000
 
             for i, block in enumerate(compiled_blocks):
                 if isinstance(block, ChatMessage):
-                    history_messages.append(
-                        {"author": block.author, "content": block.content}
-                    )
+                    history_messages.append({"author": block.author, "content": block.content})
                 elif isinstance(block, AutoReply):
                     auto_reply_counter += 1
 
                     # --- Calculate Future Changes for this AutoReply ---
-                    future_changes_map: Dict[int, int] = defaultdict(int)
+                    future_changes_map: dict[int, int] = defaultdict(int)
                     # Look ahead in the *rest* of the compiled blocks
                     for future_block in compiled_blocks[i + 1 :]:
                         if isinstance(future_block, AutoReply):
@@ -532,12 +475,8 @@ class DeepResearchEngine:
                     current_max_len = None
                     # Example: Start truncating after 3 auto-replies
                     if auto_reply_counter > 3:
-                        if auto_reply_max_length is None:
-                            auto_reply_max_length = 5_000  # Initial truncation length
-                        else:
-                            # Reduce length for older replies
-                            auto_reply_max_length = max(auto_reply_max_length // 2, 300)
                         current_max_len = auto_reply_max_length
+                        auto_reply_max_length = max(auto_reply_max_length // 2, 300)
 
                     # --- Render the AutoReply block ---
                     # Pass registry, future changes, and truncation length
@@ -566,11 +505,7 @@ class DeepResearchEngine:
                 print(console_auto_reply)
 
             # Get the current node path for logging
-            current_node_path = (
-                self.current_node.path
-                if self.current_node
-                else self.file_system.root_dir
-            )
+            current_node_path = self.current_node.path if self.current_node else self.file_system.root_dir
 
             # Generate the request
             request = self.llm_interface.generate_request(
@@ -609,11 +544,7 @@ class DeepResearchEngine:
 
                     # Add a warning message to the current node's auto reply
                     if self.current_node:
-                        auto_reply_aggregator = (
-                            self.chat_history.get_auto_reply_aggregator(
-                                self._current_history_tag
-                            )
-                        )
+                        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
                         auto_reply_aggregator.add_internal_message_from(
                             "⚠️ BUDGET ALERT: The message cycle budget has been exhausted. "
                             "Please finalize your work as quickly as possible. "
@@ -624,40 +555,24 @@ class DeepResearchEngine:
                     # Buffer is also exhausted
                     print("\n===== BUDGET COMPLETELY EXHAUSTED =====")
                     print(f"Initial budget: {self.initial_budget} cycles")
-                    print(
-                        f"Current usage: {self.message_cycles_used} cycles (including buffer)"
-                    )
+                    print(f"Current usage: {self.message_cycles_used} cycles (including buffer)")
 
-                    user_input = (
-                        input(
-                            "Would you like to add 20 more cycles to continue? (y/N): "
-                        )
-                        .strip()
-                        .lower()
-                    )
+                    user_input = input("Would you like to add 20 more cycles to continue? (y/N): ").strip().lower()
                     if user_input == "y":
                         additional_cycles = 20
                         self.budget += additional_cycles
-                        print(
-                            f"Added {additional_cycles} more cycles. New budget: {self.budget}"
-                        )
+                        print(f"Added {additional_cycles} more cycles. New budget: {self.budget}")
 
                         # Add a notification to the current node's auto reply
                         if self.current_node:
-                            auto_reply_aggregator = (
-                                self.chat_history.get_auto_reply_aggregator(
-                                    self._current_history_tag
-                                )
-                            )
+                            auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
                             auto_reply_aggregator.add_internal_message_from(
                                 f"The budget has been extended with {additional_cycles} additional cycles. "
                                 f"New total: {self.budget} cycles.",
                                 "SYSTEM",
                             )
                     else:
-                        print(
-                            "Finishing research due to budget constraints. Engine will await new instructions."
-                        )
+                        print("Finishing research due to budget constraints. Engine will await new instructions.")
                         self.awaiting_new_instruction = True
                         # Mark current node as failed? Or just stop? Let's mark as failed.
                         if self.current_node:
@@ -665,22 +580,14 @@ class DeepResearchEngine:
                             self.file_system.update_files()
 
             # Check if approaching budget limit (within 10 cycles)
-            elif (
-                self.budget is not None
-                and self.is_approaching_budget_limit()
-                and not self.budget_warning_shown
-            ):
+            elif self.budget is not None and self.is_approaching_budget_limit() and not self.budget_warning_shown:
                 self.budget_warning_shown = True
                 print("\n===== BUDGET WARNING =====")
-                print(
-                    f"Approaching budget limit. {self.get_remaining_budget()} cycles remaining out of {self.budget}."
-                )
+                print(f"Approaching budget limit. {self.get_remaining_budget()} cycles remaining out of {self.budget}.")
 
                 # Add a warning message to the current node's auto reply
                 if self.current_node:
-                    auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-                        self._current_history_tag
-                    )
+                    auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
                     auto_reply_aggregator.add_internal_message_from(
                         f"⚠️ BUDGET WARNING: Only {self.get_remaining_budget()} message cycles remaining out of {self.budget}. "
                         "Please prioritize the most important tasks and consider wrapping up soon.",
@@ -696,7 +603,8 @@ class DeepResearchEngine:
 
         # End of the while loop (awaiting_new_instruction is True)
         print(
-            f"Engine execution cycle complete. Current node: {self.current_node.title if self.current_node else 'None'}. Awaiting new instruction."
+            f"Engine execution cycle complete. Current node: {self.current_node.title if self.current_node else 'None'}. "\
+            "Awaiting new instruction."
         )
 
     def manually_choose_and_activate_node(self):
@@ -725,9 +633,7 @@ class DeepResearchEngine:
         node = all_nodes[index]
         self.activate_node(node)
 
-    def add_command_output(
-        self, command_name: str, args: Dict, output: str, node_title: str
-    ) -> None:
+    def add_command_output(self, command_name: str, args: dict, output: str, node_title: str) -> None:
         """
         Add command output to be included in the automatic response
 
@@ -740,11 +646,9 @@ class DeepResearchEngine:
         if not output:
             output = ""
         auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(node_title)
-        auto_reply_aggregator.add_command_output(
-            command_name, {"args": args, "output": output}
-        )
+        auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
 
-    def process_commands(self, text: str) -> tuple[bool, str, Dict]:
+    def process_commands(self, text: str) -> tuple[bool, str, dict]:
         """
         Process commands from text using the _CommandProcessor helper class.
 
@@ -764,9 +668,7 @@ class DeepResearchEngine:
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
         status_printer = StatusPrinter(self.template_manager)
-        status_printer.print_status(
-            self.is_root_problem_defined(), self.current_node, self.file_system
-        )
+        status_printer.print_status(self.is_root_problem_defined(), self.current_node, self.file_system)
 
     def set_budget(self, budget: int):
         """Set the budget for the Deep Research Assistant"""
@@ -776,12 +678,8 @@ class DeepResearchEngine:
 
         # Add a message to the current node's auto reply
         if self.current_node:
-            auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-                self._current_history_tag
-            )
-            auto_reply_aggregator.add_internal_message_from(
-                f"Budget has been set to {budget} message cycles.", "SYSTEM"
-            )
+            auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+            auto_reply_aggregator.add_internal_message_from(f"Budget has been set to {budget} message cycles.", "SYSTEM")
 
     def increment_message_cycles(self):
         """Increment the message cycles counter"""
@@ -834,9 +732,7 @@ class DeepResearchEngine:
                 try:
                     full_llm_response = next(response_generator)
                     # Log the response
-                    self.llm_interface.log_response(
-                        current_node_path, full_llm_response
-                    )
+                    self.llm_interface.log_response(current_node_path, full_llm_response)
                     yield full_llm_response
                     break  # Successfully got a response, exit the retry loop
                 except StopIteration:
@@ -864,9 +760,7 @@ class DeepResearchEngine:
         """Generate a summary of all artifacts created during the research. (Currently not called automatically)"""
         report_generator = ReportGenerator(self.file_system, self.template_manager)
         # Pass the root completion message to the generator
-        return report_generator.generate_final_report(
-            self.interface, self.root_completion_message
-        )
+        return report_generator.generate_final_report(self.interface, self.root_completion_message)
 
     def focus_down(self, subproblem_title: str) -> bool:
         """
@@ -899,7 +793,7 @@ class DeepResearchEngine:
 
         return True
 
-    def focus_up(self, message: Optional[str] = None) -> bool:
+    def focus_up(self, message: str | None = None) -> bool:
         """
         Schedule focus up to the parent problem after the current cycle is complete.
         Adds a standard notification and an optional custom message from the child
@@ -927,9 +821,7 @@ class DeepResearchEngine:
                 self.root_completion_message = message  # Store final message if any
             self.file_system.update_files()
             self.awaiting_new_instruction = True
-            print(
-                f"Root node '{current_node.title}' finished. Engine awaiting new instruction."
-            )
+            print(f"Root node '{current_node.title}' finished. Engine awaiting new instruction.")
             return True
 
         # Mark the current non-root node as FINISHED
@@ -940,28 +832,19 @@ class DeepResearchEngine:
 
         # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
         if parent_node:  # Ensure parent exists before trying to add messages
-            parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-                parent_node.title
-            )
+            parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(parent_node.title)
 
             # 1. Always add the standard status message
-            parent_auto_reply_aggregator.add_internal_message_from(
-                "Task marked FINISHED, focusing back up.", current_node.title
-            )
+            parent_auto_reply_aggregator.add_internal_message_from("Task marked FINISHED, focusing back up.", current_node.title)
 
             # 2. If a custom message was provided, add it as well
             if message:
                 # Prefix the custom message for clarity
-                parent_auto_reply_aggregator.add_internal_message_from(
-                    f"[Completion Message]: {message}", current_node.title
-                )
+                parent_auto_reply_aggregator.add_internal_message_from(f"[Completion Message]: {message}", current_node.title)
 
         # --- Schedule the focus change ---
         # Check if there are queued siblings to activate
-        if (
-            parent_node.title in self.children_queue
-            and self.children_queue[parent_node.title]
-        ):
+        if parent_node.title in self.children_queue and self.children_queue[parent_node.title]:
             # Get the next sibling from the queue
             next_sibling_title = self.children_queue[parent_node.title].pop(0)
             # If queue is empty after pop, remove the key
@@ -984,7 +867,7 @@ class DeepResearchEngine:
 
         return True
 
-    def fail_and_focus_up(self, message: Optional[str] = None) -> bool:
+    def fail_and_focus_up(self, message: str | None = None) -> bool:
         """
         Mark the current problem as FAILED, schedule focus up, and add notifications
         (standard and optional custom) to the parent's auto-reply.
@@ -1011,9 +894,7 @@ class DeepResearchEngine:
                 self.root_completion_message = message  # Store final message if any
             self.file_system.update_files()
             self.awaiting_new_instruction = True
-            print(
-                f"Root node '{current_node.title}' failed. Engine awaiting new instruction."
-            )
+            print(f"Root node '{current_node.title}' failed. Engine awaiting new instruction.")
             return True
 
         # Mark the current non-root node as FAILED
@@ -1024,21 +905,15 @@ class DeepResearchEngine:
 
         # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
         if parent_node:  # Ensure parent exists
-            parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(
-                parent_node.title
-            )
+            parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(parent_node.title)
 
             # 1. Always add the standard status message
-            parent_auto_reply_aggregator.add_internal_message_from(
-                "Task marked FAILED, focusing back up.", current_node.title
-            )
+            parent_auto_reply_aggregator.add_internal_message_from("Task marked FAILED, focusing back up.", current_node.title)
 
             # 2. If a custom failure message was provided, add it as well
             if message:
                 # Prefix the custom message for clarity
-                parent_auto_reply_aggregator.add_internal_message_from(
-                    f"[Failure Message]: {message}", current_node.title
-                )
+                parent_auto_reply_aggregator.add_internal_message_from(f"[Failure Message]: {message}", current_node.title)
 
         # --- Schedule the focus change ---
         self.next_node = parent_node

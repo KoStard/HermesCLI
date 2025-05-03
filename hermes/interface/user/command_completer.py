@@ -19,7 +19,6 @@ class CommandCompleter(Completer):
 
         score = 0
         last_idx = -1
-        pattern_idx = 0
 
         for char in pattern:
             # Find the next occurrence of pattern char after last matched position
@@ -33,7 +32,6 @@ class CommandCompleter(Completer):
                 score += idx - last_idx - 1
 
             last_idx = idx
-            pattern_idx += 1
 
         return True, score
 
@@ -56,5 +54,5 @@ class CommandCompleter(Completer):
                 matches.append((score, command))
 
         # Sort by score and yield completions
-        for score, command in sorted(matches):
+        for _, command in sorted(matches):
             yield Completion(command, start_position=-len(latest_line))

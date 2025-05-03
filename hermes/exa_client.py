@@ -1,4 +1,3 @@
-from typing import Optional, List
 from dataclasses import dataclass
 
 
@@ -8,17 +7,17 @@ class ExaContentResult:
     text: str
     id: str
     title: str
-    author: Optional[str]
-    published_date: Optional[str]
-    image: Optional[str]
+    author: str | None
+    published_date: str | None
+    image: str | None
 
 
 @dataclass
 class ExaSearchResult:
     url: str
     title: str
-    author: Optional[str]
-    published_date: Optional[str]
+    author: str | None
+    published_date: str | None
 
 
 class ExaClient:
@@ -27,7 +26,7 @@ class ExaClient:
 
         self.client = Exa(api_key=api_key)
 
-    def get_contents(self, url: str, text: bool = True) -> List[ExaContentResult]:
+    def get_contents(self, url: str, text: bool = True) -> list[ExaContentResult]:
         """Get contents of a URL with error handling and validation"""
         response = self.client.get_contents([url], text=text)
         return [
@@ -43,7 +42,7 @@ class ExaClient:
             for result in response.results
         ]
 
-    def search(self, query: str, num_results: int = 10) -> List[ExaContentResult]:
+    def search(self, query: str, num_results: int = 10) -> list[ExaContentResult]:
         """Search for a query and return the results"""
         response = self.client.search(query, num_results=num_results)
         return [

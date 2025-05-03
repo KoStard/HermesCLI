@@ -3,12 +3,10 @@ import json
 
 def convert_notebook_custom(ipynb_path):
     """Convert notebook to text format using custom implementation."""
-    with open(ipynb_path, "r", encoding="utf-8") as f:
+    with open(ipynb_path, encoding="utf-8") as f:
         notebook = json.load(f)
 
-    text_content = [
-        """> This is automatically generated representation of the Jupyter Notebook. This is read-only format."""
-    ]
+    text_content = ["""> This is automatically generated representation of the Jupyter Notebook. This is read-only format."""]
 
     # Add notebook metadata if exists
     if "metadata" in notebook:
@@ -39,9 +37,7 @@ def convert_notebook_custom(ipynb_path):
                         text_content.append("".join(output["data"]["text/plain"]))
                     # Handle other output types like images, HTML, etc.
                     else:
-                        text_content.append(
-                            f"[Output type: {list(output['data'].keys())}]"
-                        )
+                        text_content.append(f"[Output type: {list(output['data'].keys())}]")
 
         text_content.append("\n")  # Add extra newline between cells
 

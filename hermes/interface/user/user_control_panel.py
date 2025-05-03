@@ -1,41 +1,42 @@
-from datetime import datetime, timezone
+import os
 import shlex
 from argparse import ArgumentParser, Namespace
-from typing import Generator, Optional
+from collections.abc import Generator
+from datetime import datetime, timezone
 
-from hermes.exa_client import ExaClient
-from hermes.interface.helpers.terminal_coloring import CLIColors
-from hermes.interface.user.fuzzy_selector import FuzzyFilesSelector
-from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
-from ..helpers.peekable_generator import PeekableGenerator
-from hermes.message import (
-    ImageUrlMessage,
-    Message,
-    TextMessage,
-    ImageMessage,
-    AudioFileMessage,
-    VideoMessage,
-    EmbeddedPDFMessage,
-    TextualFileMessage,
-    UrlMessage,
-)
 from hermes.event import (
+    AgentModeEvent,
+    ClearHistoryEvent,
     DeepResearchBudgetEvent,
     Event,
     ExitEvent,
+    LLMCommandsExecutionEvent,
     LoadHistoryEvent,
     MessageEvent,
-    ClearHistoryEvent,
     OnceEvent,
     SaveHistoryEvent,
-    AgentModeEvent,
-    LLMCommandsExecutionEvent,
     ThinkingLevelEvent,
 )
+from hermes.exa_client import ExaClient
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.utils.tree_generator import TreeGenerator
+from hermes.interface.helpers.terminal_coloring import CLIColors
+from hermes.interface.user.fuzzy_selector import FuzzyFilesSelector
+from hermes.message import (
+    AudioFileMessage,
+    EmbeddedPDFMessage,
+    ImageMessage,
+    ImageUrlMessage,
+    Message,
+    TextMessage,
+    TextualFileMessage,
+    UrlMessage,
+    VideoMessage,
+)
 from hermes.utils.file_extension import remove_quotes
-import os
+from hermes.utils.tree_generator import TreeGenerator
+
+from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
+from ..helpers.peekable_generator import PeekableGenerator
 
 
 class UserControlPanel(ControlPanel):
@@ -44,7 +45,7 @@ class UserControlPanel(ControlPanel):
         *,
         notifications_printer: CLINotificationsPrinter,
         extra_commands: list[ControlPanelCommand] = None,
-        exa_client: Optional[ExaClient] = None,
+        exa_client: ExaClient | None = None,
         llm_control_panel=None,
         is_deep_research_mode=False,
     ):
@@ -81,9 +82,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/text",
                 description="Add text to the conversation",
                 short_description="Send a text message",
-                parser=lambda line: MessageEvent(
-                    TextMessage(author="user", text=line, is_directly_entered=True)
-                ),
+                parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directly_entered=True)),
             )
         )
 
@@ -106,9 +105,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/image",
                 description="Add image to the conversation",
                 short_description="Share an image file",
-                parser=lambda line: MessageEvent(
-                    ImageMessage(author="user", image_path=line)
-                ),
+                parser=lambda line: MessageEvent(ImageMessage(author="user", image_path=line)),
             )
         )
 
@@ -118,9 +115,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/image_url",
                 description="Add image from url to the conversation",
                 short_description="Share an image via URL",
-                parser=lambda line: MessageEvent(
-                    ImageUrlMessage(author="user", image_url=line)
-                ),
+                parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line)),
             )
         )
 
@@ -130,9 +125,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/audio",
                 description="Add audio to the conversation",
                 short_description="Share an audio file",
-                parser=lambda line: MessageEvent(
-                    AudioFileMessage(author="user", audio_filepath=line)
-                ),
+                parser=lambda line: MessageEvent(AudioFileMessage(author="user", audio_filepath=line)),
             )
         )
 
@@ -142,9 +135,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/video",
                 description="Add video to the conversation",
                 short_description="Share a video file",
-                parser=lambda line: MessageEvent(
-                    VideoMessage(author="user", video_filepath=line)
-                ),
+                parser=lambda line: MessageEvent(VideoMessage(author="user", video_filepath=line)),
             )
         )
 
@@ -152,11 +143,10 @@ class UserControlPanel(ControlPanel):
             ControlPanelCommand(
                 command_id="pdf",
                 command_label="/pdf",
-                description="Add pdf to the conversation. After the PDF path, optionally use {<page_number>, <page_number>:<page_number>, ...} to specify pages.",
+                description="Add pdf to the conversation. After the PDF path, optionally use " \
+                "{<page_number>, <page_number>:<page_number>, ...} to specify pages.",
                 short_description="Share a PDF file",
-                parser=lambda line: MessageEvent(
-                    EmbeddedPDFMessage.build_from_line(author="user", raw_line=line)
-                ),
+                parser=lambda line: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line)),
             )
         )
 
@@ -166,11 +156,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/textual_file",
                 description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
                 short_description="Share a text-based document",
-                parser=lambda line: MessageEvent(
-                    TextualFileMessage(
-                        author="user", text_filepath=line, textual_content=None
-                    )
-                ),
+                parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
             )
         )
 
@@ -180,11 +166,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/textual_files",
                 description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
                 short_description="Share a text-based document",
-                parser=lambda line: MessageEvent(
-                    TextualFileMessage(
-                        author="user", text_filepath=line, textual_content=None
-                    )
-                ),
+                parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
                 visible_from_interface=False,
                 default_on_cli=True,
             )
@@ -266,9 +248,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/llm_commands_execution",
                 description="Enable or disable execution of LLM commands (on/off)",
                 short_description="Toggle LLM command execution",
-                parser=lambda line: LLMCommandsExecutionEvent(
-                    enabled=line.strip().lower() == "on"
-                ),
+                parser=lambda line: LLMCommandsExecutionEvent(enabled=line.strip().lower() == "on"),
             )
         )
         self._register_command(
@@ -287,9 +267,7 @@ class UserControlPanel(ControlPanel):
                 command_label="/agent_mode",
                 description="Enable or disable agent mode (on/off)",
                 short_description="Toggle agent mode",
-                parser=lambda line: AgentModeEvent(
-                    enabled=line.strip().lower() == "on"
-                ),
+                parser=lambda line: AgentModeEvent(enabled=line.strip().lower() == "on"),
             )
         )
 
@@ -346,9 +324,7 @@ class UserControlPanel(ControlPanel):
     def _parse_set_assistant_command_status(self, content: str) -> None:
         """Set the status of an assistant command"""
         if not self.llm_control_panel:
-            self.notifications_printer.print_notification(
-                "Error: LLM control panel not available", CLIColors.RED
-            )
+            self.notifications_printer.print_notification("Error: LLM control panel not available", CLIColors.RED)
             return None
 
         try:
@@ -364,9 +340,7 @@ class UserControlPanel(ControlPanel):
     def _parse_list_assistant_commands(self, _: str) -> None:
         """List all assistant commands with their current status"""
         if not self.llm_control_panel:
-            self.notifications_printer.print_notification(
-                "Error: LLM control panel not available", CLIColors.RED
-            )
+            self.notifications_printer.print_notification("Error: LLM control panel not available", CLIColors.RED)
             return None
 
         overrides = self.llm_control_panel.get_command_override_statuses()
@@ -390,9 +364,7 @@ class UserControlPanel(ControlPanel):
         try:
             budget = int(content.strip())
             if budget <= 0:
-                self.notifications_printer.print_notification(
-                    "Budget must be a positive integer", CLIColors.RED
-                )
+                self.notifications_printer.print_notification("Budget must be a positive integer", CLIColors.RED)
                 return None
             return DeepResearchBudgetEvent(budget=budget)
         except ValueError:
@@ -426,10 +398,7 @@ class UserControlPanel(ControlPanel):
     def render(self):
         results = []
         for command in self.commands:
-            if (
-                self.commands[command].is_deep_research
-                and not self.is_deep_research_mode
-            ):
+            if self.commands[command].is_deep_research and not self.is_deep_research_mode:
                 continue
             if not self.commands[command].visible_from_interface:
                 continue
@@ -437,9 +406,7 @@ class UserControlPanel(ControlPanel):
 
         return "\n".join(results)
 
-    def break_down_and_execute_message(
-        self, message: Message
-    ) -> Generator[Event, None, None]:
+    def break_down_and_execute_message(self, message: Message) -> Generator[Event, None, None]:
         peekable_generator = PeekableGenerator(self._lines_from_message(message))
         prioritised_backlog = []
         # Collecting the text message, can be interrupted by commands
@@ -464,16 +431,12 @@ class UserControlPanel(ControlPanel):
 
                 command_priority = self.commands[matching_command].priority
                 command_parser = self.commands[matching_command].parser
-                command_content = self._extract_command_content_in_line(
-                    matching_command, line
-                )
+                command_content = self._extract_command_content_in_line(matching_command, line)
 
                 try:
                     parsed_command_events = command_parser(command_content)
                 except Exception as e:
-                    self.notifications_printer.print_error(
-                        f"Command {matching_command} failed: {e}"
-                    )
+                    self.notifications_printer.print_error(f"Command {matching_command} failed: {e}")
                     continue
 
                 if parsed_command_events is None:
@@ -543,14 +506,10 @@ class UserControlPanel(ControlPanel):
                     )
                     self._cli_arguments.add(command_label[1:])
 
-        parser.add_argument(
-            "--prompt", type=str, action="append", help="Prompt for the LLM"
-        )
+        parser.add_argument("--prompt", type=str, action="append", help="Prompt for the LLM")
         self._cli_arguments.add("prompt")
 
-    def convert_cli_arguments_to_text(
-        self, parser: ArgumentParser, args: Namespace
-    ) -> str:
+    def convert_cli_arguments_to_text(self, parser: ArgumentParser, args: Namespace) -> str:
         lines = []
         args_dict = vars(args)
         for arg, value in args_dict.items():
@@ -570,24 +529,20 @@ class UserControlPanel(ControlPanel):
     def _parse_exa_url_command(self, content: str) -> MessageEvent:
         """Parse and execute the /exa_url command"""
         if not self.exa_client:
-            raise ValueError(
-                "Exa integration not configured - missing EXA_API_KEY in config"
-            )
+            raise ValueError("Exa integration not configured - missing EXA_API_KEY in config")
 
         url = content.strip()
         result = self.exa_client.get_contents(url)[0]
         result_text = result.text
         result_title = result.title
-        content_age = (
-            datetime.now(timezone.utc)
-            - datetime.fromisoformat(result.published_date).astimezone(timezone.utc)
-        ).days
+        content_age = (datetime.now(timezone.utc) - datetime.fromisoformat(result.published_date).astimezone(timezone.utc)).days
 
         if not result_text:
             raise ValueError(f"No content found for URL: {url}")
 
         if content_age > 7:
-            result_text += f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, it might not be fully up to date"
+            result_text += f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, " \
+                "it might not be fully up to date"
 
         return MessageEvent(
             TextualFileMessage(

@@ -8,7 +8,8 @@ This answers the question:
 How can you pass a generator to another function, such that it consumes only part of it?
 """
 
-from typing import Generator, TypeVar
+from collections.abc import Generator
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -35,9 +36,7 @@ class PeekableGenerator:
         return next(self._generator)
 
 
-def iterate_while(
-    peekable_generator: PeekableGenerator, condition
-) -> Generator[T, None, None]:
+def iterate_while(peekable_generator: PeekableGenerator, condition) -> Generator[T, None, None]:
     """
     Iterate over a peekable generator while condition is True.
 

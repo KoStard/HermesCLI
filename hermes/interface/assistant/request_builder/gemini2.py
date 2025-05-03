@@ -1,5 +1,6 @@
+import typing
 from base64 import b64encode
-from typing import Optional
+
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.assistant.request_builder.all_messages_aggregator import (
     AllMessagesAggregator,
@@ -10,7 +11,6 @@ from hermes.interface.assistant.request_builder.text_messages_aggregator import 
 )
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.utils.file_extension import get_file_extension
-import typing
 
 if typing.TYPE_CHECKING:
     from google.genai import Client
@@ -25,7 +25,7 @@ class Gemini2RequestBuilder(RequestBuilder):
         google_client: "Client",
     ):
         super().__init__(model_tag, notifications_printer, prompt_builder_factory)
-        from google.genai.types import Tool, GoogleSearch
+        from google.genai.types import GoogleSearch, Tool
 
         if model_tag.endswith("/grounded"):
             self.grounded = True
@@ -39,9 +39,7 @@ class Gemini2RequestBuilder(RequestBuilder):
         self.google_client = google_client
 
     def initialize_request(self):
-        self.text_messages_aggregator = TextMessagesAggregator(
-            self.prompt_builder_factory
-        )
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
 
     def _add_part(self, content: str | dict, author: str):
@@ -63,10 +61,7 @@ class Gemini2RequestBuilder(RequestBuilder):
         name: str = None,
         text_role: str = None,
     ):
-        if (
-            self.text_messages_aggregator.get_current_author() != author
-            and not self.text_messages_aggregator.is_empty()
-        ):
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()
         self.text_messages_aggregator.add_message(
             message=text,
@@ -106,19 +101,15 @@ class Gemini2RequestBuilder(RequestBuilder):
         text_filepath: str,
         author: str,
         message_id: int,
-        file_role: Optional[str] = None,
+        file_role: str | None = None,
     ):
-        return self._default_handle_textual_file_message(
-            text_filepath, author, message_id, file_role
-        )
+        return self._default_handle_textual_file_message(text_filepath, author, message_id, file_role)
 
     def handle_image_message(self, image_path: str, author: str, message_id: int):
         from google.genai.types import Part
 
         uploaded_file = self._upload_file(image_path)
-        uploaded_file = Part.from_uri(
-            file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type
-        )
+        uploaded_file = Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
     def _get_base64_image(self, image_path: str) -> str:
@@ -140,9 +131,8 @@ class Gemini2RequestBuilder(RequestBuilder):
 
     def _upload_file(self, file_path: str):
         file_hash = self._get_file_hash(file_path)
-        if file_path in self.uploaded_files:
-            if self.uploaded_files[file_path]["hash"] == file_hash:
-                return self.uploaded_files[file_path]["uploaded_file"]
+        if file_path in self.uploaded_files and self.uploaded_files[file_path]["hash"] == file_hash:
+            return self.uploaded_files[file_path]["uploaded_file"]
 
         uploaded_file = self.google_client.files.upload(path=file_path)
         self.uploaded_files[file_path] = {
@@ -168,23 +158,17 @@ class Gemini2RequestBuilder(RequestBuilder):
         from google.genai.types import Part
 
         uploaded_file = self._upload_file(audio_path)
-        uploaded_file = Part.from_uri(
-            file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type
-        )
+        uploaded_file = Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
     def handle_video_message(self, video_path: str, author: str, message_id: int):
         from google.genai.types import Part
 
         uploaded_file = self._upload_file(video_path)
-        uploaded_file = Part.from_uri(
-            file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type
-        )
+        uploaded_file = Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
         self._add_part(uploaded_file, author)
 
-    def handle_embedded_pdf_message(
-        self, pdf_path: str, pages: list[int], author: str, message_id: int
-    ):
+    def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
         from google.genai.types import Part
 
         extracted_pdf_key = (pdf_path, tuple(pages))
@@ -197,7 +181,5 @@ class Gemini2RequestBuilder(RequestBuilder):
             self.extracted_pdfs[extracted_pdf_key] = pdf_path
 
         uploaded_file = self._upload_file(pdf_path)
-        uploaded_file = Part.from_uri(
-            file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type
-        )
+        uploaded_file = Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
         self._add_part(uploaded_file, author)

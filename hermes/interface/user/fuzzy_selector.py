@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import List
 
 
 class FuzzyFilesSelector:
@@ -10,7 +9,8 @@ class FuzzyFilesSelector:
     def select_files(self, multi=True):
         """
         Select files using fuzzy finder.
-        Behaviour like fzf, getting from current working directory child files, recursively through the files, excluding files starting with a dot.
+        Behaviour like fzf, getting from current working directory child files, recursively through the files, excluding files 
+        starting with a dot.
         Return should be a list of absolute paths for the selected files.
         Empty list is selection as well.
         """
@@ -29,13 +29,9 @@ class FuzzyFilesSelector:
                 "message": "Select files:" if multi else "Select a file:",
                 "choices": choices,
                 "multiselect": multi,
-                "filter": lambda result: [item for item in result if item is not None]
-                if multi
-                else [result],
+                "filter": lambda result: [item for item in result if item is not None] if multi else [result],
                 "validate": lambda result: True,
-                "transformer": lambda result: f"{len(result)} files selected"
-                if multi and result
-                else "No files selected",
+                "transformer": lambda result: f"{len(result)} files selected" if multi and result else "No files selected",
                 "long_instruction": "Use arrow keys to navigate, tab to select, enter to confirm, Ctrl+c to cancel selection",
                 "mandatory": False,
                 "height": min(15, len(choices) + 2),
@@ -57,7 +53,7 @@ class FuzzyFilesSelector:
 
         return [str(Path(file).absolute()) for file in result["files"]]
 
-    def _get_file_choices(self) -> List[str]:
+    def _get_file_choices(self) -> list[str]:
         """Get all files recursively from current directory, excluding hidden files."""
         choices = []
 

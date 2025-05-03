@@ -1,6 +1,6 @@
 import textwrap
+
 from .base import PromptBuilder, PromptBuilderFactory
-from typing import List
 
 
 class SimplePromptTextPiece:
@@ -14,7 +14,7 @@ class SimplePromptBuilder(PromptBuilder):
     """A simple prompt builder that concatenates text pieces with empty lines between them."""
 
     def __init__(self):
-        self.text_pieces: List[SimplePromptTextPiece] = []
+        self.text_pieces: list[SimplePromptTextPiece] = []
 
     def add_text(self, text: str, name: str = None, text_role: str = None):
         """
@@ -45,10 +45,7 @@ class SimplePromptBuilder(PromptBuilder):
             if piece.text_role:
                 tag_attrs.append(f'role="{piece.text_role}"')
 
-            if tag_attrs:
-                tag_start = f"<text {' '.join(tag_attrs)}>"
-            else:
-                tag_start = "<text>"
+            tag_start = f"<text {' '.join(tag_attrs)}>" if tag_attrs else "<text>"
 
             result.append(f"{tag_start}\n{piece.text}\n</text>")
 
@@ -62,7 +59,8 @@ class SimplePromptBuilderFactory(PromptBuilderFactory):
     def get_help_message(self) -> str:
         return textwrap.dedent(
             """
-        You are a helpful assistant. Your response is not limited to XML. In fact, you can respond with any text, including markdown, and should not use xml unless directly asked, as it's frustrating for the user.
+        You are a helpful assistant. Your response is not limited to XML. In fact, you can respond with any text, including markdown, 
+        and should not use xml unless directly asked, as it's frustrating for the user.
         The user prompts are wrapped in simple xml tags to help you understand the structure of the prompt. 
         This structure is applied only to the user prompts, not to the assistant responses. 
         Check other instructions for assistant response format.

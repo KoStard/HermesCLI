@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .base import DynamicSectionData, DynamicSectionRenderer
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 # --- Data ---
 @dataclass(frozen=True)
 class PermanentLogsData(DynamicSectionData):
-    permanent_logs: List[str]
+    permanent_logs: list[str]
 
 
 # --- Renderer ---

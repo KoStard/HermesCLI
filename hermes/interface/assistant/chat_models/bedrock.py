@@ -1,5 +1,5 @@
 import time
-from typing import Generator
+from collections.abc import Generator
 
 from hermes.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
@@ -10,26 +10,23 @@ from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
 )
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.bedrock import BedrockRequestBuilder
+
 from .base import ChatModel
 
 
 class BedrockModel(ChatModel):
     def initialize(self):
-        from botocore.config import Config
         import boto3
+        from botocore.config import Config
 
-        self.request_builder = BedrockRequestBuilder(
-            self.model_tag, self.notifications_printer, SimplePromptBuilderFactory()
-        )
+        self.request_builder = BedrockRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
 
         aws_region = self.config.get("aws_region")
         aws_profile_name = self.config.get("aws_profile_name")
 
         if aws_profile_name:
             session = boto3.Session(profile_name=aws_profile_name)
-            self.notifications_printer.print_notification(
-                f"Using AWS profile: {aws_profile_name}"
-            )
+            self.notifications_printer.print_notification(f"Using AWS profile: {aws_profile_name}")
         else:
             session = boto3.Session()  # Use default profile/credentials
 
@@ -43,9 +40,7 @@ class BedrockModel(ChatModel):
             ),
         )
         self._low_reasoning_tokens = self.config.get("low_reasoning_tokens", 1024)
-        self._medium_reasoning_tokens = self.config.get(
-            "low_reasoning_tokens", 1024 * 5
-        )
+        self._medium_reasoning_tokens = self.config.get("low_reasoning_tokens", 1024 * 5)
         self._high_reasoning_tokens = self.config.get("low_reasoning_tokens", 1024 * 10)
 
     def send_request(self, request: any) -> Generator[str, None, None]:

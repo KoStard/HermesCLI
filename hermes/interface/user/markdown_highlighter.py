@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 
 class MarkdownHighlighter:
@@ -14,8 +14,8 @@ class MarkdownHighlighter:
         return rendered
 
     def get_lexer(self, element):
-        from pygments.lexers import get_lexer_by_name, MarkdownLexer
         import pygments
+        from pygments.lexers import MarkdownLexer, get_lexer_by_name
 
         info = element.get("attrs", {}).get("info", "")
         if info:
@@ -27,15 +27,13 @@ class MarkdownHighlighter:
             return MarkdownLexer()
 
     def print_markdown(self, text, lexer):
-        from pygments.formatters import Terminal256Formatter
         from pygments import highlight
+        from pygments.formatters import Terminal256Formatter
 
         highlighted = highlight(text, lexer, Terminal256Formatter())
         print(highlighted, end="")
 
-    def line_aggregator(
-        self, generator: Generator[str, None, None]
-    ) -> Generator[str, None, None]:
+    def line_aggregator(self, generator: Generator[str, None, None]) -> Generator[str, None, None]:
         buffer = ""
         for chunk in generator:
             buffer += chunk
@@ -54,7 +52,8 @@ class MarkdownHighlighter:
             """
             Fix to a bug where some characters get serialised:
             Test:
-                ⋊  python -c 'from hermes.utils.markdown_highlighter import MarkdownHighlighter; print(MarkdownHighlighter().process_markdown("`<>!@#$%^&*()-=`"))'
+                ⋊  python -c 'from hermes.utils.markdown_highlighter import MarkdownHighlighter; 
+                print(MarkdownHighlighter().process_markdown("`<>!@#$%^&*()-=`"))'
                 `<>!@#$%^&*()-=` < correct
                 `&lt;&gt;!@#$%^&amp;*()-=` < incorrect
             """

@@ -1,6 +1,7 @@
-import socket
 import argparse
 import json
+import socket
+
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import HTML
 
@@ -28,7 +29,7 @@ def main():
                     if not chunk:
                         break
                     buffer.append(chunk)
-            except socket.timeout:
+            except TimeoutError:
                 if not buffer:
                     continue
 
@@ -50,15 +51,12 @@ def main():
                     history=None,
                     auto_suggest=None,
                     multiline=True,
-                    prompt_continuation=lambda width, line_number, is_soft_wrap: " "
-                    * width,
+                    prompt_continuation=lambda width, line_number, is_soft_wrap: " " * width,
                 )
 
                 # Get user input
                 try:
-                    user_input = session.prompt(
-                        HTML("\n<ansiyellow>Your response: </ansiyellow>")
-                    )
+                    user_input = session.prompt(HTML("\n<ansiyellow>Your response: </ansiyellow>"))
                     if user_input.strip():
                         # Send response back to server
                         client_socket.send(user_input.encode())

@@ -3,9 +3,9 @@ import os
 import re
 import threading
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 from enum import Enum
+from pathlib import Path
+from typing import Optional
 
 from .frontmatter_manager import FrontmatterManager
 from .knowledge_entry import KnowledgeEntry
@@ -24,7 +24,7 @@ class Artifact:
 
     @staticmethod
     def load_from_file(file_path: Path) -> "Artifact":
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
         metadata, content = FrontmatterManager().extract_frontmatter(content)
         # Derive name from filename without extension
@@ -34,9 +34,7 @@ class Artifact:
         return Artifact(name=name, content=content)
 
     def save_to_file(self, file_path: Path) -> None:
-        content = self.frontmatter_manager.add_frontmatter(
-            self.content, {"name": self.name}
-        )
+        content = self.frontmatter_manager.add_frontmatter(self.content, {"name": self.name})
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
 
@@ -54,17 +52,15 @@ class ProblemStatus(Enum):
 class Node:
     title: str
     problem_definition: str
-    criteria: List[str] = field(default_factory=list)
-    criteria_done: List[bool] = field(default_factory=list)
-    artifacts: Dict[str, Artifact] = field(default_factory=dict)
-    subproblems: Dict[str, "Node"] = field(default_factory=dict)
+    criteria: list[str] = field(default_factory=list)
+    criteria_done: list[bool] = field(default_factory=list)
+    artifacts: dict[str, Artifact] = field(default_factory=dict)
+    subproblems: dict[str, "Node"] = field(default_factory=dict)
     parent: Optional["Node"] = None
-    path: Optional[Path] = None
+    path: Path | None = None
     status: ProblemStatus = ProblemStatus.NOT_STARTED
     depth_from_root: int = 0
-    visible_artifacts: Dict[str, bool] = field(
-        default_factory=dict
-    )  # Track visibility state for all artifacts
+    visible_artifacts: dict[str, bool] = field(default_factory=dict)  # Track visibility state for all artifacts
 
     def add_criteria(self, criteria: str) -> int:
         """Add criteria and return its index"""
@@ -140,9 +136,9 @@ class Node:
 class FileSystem:
     def __init__(self, root_dir: str = "research"):
         self.root_dir = Path(root_dir).resolve()
-        self.root_node: Optional[Node] = None
-        self._external_files: Dict[str, Artifact] = {}
-        self.knowledge_base: List[KnowledgeEntry] = []
+        self.root_node: Node | None = None
+        self._external_files: dict[str, Artifact] = {}
+        self.knowledge_base: list[KnowledgeEntry] = []
         self.lock = threading.RLock()
         self.frontmatter_manager = FrontmatterManager()
 
@@ -150,9 +146,7 @@ class FileSystem:
         self.root_dir.mkdir(parents=True, exist_ok=True)
 
         # Create the external files directory
-        self.external_files_dir = (
-            self.root_dir / "_ExternalFiles"
-        )  # Prefix with _ for clarity
+        self.external_files_dir = self.root_dir / "_ExternalFiles"  # Prefix with _ for clarity
         self.external_files_dir.mkdir(exist_ok=True)
 
         # Define path for the knowledge base file
@@ -167,9 +161,7 @@ class FileSystem:
         if self.root_node:
             # Avoid creating multiple root problems if one already exists in memory
             # Or handle merging/updating if necessary
-            print(
-                f"Warning: Root problem '{self.root_node.title}' already exists. Overwriting is not implemented."
-            )
+            print(f"Warning: Root problem '{self.root_node.title}' already exists. Overwriting is not implemented.")
             return self.root_node
         # Create root directory if it doesn't exist
         self.root_dir.mkdir(parents=True, exist_ok=True)
@@ -190,17 +182,13 @@ class FileSystem:
 
         return self.root_node
 
-    def load_existing_problem(self) -> Optional[Node]:
+    def load_existing_problem(self) -> Node | None:
         """Check if a problem already exists and load it"""
         # External files are loaded during __init__
-        self.root_node = self._recursively_load_problems(
-            self.root_dir, parent_node=None
-        )
+        self.root_node = self._recursively_load_problems(self.root_dir, parent_node=None)
         return self.root_node
 
-    def _recursively_load_problems(
-        self, node_dir: Path, parent_node: Optional[Node]
-    ) -> Optional[Node]:
+    def _recursively_load_problems(self, node_dir: Path, parent_node: Node | None) -> Node | None:
         if not node_dir.exists():
             return None
 
@@ -210,9 +198,7 @@ class FileSystem:
             return None
 
         # Read problem definition and extract front-matter
-        title, problem_definition = self._read_problem_definition_with_frontmatter(
-            problem_def_file
-        )
+        title, problem_definition = self._read_problem_definition_with_frontmatter(problem_def_file)
 
         # If no title in front-matter, use directory name as fallback
         if not title:
@@ -247,7 +233,7 @@ class FileSystem:
 
         return node
 
-    def _read_artifacts(self, artifacts_dir: Path) -> Dict[str, Artifact]:
+    def _read_artifacts(self, artifacts_dir: Path) -> dict[str, Artifact]:
         """Read artifacts from the artifacts directory"""
         artifacts = {}
         if artifacts_dir.exists():
@@ -290,14 +276,12 @@ class FileSystem:
                 if file_path.is_file():
                     try:
                         artifact = Artifact.load_from_file(file_path)
-                        artifact.is_fully_visible = (
-                            True  # External files should be fully visible
-                        )
+                        artifact.is_fully_visible = True  # External files should be fully visible
                         self._external_files[file_path.name] = artifact
                     except Exception as e:
                         print(f"Error loading external file {file_path.name}: {e}")
 
-    def get_external_files(self) -> Dict[str, Artifact]:
+    def get_external_files(self) -> dict[str, Artifact]:
         """Get the dictionary of loaded external files"""
         # Consider adding a check here to reload if needed, but __init__ load should suffice for now
         # Return a copy to prevent external modification
@@ -321,27 +305,19 @@ class FileSystem:
                     if not block:
                         continue
                     try:
-                        metadata, content = (
-                            self.frontmatter_manager.extract_frontmatter(block)
-                        )
+                        metadata, content = self.frontmatter_manager.extract_frontmatter(block)
                         if metadata:  # Ensure metadata was found
                             entry = KnowledgeEntry.from_dict(metadata, content)
                             self.knowledge_base.append(entry)
                         else:
-                            print(
-                                f"Warning: Could not parse frontmatter for a knowledge block in {self._knowledge_base_file}"
-                            )
+                            print(f"Warning: Could not parse frontmatter for a knowledge block in {self._knowledge_base_file}")
                     except Exception as e_parse:
-                        print(
-                            f"Warning: Error parsing knowledge entry block: {e_parse}\nBlock content:\n{block[:200]}..."
-                        )
+                        print(f"Warning: Error parsing knowledge entry block: {e_parse}\nBlock content:\n{block[:200]}...")
 
             except FileNotFoundError:
                 pass  # Expected if file doesn't exist yet
             except Exception as e_read:
-                print(
-                    f"Error loading knowledge base file {self._knowledge_base_file}: {e_read}"
-                )
+                print(f"Error loading knowledge base file {self._knowledge_base_file}: {e_read}")
                 # Decide on recovery strategy: potentially backup old file, start fresh?
                 # For now, we start with an empty list if loading fails.
                 self.knowledge_base = []
@@ -355,9 +331,7 @@ class FileSystem:
                 sorted_entries = sorted(self.knowledge_base, key=lambda x: x.timestamp)
                 for entry in sorted_entries:
                     metadata = entry.to_dict()
-                    entry_string = self.frontmatter_manager.add_frontmatter(
-                        entry.content, metadata
-                    )
+                    entry_string = self.frontmatter_manager.add_frontmatter(entry.content, metadata)
                     entry_strings.append(entry_string)
 
                 # Join entries with the separator
@@ -365,9 +339,7 @@ class FileSystem:
                 self._knowledge_base_file.write_text(full_content, encoding="utf-8")
 
             except Exception as e:
-                print(
-                    f"Error saving knowledge base file {self._knowledge_base_file}: {e}"
-                )
+                print(f"Error saving knowledge base file {self._knowledge_base_file}: {e}")
 
     def add_knowledge_entry(self, entry: KnowledgeEntry) -> None:
         """Add a new entry to the knowledge base and save immediately."""
@@ -376,13 +348,13 @@ class FileSystem:
             # Save immediately to ensure persistence
             self.save_knowledge_base()
 
-    def get_knowledge_base(self) -> List[KnowledgeEntry]:
+    def get_knowledge_base(self) -> list[KnowledgeEntry]:
         """Get a copy of the current knowledge base entries."""
         with self.lock:
             # Return a copy to prevent external modification
             return self.knowledge_base[:]
 
-    def get_parent_chain(self, node: Node) -> List[Node]:
+    def get_parent_chain(self, node: Node) -> list[Node]:
         """Get the parent chain including the given node"""
         chain = []
         current = node
@@ -391,7 +363,7 @@ class FileSystem:
             current = current.parent
         return list(reversed(chain))
 
-    def get_problem_hierarchy(self, current_node: Optional[Node] = None) -> str:
+    def get_problem_hierarchy(self, current_node: Node | None = None) -> str:
         """Get the problem hierarchy as a string"""
         if not self.root_node:
             return ""
@@ -406,9 +378,9 @@ class FileSystem:
     def _build_hierarchy_tree(
         self,
         node: Node,
-        result: List[str],
+        result: list[str],
         indent_level: int,
-        current_node: Optional[Node] = None,
+        current_node: Node | None = None,
     ) -> None:
         """
         Recursively build the hierarchy tree in XML-like format
@@ -453,10 +425,8 @@ class FileSystem:
             result.append(opening_tag)
 
             # Process children with increased indentation
-            for title, subproblem in node.subproblems.items():
-                self._build_hierarchy_tree(
-                    subproblem, result, indent_level + 1, current_node
-                )
+            for _, subproblem in node.subproblems.items():
+                self._build_hierarchy_tree(subproblem, result, indent_level + 1, current_node)
 
             # Closing tag
             result.append(f'{indent}</"{node_title}">')
@@ -511,19 +481,13 @@ class FileSystem:
 
         # Write problem definition with front-matter
         with open(node.path / "Problem Definition.md", "w", encoding="utf-8") as f:
-            content = self.frontmatter_manager.add_frontmatter(
-                node.problem_definition, {"title": node.title}
-            )
+            content = self.frontmatter_manager.add_frontmatter(node.problem_definition, {"title": node.title})
             f.write(content)
 
         # Write criteria (always create the file)
-        with open(
-            node.path / "Criteria of Definition of Done.md", "w", encoding="utf-8"
-        ) as f:
+        with open(node.path / "Criteria of Definition of Done.md", "w", encoding="utf-8") as f:
             if node.criteria:
-                for i, (criterion, done) in enumerate(
-                    zip(node.criteria, node.criteria_done)
-                ):
+                for i, (criterion, done) in enumerate(zip(node.criteria, node.criteria_done, strict=False)):
                     status = "[x]" if done else "[ ]"
                     f.write(f"{i + 1}. {status} {criterion}\n")
 
@@ -544,9 +508,7 @@ class FileSystem:
         for subproblem in node.subproblems.values():
             self._write_node_to_disk(subproblem)
 
-    def _read_problem_definition_with_frontmatter(
-        self, file_path: Path
-    ) -> Tuple[Optional[str], str]:
+    def _read_problem_definition_with_frontmatter(self, file_path: Path) -> tuple[str | None, str]:
         """
         Read a problem definition file and extract front-matter metadata
 
@@ -556,7 +518,7 @@ class FileSystem:
         if not file_path.exists():
             return None, ""
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             full_content = f.read()
 
         metadata, content = self.frontmatter_manager.extract_frontmatter(full_content)
@@ -574,9 +536,7 @@ class FileSystem:
         - Appends a short hash of the original name for uniqueness.
         - Preserves the original file extension.
         """
-        _MAX_COMPONENT_BASE_LENGTH = (
-            50  # Max length for the base name part (excluding hash and extension)
-        )
+        _MAX_COMPONENT_BASE_LENGTH = 50  # Max length for the base name part (excluding hash and extension)
         _HASH_LENGTH = 8  # Length of the hash suffix
 
         original_filename = original_filename.strip()
@@ -590,21 +550,13 @@ class FileSystem:
         extension = extension.lower()  # Normalize extension
 
         # Generate hash from the original full name (before any modification)
-        hasher = hashlib.sha1(
-            original_filename.encode("utf-8", "ignore")
-        )  # Use ignore for robustness
+        hasher = hashlib.sha1(original_filename.encode("utf-8", "ignore"))  # Use ignore for robustness
         unique_suffix = hasher.hexdigest()[:_HASH_LENGTH]
 
         # Basic sanitization: replace invalid chars, collapse spaces/underscores
-        sanitized_base = re.sub(
-            r'[<>:"/\\|?*]+', "_", base_name
-        )  # Replace strictly invalid chars
-        sanitized_base = re.sub(
-            r"\s+", "_", sanitized_base
-        )  # Replace whitespace with underscore
-        sanitized_base = re.sub(
-            r"_+", "_", sanitized_base
-        )  # Collapse multiple underscores
+        sanitized_base = re.sub(r'[<>:"/\\|?*]+', "_", base_name)  # Replace strictly invalid chars
+        sanitized_base = re.sub(r"\s+", "_", sanitized_base)  # Replace whitespace with underscore
+        sanitized_base = re.sub(r"_+", "_", sanitized_base)  # Collapse multiple underscores
         # Remove most non-alphanumeric characters, keeping underscores and hyphens
         sanitized_base = re.sub(r"[^a-zA-Z0-9_-]+", "", sanitized_base)
         # Remove leading/trailing underscores/hyphens/periods
@@ -634,13 +586,9 @@ class FileSystem:
         if len(final_filename) > _MAX_FILENAME_LEN:
             # If even after truncation and hashing it's too long (very unlikely), truncate brutally
             # Keep the hash and extension if possible
-            keep_len = (
-                _MAX_FILENAME_LEN - len(unique_suffix) - len(extension) - 1
-            )  # -1 for the underscore
+            keep_len = _MAX_FILENAME_LEN - len(unique_suffix) - len(extension) - 1  # -1 for the underscore
             if keep_len > 0:
-                final_filename = (
-                    f"{sanitized_base[:keep_len]}_{unique_suffix}{extension}"
-                )
+                final_filename = f"{sanitized_base[:keep_len]}_{unique_suffix}{extension}"
             else:
                 # Extremely unlikely: hash + extension is already too long. Just truncate the whole thing.
                 final_filename = final_filename[:_MAX_FILENAME_LEN]
@@ -651,7 +599,7 @@ class FileSystem:
         criteria = []
         criteria_done = []
         if criteria_file.exists():
-            with open(criteria_file, "r", encoding="utf-8") as f:
+            with open(criteria_file, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line and line[0].isdigit():
@@ -662,11 +610,7 @@ class FileSystem:
                             # Check if it's marked as done
                             done = "[x]" in criterion_text or "[X]" in criterion_text
                             # Remove status marker
-                            criterion_text = (
-                                criterion_text.split("] ", 1)[1]
-                                if "] " in criterion_text
-                                else criterion_text
-                            )
+                            criterion_text = criterion_text.split("] ", 1)[1] if "] " in criterion_text else criterion_text
                             criteria.append(criterion_text)
                             criteria_done.append(done)
         return criteria, criteria_done

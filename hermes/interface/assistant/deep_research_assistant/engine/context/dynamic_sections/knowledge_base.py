@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .base import DynamicSectionData, DynamicSectionRenderer
 
@@ -21,8 +21,8 @@ class PrimitiveKnowledgeEntryData:
     content: str
     author_node_title: str
     timestamp: str
-    title: Optional[str]
-    tags: Tuple[str, ...]  # Use tuple for immutability
+    title: str | None
+    tags: tuple[str, ...]  # Use tuple for immutability
 
     @staticmethod
     def from_entry(entry: "KnowledgeEntry") -> "PrimitiveKnowledgeEntryData":
@@ -39,11 +39,11 @@ class PrimitiveKnowledgeEntryData:
 @dataclass(frozen=True)
 class KnowledgeBaseData(DynamicSectionData):
     # Store primitive representations of knowledge entries
-    knowledge_entries: Tuple[PrimitiveKnowledgeEntryData, ...]
+    knowledge_entries: tuple[PrimitiveKnowledgeEntryData, ...]
 
     @staticmethod
     def from_knowledge_base(
-        knowledge_base: List["KnowledgeEntry"],
+        knowledge_base: list["KnowledgeEntry"],
     ) -> "KnowledgeBaseData":
         entry_data = tuple(
             PrimitiveKnowledgeEntryData.from_entry(entry)
@@ -67,7 +67,5 @@ class KnowledgeBaseRenderer(DynamicSectionRenderer):
             # Alternatively, return "" if we want it completely hidden.
 
         # Pass the primitive tuple of knowledge entry data
-        context = {
-            "knowledge_entries_data": data.knowledge_entries
-        }  # Tuple[PrimitiveKnowledgeEntryData]
+        context = {"knowledge_entries_data": data.knowledge_entries}  # Tuple[PrimitiveKnowledgeEntryData]
         return self._render_template(context)

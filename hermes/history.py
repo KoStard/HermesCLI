@@ -4,12 +4,11 @@ History keeps track of the messages in the conversation.
 
 import json
 from dataclasses import dataclass
-from typing import List
 
-from hermes.event import MessageEvent, RawContentForHistoryEvent, Event
+from hermes.event import Event, MessageEvent, RawContentForHistoryEvent
 from hermes.message import (
-    Message,
     DESERIALIZATION_KEYMAP,
+    Message,
 )
 
 
@@ -44,15 +43,13 @@ class HistoryItem:
             message = DESERIALIZATION_KEYMAP[message_type](message_data)
             return HistoryItem(message=message)
         else:
-            raw_content = RawContentForHistoryEvent.from_json(
-                history_item["raw_content"]
-            )
+            raw_content = RawContentForHistoryEvent.from_json(history_item["raw_content"])
             return HistoryItem(raw_content=raw_content)
 
 
 class History:
-    _committed_items: List[HistoryItem]
-    _uncommitted_items: List[HistoryItem]
+    _committed_items: list[HistoryItem]
+    _uncommitted_items: list[HistoryItem]
 
     def __init__(self):
         self._committed_items = []
@@ -75,27 +72,25 @@ class History:
         self._uncommitted_items = []
         return had_changes
 
-    def get_messages(self) -> List[Message]:
+    def get_messages(self) -> list[Message]:
         all_items = self._committed_items + self._uncommitted_items
         return [item.message for item in all_items if item.message]
 
-    def get_messages_as_events(self) -> List[Event]:
+    def get_messages_as_events(self) -> list[Event]:
         all_items = self._committed_items + self._uncommitted_items
         return [MessageEvent(item.message) for item in all_items if item.message]
 
-    def get_history_for(self, author: str) -> List[Message]:
+    def get_history_for(self, author: str) -> list[Message]:
         results = []
         all_items = self._committed_items + self._uncommitted_items
         for item in all_items:
-            # Not including the text that is directly entered, which means is directly extracted from the raw content, which is included as well
+            # Not including the text that is directly entered, which means is directly extracted from the raw content,
+            # which is included as well
             if item.message:
                 if item.message.author != author:
                     results.append(item.message)
                 elif item.message.author == author:
-                    if (
-                        hasattr(item.message, "is_directly_entered")
-                        and item.message.is_directly_entered
-                    ):
+                    if hasattr(item.message, "is_directly_entered") and item.message.is_directly_entered:
                         continue
                     results.append(item.message)
             elif item.raw_content and item.raw_content.content.author == author:
@@ -130,7 +125,7 @@ class History:
             KeyError: If the file is missing required message data
             ValueError: If message type is not recognized
         """
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, encoding="utf-8") as f:
             history_data = json.load(f)
 
         self.clear()

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .base import DynamicSectionData, DynamicSectionRenderer
 
@@ -22,12 +22,12 @@ class PrimitiveArtifactData:
     content: str
     is_external: bool
     is_fully_visible: bool  # Added to track visibility state directly
-    owner_title: Optional[str] = None  # Added to track ownership for node artifacts
+    owner_title: str | None = None  # Added to track ownership for node artifacts
 
     @staticmethod
     def from_artifact(
         artifact: "Artifact",
-        owner_title: Optional[str] = None,
+        owner_title: str | None = None,
         is_fully_visible: bool = True,
     ) -> "PrimitiveArtifactData":
         return PrimitiveArtifactData(
@@ -43,24 +43,18 @@ class PrimitiveArtifactData:
 @dataclass(frozen=True)
 class ArtifactsSectionData(DynamicSectionData):
     # Store primitive representations
-    external_files: Tuple[PrimitiveArtifactData, ...] = field(default_factory=tuple)
-    node_artifacts: Tuple[PrimitiveArtifactData, ...] = field(default_factory=tuple)
+    external_files: tuple[PrimitiveArtifactData, ...] = field(default_factory=tuple)
+    node_artifacts: tuple[PrimitiveArtifactData, ...] = field(default_factory=tuple)
 
     @staticmethod
     def from_artifact_lists(
-        external_files_dict: Dict[str, "Artifact"],
-        node_artifacts_list: List[
-            Tuple[str, str, str, bool]
-        ],  # (owner_title, name, content, is_fully_visible)
+        external_files_dict: dict[str, "Artifact"],
+        node_artifacts_list: list[tuple[str, str, str, bool]],  # (owner_title, name, content, is_fully_visible)
     ) -> "ArtifactsSectionData":
         # Convert external files dict to primitive tuple
         external_primitives = tuple(
-            PrimitiveArtifactData.from_artifact(
-                artifact, is_fully_visible=True
-            )  # External are always visible
-            for name, artifact in sorted(
-                external_files_dict.items()
-            )  # Sort for consistent order
+            PrimitiveArtifactData.from_artifact(artifact, is_fully_visible=True)  # External are always visible
+            for name, artifact in sorted(external_files_dict.items())  # Sort for consistent order
         )
 
         # Convert node artifacts list to primitive tuple
@@ -72,14 +66,10 @@ class ArtifactsSectionData(DynamicSectionData):
                 is_fully_visible=is_fully_visible,
                 owner_title=owner_title,
             )
-            for owner_title, name, content, is_fully_visible in sorted(
-                node_artifacts_list, key=lambda x: (x[0], x[1])
-            )  # Sort
+            for owner_title, name, content, is_fully_visible in sorted(node_artifacts_list, key=lambda x: (x[0], x[1]))  # Sort
         )
 
-        return ArtifactsSectionData(
-            external_files=external_primitives, node_artifacts=node_primitives
-        )
+        return ArtifactsSectionData(external_files=external_primitives, node_artifacts=node_primitives)
 
 
 # --- Renderer ---

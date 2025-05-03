@@ -1,6 +1,5 @@
-import os
 import logging
-from typing import Tuple
+import os
 
 from hermes.utils.binary_file import is_binary
 
@@ -14,7 +13,7 @@ class FileReader:
     """
 
     @staticmethod
-    def read_file(filepath: str) -> Tuple[str, bool]:
+    def read_file(filepath: str) -> tuple[str, bool]:
         """
         Read a file with appropriate format handling.
 
@@ -51,11 +50,9 @@ class FileReader:
         except Exception as e:
             # Fall back to plain text for non-binary files
             if not is_binary(filepath):
-                logger.debug(
-                    f"Failed to use markitdown for {filepath}, reading as text file: {e}"
-                )
+                logger.debug(f"Failed to use markitdown for {filepath}, reading as text file: {e}")
                 try:
-                    with open(filepath, "r", encoding="utf-8") as f:
+                    with open(filepath, encoding="utf-8") as f:
                         content = f.read()
                     return content, True
                 except Exception as read_error:

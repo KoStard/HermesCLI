@@ -1,17 +1,17 @@
 import json
 import os
+import platform
 import socket
 import subprocess
-import platform
 import sys
-from typing import Generator
+from collections.abc import Generator
 
 from hermes.event import Event
-from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
 )
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
+from hermes.interface.assistant.chat_models.base import ChatModel
 from hermes.message import TextMessage
 
 
@@ -67,8 +67,7 @@ class DebugInterface(ChatAssistantInterface):
     def get_input(self) -> Generator[Event, None, None]:
         message = self._send_request()
 
-        for event in self.control_panel.break_down_and_execute_message(message):
-            yield event
+        yield from self.control_panel.break_down_and_execute_message(message)
 
     def _send_request(self):
         message_data = json.dumps(self.request)

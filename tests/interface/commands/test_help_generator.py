@@ -1,6 +1,7 @@
-import unittest
 import re
-from typing import Any, Dict
+import unittest
+from typing import Any
+
 from hermes.interface.commands.command import Command, CommandRegistry
 from hermes.interface.commands.help_generator import CommandHelpGenerator
 
@@ -11,11 +12,9 @@ class TestHelpCommand1(Command[str]):
         super().__init__("cmd1", "First test command")
         self.add_section("title", required=True, help_text="The title section")
         self.add_section("body", required=True, help_text="The body content")
-        self.add_section(
-            "tags", required=False, help_text="Optional tags", allow_multiple=True
-        )
+        self.add_section("tags", required=False, help_text="Optional tags", allow_multiple=True)
 
-    def execute(self, context: str, args: Dict[str, Any]) -> None:
+    def execute(self, context: str, args: dict[str, Any]) -> None:
         pass
 
 
@@ -24,7 +23,7 @@ class TestHelpCommand2(Command[str]):
         super().__init__("cmd2", "Second test command with\nmultiple line\nhelp text")
         self.add_section("content", required=True, help_text="The main content")
 
-    def execute(self, context: str, args: Dict[str, Any]) -> None:
+    def execute(self, context: str, args: dict[str, Any]) -> None:
         pass
 
 

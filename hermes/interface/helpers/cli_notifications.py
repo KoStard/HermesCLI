@@ -24,11 +24,7 @@ class CLINotificationsPrinter:
 
         lines = message.split("\n")
 
-        wrapped_message = [
-            wrapped_line
-            for line in lines
-            for wrapped_line in textwrap.wrap(line, width=max_message_width - 4)
-        ]
+        wrapped_message = [wrapped_line for line in lines for wrapped_line in textwrap.wrap(line, width=max_message_width - 4)]
 
         # Determine the width of the box based on the longest line
         box_width = min(max(len(line) for line in wrapped_message) + 4, terminal_width)
@@ -53,6 +49,4 @@ class CLINotificationsPrinter:
 
 if __name__ == "__main__":
     printer = CLINotificationsPrinter()
-    printer.print_notification(
-        "This is a test message that should be printed in a round rectangle."
-    )
+    printer.print_notification("This is a test message that should be printed in a round rectangle.")

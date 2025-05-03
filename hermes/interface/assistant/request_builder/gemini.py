@@ -1,6 +1,6 @@
-from base64 import b64encode
 import time
-from typing import Optional
+from base64 import b64encode
+
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.assistant.request_builder.all_messages_aggregator import (
     AllMessagesAggregator,
@@ -31,9 +31,7 @@ class GeminiRequestBuilder(RequestBuilder):
         self.extracted_pdfs = {}
 
     def initialize_request(self):
-        self.text_messages_aggregator = TextMessagesAggregator(
-            self.prompt_builder_factory
-        )
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
 
     def _add_content(self, content: str | dict, author: str):
@@ -52,10 +50,7 @@ class GeminiRequestBuilder(RequestBuilder):
         name: str = None,
         text_role: str = None,
     ):
-        if (
-            self.text_messages_aggregator.get_current_author() != author
-            and not self.text_messages_aggregator.is_empty()
-        ):
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()
         self.text_messages_aggregator.add_message(
             message=text,
@@ -66,16 +61,14 @@ class GeminiRequestBuilder(RequestBuilder):
         )
 
     def compile_request(self) -> any:
-        from google.generativeai.types import HarmCategory, HarmBlockThreshold
+        from google.generativeai.types import HarmBlockThreshold, HarmCategory
 
         self._wait_for_uploaded_files()
         self._flush_text_messages()
 
         final_messages = []
         for messages, author in self.all_messages_aggregator.get_aggregated_messages():
-            final_messages.append(
-                {"role": self._get_message_role(author), "parts": messages}
-            )
+            final_messages.append({"role": self._get_message_role(author), "parts": messages})
 
         return {
             "model_kwargs": {"model_name": self.model_tag},
@@ -114,11 +107,9 @@ class GeminiRequestBuilder(RequestBuilder):
         text_filepath: str,
         author: str,
         message_id: int,
-        file_role: Optional[str] = None,
+        file_role: str | None = None,
     ):
-        return self._default_handle_textual_file_message(
-            text_filepath, author, message_id, file_role
-        )
+        return self._default_handle_textual_file_message(text_filepath, author, message_id, file_role)
 
     def handle_image_message(self, image_path: str, author: str, message_id: int):
         uploaded_file = self._upload_file(image_path)
@@ -143,9 +134,8 @@ class GeminiRequestBuilder(RequestBuilder):
 
     def _upload_file(self, file_path: str):
         file_hash = self._get_file_hash(file_path)
-        if file_path in self.uploaded_files:
-            if self.uploaded_files[file_path]["hash"] == file_hash:
-                return self.uploaded_files[file_path]["uploaded_file"]
+        if file_path in self.uploaded_files and self.uploaded_files[file_path]["hash"] == file_hash:
+            return self.uploaded_files[file_path]["uploaded_file"]
         import google.generativeai as genai
 
         uploaded_file = genai.upload_file(path=file_path)
@@ -163,17 +153,11 @@ class GeminiRequestBuilder(RequestBuilder):
 
     def _wait_for_uploaded_files(self):
         for file_path, uploaded_file_details in self.uploaded_files.items():
-            current_status = self._get_uploaded_file_status(
-                uploaded_file_details["uploaded_file"]
-            )
+            current_status = self._get_uploaded_file_status(uploaded_file_details["uploaded_file"])
             while current_status == "PROCESSING":
-                self.notifications_printer.print_info(
-                    f"Waiting for file {file_path} to be processed..."
-                )
+                self.notifications_printer.print_info(f"Waiting for file {file_path} to be processed...")
                 time.sleep(0.5)
-                current_status = self._get_uploaded_file_status(
-                    uploaded_file_details["uploaded_file"]
-                )
+                current_status = self._get_uploaded_file_status(uploaded_file_details["uploaded_file"])
             print(f"File {file_path} processed, status: {current_status}")
 
     def handle_audio_file_message(self, audio_path: str, author: str, message_id: int):
@@ -184,9 +168,7 @@ class GeminiRequestBuilder(RequestBuilder):
         uploaded_file = self._upload_file(video_path)
         self._add_content(uploaded_file, author)
 
-    def handle_embedded_pdf_message(
-        self, pdf_path: str, pages: list[int], author: str, message_id: int
-    ):
+    def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
         extracted_pdf_key = (pdf_path, tuple(pages))
         if extracted_pdf_key in self.extracted_pdfs:
             pdf_path = self.extracted_pdfs[extracted_pdf_key]

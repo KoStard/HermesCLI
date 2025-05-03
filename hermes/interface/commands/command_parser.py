@@ -1,19 +1,19 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # Use relative import within the same package
-from .command import CommandRegistry, Command
+from .command import Command, CommandRegistry
 
 
 @dataclass
 class CommandError:
     """Represents an error encountered during command parsing or validation."""
 
-    command_name: Optional[str]  # Name of the command where error occurred
+    command_name: str | None  # Name of the command where error occurred
     message: str  # Description of the error
-    line_number: Optional[int] = None  # Line number where the error was detected
+    line_number: int | None = None  # Line number where the error was detected
     is_syntax_error: bool = False  # True if it's a block syntax error (<<< >>>)
 
 
@@ -21,13 +21,13 @@ class CommandError:
 class ParseResult:
     """Result of parsing a single command block."""
 
-    command_name: Optional[str] = None
-    args: Dict[str, Any] = field(default_factory=dict)
-    errors: List[CommandError] = field(default_factory=list)
+    command_name: str | None = None
+    args: dict[str, Any] = field(default_factory=dict)
+    errors: list[CommandError] = field(default_factory=list)
     # Indicates if this specific block had a <<< >>> syntax error preventing parsing
     has_block_syntax_error: bool = False
     # Start line index (0-based) of the command block in the original text
-    block_start_line_index: Optional[int] = None
+    block_start_line_index: int | None = None
 
 
 class CommandParser:
@@ -37,7 +37,7 @@ class CommandParser:
         # Get the singleton instance of the registry
         self.registry = CommandRegistry()
 
-    def parse_text(self, text: str) -> List[ParseResult]:
+    def parse_text(self, text: str) -> list[ParseResult]:
         """
         Parse all command blocks from the input text.
 
@@ -49,13 +49,11 @@ class CommandParser:
             (even those with syntax errors). Includes results for syntax errors
             detected outside specific blocks (e.g., dangling tags).
         """
-        results: List[ParseResult] = []
+        results: list[ParseResult] = []
         lines = text.split("\n")
 
         # 1. Find potential command blocks and check overall block syntax
-        potential_blocks, block_syntax_errors = self._find_blocks_and_check_syntax(
-            lines
-        )
+        potential_blocks, block_syntax_errors = self._find_blocks_and_check_syntax(lines)
 
         # Add block syntax errors as separate ParseResult entries
         for error in block_syntax_errors:
@@ -67,17 +65,11 @@ class CommandParser:
             results.append(result)
 
         # Sort results by line number for predictable order
-        results.sort(
-            key=lambda r: r.block_start_line_index
-            if r.block_start_line_index is not None
-            else -1
-        )
+        results.sort(key=lambda r: r.block_start_line_index if r.block_start_line_index is not None else -1)
 
         return results
 
-    def _find_blocks_and_check_syntax(
-        self, lines: List[str]
-    ) -> Tuple[List[Tuple[int, List[str]]], List[CommandError]]:
+    def _find_blocks_and_check_syntax(self, lines: list[str]) -> tuple[list[tuple[int, list[str]]], list[CommandError]]:
         """
         Identifies potential command blocks (<<< ... >>>) and checks for syntax errors
         like mismatched or nested tags.
@@ -89,7 +81,7 @@ class CommandParser:
         """
         blocks = []
         errors = []
-        open_tag_index: Optional[int] = None
+        open_tag_index: int | None = None
 
         for i, line in enumerate(lines):
             stripped_line = line.strip()
@@ -142,9 +134,7 @@ class CommandParser:
 
         return blocks, errors
 
-    def _parse_single_block(
-        self, block_start_index: int, block_lines: List[str]
-    ) -> ParseResult:
+    def _parse_single_block(self, block_start_index: int, block_lines: list[str]) -> ParseResult:
         """Parses the content of a single, syntactically valid command block."""
         result = ParseResult(block_start_line_index=block_start_index)
         opening_line = block_lines[0].strip()
@@ -195,8 +185,7 @@ class CommandParser:
                 CommandError(
                     command_name=command_name,
                     message=f"Error during argument transformation: {e}",
-                    line_number=block_start_index
-                    + 1,  # Error relates to the whole block
+                    line_number=block_start_index + 1,  # Error relates to the whole block
                 )
             )
             # Continue with original args for validation if transformation fails? Or stop?
@@ -211,17 +200,14 @@ class CommandParser:
                 CommandError(
                     command_name=command_name,
                     message=error_msg,
-                    line_number=block_start_index
-                    + 1,  # Validation error applies to the block
+                    line_number=block_start_index + 1,  # Validation error applies to the block
                 )
             )
 
         return result
 
     @staticmethod
-    def _parse_command_sections(
-        content: str, content_start_line: int, command: Command[Any]
-    ) -> Tuple[Dict[str, Any], List[CommandError]]:
+    def _parse_command_sections(content: str, content_start_line: int, command: Command[Any]) -> tuple[dict[str, Any], list[CommandError]]:
         """
         Helper to parse ///section delimiters within command content.
 
@@ -235,16 +221,14 @@ class CommandParser:
             - A dictionary of arguments: `{section_name: content_or_list_of_content}`.
             - A list of `CommandError` for section-related issues.
         """
-        args: Dict[str, Any] = {}
-        errors: List[CommandError] = []
+        args: dict[str, Any] = {}
+        errors: list[CommandError] = []
         # Regex to find sections: ///name content (until next ///or end)
         # It captures the name (group 1) and the content (group 2)
         # (?s) makes . match newlines. Non-greedy .*? ensures it stops at the first ///
-        section_matches = re.finditer(
-            r"///(\w+)\s*(.*?)(?=\s*///|\Z)", content, re.MULTILINE | re.DOTALL
-        )
+        section_matches = re.finditer(r"///(\w+)\s*(.*?)(?=\s*///|\Z)", content, re.MULTILINE | re.DOTALL)
 
-        sections_found: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
+        sections_found: dict[str, list[tuple[str, int]]] = defaultdict(list)
         last_pos = 0
 
         # Check for content before the first section marker
@@ -304,14 +288,10 @@ class CommandParser:
             )
 
         # Process found sections based on command definition (allow_multiple)
-        allow_multiple_dict = {
-            section.name: section.allow_multiple for section in command.sections
-        }
+        allow_multiple_dict = {section.name: section.allow_multiple for section in command.sections}
 
         for name, content_list in sections_found.items():
-            allows_multiple = allow_multiple_dict.get(
-                name, False
-            )  # Default to False if section somehow not in command.sections
+            allows_multiple = allow_multiple_dict.get(name, False)  # Default to False if section somehow not in command.sections
             if len(content_list) > 1 and not allows_multiple:
                 # Report error for the second occurrence onwards
                 for _, line_num in content_list[1:]:
@@ -334,7 +314,7 @@ class CommandParser:
         return args, errors
 
     @staticmethod
-    def generate_error_report(parse_results: List[ParseResult]) -> str:
+    def generate_error_report(parse_results: list[ParseResult]) -> str:
         """
         Generate a formatted error report string from a list of ParseResult objects.
 
@@ -345,7 +325,7 @@ class CommandParser:
             A formatted markdown string summarizing the errors, or an empty string
             if no errors were found.
         """
-        all_errors: List[CommandError] = []
+        all_errors: list[CommandError] = []
         for result in parse_results:
             all_errors.extend(result.errors)
 
@@ -366,9 +346,7 @@ class CommandParser:
 
         for i, error in enumerate(all_errors, 1):
             line_info = f" (near line {error.line_number})" if error.line_number else ""
-            cmd_info = (
-                f" in command '{error.command_name}'" if error.command_name else ""
-            )
+            cmd_info = f" in command '{error.command_name}'" if error.command_name else ""
 
             error_type = "Syntax Error" if error.is_syntax_error else "Error"
             report_parts.append(f"#### {error_type} {i}{line_info}{cmd_info}:")
@@ -381,9 +359,7 @@ class CommandParser:
 
         report_parts.append("---")
         if syntax_errors_found:
-            report_parts.append(
-                "**Note:** Commands with block syntax errors (<<< >>> issues) were not parsed or executed."
-            )
+            report_parts.append("**Note:** Commands with block syntax errors (<<< >>> issues) were not parsed or executed.")
         if other_errors_found:
             report_parts.append(
                 "**Note:** Commands with other errors (e.g., unknown command, missing/invalid sections) might be skipped during execution."

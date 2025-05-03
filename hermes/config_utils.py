@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 from appdirs import user_config_dir
 
 
@@ -19,9 +20,7 @@ def _get_config_root_dir() -> Path:
         return Path(user_config_dir(appname="hermes", appauthor=False))
     else:
         # Fallback for other potential OS - default to Unix-like style
-        print(
-            f"Warning: Unsupported platform '{sys.platform}'. Defaulting config path to ~/.config/hermes/"
-        )
+        print(f"Warning: Unsupported platform '{sys.platform}'. Defaulting config path to ~/.config/hermes/")
         return Path.home() / ".config" / "hermes"
 
 

@@ -1,42 +1,44 @@
-import textwrap
+import configparser
 import logging
-from hermes.extensions_loader import load_extensions
-from hermes.engine import Engine
+import os
+import sys
+import textwrap
 from argparse import ArgumentParser, Namespace
+
+from hermes.config_utils import get_config_path
+from hermes.engine import Engine
+from hermes.exa_client import ExaClient
+from hermes.extensions_loader import load_extensions
 from hermes.history import History
 from hermes.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
 )
+from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.interface.assistant.model_factory import ModelFactory
-from hermes.interface.user.command_completer import CommandCompleter
 from hermes.interface.control_panel.commands_lister import CommandsLister
 from hermes.interface.debug.debug_interface import DebugInterface
-from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.interface.user.command_completer import CommandCompleter
 from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
 from hermes.interface.user.user_control_panel import UserControlPanel
 from hermes.interface.user.user_interface import UserInterface
-from hermes.exa_client import ExaClient
 from hermes.participants import DebugParticipant, LLMParticipant, UserParticipant
-import configparser
-import os
-import sys
-from hermes.config_utils import get_config_path
 
 
-def build_cli_interface(
-    user_control_panel: UserControlPanel, model_factory: ModelFactory
-):
+def build_cli_interface(user_control_panel: UserControlPanel, model_factory: ModelFactory):
     parser = ArgumentParser()
     subparsers = parser.add_subparsers(dest="execution_mode", required=True)
     chat_parser = subparsers.add_parser("chat", help="Get command information")
 
     chat_parser.add_argument("--debug", action="store_true")
+
+    suggested_models =  ', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.get_provider_model_pairs())
+
     chat_parser.add_argument(
         "--model",
         type=str,
-        help=f"Model for the LLM (suggested models: {', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.get_provider_model_pairs())})",
+        help=f"Model for the LLM (suggested models: {suggested_models})",
     )
     chat_parser.add_argument(
         "--deep-research",
@@ -44,9 +46,7 @@ def build_cli_interface(
         help="Use the Deep Research Assistant interface with path to research folder",
         type=str,
     )
-    chat_parser.add_argument(
-        "--stt", action="store_true", help="Use Speech to Text mode for input"
-    )
+    chat_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
     chat_parser.add_argument(
         "--no-markdown",
         action="store_true",
@@ -68,14 +68,10 @@ def build_cli_interface(
         help="Extract pages from a PDF file. Will be saved as original_path/original_name_extracted.pdf",
     )
     extract_pdf_parser.add_argument("filepath", type=str, help="Path to the PDF file")
-    extract_pdf_parser.add_argument(
-        "pages", type=str, help="Pages to extract (e.g. {1,4:5})"
-    )
+    extract_pdf_parser.add_argument("pages", type=str, help="Pages to extract (e.g. {1,4:5})")
 
     # Get URL content command
-    get_url_parser = utils_subparsers.add_parser(
-        "get_url", help="Get raw content from a URL using standard HTTP"
-    )
+    get_url_parser = utils_subparsers.add_parser("get_url", help="Get raw content from a URL using standard HTTP")
     get_url_parser.add_argument("url", type=str, help="URL to fetch content from")
     get_url_parser.add_argument(
         "--output",
@@ -85,9 +81,7 @@ def build_cli_interface(
     )
 
     # Get URL content via Exa command
-    get_url_exa_parser = utils_subparsers.add_parser(
-        "get_url_exa", help="Get enhanced content from a URL using Exa API"
-    )
+    get_url_exa_parser = utils_subparsers.add_parser("get_url_exa", help="Get enhanced content from a URL using Exa API")
     get_url_exa_parser.add_argument("url", type=str, help="URL to fetch content from")
     get_url_exa_parser.add_argument(
         "--output",
@@ -97,9 +91,7 @@ def build_cli_interface(
     )
 
     # Exa search command
-    exa_search_parser = utils_subparsers.add_parser(
-        "exa_search", help="Search the web using Exa API"
-    )
+    exa_search_parser = utils_subparsers.add_parser("exa_search", help="Search the web using Exa API")
     exa_search_parser.add_argument("query", type=str, help="Search query")
     exa_search_parser.add_argument(
         "--num_results",
@@ -113,9 +105,7 @@ def build_cli_interface(
     info_subparsers = info_parser.add_subparsers(dest="info_command", required=True)
 
     # List assistant commands
-    info_subparsers.add_parser(
-        "list-assistant-commands", help="List all assistant commands"
-    )
+    info_subparsers.add_parser("list-assistant-commands", help="List all assistant commands")
 
     # List user commands
     info_subparsers.add_parser("list-user-commands", help="List all user commands")
@@ -134,13 +124,9 @@ def main():
             if raw_overrides:
                 for override in raw_overrides.split(","):
                     command_id, status = override.split(":")
-                    command_status_overrides[command_id.strip()] = (
-                        status.strip().upper()
-                    )
+                    command_status_overrides[command_id.strip()] = status.strip().upper()
         except Exception as e:
-            print(
-                f"Warning: Failed to parse llm_command_status_overrides from config: {e}"
-            )
+            print(f"Warning: Failed to parse llm_command_status_overrides from config: {e}")
 
     notifications_printer = CLINotificationsPrinter()
 
@@ -171,9 +157,7 @@ def main():
         llm_control_panel=llm_control_panel,
     )
 
-    cli_arguments_parser, utils_subparsers = build_cli_interface(
-        user_control_panel, model_factory
-    )
+    cli_arguments_parser, utils_subparsers = build_cli_interface(user_control_panel, model_factory)
 
     extension_utils_visitors = []
 
@@ -199,9 +183,7 @@ def main():
     elif cli_args.execution_mode == "utils":
         execute_utils_command(cli_args, config, extension_utils_visitors)
         return
-    user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(
-        cli_arguments_parser, cli_args
-    )
+    user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(cli_arguments_parser, cli_args)
     stt_input_handler_optional = get_stt_input_handler(cli_args, config)
     markdown_highlighter = None if cli_args.no_markdown else MarkdownHighlighter()
 
@@ -227,21 +209,18 @@ def main():
             model_info_string = get_default_model_info_string(config)
         if not model_info_string:
             raise ValueError(
-                "No model specified. Please specify a model using the --model argument or add a default model in the config file ~/.config/hermes/config.ini."
+                "No model specified. Please specify a model using the --model argument or add a default model in the config " \
+                "file ~/.config/hermes/config.ini."
             )
         if "/" not in model_info_string:
-            raise ValueError(
-                "Model info string should be in the format provider/model_tag"
-            )
+            raise ValueError("Model info string should be in the format provider/model_tag")
         provider, model_tag = model_info_string.split("/", 1)
         provider = provider.upper()
 
         model = model_factory.get_model(provider, model_tag, config)
 
         if is_debug_mode:
-            debug_interface = DebugInterface(
-                control_panel=llm_control_panel, model=model
-            )
+            debug_interface = DebugInterface(control_panel=llm_control_panel, model=model)
             debug_participant = DebugParticipant(debug_interface)
             assistant_participant = debug_participant
         elif is_deep_research_mode:
@@ -259,13 +238,9 @@ def main():
             deep_research_participant = LLMParticipant(deep_research_interface)
             assistant_participant = deep_research_participant
 
-            notifications_printer.print_notification(
-                f"Using Deep Research Assistant interface with research directory: {research_path}"
-            )
+            notifications_printer.print_notification(f"Using Deep Research Assistant interface with research directory: {research_path}")
         else:
-            llm_interface = ChatAssistantInterface(
-                model, control_panel=llm_control_panel
-            )
+            llm_interface = ChatAssistantInterface(model, control_panel=llm_control_panel)
             llm_participant = LLMParticipant(llm_interface)
             assistant_participant = llm_participant
 
@@ -315,8 +290,9 @@ def execute_utils_command(cli_args, config, extension_utils_visitors):
             else:
                 pages.append(int(part))
 
-        from PyPDF2 import PdfReader, PdfWriter
         import os
+
+        from PyPDF2 import PdfReader, PdfWriter
 
         reader = PdfReader(cli_args.filepath)
         writer = PdfWriter()
@@ -330,12 +306,14 @@ def execute_utils_command(cli_args, config, extension_utils_visitors):
             writer.write(output_file)
         print(f"Extracted pages saved to: {output_path}")
     elif cli_args.utils_command == "get_url":
-        from markitdown import MarkItDown
         import requests
+        from markitdown import MarkItDown
 
         headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "User-Agent": 
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": 
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "en-US,en;q=0.9",
             "Upgrade-Insecure-Requests": "1",
             "Sec-Fetch-Dest": "document",
@@ -351,9 +329,7 @@ def execute_utils_command(cli_args, config, extension_utils_visitors):
         print(f"\n# URL Content: {cli_args.url}\n")
         print(markdown_content)
     elif cli_args.utils_command == "get_url_exa":
-        client = ExaClient(
-            config["EXA"]["api_key"]
-        )  # Will fail naturally if config is missing
+        client = ExaClient(config["EXA"]["api_key"])  # Will fail naturally if config is missing
         result = client.get_contents(cli_args.url)
 
         if not result:
@@ -364,9 +340,7 @@ def execute_utils_command(cli_args, config, extension_utils_visitors):
         print(result[0].text)
         print("Last updated:", result[0].published_date)
     elif cli_args.utils_command == "exa_search":
-        client = ExaClient(
-            config["EXA"]["api_key"]
-        )  # Will fail naturally if config is missing
+        client = ExaClient(config["EXA"]["api_key"])  # Will fail naturally if config is missing
         results = client.search(cli_args.query, cli_args.num_results)
 
         if not results:
@@ -412,9 +386,7 @@ def load_config():
 def get_stt_input_handler(cli_args: Namespace, config: configparser.ConfigParser):
     if cli_args.stt:
         if "GROQ" not in config or "api_key" not in config["GROQ"]:
-            raise ValueError(
-                "Please set the GROQ api key in ~/.config/hermes/config.ini"
-            )
+            raise ValueError("Please set the GROQ api key in ~/.config/hermes/config.ini")
         return STTInputHandler(api_key=config["GROQ"]["api_key"])
     else:
         return None

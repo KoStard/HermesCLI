@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .base import DynamicSectionData, DynamicSectionRenderer
 
@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class CriteriaSectionData(DynamicSectionData):
     # These are already primitive, just add factory
-    criteria: Tuple[str, ...]
-    criteria_done: Tuple[bool, ...]
+    criteria: tuple[str, ...]
+    criteria_done: tuple[bool, ...]
 
     @staticmethod
     def from_node(target_node: "Node") -> "CriteriaSectionData":

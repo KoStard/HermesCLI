@@ -20,9 +20,7 @@ class TreeGenerator:
         """
         return self._build_tree(root_path, "", depth, 0)
 
-    def _build_tree(
-        self, current_path: str, prefix: str, depth: int, current_depth: int
-    ) -> str:
+    def _build_tree(self, current_path: str, prefix: str, depth: int, current_depth: int) -> str:
         """
         Recursively builds the tree string.
 
@@ -45,11 +43,7 @@ class TreeGenerator:
 
         tree_string = ""
 
-        filtered_entries = [
-            entry
-            for entry in entries
-            if not any(excl(entry) for excl in self.exclusions)
-        ]
+        filtered_entries = [entry for entry in entries if not any(excl(entry) for excl in self.exclusions)]
 
         for i, entry in enumerate(filtered_entries):
             is_last = i == len(filtered_entries) - 1
@@ -58,9 +52,7 @@ class TreeGenerator:
             if os.path.isdir(entry_path):
                 tree_string += f"{prefix}{'-' if not prefix else '--'}{entry}\n"
                 new_prefix = prefix + ("  " if is_last else "--")
-                tree_string += self._build_tree(
-                    entry_path, new_prefix, depth, current_depth + 1
-                )
+                tree_string += self._build_tree(entry_path, new_prefix, depth, current_depth + 1)
             else:
                 tree_string += f"{prefix}{'-' if not prefix else '--'}{entry}\n"
 
