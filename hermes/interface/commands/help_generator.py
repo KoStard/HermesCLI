@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from hermes.interface.templates.template_manager import TemplateManager
+
 from .command import Command
 
 
@@ -18,7 +19,7 @@ class CommandHelpGenerator:
         default_templates_dir = Path(__file__).parent / "templates"
         self.template_manager = TemplateManager(default_templates_dir)
 
-    def generate_help(self, commands: Dict[str, Command[Any]]) -> str:
+    def generate_help(self, commands: dict[str, Command[Any]]) -> str:
         """
         Generate help text for given commands.
 
@@ -28,6 +29,4 @@ class CommandHelpGenerator:
         Returns:
             Formatted help text as a string.
         """
-        return self.template_manager.render_template(
-            "command_help.mako", commands=commands
-        )
+        return self.template_manager.render_template("command_help.mako", commands=commands)

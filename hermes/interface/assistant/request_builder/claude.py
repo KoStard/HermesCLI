@@ -1,20 +1,18 @@
 from base64 import b64encode
-from typing import Optional
+
+from hermes.interface.assistant.request_builder.all_messages_aggregator import (
+    AllMessagesAggregator,
+)
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.text_messages_aggregator import (
     TextMessagesAggregator,
-)
-from hermes.interface.assistant.request_builder.all_messages_aggregator import (
-    AllMessagesAggregator,
 )
 from hermes.utils.file_extension import get_file_extension
 
 
 class ClaudeRequestBuilder(RequestBuilder):
     def initialize_request(self):
-        self.text_messages_aggregator = TextMessagesAggregator(
-            self.prompt_builder_factory
-        )
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
         self._extracted_pdfs = {}
 
@@ -34,9 +32,7 @@ class ClaudeRequestBuilder(RequestBuilder):
 
         final_messages = []
         for messages, author in self.all_messages_aggregator.get_aggregated_messages():
-            final_messages.append(
-                {"role": self._get_message_role(author), "content": messages}
-            )
+            final_messages.append({"role": self._get_message_role(author), "content": messages})
 
         return {
             "model": self.model_tag,
@@ -52,10 +48,7 @@ class ClaudeRequestBuilder(RequestBuilder):
         name: str = None,
         text_role: str = None,
     ):
-        if (
-            self.text_messages_aggregator.get_current_author() != author
-            and not self.text_messages_aggregator.is_empty()
-        ):
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()
         self.text_messages_aggregator.add_message(
             message=text,
@@ -76,9 +69,7 @@ class ClaudeRequestBuilder(RequestBuilder):
         with open(file_path, "rb") as file:
             return base64.b64encode(file.read()).decode("utf-8")
 
-    def handle_embedded_pdf_message(
-        self, pdf_path: str, pages: list[int], author: str, message_id: int
-    ):
+    def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
         extracted_pdf_key = (pdf_path, tuple(pages))
         # Extract specified pages if pages are provided
         if extracted_pdf_key in self._extracted_pdfs:
@@ -136,11 +127,9 @@ class ClaudeRequestBuilder(RequestBuilder):
         text_filepath: str,
         author: str,
         message_id: int,
-        file_role: Optional[str] = None,
+        file_role: str | None = None,
     ):
-        return self._default_handle_textual_file_message(
-            text_filepath, author, message_id, file_role
-        )
+        return self._default_handle_textual_file_message(text_filepath, author, message_id, file_role)
 
     def handle_url_message(self, url: str, author: str, message_id: int):
         return self._default_handle_url_message(url, author, message_id)

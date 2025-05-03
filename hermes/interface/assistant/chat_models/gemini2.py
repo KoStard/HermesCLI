@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
@@ -10,21 +10,20 @@ from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
 )
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.gemini2 import Gemini2RequestBuilder
+
 from .base import ChatModel
 
 
 class Gemini2Model(ChatModel):
     def initialize(self):
         from google import genai
-        from google.genai.types import Tool, GoogleSearch
+        from google.genai.types import GoogleSearch, Tool
 
         api_key = self.config.get("api_key")
         if not api_key:
             raise ValueError("API key is required for Gemini model")
 
-        self.client = genai.Client(
-            api_key=api_key, http_options={"api_version": "v1alpha"}
-        )
+        self.client = genai.Client(api_key=api_key, http_options={"api_version": "v1alpha"})
 
         self.request_builder = Gemini2RequestBuilder(
             self.model_tag,
@@ -40,13 +39,13 @@ class Gemini2Model(ChatModel):
         return "thinking" in self.model_tag
 
     def send_request(self, request: any) -> Generator[str, None, None]:
-        from google.genai.types import GenerateContentConfig
         from google.genai.errors import ClientError
+        from google.genai.types import GenerateContentConfig
         from tenacity import (
             retry,
+            retry_if_exception_type,
             stop_after_attempt,
             wait_exponential,
-            retry_if_exception_type,
         )
 
         @retry(
@@ -68,9 +67,7 @@ class Gemini2Model(ChatModel):
             response = _send_request_with_retry()
         except ClientError as e:
             if e.status == 429:
-                raise RuntimeError(
-                    "Gemini API quota exceeded - try again later or check your Google Cloud quota"
-                ) from e
+                raise RuntimeError("Gemini API quota exceeded - try again later or check your Google Cloud quota") from e
             raise
 
         # has_finished_thinking = False if self._supports_thinking else True
@@ -82,15 +79,10 @@ class Gemini2Model(ChatModel):
             return
 
         for part in response.candidates[0].content.parts or []:
-            yield from self._convert_to_llm_response(
-                self._handle_part(part), is_thinking=not has_finished_thinking
-            )
+            yield from self._convert_to_llm_response(self._handle_part(part), is_thinking=not has_finished_thinking)
 
             # Handle thinking state transitions
-            if hasattr(part, "thought") and part.thought:
-                has_finished_thinking = False
-            else:
-                has_finished_thinking = True
+            has_finished_thinking = not (hasattr(part, "thought") and part.thought)
 
     def _handle_part(self, part) -> Generator[str, None, None]:
         if hasattr(part, "text"):
@@ -108,9 +100,7 @@ class Gemini2Model(ChatModel):
 
         yield str(part)
 
-    def _convert_to_llm_response(
-        self, responses: Generator[str, None, None], is_thinking: bool
-    ) -> Generator[BaseLLMResponse, None, None]:
+    def _convert_to_llm_response(self, responses: Generator[str, None, None], is_thinking: bool) -> Generator[BaseLLMResponse, None, None]:
         for response in responses:
             if is_thinking:
                 yield ThinkingLLMResponse(response)

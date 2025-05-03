@@ -8,7 +8,8 @@ Basically interface is what the user sees and interacts with
 """
 
 from abc import ABC, abstractmethod
-from typing import Generator, List
+from collections.abc import Generator
+
 from hermes.event import Event
 from hermes.history import History
 from hermes.message import Message
@@ -16,9 +17,7 @@ from hermes.message import Message
 
 class Interface(ABC):
     @abstractmethod
-    def render(
-        self, history_snapshot: List[Message], events: Generator[Event, None, None]
-    ) -> Generator[Event, None, None]:
+    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """
         Render events to the participant.
         It might yield events for the other participant.
@@ -36,5 +35,5 @@ class Interface(ABC):
     def clear(self):
         pass
 
-    def initialize_from_history(self, history: History):
+    def initialize_from_history(self, history: History):  # noqa: B027
         pass

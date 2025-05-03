@@ -1,7 +1,7 @@
 import os
-from datetime import datetime
 import shutil
-from typing import List
+from datetime import datetime
+
 from .header import Header
 from .section_path import SectionPath
 
@@ -13,7 +13,7 @@ class MarkdownDocumentUpdater:
         self.file_path = file_path
         self.backup_dir = backup_dir
 
-    def _create_if_not_exists(self, section_path: List[str], content: str) -> None:
+    def _create_if_not_exists(self, section_path: list[str], content: str) -> None:
         """Create a new markdown file with initial section structure."""
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
         with open(self.file_path, "w", encoding="utf-8") as f:
@@ -32,9 +32,7 @@ class MarkdownDocumentUpdater:
         backup_path = os.path.join(self.backup_dir, f"{filename}_{timestamp}.bak")
         shutil.copy2(self.file_path, backup_path)
 
-    def update_section(
-        self, section_path: List[str], new_content: str, mode: str
-    ) -> bool:
+    def update_section(self, section_path: list[str], new_content: str, mode: str) -> bool:
         """
         Update a section in the markdown document.
 
@@ -54,7 +52,7 @@ class MarkdownDocumentUpdater:
         if not new_content.endswith("\n"):
             new_content += "\n"
 
-        with open(self.file_path, "r", encoding="utf-8") as f:
+        with open(self.file_path, encoding="utf-8") as f:
             lines = f.readlines()
 
         is_preface = False
@@ -62,9 +60,7 @@ class MarkdownDocumentUpdater:
             section_path = section_path[:-1]
             is_preface = True
 
-        updated_lines, section_found = self._process_lines(
-            lines, section_path, new_content, mode, is_preface
-        )
+        updated_lines, section_found = self._process_lines(lines, section_path, new_content, mode, is_preface)
 
         with open(self.file_path, "w", encoding="utf-8") as f:
             f.writelines(updated_lines)
@@ -73,12 +69,12 @@ class MarkdownDocumentUpdater:
 
     def _process_lines(
         self,
-        lines: List[str],
-        section_path: List[str],
+        lines: list[str],
+        section_path: list[str],
         new_content: str,
         mode: str,
         is_preface: bool,
-    ) -> tuple[List[str], bool]:
+    ) -> tuple[list[str], bool]:
         """Process document lines and apply the update.
 
         Returns:
@@ -100,9 +96,7 @@ class MarkdownDocumentUpdater:
                 if path_tracker.matches(section_path):
                     section_found = True
                     if is_preface:
-                        start_of_next_section = (
-                            self._find_start_of_next_section(lines[i + 1 :]) + 1
-                        )
+                        start_of_next_section = self._find_start_of_next_section(lines[i + 1 :]) + 1
                         if mode == "append_markdown_section":
                             updated_lines.extend(lines[i : i + start_of_next_section])
                             updated_lines.append(new_content)
@@ -110,9 +104,7 @@ class MarkdownDocumentUpdater:
                             updated_lines.extend([line, new_content])
                         i += start_of_next_section - 1
                     elif mode == "append_markdown_section":
-                        section_end = (
-                            self._find_section_end(lines[i + 1 :], header.level) + 1
-                        )
+                        section_end = self._find_section_end(lines[i + 1 :], header.level) + 1
                         updated_lines.extend(lines[i : i + section_end])
                         updated_lines.append(new_content)
                         i += section_end - 1
@@ -128,7 +120,7 @@ class MarkdownDocumentUpdater:
 
         return updated_lines, section_found
 
-    def _find_section_end(self, lines: List[str], current_level: int) -> int:
+    def _find_section_end(self, lines: list[str], current_level: int) -> int:
         """Find the end index of current section."""
         for i, line in enumerate(lines):
             header = Header.parse(line)
@@ -136,7 +128,7 @@ class MarkdownDocumentUpdater:
                 return i
         return len(lines)
 
-    def _find_start_of_next_section(self, lines: List[str]) -> int:
+    def _find_start_of_next_section(self, lines: list[str]) -> int:
         """Find the start index of the next section."""
         for i, line in enumerate(lines):
             header = Header.parse(line)
@@ -144,9 +136,7 @@ class MarkdownDocumentUpdater:
                 return i
         return len(lines)
 
-    def _skip_existing_content(
-        self, lines: List[str], start_idx: int, current_level: int
-    ) -> int:
+    def _skip_existing_content(self, lines: list[str], start_idx: int, current_level: int) -> int:
         """Skip the existing content of a section."""
         i = start_idx + 1
         while i < len(lines):
@@ -164,6 +154,4 @@ if __name__ == "__main__":
     parser.add_argument("file_path", type=str, help="Path to the markdown file")
     args = parser.parse_args()
     updater = MarkdownDocumentUpdater(args.file_path)
-    updater.update_section(
-        ["T1"], "New content for Section 1.1", "update_markdown_section"
-    )
+    updater.update_section(["T1"], "New content for Section 1.1", "update_markdown_section")

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, TypeVar, Generic
+from typing import Any, Generic, TypeVar
 
 # Define a TypeVar representing any context type the specific interface might use
 ContextType = TypeVar("ContextType")
@@ -37,7 +37,7 @@ class Command(ABC, Generic[ContextType]):
     ):
         self.name = name
         self.help_text = help_text
-        self.sections: List[CommandSection] = []
+        self.sections: list[CommandSection] = []
 
     def add_section(
         self,
@@ -47,15 +47,13 @@ class Command(ABC, Generic[ContextType]):
         allow_multiple: bool = False,
     ) -> None:
         """Add a section definition to this command"""
-        self.sections.append(
-            CommandSection(name, required, help_text, allow_multiple=allow_multiple)
-        )
+        self.sections.append(CommandSection(name, required, help_text, allow_multiple=allow_multiple))
 
-    def get_required_sections(self) -> List[str]:
+    def get_required_sections(self) -> list[str]:
         """Get names of all required sections"""
         return [section.name for section in self.sections if section.required]
 
-    def get_all_sections(self) -> List[str]:
+    def get_all_sections(self) -> list[str]:
         """Get names of all sections"""
         return [section.name for section in self.sections]
 
@@ -67,7 +65,7 @@ class Command(ABC, Generic[ContextType]):
         return ""
 
     @abstractmethod
-    def execute(self, context: ContextType, args: Dict[str, Any]):
+    def execute(self, context: ContextType, args: dict[str, Any]):
         """
         Execute the command with the given arguments and a context object
         provided by the calling interface.
@@ -83,7 +81,7 @@ class Command(ABC, Generic[ContextType]):
         """
         pass
 
-    def validate(self, args: Dict[str, Any]) -> List[str]:
+    def validate(self, args: dict[str, Any]) -> list[str]:
         """
         Validate command arguments against defined sections.
         Returns a list of error messages.
@@ -96,7 +94,7 @@ class Command(ABC, Generic[ContextType]):
         # by overriding this method in subclasses.
         return errors
 
-    def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def transform_args(self, args: dict[str, Any]) -> dict[str, Any]:
         """
         Transform arguments before validation or execution if needed.
         Default implementation returns args unchanged.
@@ -111,7 +109,7 @@ class Command(ABC, Generic[ContextType]):
         """
         return False
 
-    def get_additional_information(self) -> Dict[Any, Any]:
+    def get_additional_information(self) -> dict[Any, Any]:
         """
         Returns a dictionary with additional information about the command.
         Default is an empty dictionary.
@@ -123,11 +121,11 @@ class CommandRegistry:
     """Registry for all available commands (Singleton)."""
 
     _instance = None
-    _commands: Dict[str, Command[Any]]  # Store commands generically
+    _commands: dict[str, Command[Any]]  # Store commands generically
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(CommandRegistry, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             # Initialize command storage in the instance
             cls._instance._commands = {}
         return cls._instance
@@ -139,16 +137,16 @@ class CommandRegistry:
             print(f"Warning: Command '{command.name}' is being re-registered.")
         self._commands[command.name] = command
 
-    def get_command(self, name: str) -> Optional[Command[Any]]:
+    def get_command(self, name: str) -> Command[Any] | None:
         """Get a command instance by name."""
         return self._commands.get(name)
 
-    def get_all_commands(self) -> Dict[str, Command[Any]]:
+    def get_all_commands(self) -> dict[str, Command[Any]]:
         """Get all registered command instances."""
         # Return a copy to prevent external modification
         return self._commands.copy()
 
-    def get_command_names(self) -> List[str]:
+    def get_command_names(self) -> list[str]:
         """Get names of all registered commands."""
         return list(self._commands.keys())
 

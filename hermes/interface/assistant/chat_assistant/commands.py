@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Any, Dict, Generator
+from collections.abc import Generator
+from typing import Any
 
 from hermes.event import (
     AssistantDoneEvent,
@@ -10,11 +11,11 @@ from hermes.event import (
 from hermes.interface.commands.command import Command
 from hermes.interface.helpers.cli_notifications import CLIColors
 from hermes.message import (
+    AssistantNotificationMessage,
     LLMRunCommandOutput,
     TextMessage,
     TextualFileMessage,
     UrlMessage,
-    AssistantNotificationMessage,
 )
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.filepath import prepare_filepath
@@ -32,9 +33,7 @@ class ChatAssistantCommandContext:
         self.exa_client = control_panel.exa_client
         self._cwd = os.getcwd()
 
-    def print_notification(
-        self, message: str, color: CLIColors = CLIColors.BLUE
-    ) -> None:
+    def print_notification(self, message: str, color: CLIColors = CLIColors.BLUE) -> None:
         """Print a notification using the notifications printer."""
         self.notifications_printer.print_notification(message, color)
 
@@ -42,9 +41,7 @@ class ChatAssistantCommandContext:
         """Get the current working directory."""
         return self._cwd
 
-    def create_assistant_notification(
-        self, message: str, name: str = None
-    ) -> MessageEvent:
+    def create_assistant_notification(self, message: str, name: str = None) -> MessageEvent:
         """Create a notification that's only visible to the assistant."""
         return MessageEvent(AssistantNotificationMessage(text=message, name=name))
 
@@ -69,9 +66,7 @@ class ChatAssistantCommandContext:
             return True  # No need for confirmation if file doesn't exist
 
         # Ask user for confirmation
-        self.print_notification(
-            f"File '{file_path}' already exists. Overwrite? (y/n): "
-        )
+        self.print_notification(f"File '{file_path}' already exists. Overwrite? (y/n): ")
 
         while True:
             try:
@@ -81,9 +76,7 @@ class ChatAssistantCommandContext:
                 if response in ["y", "yes"]:
                     return True
                 elif response in ["n", "no"]:
-                    self.print_notification(
-                        f"File overwrite declined for: {file_path}", CLIColors.YELLOW
-                    )
+                    self.print_notification(f"File overwrite declined for: {file_path}", CLIColors.YELLOW)
                     return False
                 else:
                     self.print_notification("Please enter 'y' or 'n': ")
@@ -96,9 +89,8 @@ class ChatAssistantCommandContext:
         """Backup the existing file to prevent possible data loss."""
         if not os.path.exists(file_path):
             return
-        from datetime import datetime
         import shutil
-
+        from datetime import datetime
 
         # Create backup directory
         backup_dir = os.path.join("/tmp", "hermes", "backups")
@@ -125,9 +117,7 @@ class ChatAssistantCommandContext:
                 file.write(content)
             return True
         except Exception as e:
-            self.print_notification(
-                f"Error creating file {file_path}: {str(e)}", CLIColors.RED
-            )
+            self.print_notification(f"Error creating file {file_path}: {str(e)}", CLIColors.RED)
             return False
 
     def append_file(self, file_path: str, content: str) -> bool:
@@ -139,9 +129,7 @@ class ChatAssistantCommandContext:
                 file.write(content)
             return True
         except Exception as e:
-            self.print_notification(
-                f"Error appending to file {file_path}: {str(e)}", CLIColors.RED
-            )
+            self.print_notification(f"Error appending to file {file_path}: {str(e)}", CLIColors.RED)
             return False
 
     def prepend_file(self, file_path: str, content: str) -> bool:
@@ -150,7 +138,7 @@ class ChatAssistantCommandContext:
             self.ensure_directory_exists(file_path)
             if os.path.exists(file_path):
                 # Read existing content
-                with open(file_path, "r", encoding="utf-8") as file:
+                with open(file_path, encoding="utf-8") as file:
                     existing_content = file.read()
                 # Write new content followed by existing
                 with open(file_path, "w", encoding="utf-8") as file:
@@ -161,14 +149,10 @@ class ChatAssistantCommandContext:
                     file.write(content)
             return True
         except Exception as e:
-            self.print_notification(
-                f"Error prepending to file {file_path}: {str(e)}", CLIColors.RED
-            )
+            self.print_notification(f"Error prepending to file {file_path}: {str(e)}", CLIColors.RED)
             return False
 
-    def update_markdown_section(
-        self, file_path: str, section_path: list[str], new_content: str, submode: str
-    ) -> bool:
+    def update_markdown_section(self, file_path: str, section_path: list[str], new_content: str, submode: str) -> bool:
         """Update a specific section in a markdown file."""
         try:
             from hermes.interface.markdown.document_updater import (
@@ -188,9 +172,7 @@ class ChatAssistantCommandContext:
                 )
                 return False
         except Exception as e:
-            self.print_notification(
-                f"Error updating markdown section: {str(e)}", CLIColors.RED
-            )
+            self.print_notification(f"Error updating markdown section: {str(e)}", CLIColors.RED)
             return False
 
 
@@ -202,7 +184,8 @@ class CreateFileCommand(Command[ChatAssistantCommandContext]):
             "create_file",
             """Create a new file with the specified content.
 
-**IMPORTANT:** When the user asks you to "create a file", "make a file", "generate a file", or uses similar wording that implies the creation of a new file, you **MUST** use this command.
+**IMPORTANT:** When the user asks you to "create a file", "make a file", "generate a file", 
+or uses similar wording that implies the creation of a new file, you **MUST** use this command.
 
 The content will be written to the file as-is, without any additional formatting.
 
@@ -213,14 +196,10 @@ If the user hasn't mentioned where to create a file, or you just want to create 
 
 If any of the folders in the filepath don't exist, the folders will be automatically created.""",
         )
-        self.add_section(
-            "path", True, "Path to the file to create (relative or absolute)"
-        )
+        self.add_section("path", True, "Path to the file to create (relative or absolute)")
         self.add_section("content", True, "Content to write to the file")
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         file_path = prepare_filepath(remove_quotes(args["path"]))
         content = args["content"]
 
@@ -242,13 +221,9 @@ If any of the folders in the filepath don't exist, the folders will be automatic
         success = context.create_file(file_path, content)
 
         if success:
-            yield context.create_assistant_notification(
-                f"Successfully created file: {file_path}", "File Creation"
-            )
+            yield context.create_assistant_notification(f"Successfully created file: {file_path}", "File Creation")
         else:
-            yield context.create_assistant_notification(
-                f"Failed to create file: {file_path}", "File Creation Error"
-            )
+            yield context.create_assistant_notification(f"Failed to create file: {file_path}", "File Creation Error")
 
 
 class AppendFileCommand(Command[ChatAssistantCommandContext]):
@@ -262,14 +237,10 @@ class AppendFileCommand(Command[ChatAssistantCommandContext]):
 The content will be appended as-is to the end of the file, without any additional formatting.
 If the file doesn't exist yet, it will be created.""",
         )
-        self.add_section(
-            "path", True, "Path to the file to append to (relative or absolute)"
-        )
+        self.add_section("path", True, "Path to the file to append to (relative or absolute)")
         self.add_section("content", True, "Content to append to the file")
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         file_path = prepare_filepath(remove_quotes(args["path"]))
         content = args["content"]
 
@@ -277,13 +248,9 @@ If the file doesn't exist yet, it will be created.""",
         success = context.append_file(file_path, content)
 
         if success:
-            yield context.create_assistant_notification(
-                f"Successfully appended to file: {file_path}", "File Append"
-            )
+            yield context.create_assistant_notification(f"Successfully appended to file: {file_path}", "File Append")
         else:
-            yield context.create_assistant_notification(
-                f"Failed to append to file: {file_path}", "File Append Error"
-            )
+            yield context.create_assistant_notification(f"Failed to append to file: {file_path}", "File Append Error")
 
 
 class PrependFileCommand(Command[ChatAssistantCommandContext]):
@@ -297,14 +264,10 @@ class PrependFileCommand(Command[ChatAssistantCommandContext]):
 The content will be inserted at the top of the file as-is, without any additional formatting.
 If the file doesn't exist yet, it will be created.""",
         )
-        self.add_section(
-            "path", True, "Path to the file to prepend to (relative or absolute)"
-        )
+        self.add_section("path", True, "Path to the file to prepend to (relative or absolute)")
         self.add_section("content", True, "Content to add to the beginning of the file")
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         file_path = prepare_filepath(remove_quotes(args["path"]))
         content = args["content"]
 
@@ -312,13 +275,9 @@ If the file doesn't exist yet, it will be created.""",
         success = context.prepend_file(file_path, content)
 
         if success:
-            yield context.create_assistant_notification(
-                f"Successfully prepended to file: {file_path}", "File Prepend"
-            )
+            yield context.create_assistant_notification(f"Successfully prepended to file: {file_path}", "File Prepend")
         else:
-            yield context.create_assistant_notification(
-                f"Failed to prepend to file: {file_path}", "File Prepend Error"
-            )
+            yield context.create_assistant_notification(f"Failed to prepend to file: {file_path}", "File Prepend Error")
 
 
 class MarkdownUpdateSectionCommand(Command[ChatAssistantCommandContext]):
@@ -343,7 +302,8 @@ How the section path works:
    ### T2
    Some content <<< This content will be targeted
    #### T3
-5. The section path must start from the root node, which is the top-level header of the document. If there are multiple top-level headers, include the one where the target section is.
+5. The section path must start from the root node, which is the top-level header of the document. If there are multiple top-level headers, 
+include the one where the target section is.
 
 The section path must exactly match the headers in the document.
 Sections are identified by their markdown headers (##, ###, etc).
@@ -362,12 +322,10 @@ Some more content here.
 """,
         )
         self.add_section("path", True, "Path to the markdown file")
-        self.add_section(
-            "section_path", True, "Section path (e.g., 'Header 1 > Subheader')"
-        )
+        self.add_section("section_path", True, "Section path (e.g., 'Header 1 > Subheader')")
         self.add_section("content", True, "New content for the section")
 
-    def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def transform_args(self, args: dict[str, Any]) -> dict[str, Any]:
         if "path" in args and "section_path" in args:
             # The section_path is currently parsed as a single string, but needs to be a list
             section_path_raw = args["section_path"]
@@ -378,9 +336,7 @@ Some more content here.
             args["path"] = prepare_filepath(remove_quotes(args["path"].strip()))
         return args
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         file_path = args["path"]
         section_path = args["section_path"]
         content = args["content"]
@@ -441,12 +397,10 @@ Example:
 This command doesn't work on non-markdown files.""",
         )
         self.add_section("path", True, "Path to the markdown file")
-        self.add_section(
-            "section_path", True, "Section path (e.g., 'Header 1 > Subheader')"
-        )
+        self.add_section("section_path", True, "Section path (e.g., 'Header 1 > Subheader')")
         self.add_section("content", True, "Content to append to the section")
 
-    def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def transform_args(self, args: dict[str, Any]) -> dict[str, Any]:
         if "path" in args and "section_path" in args:
             # The section_path is currently parsed as a single string, but needs to be a list
             section_path_raw = args["section_path"]
@@ -457,9 +411,7 @@ This command doesn't work on non-markdown files.""",
             args["path"] = prepare_filepath(remove_quotes(args["path"].strip()))
         return args
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         file_path = args["path"]
         section_path = args["section_path"]
         content = args["content"]
@@ -504,11 +456,9 @@ If no depth is specified, the complete tree will be generated.""",
             False,
             "Directory path to generate tree for (default: current directory)",
         )
-        self.add_section(
-            "depth", False, "Maximum depth of the tree (default: full depth)"
-        )
+        self.add_section("depth", False, "Maximum depth of the tree (default: full depth)")
 
-    def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def transform_args(self, args: dict[str, Any]) -> dict[str, Any]:
         # Set default values if not provided
         if "path" not in args or not args["path"].strip():
             args["path"] = os.getcwd()
@@ -525,9 +475,7 @@ If no depth is specified, the complete tree will be generated.""",
 
         return args
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         path = args["path"]
         depth = args["depth"]
 
@@ -535,18 +483,12 @@ If no depth is specified, the complete tree will be generated.""",
             tree_generator = TreeGenerator()
             context.print_notification(f"Generating tree for: {path}")
             tree_string = tree_generator.generate_tree(path, depth)
-            yield MessageEvent(
-                LLMRunCommandOutput(text=tree_string, name="Directory Tree")
-            )
-            yield context.create_assistant_notification(
-                f"Tree structure generated for path: {path}", "Directory Tree"
-            )
+            yield MessageEvent(LLMRunCommandOutput(text=tree_string, name="Directory Tree"))
+            yield context.create_assistant_notification(f"Tree structure generated for path: {path}", "Directory Tree")
         except Exception as e:
             error_msg = f"Error generating tree for {path}: {str(e)}"
             context.print_notification(error_msg, CLIColors.RED)
-            yield context.create_assistant_notification(
-                error_msg, "Directory Tree Error"
-            )
+            yield context.create_assistant_notification(error_msg, "Directory Tree Error")
 
 
 class OpenFileCommand(Command[ChatAssistantCommandContext]):
@@ -562,18 +504,14 @@ The file content will be returned as a message that you can analyze in your next
 
 If the file doesn't exist or cannot be read due to permissions, an error message will be shown.""",
         )
-        self.add_section(
-            "path", True, "Path to the file to read (relative or absolute)"
-        )
+        self.add_section("path", True, "Path to the file to read (relative or absolute)")
 
-    def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def transform_args(self, args: dict[str, Any]) -> dict[str, Any]:
         if "path" in args:
             args["path"] = prepare_filepath(remove_quotes(args["path"].strip()))
         return args
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         file_path = args["path"]
 
         if not os.path.exists(file_path):
@@ -595,9 +533,7 @@ If the file doesn't exist or cannot be read due to permissions, an error message
                         file_role="CommandOutput",
                     )
                 )
-                yield context.create_assistant_notification(
-                    f"Successfully read file: {file_path}", "File Read"
-                )
+                yield context.create_assistant_notification(f"Successfully read file: {file_path}", "File Read")
             except Exception as e:
                 error_msg = f"Error reading file {file_path}: {str(e)}"
                 context.print_notification(error_msg, CLIColors.RED)
@@ -619,13 +555,9 @@ IMPORTANT: Only use this command when you have actually completed the task.
 If you run this command without finishing the task, it will cause loss of user trust.
 Make sure you have finished and read through all the command outputs before marking the task as done.""",
         )
-        self.add_section(
-            "report", True, "Final report summarizing what was accomplished"
-        )
+        self.add_section("report", True, "Final report summarizing what was accomplished")
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         report_content = args["report"]
 
         context.print_notification("Agent marked task as done")
@@ -663,9 +595,7 @@ Running this command will end your current turn and wait for the user's response
             "Question(s) for the user - be specific about what you need",
         )
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         question_content = args["question"]
 
         context.print_notification("Agent is asking the user a question")
@@ -699,9 +629,7 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
         )
         self.add_section("query", True, "Search query - be specific for better results")
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         query = args["query"]
 
         if not context.exa_client:
@@ -715,9 +643,7 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
             results = context.exa_client.search(query, num_results=10)
 
             if not results:
-                yield context.create_assistant_notification(
-                    f"No results found for: {query}", "Web Search Results"
-                )
+                yield context.create_assistant_notification(f"No results found for: {query}", "Web Search Results")
                 return
 
             result_text = [f"# Web Search Results for: {query}\n"]
@@ -741,9 +667,7 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
                 )
             )
 
-            yield context.create_assistant_notification(
-                f"Completed web search for: {query}", "Web Search Complete"
-            )
+            yield context.create_assistant_notification(f"Completed web search for: {query}", "Web Search Complete")
 
         except Exception as e:
             error_msg = f"Error performing web search: {str(e)}"
@@ -767,13 +691,9 @@ Use this after a web search to read specific pages, or when the user provides yo
 
 If Exa API is configured, it will be used to get enhanced content.""",
         )
-        self.add_section(
-            "url", True, "URL to fetch content from (must be a valid, complete URL)"
-        )
+        self.add_section("url", True, "URL to fetch content from (must be a valid, complete URL)")
 
-    def execute(
-        self, context: ChatAssistantCommandContext, args: Dict[str, Any]
-    ) -> Generator[Event, None, None]:
+    def execute(self, context: ChatAssistantCommandContext, args: dict[str, Any]) -> Generator[Event, None, None]:
         url = args["url"].strip()
 
         if not url:

@@ -10,9 +10,10 @@ This is a mock implementation of the Deep Research system where:
 The mock uses STDOUT/STDIN to simulate the interaction between the system and the AI.
 """
 
-import os
 import argparse
+import os
 from pathlib import Path
+
 from .mock_app import DeepResearchMockApp
 
 
@@ -22,7 +23,8 @@ def main():
     parser.add_argument(
         "--instruction",
         type=str,
-        default="Please research and organize the fundamental concepts of quantum mechanics. I need a comprehensive understanding of the core principles that form the foundation of this field.",
+        default="Please research and organize the fundamental concepts of quantum mechanics. I need a comprehensive understanding of the " \
+        "core principles that form the foundation of this field.",
         help="The research instruction",
     )
     parser.add_argument(
@@ -44,10 +46,7 @@ def main():
     instruction = args.instruction
 
     # Set up research directory
-    if args.research_dir:
-        research_dir = args.research_dir
-    else:
-        research_dir = os.path.join(str(Path.cwd()), "deep_research")
+    research_dir = args.research_dir if args.research_dir else os.path.join(str(Path.cwd()), "deep_research")
 
     # Ensure the research directory exists
     os.makedirs(research_dir, exist_ok=True)

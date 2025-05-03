@@ -1,6 +1,7 @@
 import unittest
-from typing import Any, Dict, List
-from hermes.interface.commands.command import Command, CommandSection, CommandRegistry
+from typing import Any
+
+from hermes.interface.commands.command import Command, CommandRegistry, CommandSection
 
 
 # Test implementation of Command for testing
@@ -19,17 +20,17 @@ class TestCommand(Command[str]):  # Using str as a simple context type for testi
         self.execution_args = None
         self.execution_context = None
 
-    def execute(self, context: str, args: Dict[str, Any]) -> None:
+    def execute(self, context: str, args: dict[str, Any]) -> None:
         self.executed = True
         self.execution_context = context
         self.execution_args = args
 
-    def transform_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def transform_args(self, args: dict[str, Any]) -> dict[str, Any]:
         if "optional_sec" in args:
             args["optional_sec"] = args["optional_sec"].upper()
         return args
 
-    def validate(self, args: Dict[str, Any]) -> List[str]:
+    def validate(self, args: dict[str, Any]) -> list[str]:
         errors = super().validate(args)
         if "optional_sec" in args and len(args["optional_sec"]) < 3:
             errors.append("Optional section must be at least 3 characters long")
@@ -50,9 +51,7 @@ class CommandTest(unittest.TestCase):
         """Test adding sections to a command."""
         self.command.add_section("new_sec", required=True, help_text="New section")
         self.assertEqual(len(self.command.sections), 4)
-        new_section = next(
-            (s for s in self.command.sections if s.name == "new_sec"), None
-        )
+        new_section = next((s for s in self.command.sections if s.name == "new_sec"), None)
         self.assertIsNotNone(new_section)
         self.assertTrue(new_section.required)
         self.assertEqual(new_section.help_text, "New section")
@@ -75,12 +74,8 @@ class CommandTest(unittest.TestCase):
 
     def test_get_section_help(self):
         """Test retrieving help text for sections."""
-        self.assertEqual(
-            self.command.get_section_help("required_sec"), "Required section"
-        )
-        self.assertEqual(
-            self.command.get_section_help("optional_sec"), "Optional section"
-        )
+        self.assertEqual(self.command.get_section_help("required_sec"), "Required section")
+        self.assertEqual(self.command.get_section_help("optional_sec"), "Optional section")
         self.assertEqual(self.command.get_section_help("non_existent"), "")
 
     def test_validate(self):
@@ -95,9 +90,7 @@ class CommandTest(unittest.TestCase):
         self.assertEqual(len(errors), 0)
 
         # Custom validation
-        errors = self.command.validate(
-            {"required_sec": "content", "optional_sec": "ab"}
-        )
+        errors = self.command.validate({"required_sec": "content", "optional_sec": "ab"})
         self.assertEqual(len(errors), 1)
         self.assertIn("at least 3 characters", errors[0])
 
@@ -125,9 +118,7 @@ class CommandTest(unittest.TestCase):
 class CommandSectionTest(unittest.TestCase):
     def test_section_initialization(self):
         """Test that a command section is properly initialized."""
-        section = CommandSection(
-            "test", required=True, help_text="Test help", allow_multiple=True
-        )
+        section = CommandSection("test", required=True, help_text="Test help", allow_multiple=True)
         self.assertEqual(section.name, "test")
         self.assertTrue(section.required)
         self.assertEqual(section.help_text, "Test help")

@@ -4,12 +4,12 @@ Control panel is a part of the interface that handles user interaction
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Generator
 from dataclasses import dataclass
-from typing import Callable, Generator, Optional, List
 
+from hermes.event import Event
 from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
 from hermes.message import Message
-from hermes.event import Event
 
 
 @dataclass
@@ -41,9 +41,7 @@ class ControlPanel(ABC):
         pass
 
     @abstractmethod
-    def break_down_and_execute_message(
-        self, message: Message
-    ) -> Generator[Event, None, None]:
+    def break_down_and_execute_message(self, message: Message) -> Generator[Event, None, None]:
         pass
 
     def _register_command(self, command: ControlPanelCommand):
@@ -57,11 +55,7 @@ class ControlPanel(ABC):
         self.help_contents.append((content, is_agent_only))
 
     def _render_help_content(self, is_agent_mode: bool = False) -> str:
-        filtered_contents = [
-            content
-            for content, agent_only in self.help_contents
-            if not agent_only or is_agent_mode
-        ]
+        filtered_contents = [content for content, agent_only in self.help_contents if not agent_only or is_agent_mode]
         return "\n".join(filtered_contents)
 
     def _render_command_in_control_panel(self, command_label: str) -> str:
@@ -70,7 +64,7 @@ class ControlPanel(ABC):
     def _lines_from_message(self, message: Message) -> Generator[str, None, None]:
         return chunks_to_lines(message.get_content_for_user())
 
-    def _line_command_match(self, line: str) -> Optional[str]:
+    def _line_command_match(self, line: str) -> str | None:
         line = line.strip()
         for command_label in self.commands:
             if line.startswith(command_label + " ") or line == command_label:
@@ -80,5 +74,5 @@ class ControlPanel(ABC):
     def _extract_command_content_in_line(self, command_label: str, line: str) -> str:
         return line[len(command_label) :].strip()
 
-    def get_commands(self) -> List[ControlPanelCommand]:
+    def get_commands(self) -> list[ControlPanelCommand]:
         return self.commands.values()

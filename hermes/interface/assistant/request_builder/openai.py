@@ -1,27 +1,23 @@
 from base64 import b64encode
-from typing import Any, Optional
+from typing import Any
 
+from hermes.interface.assistant.request_builder.all_messages_aggregator import (
+    AllMessagesAggregator,
+)
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.text_messages_aggregator import (
     TextMessagesAggregator,
-)
-from hermes.interface.assistant.request_builder.all_messages_aggregator import (
-    AllMessagesAggregator,
 )
 from hermes.utils.file_extension import get_file_extension
 
 
 class OpenAIRequestBuilder(RequestBuilder):
-    def __init__(
-        self, model_tag: str, notifications_printer: Any, prompt_builder_factory: Any
-    ):
+    def __init__(self, model_tag: str, notifications_printer: Any, prompt_builder_factory: Any):
         super().__init__(model_tag, notifications_printer, prompt_builder_factory)
         self.reasoning_effort = None
 
     def initialize_request(self):
-        self.text_messages_aggregator = TextMessagesAggregator(
-            self.prompt_builder_factory
-        )
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
 
     def set_reasoning_effort(self, level: str):
@@ -46,10 +42,7 @@ class OpenAIRequestBuilder(RequestBuilder):
         name: str = None,
         text_role: str = None,
     ):
-        if (
-            self.text_messages_aggregator.get_current_author() != author
-            and not self.text_messages_aggregator.is_empty()
-        ):
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()
         self.text_messages_aggregator.add_message(
             message=text,
@@ -65,9 +58,7 @@ class OpenAIRequestBuilder(RequestBuilder):
         self._add_content(
             {
                 "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/{self._get_extension(image_path)};base64,{base64_image}"
-                },
+                "image_url": {"url": f"data:image/{self._get_extension(image_path)};base64,{base64_image}"},
             },
             author,
         )
@@ -87,11 +78,9 @@ class OpenAIRequestBuilder(RequestBuilder):
         text_filepath: str,
         author: str,
         message_id: int,
-        file_role: Optional[str] = None,
+        file_role: str | None = None,
     ):
-        self._default_handle_textual_file_message(
-            text_filepath, author, message_id, file_role
-        )
+        self._default_handle_textual_file_message(text_filepath, author, message_id, file_role)
 
     def handle_url_message(self, url: str, author: str, message_id: int):
         self._default_handle_url_message(url, author, message_id)
@@ -114,9 +103,7 @@ class OpenAIRequestBuilder(RequestBuilder):
             "stream": True,
         }
         if self.reasoning_effort is not None and (
-            self.model_tag in ["o1", "o3-mini"]
-            or self.model_tag.endswith("/o1")
-            or self.model_tag.endswith("/o3-mini")
+            self.model_tag in ["o1", "o3-mini"] or self.model_tag.endswith("/o1") or self.model_tag.endswith("/o3-mini")
         ):
             request["reasoning_effort"] = self.reasoning_effort
         return request

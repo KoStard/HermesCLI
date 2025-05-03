@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
@@ -10,6 +10,7 @@ from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
 )
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.gemini import GeminiRequestBuilder
+
 from .base import ChatModel
 
 
@@ -17,9 +18,7 @@ class GeminiModel(ChatModel):
     def initialize(self):
         import google.generativeai as genai
 
-        self.request_builder = GeminiRequestBuilder(
-            self.model_tag, self.notifications_printer, SimplePromptBuilderFactory()
-        )
+        self.request_builder = GeminiRequestBuilder(self.model_tag, self.notifications_printer, SimplePromptBuilderFactory())
 
         api_key = self.config.get("api_key")
         if not api_key:
@@ -37,26 +36,19 @@ class GeminiModel(ChatModel):
 
         chat = model.start_chat(history=request["history"])
         response = chat.send_message(**request["message"])
-        has_finished_thinking = False if self._supports_thinking else True
+        has_finished_thinking = not self._supports_thinking
         for chunk in response:
             parts = chunk.candidates[0].content.parts
             if not parts:
                 continue
-            yield from self._convert_to_llm_response(
-                self._handle_part(parts[0]), is_thinking=not has_finished_thinking
-            )
+            yield from self._convert_to_llm_response(self._handle_part(parts[0]), is_thinking=not has_finished_thinking)
 
-            if (
-                len(response._result.candidates[0].content.parts) == 2
-                or len(parts) == 2
-            ):
+            if len(response._result.candidates[0].content.parts) == 2 or len(parts) == 2:
                 # Sometimes the len(parts) is 1, but the next chunk is already of the response.
                 has_finished_thinking = True
 
             if len(parts) == 2:
-                yield from self._convert_to_llm_response(
-                    self._handle_part(parts[1]), is_thinking=not has_finished_thinking
-                )
+                yield from self._convert_to_llm_response(self._handle_part(parts[1]), is_thinking=not has_finished_thinking)
 
     def _handle_part(self, part) -> Generator[str, None, None]:
         if "text" in part:
@@ -65,31 +57,21 @@ class GeminiModel(ChatModel):
 
         if "executable_code" in part:
             language = part.executable_code.language.name.lower()
-            if language == "language_unspecified":
-                language = ""
-            else:
-                language = f" {language}"
+            language = "" if language == "language_unspecified" else f" {language}"
             yield f"```{language}"
             yield part.executable_code.code.lstrip("\n")
             yield "```"
             return
 
         if "code_execution_result" in part:
-            outcome_result = part.code_execution_result.outcome.name.lower().replace(
-                "outcome_", ""
-            )
-            if outcome_result == "ok" or outcome_result == "unspecified":
-                outcome_result = ""
-            else:
-                outcome_result = f" {outcome_result}"
+            outcome_result = part.code_execution_result.outcome.name.lower().replace("outcome_", "")
+            outcome_result = "" if outcome_result == "ok" or outcome_result == "unspecified" else f" {outcome_result}"
             yield f"```{outcome_result}"
             yield part.code_execution_result.output
             yield "```"
             return
 
-    def _convert_to_llm_response(
-        self, responses: Generator[str, None, None], is_thinking: bool
-    ) -> Generator[BaseLLMResponse, None, None]:
+    def _convert_to_llm_response(self, responses: Generator[str, None, None], is_thinking: bool) -> Generator[BaseLLMResponse, None, None]:
         for response in responses:
             # response += "\n"
             if is_thinking:

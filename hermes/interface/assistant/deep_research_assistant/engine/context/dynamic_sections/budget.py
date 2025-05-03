@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .base import DynamicSectionData, DynamicSectionRenderer
 
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 # --- Data ---
 @dataclass(frozen=True)
 class BudgetSectionData(DynamicSectionData):
-    budget: Optional[int]
-    remaining_budget: Optional[int]
+    budget: int | None
+    remaining_budget: int | None
 
 
 # --- Renderer ---

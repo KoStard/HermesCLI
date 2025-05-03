@@ -1,6 +1,5 @@
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 
 class DeepResearchLogger:
@@ -9,7 +8,7 @@ class DeepResearchLogger:
     def __init__(self, base_dir: Path):
         self.base_dir = base_dir
 
-    def ensure_logs_directory(self, node_path: Optional[Path]) -> Optional[Path]:
+    def ensure_logs_directory(self, node_path: Path | None) -> Path | None:
         """Ensure logs_and_debug directory exists for the current problem"""
         if not node_path:
             return None
@@ -21,8 +20,8 @@ class DeepResearchLogger:
 
     def log_llm_request(
         self,
-        node_path: Optional[Path],
-        rendered_messages: List[dict],
+        node_path: Path | None,
+        rendered_messages: list[dict],
         request_data: dict,
     ) -> None:
         """Log an LLM request to a file"""
@@ -37,11 +36,9 @@ class DeepResearchLogger:
             f.write("=== LLM REQUEST ===\n\n")
             f.write("== Chat History ==\n")
             for msg in rendered_messages:
-                f.write(
-                    f"[{msg.get('author', 'unknown')}]: {msg.get('content', '')}\n\n"
-                )
+                f.write(f"[{msg.get('author', 'unknown')}]: {msg.get('content', '')}\n\n")
 
-    def log_llm_response(self, node_path: Optional[Path], response: str) -> None:
+    def log_llm_response(self, node_path: Path | None, response: str) -> None:
         """Log an LLM response to a file"""
         logs_dir = self.ensure_logs_directory(node_path)
         if not logs_dir:

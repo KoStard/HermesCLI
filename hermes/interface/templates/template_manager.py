@@ -1,11 +1,9 @@
 from pathlib import Path
-from typing import Any, Optional
-
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from mako.template import Template
     from mako.lookup import TemplateLookup
+    from mako.template import Template
 
 
 class TemplateManager:

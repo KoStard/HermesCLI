@@ -1,12 +1,12 @@
-import os
 import logging
-from typing import Generator, List, Optional
+import os
+from collections.abc import Generator
 from pathlib import Path
 
+# Import other necessary types
+from hermes.event import Event, MessageEvent
+from hermes.history import History
 from hermes.interface.assistant.chat_models.base import ChatModel
-
-# Import core command components
-from hermes.interface.commands.command import CommandRegistry, Command
 
 # Import Deep Research specific components
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (
@@ -20,12 +20,10 @@ from hermes.interface.assistant.deep_research_assistant.llm_interface_impl impor
 )
 from hermes.interface.base import Interface
 
-# Import other necessary types
-from hermes.event import Event, MessageEvent
+# Import core command components
+from hermes.interface.commands.command import Command, CommandRegistry
 from hermes.message import Message, TextMessage, TextualFileMessage
-from hermes.history import History
 from hermes.utils.file_reader import FileReader
-
 
 logger = logging.getLogger(__name__)
 
@@ -33,21 +31,17 @@ logger = logging.getLogger(__name__)
 class DeepResearchAssistantInterface(Interface):
     """Interface for the Deep Research Assistant"""
 
-    def __init__(
-        self, model: ChatModel, research_path: str = None, extension_commands=None
-    ):
+    def __init__(self, model: ChatModel, research_path: str = None, extension_commands=None):
         self.model = model
         self.model.initialize()
         self.research_dir = research_path if research_path else str(Path.cwd())
         # Store extension command *classes* or *instances*
         self.extension_command_defs = extension_commands or []
-        self._engine: Optional[DeepResearchEngine] = None
+        self._engine: DeepResearchEngine | None = None
         self.instruction = None
         self._pending_budget = None  # Store budget until engine is initialized
 
-    def render(
-        self, history_snapshot: List[Message], events: Generator[Event, None, None]
-    ) -> Generator[Event, None, None]:
+    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """Render the interface with the given history and events"""
         logger.debug("Rendering Deep Research Assistant interface")
 
@@ -102,13 +96,9 @@ class DeepResearchAssistantInterface(Interface):
                     try:
                         registry.register(cmd_def())
                     except Exception as e:
-                        logger.error(
-                            f"Failed to instantiate and register extension command {cmd_def.__name__}: {e}"
-                        )
+                        logger.error(f"Failed to instantiate and register extension command {cmd_def.__name__}: {e}")
                 else:
-                    logger.warning(
-                        f"Ignoring invalid extension command definition: {cmd_def}"
-                    )
+                    logger.warning(f"Ignoring invalid extension command definition: {cmd_def}")
 
             # Apply any pending budget
             if self._pending_budget is not None:
@@ -189,17 +179,13 @@ class DeepResearchAssistantInterface(Interface):
                         # Check state after execution finishes
                         if self._engine.is_awaiting_instruction():
                             # Check if the root node finished/failed to generate the final report
-                            if (
-                                self._engine.current_node
-                                == self._engine.file_system.root_node
-                                and self._engine.current_node.status
-                                in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
-                            ):
+                            if self._engine.current_node == self._engine.file_system.root_node and self._engine.current_node.status in [
+                                ProblemStatus.FINISHED,
+                                ProblemStatus.FAILED,
+                            ]:
                                 logger.info("Generating final report.")
                                 final_report = self._engine._generate_final_report()
-                                yield MessageEvent(
-                                    TextMessage(author="assistant", text=final_report)
-                                )
+                                yield MessageEvent(TextMessage(author="assistant", text=final_report))
                             # Always yield the waiting message after completion
                             yield MessageEvent(
                                 TextMessage(
@@ -208,9 +194,7 @@ class DeepResearchAssistantInterface(Interface):
                                 )
                             )
                         else:
-                            logger.error(
-                                "Engine did not enter awaiting state after initial execution."
-                            )
+                            logger.error("Engine did not enter awaiting state after initial execution.")
                             yield MessageEvent(
                                 TextMessage(
                                     author="assistant",
@@ -240,19 +224,13 @@ class DeepResearchAssistantInterface(Interface):
                     # Check state after execution finishes
                     if self._engine.is_awaiting_instruction():
                         # Check if the root node finished/failed to generate the final report
-                        if (
-                            self._engine.current_node
-                            == self._engine.file_system.root_node
-                            and self._engine.current_node.status
-                            in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
-                        ):
-                            logger.info(
-                                "Generating final report after follow-up instruction."
-                            )
+                        if self._engine.current_node == self._engine.file_system.root_node and self._engine.current_node.status in [
+                            ProblemStatus.FINISHED,
+                            ProblemStatus.FAILED,
+                        ]:
+                            logger.info("Generating final report after follow-up instruction.")
                             final_report = self._engine._generate_final_report()
-                            yield MessageEvent(
-                                TextMessage(author="assistant", text=final_report)
-                            )
+                            yield MessageEvent(TextMessage(author="assistant", text=final_report))
                         # Always yield the waiting message after completion
                         yield MessageEvent(
                             TextMessage(
@@ -261,9 +239,7 @@ class DeepResearchAssistantInterface(Interface):
                             )
                         )
                     else:
-                        logger.error(
-                            "Engine did not enter awaiting state after processing new instruction."
-                        )
+                        logger.error("Engine did not enter awaiting state after processing new instruction.")
                         yield MessageEvent(
                             TextMessage(
                                 author="assistant",
@@ -286,9 +262,7 @@ class DeepResearchAssistantInterface(Interface):
                 # from a previous call, or an error occurred.
                 # In a synchronous model where execute() blocks, this state shouldn't be reached
                 # unless get_input is called again before execute finishes.
-                logger.warning(
-                    "get_input called while engine is not awaiting instruction."
-                )
+                logger.warning("get_input called while engine is not awaiting instruction.")
                 yield MessageEvent(
                     TextMessage(
                         author="assistant",
@@ -298,14 +272,8 @@ class DeepResearchAssistantInterface(Interface):
                 return  # End processing for this call
 
         except Exception as e:
-            logger.error(
-                f"Error during Deep Research engine interaction: {e}", exc_info=True
-            )
-            yield MessageEvent(
-                TextMessage(
-                    author="assistant", text=f"An error occurred during research: {e}"
-                )
-            )
+            logger.error(f"Error during Deep Research engine interaction: {e}", exc_info=True)
+            yield MessageEvent(TextMessage(author="assistant", text=f"An error occurred during research: {e}"))
 
     def clear(self):
         """Clear the interface state"""

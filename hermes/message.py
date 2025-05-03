@@ -1,23 +1,24 @@
 """
 Messages are what the participant sends to the other participant through the engine
 Some messages are commands, they might not go through to the other participant, maybe they are for the engine itself.
-Imagine using Telegram or some other messaging app. What you can add and press Send is what a message is. With difference that you can send multiple messages at once.
+Imagine using Telegram or some other messaging app. What you can add and press Send is what a message is. 
+With difference that you can send multiple messages at once.
 """
 
+import os
+from abc import ABC, abstractmethod
+from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Generator, Optional, Dict
-from abc import ABC, abstractmethod
 
-from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
-from hermes.interface.helpers.peekable_generator import PeekableGenerator, iterate_while
-from hermes.utils.file_extension import remove_quotes
-from hermes.utils.filepath import prepare_filepath
 from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     ThinkingLLMResponse,
 )
-import os
+from hermes.interface.helpers.chunks_to_lines import chunks_to_lines
+from hermes.interface.helpers.peekable_generator import PeekableGenerator, iterate_while
+from hermes.utils.file_extension import remove_quotes
+from hermes.utils.filepath import prepare_filepath
 
 
 @dataclass(init=False)
@@ -31,7 +32,7 @@ class Message(ABC):
     author: str
     timestamp: datetime
 
-    def __init__(self, *, author: str, timestamp: Optional[datetime] = None):
+    def __init__(self, *, author: str, timestamp: datetime | None = None):
         self.author = author
         self.timestamp = timestamp or datetime.now()
 
@@ -59,18 +60,18 @@ class TextMessage(Message):
 
     text: str
     is_directly_entered: bool
-    name: Optional[str]
-    text_role: Optional[str]
+    name: str | None
+    text_role: str | None
 
     def __init__(
         self,
         *,
         author: str,
         text: str,
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
         is_directly_entered: bool = False,
-        name: Optional[str] = None,
-        text_role: Optional[str] = None,
+        name: str | None = None,
+        text_role: str | None = None,
     ):
         super().__init__(author=author, timestamp=timestamp)
         self.text = text
@@ -115,18 +116,18 @@ class TextGeneratorMessage(Message):
     text: str
     has_finished: bool
     is_directly_entered: bool
-    name: Optional[str]
-    text_role: Optional[str]
+    name: str | None
+    text_role: str | None
 
     def __init__(
         self,
         *,
         author: str,
         text_generator: Generator[str, None, None],
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
         is_directly_entered: bool = False,
-        name: Optional[str] = None,
-        text_role: Optional[str] = None,
+        name: str | None = None,
+        text_role: str | None = None,
     ):
         super().__init__(author=author, timestamp=timestamp)
         # We should track the output of the generator, and save it to self.text
@@ -198,9 +199,7 @@ class ImageUrlMessage(Message):
 
     image_url: str
 
-    def __init__(
-        self, *, author: str, image_url: str, timestamp: Optional[datetime] = None
-    ):
+    def __init__(self, *, author: str, image_url: str, timestamp: datetime | None = None):
         super().__init__(author=author, timestamp=timestamp)
         self.image_url = image_url
 
@@ -237,9 +236,7 @@ class ImageMessage(Message):
         "jpg": "jpeg",
     }
 
-    def __init__(
-        self, *, author: str, image_path: str, timestamp: Optional[datetime] = None
-    ):
+    def __init__(self, *, author: str, image_path: str, timestamp: datetime | None = None):
         super().__init__(author=author, timestamp=timestamp)
         self.image_path = prepare_filepath(image_path)
 
@@ -272,9 +269,7 @@ class AudioFileMessage(Message):
 
     audio_filepath: str
 
-    def __init__(
-        self, *, author: str, audio_filepath: str, timestamp: Optional[datetime] = None
-    ):
+    def __init__(self, *, author: str, audio_filepath: str, timestamp: datetime | None = None):
         super().__init__(author=author, timestamp=timestamp)
         self.audio_filepath = prepare_filepath(audio_filepath)
 
@@ -307,9 +302,7 @@ class VideoMessage(Message):
 
     video_filepath: str
 
-    def __init__(
-        self, *, author: str, video_filepath: str, timestamp: Optional[datetime] = None
-    ):
+    def __init__(self, *, author: str, video_filepath: str, timestamp: datetime | None = None):
         super().__init__(author=author, timestamp=timestamp)
         self.video_filepath = prepare_filepath(video_filepath)
 
@@ -341,15 +334,15 @@ class EmbeddedPDFMessage(Message):
     """Class for messages that are embedded PDFs"""
 
     pdf_filepath: str
-    pages: Optional[list[int]]
+    pages: list[int] | None
 
     def __init__(
         self,
         *,
         author: str,
         pdf_filepath: str,
-        timestamp: Optional[datetime] = None,
-        pages: Optional[list[int]] = None,
+        timestamp: datetime | None = None,
+        pages: list[int] | None = None,
     ):
         super().__init__(author=author, timestamp=timestamp)
         self.pdf_filepath = prepare_filepath(pdf_filepath)
@@ -421,20 +414,20 @@ class TextualFileMessage(Message):
     Supports both real files with path, and virtual files that have only content.
     """
 
-    text_filepath: Optional[str]
-    textual_content: Optional[str]
-    file_role: Optional[str]
-    name: Optional[str]
+    text_filepath: str | None
+    textual_content: str | None
+    file_role: str | None
+    name: str | None
 
     def __init__(
         self,
         *,
         author: str,
-        text_filepath: Optional[str],
-        textual_content: Optional[str],
-        timestamp: Optional[datetime] = None,
-        file_role: Optional[str] = None,
-        name: Optional[str] = None,
+        text_filepath: str | None,
+        textual_content: str | None,
+        timestamp: datetime | None = None,
+        file_role: str | None = None,
+        name: str | None = None,
     ):
         super().__init__(author=author, timestamp=timestamp)
         self.text_filepath = None
@@ -452,7 +445,7 @@ class TextualFileMessage(Message):
             return f"Directory: {self.text_filepath}"
         return f"Text file: {self.text_filepath}"
 
-    def get_content_for_assistant(self) -> Dict[str, str]:
+    def get_content_for_assistant(self) -> dict[str, str]:
         return {
             "textual_content": self.textual_content,
             "text_filepath": self.text_filepath,
@@ -486,14 +479,14 @@ class LLMRunCommandOutput(Message):
     """Class for messages that represent the output of LLM-run commands"""
 
     text: str
-    name: Optional[str]
+    name: str | None
 
     def __init__(
         self,
         *,
         text: str,
-        timestamp: Optional[datetime] = None,
-        name: Optional[str] = None,
+        timestamp: datetime | None = None,
+        name: str | None = None,
     ):
         super().__init__(author="user", timestamp=timestamp)
         self.text = text
@@ -528,7 +521,7 @@ class UrlMessage(Message):
 
     url: str
 
-    def __init__(self, *, author: str, url: str, timestamp: Optional[datetime] = None):
+    def __init__(self, *, author: str, url: str, timestamp: datetime | None = None):
         super().__init__(author=author, timestamp=timestamp)
         self.url = url
 
@@ -573,15 +566,13 @@ class ThinkingAndResponseGeneratorMessage(Message):
         *,
         author: str,
         thinking_and_response_generator: Generator[BaseLLMResponse, None, None],
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
         is_directly_entered=False,
         name: str = "",
         text_role: str = "",
     ):
         super().__init__(author=author, timestamp=timestamp)
-        self.thinking_and_response_generator = PeekableGenerator(
-            thinking_and_response_generator
-        )
+        self.thinking_and_response_generator = PeekableGenerator(thinking_and_response_generator)
         self.thinking_text = ""
         self.response_text = ""
         self.thinking_informed = False
@@ -681,8 +672,8 @@ class AssistantNotificationMessage(TextMessage):
         self,
         *,
         text: str,
-        timestamp: Optional[datetime] = None,
-        name: Optional[str] = None,
+        timestamp: datetime | None = None,
+        name: str | None = None,
     ):
         super().__init__(
             author="user",

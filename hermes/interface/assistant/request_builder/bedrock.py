@@ -1,4 +1,3 @@
-from typing import Optional
 from hermes.interface.assistant.request_builder.all_messages_aggregator import (
     AllMessagesAggregator,
 )
@@ -14,9 +13,7 @@ class BedrockRequestBuilder(RequestBuilder):
         self.reasoning_effort: int = None
 
     def initialize_request(self):
-        self.text_messages_aggregator = TextMessagesAggregator(
-            self.prompt_builder_factory
-        )
+        self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
         self._extracted_pdfs = {}
 
@@ -28,9 +25,7 @@ class BedrockRequestBuilder(RequestBuilder):
 
         final_messages = []
         for messages, author in self.all_messages_aggregator.get_aggregated_messages():
-            final_messages.append(
-                {"role": self._get_message_role(author), "content": messages}
-            )
+            final_messages.append({"role": self._get_message_role(author), "content": messages})
 
         response = {
             "modelId": self.model_tag,
@@ -42,15 +37,10 @@ class BedrockRequestBuilder(RequestBuilder):
         }
 
         if self.reasoning_effort:
-            response["additionalModelRequestFields"] = {
-                "thinking": {"type": "enabled", "budget_tokens": self.reasoning_effort}
-            }
+            response["additionalModelRequestFields"] = {"thinking": {"type": "enabled", "budget_tokens": self.reasoning_effort}}
             response["inferenceConfig"]["maxTokens"] = 124_000
 
-        if (
-            "maxTokens" not in response["inferenceConfig"]
-            and "claude-3-7" in self.model_tag
-        ):
+        if "maxTokens" not in response["inferenceConfig"] and "claude-3-7" in self.model_tag:
             response["inferenceConfig"]["maxTokens"] = 124_000
 
         # Using Converse API
@@ -58,9 +48,7 @@ class BedrockRequestBuilder(RequestBuilder):
 
     def _flush_text_messages(self):
         content = self.text_messages_aggregator.compile_request()
-        self._add_content(
-            {"text": content}, self.text_messages_aggregator.get_current_author()
-        )
+        self._add_content({"text": content}, self.text_messages_aggregator.get_current_author())
         self.text_messages_aggregator.clear()
 
     def handle_text_message(
@@ -71,10 +59,7 @@ class BedrockRequestBuilder(RequestBuilder):
         name: str = None,
         text_role: str = None,
     ):
-        if (
-            self.text_messages_aggregator.get_current_author() != author
-            and not self.text_messages_aggregator.is_empty()
-        ):
+        if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()
         self.text_messages_aggregator.add_message(
             message=text,
@@ -89,31 +74,22 @@ class BedrockRequestBuilder(RequestBuilder):
             return "user"
         return "assistant"
 
-    def handle_embedded_pdf_message(
-        self, pdf_path: str, pages: list[int], author: str, message_id: int
-    ):
+    def handle_embedded_pdf_message(self, pdf_path: str, pages: list[int], author: str, message_id: int):
         extracted_pdf_key = (pdf_path, tuple(pages))
         # Extract specified pages if pages are provided
         if extracted_pdf_key in self._extracted_pdfs:
             final_pdf_path = self._extracted_pdfs[extracted_pdf_key]
         else:
-            if pages:
-                final_pdf_path = self._extract_pages_from_pdf(pdf_path, pages)
-            else:
-                final_pdf_path = pdf_path
+            final_pdf_path = self._extract_pages_from_pdf(pdf_path, pages) if pages else pdf_path
             self._extracted_pdfs[extracted_pdf_key] = final_pdf_path
 
         self._add_content(
             {
                 "document": {
                     "format": "pdf",
-                    "name": self._get_file_name(
-                        pdf_path
-                    ),  # Using original name for PDF file
+                    "name": self._get_file_name(pdf_path),  # Using original name for PDF file
                     "source": {
-                        "bytes": self._get_file_bytes(
-                            final_pdf_path
-                        )  # Using the extracted document
+                        "bytes": self._get_file_bytes(final_pdf_path)  # Using the extracted document
                     },
                 }
             },
@@ -167,11 +143,9 @@ class BedrockRequestBuilder(RequestBuilder):
         text_filepath: str,
         author: str,
         message_id: int,
-        file_role: Optional[str] = None,
+        file_role: str | None = None,
     ):
-        return self._default_handle_textual_file_message(
-            text_filepath, author, message_id, file_role
-        )
+        return self._default_handle_textual_file_message(text_filepath, author, message_id, file_role)
 
     def handle_url_message(self, url: str, author: str, message_id: int):
         return self._default_handle_url_message(url, author, message_id)

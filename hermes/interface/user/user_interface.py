@@ -1,31 +1,30 @@
 import os
-from typing import Generator, List, Optional
+from collections.abc import Generator
 
 from prompt_toolkit import PromptSession
-from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 
-from hermes.history import History
-
-from hermes.interface.base import Interface
-from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
-from hermes.interface.user.stt_input_handler import STTInputHandler
-from hermes.interface.user.user_control_panel import UserControlPanel
-from hermes.message import Message, TextGeneratorMessage, TextMessage
 from hermes.event import (
     Event,
     MessageEvent,
     NotificationEvent,
     RawContentForHistoryEvent,
 )
+from hermes.history import History
+from hermes.interface.base import Interface
 from hermes.interface.helpers.cli_notifications import (
-    CLINotificationsPrinter,
     CLIColors,
+    CLINotificationsPrinter,
 )
 from hermes.interface.helpers.terminal_coloring import print_colored_text
 from hermes.interface.user.command_completer import CommandCompleter
+from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
+from hermes.interface.user.stt_input_handler import STTInputHandler
+from hermes.interface.user.user_control_panel import UserControlPanel
+from hermes.message import Message, TextGeneratorMessage, TextMessage
 
 
 class UserInterface(Interface):
@@ -37,7 +36,7 @@ class UserInterface(Interface):
         control_panel: UserControlPanel,
         command_completer: CommandCompleter,
         markdown_highlighter: MarkdownHighlighter,
-        stt_input_handler: Optional[STTInputHandler],
+        stt_input_handler: STTInputHandler | None,
         notifications_printer: CLINotificationsPrinter,
         user_input_from_cli: str,
     ):
@@ -51,15 +50,13 @@ class UserInterface(Interface):
         self.notifications_printer = notifications_printer
         self.user_input_from_cli = user_input_from_cli
 
-    def render(
-        self, history_snapshot: List[Message], events: Generator[Event, None, None]
-    ) -> Generator[Event, None, None]:
+    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         if not self.control_panel_has_rendered:
             print_colored_text(self.control_panel.render(), CLIColors.GREEN)
             self.control_panel_has_rendered = True
 
         last_author = None
-        for i, event in enumerate(events):
+        for event in events:
             if not isinstance(event, MessageEvent):
                 if isinstance(event, NotificationEvent):
                     self.notifications_printer.print_notification(event.text)
@@ -85,9 +82,7 @@ class UserInterface(Interface):
                     last_author = message.author
                     self.print_author(message.author)
                 if self.markdown_highlighter:
-                    self.markdown_highlighter.process_markdown(
-                        message.get_content_for_user()
-                    )
+                    self.markdown_highlighter.process_markdown(message.get_content_for_user())
                 else:
                     for chunk in message.get_content_for_user():
                         print(chunk, end="", flush=True)
@@ -115,12 +110,9 @@ class UserInterface(Interface):
         sendable_content_present = False
 
         for event in self.control_panel.break_down_and_execute_message(input_message):
-            if isinstance(event, MessageEvent):
-                if message_source != "cli" or (
-                    isinstance(event.get_message(), TextMessage)
-                    and event.get_message().is_directly_entered
-                ):
-                    sendable_content_present = True
+            if isinstance(event, MessageEvent) and (
+                message_source != "cli" or (isinstance(event.get_message(), TextMessage) and event.get_message().is_directly_entered)):
+                sendable_content_present = True
             yield event
 
         if not sendable_content_present:
@@ -166,9 +158,7 @@ class UserInterface(Interface):
                 user_input = session.prompt(HTML("<ansiyellow>You: </ansiyellow>"))
                 if user_input.strip():
                     break
-                print_colored_text(
-                    "Please enter a non-empty message.", CLIColors.YELLOW
-                )
+                print_colored_text("Please enter a non-empty message.", CLIColors.YELLOW)
             except KeyboardInterrupt:
                 print_colored_text(
                     "\nInput cleared. Please enter your message or press Ctrl+D to exit.",

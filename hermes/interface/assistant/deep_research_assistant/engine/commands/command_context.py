@@ -1,9 +1,8 @@
-from typing import Dict, Optional
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
-    FileSystem,
-)
 from hermes.interface.assistant.deep_research_assistant.engine.context.history import (
     ChatHistory,
+)
+from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
+    FileSystem,
 )
 
 
@@ -63,11 +62,9 @@ class CommandContext:
         self.file_system.update_files()
 
     # Command output operations
-    def add_command_output(self, command_name: str, args: Dict, output: str) -> None:
+    def add_command_output(self, command_name: str, args: dict, output: str) -> None:
         """Add command output to be included in the automatic response"""
-        self._engine.add_command_output(
-            command_name, args, output, self.current_node.title
-        )
+        self._engine.add_command_output(command_name, args, output, self.current_node.title)
 
     # Log operations
     def add_to_permanent_log(self, content: str) -> None:
@@ -104,10 +101,10 @@ class CommandContext:
     def focus_down(self, subproblem_title: str) -> bool:
         return self._engine.focus_down(subproblem_title)
 
-    def focus_up(self, message: Optional[str] = None) -> bool:
+    def focus_up(self, message: str | None = None) -> bool:
         # Pass the message to the engine's method
         return self._engine.focus_up(message=message)
 
-    def fail_and_focus_up(self, message: Optional[str] = None) -> bool:
+    def fail_and_focus_up(self, message: str | None = None) -> bool:
         # Pass the message to the engine's method
         return self._engine.fail_and_focus_up(message=message)

@@ -22,10 +22,7 @@ class ContentTruncator:
         last_newline_pos = content[:max_length].rfind("\n")
 
         # If no newline found, just truncate at max_length
-        if last_newline_pos == -1:
-            truncated = content[:max_length]
-        else:
-            truncated = content[:last_newline_pos]
+        truncated = content[:max_length] if last_newline_pos == -1 else content[:last_newline_pos]
 
         # Add a note about how much content was omitted
         omitted_chars = len(content) - len(truncated)

@@ -1,11 +1,10 @@
-from typing import List
 from .base_control_panel import ControlPanelCommand
 
 
 class CommandsLister:
     """Formats and prints command information"""
 
-    def print_commands(self, commands: List[ControlPanelCommand]):
+    def print_commands(self, commands: list[ControlPanelCommand]):
         """Print commands in a formatted table"""
         if not commands:
             print("No commands found.")

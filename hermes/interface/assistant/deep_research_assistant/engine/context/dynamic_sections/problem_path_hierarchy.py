@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .base import DynamicSectionData, DynamicSectionRenderer
 
@@ -24,21 +24,19 @@ class PrimitiveNodePathData:
     # Fields needed for path rendering parity
     title: str
     problem_definition: str
-    criteria: Tuple[str, ...]
-    criteria_done: Tuple[bool, ...]
+    criteria: tuple[str, ...]
+    criteria_done: tuple[bool, ...]
     artifacts_count: int
     depth: int
     is_current: bool
     # Include sibling subproblems not in the direct path
-    sibling_subproblems: Tuple[PrimitiveSubproblemData, ...] = field(
-        default_factory=tuple
-    )
+    sibling_subproblems: tuple[PrimitiveSubproblemData, ...] = field(default_factory=tuple)
 
     @staticmethod
     def from_node(
         node: "Node",
         is_current: bool,
-        sibling_subproblems_data: Tuple[PrimitiveSubproblemData, ...] = (),
+        sibling_subproblems_data: tuple[PrimitiveSubproblemData, ...] = (),
     ) -> "PrimitiveNodePathData":
         return PrimitiveNodePathData(
             title=node.title,
@@ -56,22 +54,18 @@ class PrimitiveNodePathData:
 @dataclass(frozen=True)
 class ProblemPathHierarchyData(DynamicSectionData):
     # Store primitive representations of nodes in the path
-    path_nodes: Tuple[PrimitiveNodePathData, ...]
+    path_nodes: tuple[PrimitiveNodePathData, ...]
 
     @staticmethod
-    def from_parent_chain(
-        parent_chain: List["Node"], current_node: "Node"
-    ) -> "ProblemPathHierarchyData":
+    def from_parent_chain(parent_chain: list["Node"], current_node: "Node") -> "ProblemPathHierarchyData":
         path_data_list = []
         for i, node in enumerate(parent_chain):
             is_current_node_in_path = node == current_node
-            next_node_in_path = (
-                parent_chain[i + 1] if i + 1 < len(parent_chain) else None
-            )
+            next_node_in_path = parent_chain[i + 1] if i + 1 < len(parent_chain) else None
 
             # Collect data for sibling subproblems (those not the next node in the path)
             sibling_data = []
-            for sub_title, sub_node in sorted(node.subproblems.items()):
+            for _, sub_node in sorted(node.subproblems.items()):
                 if sub_node != next_node_in_path:
                     # Use the factory from subproblems.py
                     sibling_data.append(PrimitiveSubproblemData.from_node(sub_node))
@@ -91,9 +85,7 @@ class ProblemPathHierarchyData(DynamicSectionData):
 # --- Renderer ---
 class ProblemPathHierarchyRenderer(DynamicSectionRenderer):
     def __init__(self, template_manager: "TemplateManager"):
-        super().__init__(
-            template_manager, "sections/dynamic/problem_path_hierarchy.mako"
-        )
+        super().__init__(template_manager, "sections/dynamic/problem_path_hierarchy.mako")
 
     def render(self, data: ProblemPathHierarchyData, future_changes: int) -> str:
         # Pass the primitive tuple of path node data

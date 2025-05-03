@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from pathlib import Path
-from typing import Dict, Generator, List
 
 
 class LLMInterface(ABC):
@@ -10,9 +10,9 @@ class LLMInterface(ABC):
     def generate_request(
         self,
         help_interface: str,
-        history_messages: List[dict],
+        history_messages: list[dict],
         node_path: Path,
-    ) -> Dict:
+    ) -> dict:
         """
         Generate a request for the LLM based on the rendered interface and history
 
@@ -27,7 +27,7 @@ class LLMInterface(ABC):
         pass
 
     @abstractmethod
-    def send_request(self, request: Dict) -> Generator[str, None, None]:
+    def send_request(self, request: dict) -> Generator[str, None, None]:
         """
         Send a request to the LLM and get a generator of responses
 

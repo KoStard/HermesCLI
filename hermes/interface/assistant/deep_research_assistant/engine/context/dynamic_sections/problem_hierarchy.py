@@ -22,13 +22,9 @@ class ProblemHierarchyData(DynamicSectionData):
     target_node_title: str
 
     @staticmethod
-    def from_filesystem_and_node(
-        fs: "FileSystem", target_node: "Node"
-    ) -> "ProblemHierarchyData":
+    def from_filesystem_and_node(fs: "FileSystem", target_node: "Node") -> "ProblemHierarchyData":
         hierarchy_str = fs.get_problem_hierarchy(target_node)
-        return ProblemHierarchyData(
-            file_system_hierarchy_str=hierarchy_str, target_node_title=target_node.title
-        )
+        return ProblemHierarchyData(file_system_hierarchy_str=hierarchy_str, target_node_title=target_node.title)
 
 
 # --- Renderer ---

@@ -1,7 +1,7 @@
 import logging
 import os
 import textwrap
-from typing import Generator
+from collections.abc import Generator
 
 from hermes.event import Event, MessageEvent
 from hermes.interface.commands.command import Command, CommandRegistry
@@ -69,9 +69,7 @@ class ChatAssistantControlPanel(ControlPanel):
 
         # Map of command ID to command status override
         # Possible status values: ON, OFF, AGENT_ONLY
-        self._command_status_overrides = (
-            command_status_overrides if command_status_overrides is not None else {}
-        )
+        self._command_status_overrides = command_status_overrides if command_status_overrides is not None else {}
 
     def _add_initial_help_content(self):
         """Add initial help content about command usage"""
@@ -87,11 +85,14 @@ class ChatAssistantControlPanel(ControlPanel):
             The command syntax should be used literally, symbol-by-symbol correctly.
             The commands will be parsed and executed only after you send the full message. You'll receive the responses in the next message.
             
-            Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break. The commands should start from an empty line, from first symbol in the line. Don't put anything else in the lines of the commands.
+            Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break. 
+            The commands should start from an empty line, from first symbol in the line. 
+            Don't put anything else in the lines of the commands.
             
             You write down the commands you want to send in this interface.
             
-            ⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses, then consider the next steps.
+            ⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses, 
+            then consider the next steps.
             
             Notice that we use <<< for opening the commands, >>> for closing, and /// for arguments. Make sure you use the exact syntax.
 
@@ -105,7 +106,8 @@ class ChatAssistantControlPanel(ControlPanel):
             ```
             
             1. **Direct Commands**:
-                - When the user directly asks for something (e.g., "create a file", "make a file"), use the command syntax **without** the `#` prefix. Example:
+                - When the user directly asks for something (e.g., "create a file", "make a file"), 
+                use the command syntax **without** the `#` prefix. Example:
                     ```
                     <<< create_file
                     ///path
@@ -116,7 +118,8 @@ class ChatAssistantControlPanel(ControlPanel):
                     ```
                 
             2. **Example Commands**:
-                - When the user asks for an **example** of how to use a command (e.g., "how would you create a file?"), use the `#` prefix to indicate it is an example. Example:
+                - When the user asks for an **example** of how to use a command (e.g., "how would you create a file?"), 
+                use the `#` prefix to indicate it is an example. Example:
                     ```
                     #<<< create_file
                     #///path
@@ -126,9 +129,11 @@ class ChatAssistantControlPanel(ControlPanel):
                     #>>>
                     ```
             
-            Note that below, you'll have only the "direct commands" listed, but if you are making an example, you can use the example syntax.
+            Note that below, you'll have only the "direct commands" listed, but if you are making an example, 
+            you can use the example syntax.
             
-            In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". If the system detects this code anywhere in your response it will halt the system and the admin will check it.
+            In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". 
+            If the system detects this code anywhere in your response it will halt the system and the admin will check it.
             """
             )
         )
@@ -170,9 +175,7 @@ class ChatAssistantControlPanel(ControlPanel):
         ]
 
         # Register all commands
-        for command in (
-            file_commands + markdown_commands + utility_commands + agent_commands
-        ):
+        for command in file_commands + markdown_commands + utility_commands + agent_commands:
             self.command_registry.register(command)
 
         # Add help content for agent commands
@@ -184,11 +187,14 @@ class ChatAssistantControlPanel(ControlPanel):
             
             The difference here is that you don't have to finish the task in one reply.
             If the task is too big, you can finish it with multiple messages.
-            When you send a message without completing the task, you'll be able to continue with sending your next message, the turn will not move to the user.
-            If the task requires information that you don't yet have, or want to check something, you can use the commands, finish your message, 
+            When you send a message without completing the task, you'll be able to continue with sending your next message, 
+            the turn will not move to the user.
+            If the task requires information that you don't yet have, or want to check something, you can use the commands, 
+            finish your message, 
             the engine will run the commands and you'll see the results, which will allow you to continue with the task in next messages.
 
-            Then after you have confirmed that you finished the task, and you want to show your results to the user, you can use the done command.
+            Then after you have confirmed that you finished the task, and you want to show your results to the user, you can use 
+            the done command.
             
             You should aim to minimize user interventions until you achieve your task.
             But if it is the case that you lack some important information, don't make assumptions.
@@ -196,7 +202,8 @@ class ChatAssistantControlPanel(ControlPanel):
             The user will be informed about your command, but preferrably run it early in the process, while they are at the computer.
             
             *Don't see response of command you are executed?*
-            You won't receive the response of the commands you use immediately. You need to finish your message, without having the response, to allow the engine to run your commands.
+            You won't receive the response of the commands you use immediately. You need to finish your message, without having the 
+            response, to allow the engine to run your commands.
             When you finish your turn, you'll receive a response with the results of the command execution.
             
             CORRECT workflow:
@@ -218,12 +225,16 @@ class ChatAssistantControlPanel(ControlPanel):
             
             #### Q: What to do if I don't see any results
             
-            A: If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for the engine to process the whole message. Just finish your message and wait.
-            The concept of sending a full message for processing and receiving a consolidated response requires a shift from interactive interfaces but allows for batch processing of commands
+            A: If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for 
+            the engine to process the whole message. Just finish your message and wait.
+            The concept of sending a full message for processing and receiving a consolidated response requires a shift from interactive 
+            interfaces but allows for batch processing of commands
             
             #### Q: How many commands to send at once?
             
-            A: If you already know that you'll need multiple pieces of information, and getting the results of part of them won't influence the need for others, send a command for all of them, don't spend another message/response cycle. Commands are parallelizable! You can go even with 20-30 commands without worry, you'll then receive all of their outputs in the response.
+            A: If you already know that you'll need multiple pieces of information, and getting the results of part of them won't influence 
+            the need for others, send a command for all of them, don't spend another message/response cycle. Commands are parallelizable! 
+            You can go even with 20-30 commands without worry, you'll then receive all of their outputs in the response.
             
             #### Q: How to input same argument multiple times for a command?
             
@@ -267,9 +278,7 @@ class ChatAssistantControlPanel(ControlPanel):
             elif command_status_override == "AGENT_ONLY":
                 is_enabled = self._agent_mode
             else:
-                if not is_agent_command:
-                    is_enabled = True
-                elif self._agent_mode:
+                if not is_agent_command or self._agent_mode:
                     is_enabled = True
 
             if is_enabled:
@@ -277,9 +286,7 @@ class ChatAssistantControlPanel(ControlPanel):
 
         return "\n".join(content)
 
-    def break_down_and_execute_message(
-        self, message: Message
-    ) -> Generator[Event, None, None]:
+    def break_down_and_execute_message(self, message: Message) -> Generator[Event, None, None]:
         if not self._commands_parsing_status:
             # If command parsing is disabled, just yield the message as is
             yield MessageEvent(
@@ -321,17 +328,12 @@ class ChatAssistantControlPanel(ControlPanel):
                 # Execute the command
                 command = self.command_registry.get_command(result.command_name)
                 if command:
-                    self.notifications_printer.print_notification(
-                        f"LLM used command: {result.command_name}"
-                    )
+                    self.notifications_printer.print_notification(f"LLM used command: {result.command_name}")
                     try:
-                        for event in command.execute(self.command_context, result.args):
-                            yield event
+                        yield from command.execute(self.command_context, result.args)
                     except Exception as e:
                         error_msg = f"Command '{result.command_name}' failed: {str(e)}"
-                        self.notifications_printer.print_notification(
-                            error_msg, CLIColors.RED
-                        )
+                        self.notifications_printer.print_notification(error_msg, CLIColors.RED)
                         yield MessageEvent(
                             TextMessage(
                                 author="user",
@@ -343,9 +345,7 @@ class ChatAssistantControlPanel(ControlPanel):
                 # Handle command errors
                 error_report = self.command_parser.generate_error_report([result])
                 if error_report:
-                    self.notifications_printer.print_notification(
-                        f"Command parsing error: {error_report}", CLIColors.RED
-                    )
+                    self.notifications_printer.print_notification(f"Command parsing error: {error_report}", CLIColors.RED)
                     yield MessageEvent(
                         TextMessage(
                             author="user",
@@ -373,9 +373,7 @@ class ChatAssistantControlPanel(ControlPanel):
             return
 
         if command_id not in self.command_registry.get_command_names():
-            self.notifications_printer.print_notification(
-                f"Unknown command ID: {command_id}", CLIColors.RED
-            )
+            self.notifications_printer.print_notification(f"Unknown command ID: {command_id}", CLIColors.RED)
             return
 
         self._command_status_overrides[command_id] = status

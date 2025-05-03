@@ -1,5 +1,3 @@
-from typing import Optional
-
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
     FileSystem,
     Node,
@@ -24,7 +22,7 @@ class StatusPrinter:
     def print_status(
         self,
         problem_defined: bool,
-        current_node: Optional[Node],
+        current_node: Node | None,
         file_system: FileSystem,
     ) -> None:
         """Print the current status of the research to STDOUT using a template"""
@@ -36,9 +34,7 @@ class StatusPrinter:
             "Node": Node,
         }
         try:
-            status_output = self.template_manager.render_template(
-                "report/status_report.mako", **context
-            )
+            status_output = self.template_manager.render_template("report/status_report.mako", **context)
             # Add a newline before and after the report for better separation
             print(f"\n{status_output}\n")
         except Exception as e:
@@ -51,7 +47,5 @@ class StatusPrinter:
                 print("  Status: No current node")
             else:
                 print(f"  Current Problem: {current_node.title}")
-                print(
-                    f"  Root Node: {file_system.root_node.title if file_system and file_system.root_node else 'N/A'}"
-                )
+                print(f"  Root Node: {file_system.root_node.title if file_system and file_system.root_node else 'N/A'}")
             print("-" * 30)
