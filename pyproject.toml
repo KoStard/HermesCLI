@@ -56,4 +56,5 @@ include = [
 [dependency-groups]
 dev = [
     "invoke>=2.2.0",
+    "ruff>=0.11.8",
 ]

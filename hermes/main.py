@@ -250,6 +250,7 @@ def main():
             from hermes.interface.assistant.deep_research_assistant.interface import (
                 DeepResearchAssistantInterface,
             )
+
             deep_research_interface = DeepResearchAssistantInterface(
                 model=model,
                 research_path=research_path,

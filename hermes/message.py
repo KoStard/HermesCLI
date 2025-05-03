@@ -678,15 +678,19 @@ class AssistantNotificationMessage(TextMessage):
     """Class for notifications visible only to the assistant, not the user"""
 
     def __init__(
-        self, *, text: str, timestamp: Optional[datetime] = None, name: Optional[str] = None
+        self,
+        *,
+        text: str,
+        timestamp: Optional[datetime] = None,
+        name: Optional[str] = None,
     ):
         super().__init__(
-            author="user", 
-            text=text, 
-            timestamp=timestamp, 
+            author="user",
+            text=text,
+            timestamp=timestamp,
             is_directly_entered=True,
             name=name,
-            text_role="notification"
+            text_role="notification",
         )
 
     def get_content_for_user(self) -> str:

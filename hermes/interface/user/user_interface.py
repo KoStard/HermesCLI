@@ -77,9 +77,7 @@ class UserInterface(Interface):
                     last_author = message.author
                     self.print_author(message.author)
                 if self.markdown_highlighter:
-                    self.markdown_highlighter.process_markdown(
-                        iter(content_for_user)
-                    )
+                    self.markdown_highlighter.process_markdown(iter(content_for_user))
                 else:
                     print(content_for_user)
             elif isinstance(message, TextGeneratorMessage):

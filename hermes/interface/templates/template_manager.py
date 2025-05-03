@@ -20,10 +20,11 @@ class TemplateManager:
         """
         self.template_dir = Path(template_dir)
         self._lookup = None
-    
+
     @property
     def lookup(self) -> "TemplateLookup":
         from mako.lookup import TemplateLookup
+
         if self._lookup is None:
             self._lookup = TemplateLookup(
                 directories=[str(self.template_dir)],
@@ -33,7 +34,6 @@ class TemplateManager:
                 encoding_errors="replace",
             )
         return self._lookup
-
 
     def render_template(self, template_name: str, **context: Any) -> str:
         """

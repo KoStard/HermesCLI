@@ -16,7 +16,7 @@ from hermes.event import (
     AgentModeEvent,
     LLMCommandsExecutionEvent,
     ThinkingLevelEvent,
-    Event
+    Event,
 )
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.interface.helpers.peekable_generator import PeekableGenerator

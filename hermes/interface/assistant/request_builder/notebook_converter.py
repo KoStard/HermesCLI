@@ -19,7 +19,7 @@ def convert_notebook_custom(ipynb_path):
     for cell_num, cell in enumerate(notebook["cells"], 1):
         # Cell separator
         text_content.append("#" * 80)
-        text_content.append(f'# Cell {cell_num} [{cell["cell_type"]}]')
+        text_content.append(f"# Cell {cell_num} [{cell['cell_type']}]")
         text_content.append("#" * 80)
 
         # Cell source
@@ -40,7 +40,7 @@ def convert_notebook_custom(ipynb_path):
                     # Handle other output types like images, HTML, etc.
                     else:
                         text_content.append(
-                            f'[Output type: {list(output["data"].keys())}]'
+                            f"[Output type: {list(output['data'].keys())}]"
                         )
 
         text_content.append("\n")  # Add extra newline between cells

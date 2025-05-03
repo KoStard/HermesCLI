@@ -22,7 +22,6 @@ class BedrockModel(ChatModel):
             self.model_tag, self.notifications_printer, SimplePromptBuilderFactory()
         )
 
-
         aws_region = self.config.get("aws_region")
         aws_profile_name = self.config.get("aws_profile_name")
 
@@ -66,6 +65,7 @@ class BedrockModel(ChatModel):
 
     def _call_and_retry_if_needed(self, request, tries=1):
         from botocore.exceptions import ClientError
+
         try:
             response = self.client.converse_stream(**request)
         except ClientError as e:

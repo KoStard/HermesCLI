@@ -46,7 +46,7 @@ class SimplePromptBuilder(PromptBuilder):
                 tag_attrs.append(f'role="{piece.text_role}"')
 
             if tag_attrs:
-                tag_start = f'<text {" ".join(tag_attrs)}>'
+                tag_start = f"<text {' '.join(tag_attrs)}>"
             else:
                 tag_start = "<text>"
 

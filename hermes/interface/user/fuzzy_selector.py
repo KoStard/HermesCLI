@@ -45,6 +45,7 @@ class FuzzyFilesSelector:
         # Show the prompt and get the selection
         try:
             from InquirerPy import prompt
+
             result = prompt(questions)
 
             # Return the selected files as absolute paths

@@ -7,10 +7,7 @@ from hermes.interface.commands.command import (
     Command,
     CommandRegistry,
 )
-from hermes.interface.commands.command_parser import (
-    CommandParser,
-    ParseResult
-)
+from hermes.interface.commands.command_parser import CommandParser, ParseResult
 
 # Import the specific context for Deep Research
 from hermes.interface.assistant.deep_research_assistant.engine.commands.command_context import (
@@ -712,7 +709,7 @@ class DeepResearchEngine:
             return
 
         for index, node in enumerate(all_nodes):
-            print(f"{'*' * (node.depth_from_root + 1)} {index+1}: {node.title}")
+            print(f"{'*' * (node.depth_from_root + 1)} {index + 1}: {node.title}")
         print()
 
         index = None

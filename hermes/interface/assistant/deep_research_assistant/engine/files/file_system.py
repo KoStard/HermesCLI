@@ -527,7 +527,7 @@ class FileSystem:
                     zip(node.criteria, node.criteria_done)
                 ):
                     status = "[x]" if done else "[ ]"
-                    f.write(f"{i+1}. {status} {criterion}\n")
+                    f.write(f"{i + 1}. {status} {criterion}\n")
 
         # Write breakdown structure (always create the file)
         with open(node.path / "Breakdown Structure.md", "w", encoding="utf-8") as f:

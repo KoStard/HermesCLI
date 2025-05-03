@@ -48,7 +48,7 @@ class Gemini2Model(ChatModel):
             wait_exponential,
             retry_if_exception_type,
         )
-        
+
         @retry(
             stop=stop_after_attempt(5),
             wait=wait_exponential(multiplier=1, max=60),
