@@ -1,10 +1,8 @@
-import textwrap
-from typing import List, Optional, Tuple, Dict, Any, Type
+from typing import List, Optional, Tuple, Type
 
 from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
     FileSystem,
     Node,
-    Artifact,
 )
 from hermes.interface.assistant.deep_research_assistant.engine.commands.commands import (
     register_deep_research_commands,
@@ -27,13 +25,6 @@ from .dynamic_sections.knowledge_base import KnowledgeBaseData
 from .dynamic_sections.goal import GoalSectionData
 
 # Import types needed for factory methods (still required here for _gather_dynamic_section_data)
-from hermes.interface.assistant.deep_research_assistant.engine.files.file_system import (
-    FileSystem,
-    Node,
-)
-from hermes.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import (
-    KnowledgeEntry,
-)
 
 register_deep_research_commands()
 

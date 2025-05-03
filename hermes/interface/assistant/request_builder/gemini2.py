@@ -1,5 +1,4 @@
 from base64 import b64encode
-import time
 from typing import Optional
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.assistant.request_builder.all_messages_aggregator import (

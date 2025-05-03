@@ -23,10 +23,6 @@ from hermes.utils.tree_generator import TreeGenerator
 logger = logging.getLogger(__name__)
 
 
-import shutil
-from datetime import datetime
-
-
 class ChatAssistantCommandContext:
     """Context for executing ChatAssistant commands."""
 
@@ -100,6 +96,9 @@ class ChatAssistantCommandContext:
         """Backup the existing file to prevent possible data loss."""
         if not os.path.exists(file_path):
             return
+        from datetime import datetime
+        import shutil
+
 
         # Create backup directory
         backup_dir = os.path.join("/tmp", "hermes", "backups")
@@ -107,6 +106,7 @@ class ChatAssistantCommandContext:
 
         # Generate backup filename with timestamp
         filename = os.path.basename(file_path)
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_path = os.path.join(backup_dir, f"{filename}_{timestamp}.bak")
 

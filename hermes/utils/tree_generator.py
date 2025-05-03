@@ -1,5 +1,4 @@
 import os
-from hermes.message import TextMessage
 
 
 class TreeGenerator:

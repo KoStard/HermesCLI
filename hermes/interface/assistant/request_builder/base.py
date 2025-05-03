@@ -3,9 +3,6 @@ from typing import Optional
 import os
 
 from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
-from hermes.interface.assistant.request_builder.notebook_converter import (
-    convert_notebook_custom,
-)
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.message import (
     AudioFileMessage,
@@ -22,7 +19,6 @@ from hermes.message import (
     UrlMessage,
     VideoMessage,
 )
-from hermes.utils.binary_file import is_binary
 from hermes.utils.file_reader import FileReader
 
 import logging

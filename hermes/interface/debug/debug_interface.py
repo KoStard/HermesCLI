@@ -12,7 +12,7 @@ from hermes.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
 )
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
-from hermes.message import Message, TextMessage
+from hermes.message import TextMessage
 
 
 class DebugInterface(ChatAssistantInterface):

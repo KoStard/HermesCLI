@@ -1,5 +1,5 @@
 from base64 import b64encode
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
 
 from hermes.interface.assistant.request_builder.base import RequestBuilder
 from hermes.interface.assistant.request_builder.text_messages_aggregator import (

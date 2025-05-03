@@ -1,7 +1,7 @@
 import os
 from typing import Generator, List, Optional
 
-from prompt_toolkit import ANSI, PromptSession
+from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.formatted_text import HTML
@@ -13,7 +13,7 @@ from hermes.interface.base import Interface
 from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
 from hermes.interface.user.user_control_panel import UserControlPanel
-from hermes.message import InvisibleMessage, Message, TextGeneratorMessage, TextMessage
+from hermes.message import Message, TextGeneratorMessage, TextMessage
 from hermes.event import (
     Event,
     MessageEvent,
@@ -23,7 +23,6 @@ from hermes.event import (
 from hermes.interface.helpers.cli_notifications import (
     CLINotificationsPrinter,
     CLIColors,
-    colorize_text,
 )
 from hermes.interface.helpers.terminal_coloring import print_colored_text
 from hermes.interface.user.command_completer import CommandCompleter

@@ -45,7 +45,7 @@ class DynamicSectionRenderer(ABC):
 
         try:
             return self.template_manager.render_template(self.template_name, **context)
-        except Exception as e:
+        except Exception:
             print(f"\n--- ERROR RENDERING TEMPLATE: {self.template_name} ---")
             tb_str = traceback.format_exc()
             print(tb_str)

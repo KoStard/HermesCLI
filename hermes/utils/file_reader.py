@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Optional, Tuple
+from typing import Tuple
 
 from hermes.utils.binary_file import is_binary
 

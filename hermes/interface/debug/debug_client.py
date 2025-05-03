@@ -2,7 +2,6 @@ import socket
 import argparse
 import json
 from prompt_toolkit import PromptSession
-from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.formatted_text import HTML
 
 

@@ -27,7 +27,7 @@ from hermes.interface.helpers.cli_notifications import (
 from hermes.message import TextMessage
 from hermes.participants import Participant
 from hermes.history import History
-from itertools import cycle, chain
+from itertools import chain
 from datetime import datetime
 import shutil
 

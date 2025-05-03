@@ -13,12 +13,10 @@ from hermes.interface.base import Interface
 from hermes.event import (
     Event,
     MessageEvent,
-    NotificationEvent,
     RawContentForHistoryEvent,
 )
 from hermes.message import (
     Message,
-    TextGeneratorMessage,
     TextMessage,
     ThinkingAndResponseGeneratorMessage,
 )
