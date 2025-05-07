@@ -288,8 +288,8 @@ class DeepResearchEngine:
 
     def __init__(
         self,
-        root_dir: str = "research",
-        llm_interface: LLMInterface = None,
+        root_dir: str,
+        llm_interface: LLMInterface,
     ):
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
@@ -351,10 +351,6 @@ class DeepResearchEngine:
         Returns:
             bool: True if a problem was successfully defined, False otherwise
         """
-        # Check if LLM interface is available
-        if not self.llm_interface:
-            raise ValueError("LLM interface is required for execution")
-
         title = instruction[:200]
         if len(instruction) > 200:
             title += "..."
@@ -398,10 +394,6 @@ class DeepResearchEngine:
         (node finished/failed and focus returns to root, or budget exhausted, or shutdown)
         and sets `awaiting_new_instruction` to True.
         """
-        # Check if LLM interface is available
-        if not self.llm_interface:
-            raise ValueError("LLM interface is required for execution")
-
         # Check if root problem is defined
         if not self.is_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
