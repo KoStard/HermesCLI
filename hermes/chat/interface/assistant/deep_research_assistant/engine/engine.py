@@ -27,7 +27,7 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_s
     ProblemStatus,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.files.logger import (
-    DeepResearchLogger,
+    DeepResearchRequestAndResponseLogger,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.report.report_generator import (
     ReportGenerator,
@@ -296,7 +296,7 @@ class DeepResearchEngine:
         # Use the CommandParser from the core package
         self.command_parser = CommandParser()
         self.awaiting_new_instruction = False  # Replaces 'finished'
-        self.logger = DeepResearchLogger(Path(root_dir))
+        self.logger = DeepResearchRequestAndResponseLogger(Path(root_dir))
         self.llm_interface = llm_interface
         self.current_node: Node | None = None
         self.next_node: Node | None = None  # Tracks scheduled focus changes

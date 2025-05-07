@@ -7,7 +7,7 @@ from hermes.chat.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.files.logger import (
-    DeepResearchLogger,
+    DeepResearchRequestAndResponseLogger,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,
@@ -24,7 +24,7 @@ class ChatModelLLMInterface(LLMInterface):
     def __init__(self, model: ChatModel, research_dir: str = None):
         self.model = model
         self.research_dir = research_dir if research_dir else str(Path.cwd())
-        self.deep_research_logger = DeepResearchLogger(Path(self.research_dir))
+        self.deep_research_logger = DeepResearchRequestAndResponseLogger(Path(self.research_dir))
 
     def generate_request(
         self,
