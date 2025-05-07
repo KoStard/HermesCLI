@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from .base import DynamicSectionData, DynamicSectionRenderer
+from . import DynamicSectionData, DynamicSectionRenderer
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
         FileSystem,
         Node,
     )
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
+    from hermes.chat.interface.templates.template_manager import (
         TemplateManager,
     )
 

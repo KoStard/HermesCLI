@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from .base import DynamicSectionData, DynamicSectionRenderer
+from . import DynamicSectionData, DynamicSectionRenderer
 
 # Import PrimitiveSubproblemData needed for sibling representation
 from .subproblems import PrimitiveSubproblemData
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
         Node,
     )
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
+    from hermes.chat.interface.templates.template_manager import (
         TemplateManager,
     )
 

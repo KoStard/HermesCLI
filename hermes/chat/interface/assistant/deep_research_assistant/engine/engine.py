@@ -7,7 +7,7 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.commands.com
 )
 
 # Import the registry creation function and type alias
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import (
+from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.registry import (
     RendererRegistry,
     create_renderer_registry,
 )

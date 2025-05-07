@@ -1,43 +1,61 @@
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    # Import base classes for type hinting
     from hermes.chat.interface.templates.template_manager import TemplateManager
 
-    from .base import DynamicSectionData, DynamicSectionRenderer
+
+@dataclass(frozen=True)
+class DynamicSectionData:
+    """Base class for dynamic section data. Frozen makes instances hashable."""
+
+    pass
 
 
-# Type alias for the registry
-RendererRegistry = dict[type["DynamicSectionData"], "DynamicSectionRenderer"]
+class DynamicSectionRenderer(ABC):
+    """Base class for rendering dynamic sections."""
 
+    def __init__(self, template_manager: "TemplateManager", template_name: str):
+        self.template_manager = template_manager
+        self.template_name = template_name
 
-def create_renderer_registry(template_manager: "TemplateManager") -> RendererRegistry:
-    """Creates and populates the registry mapping data types to renderer instances."""
-    # Import Data and Renderer classes from their respective section modules
-    from .artifacts import ArtifactsSectionData, ArtifactsSectionRenderer
-    from .budget import BudgetSectionData, BudgetSectionRenderer
-    from .criteria import CriteriaSectionData, CriteriaSectionRenderer
-    from .goal import GoalSectionData, GoalSectionRenderer
-    from .header import HeaderSectionData, HeaderSectionRenderer
-    from .knowledge_base import KnowledgeBaseData, KnowledgeBaseRenderer
-    from .permanent_logs import PermanentLogsData, PermanentLogsRenderer
-    from .problem_hierarchy import ProblemHierarchyData, ProblemHierarchyRenderer
-    from .problem_path_hierarchy import (
-        ProblemPathHierarchyData,
-        ProblemPathHierarchyRenderer,
-    )
-    from .subproblems import SubproblemsSectionData, SubproblemsSectionRenderer
+    @abstractmethod
+    def render(self, data: "DynamicSectionData", future_changes: int) -> str:
+        """
+        Renders the section based on the provided data and future changes.
 
-    registry: RendererRegistry = {
-        HeaderSectionData: HeaderSectionRenderer(template_manager),
-        PermanentLogsData: PermanentLogsRenderer(template_manager),
-        BudgetSectionData: BudgetSectionRenderer(template_manager),
-        ArtifactsSectionData: ArtifactsSectionRenderer(template_manager),
-        ProblemHierarchyData: ProblemHierarchyRenderer(template_manager),
-        CriteriaSectionData: CriteriaSectionRenderer(template_manager),
-        SubproblemsSectionData: SubproblemsSectionRenderer(template_manager),
-        ProblemPathHierarchyData: ProblemPathHierarchyRenderer(template_manager),
-        KnowledgeBaseData: KnowledgeBaseRenderer(template_manager),
-        GoalSectionData: GoalSectionRenderer(template_manager),
-    }
-    return registry
+        Args:
+            data: The specific data dataclass instance for this section.
+            future_changes: The number of times this section changes *after*
+                            the current instance in the history.
+
+        Returns:
+            The rendered HTML/Markdown string for the section, or an error message.
+        """
+        pass
+
+    def _render_template(self, context: dict) -> str:
+        """Helper to render the template with common error handling."""
+        # Import traceback locally within the method to avoid potential circular dependencies
+        # if this base class were to be imported widely, although less likely now.
+        import traceback
+
+        try:
+            return self.template_manager.render_template(self.template_name, **context)
+        except Exception:
+            print(f"\n--- ERROR RENDERING TEMPLATE: {self.template_name} ---")
+            tb_str = traceback.format_exc()
+            print(tb_str)
+            print("--- END ERROR ---")
+            # Corrected f-string for artifact name
+            artifact_name = f"render_error_{self.template_name.replace('/', '_').replace('.mako', '')}"
+            error_message = (
+                f"**SYSTEM ERROR:** Failed to render the '{self.template_name}' section. "
+                f"Please create an artifact named '{artifact_name}' "
+                f"with the following content:\n```\n{tb_str}\n```\n"
+                "Then, inform the administrator."
+            )
+            # We might want to wrap this in XML tags appropriate for the interface
+            # For now, return the raw error message for inclusion.
+            return f'<error context="Rendering {self.template_name}">\n{error_message}\n</error>'
