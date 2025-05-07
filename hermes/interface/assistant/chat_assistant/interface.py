@@ -6,6 +6,7 @@ from hermes.event import (
     MessageEvent,
     RawContentForHistoryEvent,
 )
+from hermes.interface import Interface
 from hermes.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
 )
@@ -14,7 +15,6 @@ from hermes.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
 )
 from hermes.interface.assistant.models.chat_models.base import ChatModel
-from hermes.interface import Interface
 from hermes.message import (
     Message,
     TextMessage,

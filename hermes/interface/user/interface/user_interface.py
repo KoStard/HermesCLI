@@ -20,10 +20,10 @@ from hermes.interface.helpers.cli_notifications import (
     CLINotificationsPrinter,
 )
 from hermes.interface.helpers.terminal_coloring import print_colored_text
-from hermes.interface.user.interface.command_completer import CommandCompleter
 from hermes.interface.markdown.markdown_highlighter import MarkdownHighlighter
-from hermes.interface.user.interface.stt_input_handler import STTInputHandler
 from hermes.interface.user.control_panel.user_control_panel import UserControlPanel
+from hermes.interface.user.interface.command_completer import CommandCompleter
+from hermes.interface.user.interface.stt_input_handler import STTInputHandler
 from hermes.message import Message, TextGeneratorMessage, TextMessage
 
 
