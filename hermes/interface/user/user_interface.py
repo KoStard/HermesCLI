@@ -111,7 +111,8 @@ class UserInterface(Interface):
 
         for event in self.control_panel.break_down_and_execute_message(input_message):
             if isinstance(event, MessageEvent) and (
-                message_source != "cli" or (isinstance(event.get_message(), TextMessage) and event.get_message().is_directly_entered)):
+                message_source != "cli" or (isinstance(event.get_message(), TextMessage) and event.get_message().is_directly_entered)
+            ):
                 sendable_content_present = True
             yield event
 

@@ -143,7 +143,7 @@ class UserControlPanel(ControlPanel):
             ControlPanelCommand(
                 command_id="pdf",
                 command_label="/pdf",
-                description="Add pdf to the conversation. After the PDF path, optionally use " \
+                description="Add pdf to the conversation. After the PDF path, optionally use "
                 "{<page_number>, <page_number>:<page_number>, ...} to specify pages.",
                 short_description="Share a PDF file",
                 parser=lambda line: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line)),
@@ -541,8 +541,10 @@ class UserControlPanel(ControlPanel):
             raise ValueError(f"No content found for URL: {url}")
 
         if content_age > 7:
-            result_text += f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, " \
+            result_text += (
+                f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, "
                 "it might not be fully up to date"
+            )
 
         return MessageEvent(
             TextualFileMessage(

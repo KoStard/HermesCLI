@@ -88,7 +88,7 @@ class STTInputHandler:
             transcript = client.audio.transcriptions.create(
                 file=(audio_file, audio),
                 model="whisper-large-v3-turbo",
-                prompt="This is a recording of a human message in a chat, please transcribe it as accurately as possible, capture " \
+                prompt="This is a recording of a human message in a chat, please transcribe it as accurately as possible, capture "
                 "if the user has a question",
                 temperature=0,
                 response_format="text",

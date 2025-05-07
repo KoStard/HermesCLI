@@ -78,9 +78,7 @@ class ModelFactory:
 
         if not matching_classes:
             supported_providers = list(set(m.get_provider().upper() for m in self.model_classes))
-            raise ValueError(
-                f"Unsupported model provider: {provider}, supported providers: {supported_providers}"
-            )
+            raise ValueError(f"Unsupported model provider: {provider}, supported providers: {supported_providers}")
 
         if len(matching_classes) > 1:
             self.notifications_printer.print_notification(
@@ -99,7 +97,7 @@ class ModelFactory:
 def get_config_section(config: ConfigParser, provider: str):
     if provider not in config.sections():
         raise ValueError(
-            f"Config section {provider} is not found. Please double check it and specify " \
+            f"Config section {provider} is not found. Please double check it and specify "
             "it in the config file ~/.config/hermes/config.ini. You might need to specify the api_key there."
         )
     return config[provider]

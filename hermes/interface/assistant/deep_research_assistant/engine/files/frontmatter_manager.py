@@ -42,7 +42,7 @@ class FrontmatterManager:
 
     def add_frontmatter(self, content: str, metadata: dict) -> str:
         """
-        Given with the future content of the markdown file and the metadata for it, 
+        Given with the future content of the markdown file and the metadata for it,
         add the metadata as a front-matter and return the final content
 
         Args:

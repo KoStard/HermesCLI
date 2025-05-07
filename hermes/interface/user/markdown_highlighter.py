@@ -52,7 +52,7 @@ class MarkdownHighlighter:
             """
             Fix to a bug where some characters get serialised:
             Test:
-                ⋊  python -c 'from hermes.utils.markdown_highlighter import MarkdownHighlighter; 
+                ⋊  python -c 'from hermes.utils.markdown_highlighter import MarkdownHighlighter;
                 print(MarkdownHighlighter().process_markdown("`<>!@#$%^&*()-=`"))'
                 `<>!@#$%^&*()-=` < correct
                 `&lt;&gt;!@#$%^&amp;*()-=` < incorrect

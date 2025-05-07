@@ -93,7 +93,7 @@ class ChatModelLLMInterface(LLMInterface):
 
     def _handle_string_output(self, llm_response_generator: Generator[str, None, None]) -> Generator[BaseLLMResponse, None, None]:
         """
-        This is implemented for backwards compatibility, as not all models support thinking tokens yet 
+        This is implemented for backwards compatibility, as not all models support thinking tokens yet
         and they currently just return string.
         """
         for response in llm_response_generator:

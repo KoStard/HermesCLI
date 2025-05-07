@@ -33,7 +33,7 @@ def build_cli_interface(user_control_panel: UserControlPanel, model_factory: Mod
 
     chat_parser.add_argument("--debug", action="store_true")
 
-    suggested_models =  ', '.join(f'{provider.lower()}/{model_tag}' for provider, model_tag in model_factory.get_provider_model_pairs())
+    suggested_models = ", ".join(f"{provider.lower()}/{model_tag}" for provider, model_tag in model_factory.get_provider_model_pairs())
 
     chat_parser.add_argument(
         "--model",
@@ -209,7 +209,7 @@ def main():
             model_info_string = get_default_model_info_string(config)
         if not model_info_string:
             raise ValueError(
-                "No model specified. Please specify a model using the --model argument or add a default model in the config " \
+                "No model specified. Please specify a model using the --model argument or add a default model in the config "
                 "file ~/.config/hermes/config.ini."
             )
         if "/" not in model_info_string:
@@ -310,10 +310,8 @@ def execute_utils_command(cli_args, config, extension_utils_visitors):
         from markitdown import MarkItDown
 
         headers = {
-            "User-Agent": 
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Accept": 
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "en-US,en;q=0.9",
             "Upgrade-Insecure-Requests": "1",
             "Sec-Fetch-Dest": "document",

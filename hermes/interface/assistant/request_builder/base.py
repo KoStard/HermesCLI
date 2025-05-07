@@ -59,9 +59,7 @@ class RequestBuilder(ABC):
                             name=message.name,
                             text_role=message.text_role,
                         )
-            elif (
-                isinstance(message, TextGeneratorMessage | ThinkingAndResponseGeneratorMessage | InvisibleMessage)
-            ):
+            elif isinstance(message, TextGeneratorMessage | ThinkingAndResponseGeneratorMessage | InvisibleMessage):
                 content = message.get_content_for_assistant()
                 if content:
                     content = content.strip()
@@ -207,10 +205,8 @@ class RequestBuilder(ABC):
             from markitdown import MarkItDown
 
             headers = {
-                "User-Agent": 
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-                "Accept": 
-                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
                 "Accept-Language": "en-US,en;q=0.9",
                 "Upgrade-Insecure-Requests": "1",
                 "Sec-Fetch-Dest": "document",
@@ -336,7 +332,7 @@ class RequestBuilder(ABC):
 
     def _extract_pages_from_pdf(self, pdf_path: str, pages: list[int]) -> str:
         """
-        Extract the specified pages from the PDF, create a temporary pdf file with the extracted pages and return the path 
+        Extract the specified pages from the PDF, create a temporary pdf file with the extracted pages and return the path
         to the temporary file.
         If a given page is not present, skip it.
         """

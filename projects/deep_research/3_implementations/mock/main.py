@@ -23,7 +23,7 @@ def main():
     parser.add_argument(
         "--instruction",
         type=str,
-        default="Please research and organize the fundamental concepts of quantum mechanics. I need a comprehensive understanding of the " \
+        default="Please research and organize the fundamental concepts of quantum mechanics. I need a comprehensive understanding of the "
         "core principles that form the foundation of this field.",
         help="The research instruction",
     )

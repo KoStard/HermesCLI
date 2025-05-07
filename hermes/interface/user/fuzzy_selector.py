@@ -9,7 +9,7 @@ class FuzzyFilesSelector:
     def select_files(self, multi=True):
         """
         Select files using fuzzy finder.
-        Behaviour like fzf, getting from current working directory child files, recursively through the files, excluding files 
+        Behaviour like fzf, getting from current working directory child files, recursively through the files, excluding files
         starting with a dot.
         Return should be a list of absolute paths for the selected files.
         Empty list is selection as well.

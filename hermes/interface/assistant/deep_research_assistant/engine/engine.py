@@ -493,7 +493,7 @@ class DeepResearchEngine:
                             "content": auto_reply_content,
                         }  # Auto-replies are from 'user' perspective for LLM
                     )
-            
+
             history_messages = history_messages[::-1]
 
             # --- 4. Print Latest Auto-Reply to Console (Optional) ---
@@ -606,7 +606,7 @@ class DeepResearchEngine:
 
         # End of the while loop (awaiting_new_instruction is True)
         print(
-            f"Engine execution cycle complete. Current node: {self.current_node.title if self.current_node else 'None'}. "\
+            f"Engine execution cycle complete. Current node: {self.current_node.title if self.current_node else 'None'}. "
             "Awaiting new instruction."
         )
 
