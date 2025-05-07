@@ -3,9 +3,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.templates.template_manager import (
-        TemplateManager,
-    )
+    from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
 @dataclass(frozen=True)
