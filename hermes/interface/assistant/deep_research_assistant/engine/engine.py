@@ -456,7 +456,8 @@ class DeepResearchEngine:
             auto_reply_counter = 0
             auto_reply_max_length = 5000
 
-            for i, block in enumerate(compiled_blocks):
+            for i in range(len(compiled_blocks) - 1, -1, -1):
+                block = compiled_blocks[i]
                 if isinstance(block, ChatMessage):
                     history_messages.append({"author": block.author, "content": block.content})
                 elif isinstance(block, AutoReply):
@@ -492,6 +493,8 @@ class DeepResearchEngine:
                             "content": auto_reply_content,
                         }  # Auto-replies are from 'user' perspective for LLM
                     )
+            
+            history_messages = history_messages[::-1]
 
             # --- 4. Print Latest Auto-Reply to Console (Optional) ---
             # Render the *last* auto-reply added (if any) for console view, without future changes/truncation
