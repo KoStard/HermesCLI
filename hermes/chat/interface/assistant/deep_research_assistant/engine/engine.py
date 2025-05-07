@@ -299,7 +299,6 @@ class DeepResearchEngine:
         self.llm_interface = llm_interface
         self.current_node: Node | None = None
         self.next_node: Node | None = None  # Tracks scheduled focus changes
-        self.revision_index = 1
         # When parent requests activation of multiple children sequentially, we'll track them here
         # Then when the child is finished, and wants to activate the parent again, we'll activate the next in the queue
         # It's a dict, as the child itself might activate other grandchildren
@@ -703,9 +702,6 @@ class DeepResearchEngine:
         """Set the current node and update chat history"""
         self.current_node = node
         node.status = ProblemStatus.IN_PROGRESS
-
-    def increment_revision(self):
-        self.revision_index += 1
 
     def _handle_llm_request(self, request, current_node_path):
         """
