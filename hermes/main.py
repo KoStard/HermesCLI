@@ -19,7 +19,7 @@ from hermes.interface.control_panel.commands_lister import CommandsLister
 from hermes.interface.debug.debug_interface import DebugInterface
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.interface.user.command_completer import CommandCompleter
-from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
+from hermes.interface.markdown.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
 from hermes.interface.user.user_control_panel import UserControlPanel
 from hermes.interface.user.user_interface import UserInterface

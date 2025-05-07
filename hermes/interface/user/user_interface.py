@@ -21,7 +21,7 @@ from hermes.interface.helpers.cli_notifications import (
 )
 from hermes.interface.helpers.terminal_coloring import print_colored_text
 from hermes.interface.user.command_completer import CommandCompleter
-from hermes.interface.user.markdown_highlighter import MarkdownHighlighter
+from hermes.interface.markdown.markdown_highlighter import MarkdownHighlighter
 from hermes.interface.user.stt_input_handler import STTInputHandler
 from hermes.interface.user.user_control_panel import UserControlPanel
 from hermes.message import Message, TextGeneratorMessage, TextMessage
