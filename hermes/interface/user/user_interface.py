@@ -14,7 +14,7 @@ from hermes.event import (
     RawContentForHistoryEvent,
 )
 from hermes.history import History
-from hermes.interface.base import Interface
+from hermes.interface import Interface
 from hermes.interface.helpers.cli_notifications import (
     CLIColors,
     CLINotificationsPrinter,

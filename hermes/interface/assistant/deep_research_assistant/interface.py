@@ -18,7 +18,7 @@ from hermes.interface.assistant.deep_research_assistant.engine.files.file_system
 from hermes.interface.assistant.deep_research_assistant.llm_interface_impl import (
     ChatModelLLMInterface,
 )
-from hermes.interface.base import Interface
+from hermes.interface import Interface
 
 # Import core command components
 from hermes.interface.commands.command import Command, CommandRegistry
