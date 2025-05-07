@@ -1,8 +1,8 @@
 import unittest
 from typing import Any
 
-from hermes.interface.commands.command import Command, CommandRegistry
-from hermes.interface.commands.command_parser import (
+from hermes.chat.interface.commands.command import Command, CommandRegistry
+from hermes.chat.interface.commands.command_parser import (
     CommandError,
     CommandParser,
     ParseResult,

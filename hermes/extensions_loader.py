@@ -10,8 +10,8 @@ import logging
 import sys
 from pathlib import Path
 
-from hermes.interface.commands.command import Command
-from hermes.interface.control_panel import ControlPanelCommand
+from hermes.chat.interface.commands.command import Command
+from hermes.chat.interface.control_panel import ControlPanelCommand
 from hermes.utils.config_utils import get_extensions_dir_path
 
 

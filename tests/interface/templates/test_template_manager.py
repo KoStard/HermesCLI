@@ -1,6 +1,6 @@
 import pytest
 
-from hermes.interface.templates.template_manager import TemplateManager
+from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
 @pytest.fixture

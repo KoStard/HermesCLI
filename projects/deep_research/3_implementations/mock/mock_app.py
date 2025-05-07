@@ -1,7 +1,7 @@
-from hermes.extensions_loader import load_extensions
-from hermes.interface.assistant.deep_research_assistant.engine.engine import (
+from hermes.chat.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
+from hermes.extensions_loader import load_extensions
 
 from .mock_llm_interface import MockLLMInterface
 

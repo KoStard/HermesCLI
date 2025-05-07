@@ -2,8 +2,8 @@ import re
 import unittest
 from typing import Any
 
-from hermes.interface.commands.command import Command, CommandRegistry
-from hermes.interface.commands.help_generator import CommandHelpGenerator
+from hermes.chat.interface.commands.command import Command, CommandRegistry
+from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
 
 
 # Test implementation of Command for help generator testing

@@ -1,7 +1,7 @@
 import unittest
 from typing import Any
 
-from hermes.interface.commands.command import Command, CommandRegistry, CommandSection
+from hermes.chat.interface.commands.command import Command, CommandRegistry, CommandSection
 
 
 # Test implementation of Command for testing

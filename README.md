@@ -182,7 +182,7 @@ C:\Users\<YourUsername>\AppData\Roaming\hermes\
 Here's an example of an `extension.py` file that you can put inside an `example_extension` subdirectory within your `extensions` folder:
 
 ```python
-from hermes.interface.control_panel import ControlPanelCommand
+from hermes.chat.interface.control_panel import ControlPanelCommand
 from hermes.event import MessageEvent
 from hermes.message import TextMessage
 
