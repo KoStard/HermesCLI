@@ -30,6 +30,9 @@ This document captures the development philosophy you should follow throughout a
 - Then we go through reviews of the document, you accept feedback, provide more information if needed, adjust the document as needed, while trying to foresee possible issues and risks.
 - We write design documents for non-trivial tasks.
 
+## Coding
+- Use Clean Code principles. Approach to this like craftsmanship.
+
 ## Testing
 - Create unit tests for each package, verifying the public methods
 - Use clear naming pattern for the test names: `test_methodName_expectedBehaviour_inWhichSituation` - even if the method_name uses snake case, convert it to camelCase like methodName
