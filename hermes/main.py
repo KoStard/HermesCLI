@@ -5,9 +5,7 @@ import sys
 import textwrap
 from argparse import ArgumentParser, Namespace
 
-from hermes.config_utils import get_config_path
 from hermes.engine import Engine
-from hermes.interface.user.control_panel.exa_client import ExaClient
 from hermes.extensions_loader import load_extensions
 from hermes.history import History
 from hermes.interface.assistant.chat_assistant.control_panel import (
@@ -19,11 +17,13 @@ from hermes.interface.control_panel.commands_lister import CommandsLister
 from hermes.interface.debug.debug_interface import DebugInterface
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.interface.markdown.markdown_highlighter import MarkdownHighlighter
+from hermes.interface.user.control_panel.exa_client import ExaClient
 from hermes.interface.user.control_panel.user_control_panel import UserControlPanel
 from hermes.interface.user.interface.command_completer import CommandCompleter
 from hermes.interface.user.interface.stt_input_handler import STTInputHandler
 from hermes.interface.user.interface.user_interface import UserInterface
 from hermes.participants import DebugParticipant, LLMParticipant, UserParticipant
+from hermes.utils.config_utils import get_config_path
 
 
 def build_cli_interface(user_control_panel: UserControlPanel, model_factory: ModelFactory):
