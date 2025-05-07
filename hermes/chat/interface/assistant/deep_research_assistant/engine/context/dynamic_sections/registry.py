@@ -1,17 +1,16 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    # Import base classes for type hinting
     from hermes.chat.interface.templates.template_manager import TemplateManager
 
     from . import DynamicSectionData, DynamicSectionRenderer
 
 
 # Type alias for the registry
-RendererRegistry = dict[type["DynamicSectionData"], "DynamicSectionRenderer"]
+DynamicDataTypeToRendererMap = dict[type["DynamicSectionData"], "DynamicSectionRenderer"]
 
 
-def create_renderer_registry(template_manager: "TemplateManager") -> RendererRegistry:
+def get_data_type_to_renderer_instance_map(template_manager: "TemplateManager") -> DynamicDataTypeToRendererMap:
     """Creates and populates the registry mapping data types to renderer instances."""
     # Import Data and Renderer classes from their respective section modules
     from .artifacts import ArtifactsSectionData, ArtifactsSectionRenderer
@@ -28,7 +27,7 @@ def create_renderer_registry(template_manager: "TemplateManager") -> RendererReg
     )
     from .subproblems import SubproblemsSectionData, SubproblemsSectionRenderer
 
-    registry: RendererRegistry = {
+    registry: DynamicDataTypeToRendererMap = {
         HeaderSectionData: HeaderSectionRenderer(template_manager),
         PermanentLogsData: PermanentLogsRenderer(template_manager),
         BudgetSectionData: BudgetSectionRenderer(template_manager),

@@ -8,8 +8,8 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.commands.com
 
 # Import the registry creation function and type alias
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.registry import (
-    RendererRegistry,
-    create_renderer_registry,
+    DynamicDataTypeToRendererMap,
+    get_data_type_to_renderer_instance_map,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history import ChatHistory
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history_blocks import (
@@ -330,7 +330,7 @@ class DeepResearchEngine:
         templates_dir = Path(__file__).parent / "templates"
         self.template_manager = TemplateManager(templates_dir)
         # Create the renderer registry
-        self.renderer_registry: RendererRegistry = create_renderer_registry(self.template_manager)
+        self.renderer_registry: DynamicDataTypeToRendererMap = get_data_type_to_renderer_instance_map(self.template_manager)
 
         commands_help_generator = CommandHelpGenerator()
         # Update interface with the file system

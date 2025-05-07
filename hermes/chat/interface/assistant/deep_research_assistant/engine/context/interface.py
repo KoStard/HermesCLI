@@ -9,10 +9,9 @@ from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
-from .dynamic_sections.artifacts import ArtifactsSectionData
-
 # Import base data class and specific section data classes/factories from their new locations
 from .dynamic_sections import DynamicSectionData
+from .dynamic_sections.artifacts import ArtifactsSectionData
 from .dynamic_sections.budget import BudgetSectionData
 from .dynamic_sections.criteria import CriteriaSectionData
 from .dynamic_sections.goal import GoalSectionData
