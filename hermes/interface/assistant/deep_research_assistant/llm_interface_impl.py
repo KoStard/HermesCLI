@@ -6,7 +6,7 @@ from hermes.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
 )
-from hermes.interface.assistant.chat_models.base import ChatModel
+from hermes.interface.assistant.models.chat_models.base import ChatModel
 from hermes.interface.assistant.deep_research_assistant.engine.files.logger import (
     DeepResearchLogger,
 )

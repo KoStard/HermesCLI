@@ -14,7 +14,7 @@ from hermes.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
 )
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
-from hermes.interface.assistant.model_factory import ModelFactory
+from hermes.interface.assistant.models.model_factory import ModelFactory
 from hermes.interface.control_panel.commands_lister import CommandsLister
 from hermes.interface.debug.debug_interface import DebugInterface
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter

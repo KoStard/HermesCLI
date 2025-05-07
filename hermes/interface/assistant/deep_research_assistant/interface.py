@@ -6,7 +6,7 @@ from pathlib import Path
 # Import other necessary types
 from hermes.event import Event, MessageEvent
 from hermes.history import History
-from hermes.interface.assistant.chat_models.base import ChatModel
+from hermes.interface.assistant.models.chat_models.base import ChatModel
 
 # Import Deep Research specific components
 from hermes.interface.assistant.deep_research_assistant.engine.engine import (

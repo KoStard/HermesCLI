@@ -1,8 +1,8 @@
-from hermes.interface.assistant.request_builder.all_messages_aggregator import (
+from hermes.interface.assistant.models.request_builder.all_messages_aggregator import (
     AllMessagesAggregator,
 )
-from hermes.interface.assistant.request_builder.base import RequestBuilder
-from hermes.interface.assistant.request_builder.text_messages_aggregator import (
+from hermes.interface.assistant.models.request_builder.base import RequestBuilder
+from hermes.interface.assistant.models.request_builder.text_messages_aggregator import (
     TextMessagesAggregator,
 )
 

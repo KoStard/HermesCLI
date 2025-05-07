@@ -1,16 +1,16 @@
 from configparser import ConfigParser
 
-from hermes.interface.assistant.chat_models.base import ChatModel
-from hermes.interface.assistant.chat_models.bedrock import BedrockModel
-from hermes.interface.assistant.chat_models.claude import ClaudeModel
-from hermes.interface.assistant.chat_models.deepseek import DeepSeekModel
-from hermes.interface.assistant.chat_models.gemini import GeminiModel
-from hermes.interface.assistant.chat_models.gemini2 import Gemini2Model
-from hermes.interface.assistant.chat_models.groq import GroqModel
-from hermes.interface.assistant.chat_models.open_router import OpenRouterModel
-from hermes.interface.assistant.chat_models.openai import OpenAIModel
-from hermes.interface.assistant.chat_models.sambanova import SambanovaModel
-from hermes.interface.assistant.chat_models.xai import XAIModel
+from hermes.interface.assistant.models.chat_models.base import ChatModel
+from hermes.interface.assistant.models.chat_models.bedrock import BedrockModel
+from hermes.interface.assistant.models.chat_models.claude import ClaudeModel
+from hermes.interface.assistant.models.chat_models.deepseek import DeepSeekModel
+from hermes.interface.assistant.models.chat_models.gemini import GeminiModel
+from hermes.interface.assistant.models.chat_models.gemini2 import Gemini2Model
+from hermes.interface.assistant.models.chat_models.groq import GroqModel
+from hermes.interface.assistant.models.chat_models.open_router import OpenRouterModel
+from hermes.interface.assistant.models.chat_models.openai import OpenAIModel
+from hermes.interface.assistant.models.chat_models.sambanova import SambanovaModel
+from hermes.interface.assistant.models.chat_models.xai import XAIModel
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 
 

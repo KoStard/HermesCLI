@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
+from hermes.interface.assistant.models.prompt_builder.base import PromptBuilderFactory
 
 
 class TextMessagesAggregator:

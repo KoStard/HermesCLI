@@ -4,11 +4,11 @@ from hermes.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
     ThinkingLLMResponse,
 )
-from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
+from hermes.interface.assistant.models.prompt_builder.simple_prompt_builder import (
     SimplePromptBuilderFactory,
 )
-from hermes.interface.assistant.request_builder.base import RequestBuilder
-from hermes.interface.assistant.request_builder.openai import OpenAIRequestBuilder
+from hermes.interface.assistant.models.request_builder.base import RequestBuilder
+from hermes.interface.assistant.models.request_builder.openai import OpenAIRequestBuilder
 
 from .base import ChatModel
 

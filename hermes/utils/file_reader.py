@@ -30,7 +30,7 @@ class FileReader:
         # Special handling for Jupyter notebooks
         if filepath.endswith(".ipynb"):
             try:
-                from hermes.interface.assistant.request_builder.notebook_converter import (
+                from hermes.interface.assistant.models.request_builder.notebook_converter import (
                     convert_notebook_custom,
                 )
 

@@ -11,7 +11,7 @@ from hermes.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
 )
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
-from hermes.interface.assistant.chat_models.base import ChatModel
+from hermes.interface.assistant.models.chat_models.base import ChatModel
 from hermes.message import TextMessage
 
 

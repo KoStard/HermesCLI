@@ -1,10 +1,10 @@
 from collections.abc import Generator
 
-from hermes.interface.assistant.prompt_builder.simple_prompt_builder import (
+from hermes.interface.assistant.models.prompt_builder.simple_prompt_builder import (
     SimplePromptBuilderFactory,
 )
-from hermes.interface.assistant.request_builder.base import RequestBuilder
-from hermes.interface.assistant.request_builder.claude import ClaudeRequestBuilder
+from hermes.interface.assistant.models.request_builder.base import RequestBuilder
+from hermes.interface.assistant.models.request_builder.claude import ClaudeRequestBuilder
 
 from .base import ChatModel
 

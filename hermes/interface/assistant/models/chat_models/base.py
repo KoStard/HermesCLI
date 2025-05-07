@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator
 
-from hermes.interface.assistant.request_builder.base import RequestBuilder
+from hermes.interface.assistant.models.request_builder.base import RequestBuilder
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 
 

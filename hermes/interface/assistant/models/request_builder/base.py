@@ -2,7 +2,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 
-from hermes.interface.assistant.prompt_builder.base import PromptBuilderFactory
+from hermes.interface.assistant.models.prompt_builder.base import PromptBuilderFactory
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.message import (
     AudioFileMessage,

@@ -1,10 +1,10 @@
 from base64 import b64encode
 
-from hermes.interface.assistant.request_builder.all_messages_aggregator import (
+from hermes.interface.assistant.models.request_builder.all_messages_aggregator import (
     AllMessagesAggregator,
 )
-from hermes.interface.assistant.request_builder.base import RequestBuilder
-from hermes.interface.assistant.request_builder.text_messages_aggregator import (
+from hermes.interface.assistant.models.request_builder.base import RequestBuilder
+from hermes.interface.assistant.models.request_builder.text_messages_aggregator import (
     TextMessagesAggregator,
 )
 from hermes.utils.file_extension import get_file_extension
