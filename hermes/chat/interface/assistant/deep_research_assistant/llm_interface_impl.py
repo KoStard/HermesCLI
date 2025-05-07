@@ -21,10 +21,9 @@ logger = logging.getLogger(__name__)
 class ChatModelLLMInterface(LLMInterface):
     """Implementation of LLMInterface using ChatModel"""
 
-    def __init__(self, model: ChatModel, research_dir: str = None):
+    def __init__(self, model: ChatModel, research_dir: Path):
         self.model = model
-        self.research_dir = research_dir if research_dir else str(Path.cwd())
-        self.deep_research_logger = DeepResearchRequestAndResponseLogger(Path(self.research_dir))
+        self.deep_research_logger = DeepResearchRequestAndResponseLogger(research_dir)
 
     def generate_request(
         self,

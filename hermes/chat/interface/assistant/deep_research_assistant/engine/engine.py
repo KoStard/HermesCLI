@@ -288,15 +288,14 @@ class DeepResearchEngine:
 
     def __init__(
         self,
-        root_dir: str,
+        root_dir: Path,
         llm_interface: LLMInterface,
     ):
         self.file_system = FileSystem(root_dir)
         self.chat_history = ChatHistory()
-        # Use the CommandParser from the core package
         self.command_parser = CommandParser()
         self.awaiting_new_instruction = False  # Replaces 'finished'
-        self.logger = DeepResearchRequestAndResponseLogger(Path(root_dir))
+        self.logger = DeepResearchRequestAndResponseLogger(root_dir)
         self.llm_interface = llm_interface
         self.current_node: Node | None = None
         self.next_node: Node | None = None  # Tracks scheduled focus changes

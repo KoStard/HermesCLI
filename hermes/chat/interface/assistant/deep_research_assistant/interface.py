@@ -31,10 +31,10 @@ logger = logging.getLogger(__name__)
 class DeepResearchAssistantInterface(Interface):
     """Interface for the Deep Research Assistant"""
 
-    def __init__(self, model: ChatModel, research_path: str = None, extension_commands=None):
+    def __init__(self, model: ChatModel, research_path: Path, extension_commands=None):
         self.model = model
         self.model.initialize()
-        self.research_dir = research_path if research_path else str(Path.cwd())
+        self.research_dir = research_path
         # Store extension command *classes* or *instances*
         self.extension_command_defs = extension_commands or []
         self._engine: DeepResearchEngine | None = None

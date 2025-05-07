@@ -1,8 +1,8 @@
 import traceback
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.content_truncator import ContentTruncator
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import RendererRegistry
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.base import DynamicSectionData
+from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import DynamicSectionData
+from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.registry import DynamicDataTypeToRendererMap
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history import HistoryBlock
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
@@ -34,7 +34,7 @@ class AutoReply(HistoryBlock):
     def generate_auto_reply(
         self,
         template_manager: TemplateManager,
-        renderer_registry: RendererRegistry,
+        renderer_registry: DynamicDataTypeToRendererMap,
         future_changes_map: dict[int, int],
         per_command_output_maximum_length: int | None = None,
     ) -> str:

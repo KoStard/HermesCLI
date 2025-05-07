@@ -134,8 +134,8 @@ class Node:
 
 
 class FileSystem:
-    def __init__(self, root_dir: str = "research"):
-        self.root_dir = Path(root_dir).resolve()
+    def __init__(self, root_dir: Path):
+        self.root_dir = root_dir
         self.root_node: Node | None = None
         self._external_files: dict[str, Artifact] = {}
         self.knowledge_base: list[KnowledgeEntry] = []

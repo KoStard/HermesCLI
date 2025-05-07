@@ -1,4 +1,4 @@
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.base import DynamicSectionData
+from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import DynamicSectionData
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history_blocks import AutoReply
 
 

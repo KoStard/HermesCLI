@@ -1,6 +1,7 @@
 import configparser
 import logging
 import os
+from pathlib import Path
 import sys
 import textwrap
 from argparse import ArgumentParser, Namespace
@@ -225,7 +226,7 @@ def main():
             assistant_participant = debug_participant
         elif is_deep_research_mode:
             # Use the Deep Research Assistant interface with the specified path
-            research_path = os.path.abspath(cli_args.deep_research)
+            research_path = Path(cli_args.deep_research).absolute().resolve()
             from hermes.chat.interface.assistant.deep_research_assistant.interface import (
                 DeepResearchAssistantInterface,
             )

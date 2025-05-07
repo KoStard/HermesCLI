@@ -1,4 +1,4 @@
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history import (
+from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history import (
     ChatHistory,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
