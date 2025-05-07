@@ -7,7 +7,7 @@ from argparse import ArgumentParser, Namespace
 
 from hermes.config_utils import get_config_path
 from hermes.engine import Engine
-from hermes.exa_client import ExaClient
+from hermes.interface.user.control_panel.exa_client import ExaClient
 from hermes.extensions_loader import load_extensions
 from hermes.history import History
 from hermes.interface.assistant.chat_assistant.control_panel import (

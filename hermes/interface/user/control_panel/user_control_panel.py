@@ -17,7 +17,7 @@ from hermes.event import (
     SaveHistoryEvent,
     ThinkingLevelEvent,
 )
-from hermes.exa_client import ExaClient
+from hermes.interface.user.control_panel.exa_client import ExaClient
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.interface.helpers.terminal_coloring import CLIColors
 from hermes.interface.user.control_panel.fuzzy_selector import FuzzyFilesSelector
