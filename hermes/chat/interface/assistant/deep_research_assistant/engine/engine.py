@@ -11,9 +11,9 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dyna
     RendererRegistry,
     create_renderer_registry,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history import (
+from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history import ChatHistory
+from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history_blocks import (
     AutoReply,
-    ChatHistory,
     ChatMessage,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.interface import (

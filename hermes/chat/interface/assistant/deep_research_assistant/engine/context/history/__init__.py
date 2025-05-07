@@ -1,0 +1,2 @@
+class HistoryBlock:
+    pass
