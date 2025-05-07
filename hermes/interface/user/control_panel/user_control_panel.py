@@ -20,7 +20,7 @@ from hermes.event import (
 from hermes.exa_client import ExaClient
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.interface.helpers.terminal_coloring import CLIColors
-from hermes.interface.user.fuzzy_selector import FuzzyFilesSelector
+from hermes.interface.user.control_panel.fuzzy_selector import FuzzyFilesSelector
 from hermes.message import (
     AudioFileMessage,
     EmbeddedPDFMessage,
@@ -35,8 +35,8 @@ from hermes.message import (
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
 
-from ..control_panel import ControlPanel, ControlPanelCommand
-from ..helpers.peekable_generator import PeekableGenerator
+from ...control_panel import ControlPanel, ControlPanelCommand
+from ...helpers.peekable_generator import PeekableGenerator
 
 
 class UserControlPanel(ControlPanel):

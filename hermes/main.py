@@ -18,11 +18,11 @@ from hermes.interface.assistant.model_factory import ModelFactory
 from hermes.interface.control_panel.commands_lister import CommandsLister
 from hermes.interface.debug.debug_interface import DebugInterface
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.interface.user.command_completer import CommandCompleter
+from hermes.interface.user.interface.command_completer import CommandCompleter
 from hermes.interface.markdown.markdown_highlighter import MarkdownHighlighter
-from hermes.interface.user.stt_input_handler import STTInputHandler
-from hermes.interface.user.user_control_panel import UserControlPanel
-from hermes.interface.user.user_interface import UserInterface
+from hermes.interface.user.interface.stt_input_handler import STTInputHandler
+from hermes.interface.user.control_panel.user_control_panel import UserControlPanel
+from hermes.interface.user.interface.user_interface import UserInterface
 from hermes.participants import DebugParticipant, LLMParticipant, UserParticipant
 
 

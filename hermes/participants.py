@@ -6,7 +6,7 @@ from hermes.event import Event
 from hermes.history import History
 from hermes.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.interface.debug.debug_interface import DebugInterface
-from hermes.interface.user.user_interface import UserInterface
+from hermes.interface.user.interface.user_interface import UserInterface
 from hermes.message import Message
 
 logger = logging.getLogger(__name__)
