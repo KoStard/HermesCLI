@@ -35,7 +35,7 @@ from hermes.message import (
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
 
-from ..control_panel.base_control_panel import ControlPanel, ControlPanelCommand
+from ..control_panel import ControlPanel, ControlPanelCommand
 from ..helpers.peekable_generator import PeekableGenerator
 
 

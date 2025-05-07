@@ -13,7 +13,7 @@ from pathlib import Path
 # Removed appdirs import
 from hermes.config_utils import get_extensions_dir_path
 from hermes.interface.commands.command import Command
-from hermes.interface.control_panel.base_control_panel import ControlPanelCommand
+from hermes.interface.control_panel import ControlPanelCommand
 
 
 def load_extension_module(extension_path: Path) -> object | None:

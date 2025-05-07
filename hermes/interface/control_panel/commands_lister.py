@@ -1,4 +1,4 @@
-from .base_control_panel import ControlPanelCommand
+from hermes.interface.control_panel import ControlPanelCommand
 
 
 class CommandsLister:

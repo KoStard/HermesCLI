@@ -6,7 +6,7 @@ from collections.abc import Generator
 from hermes.event import Event, MessageEvent
 from hermes.interface.commands.command import Command, CommandRegistry
 from hermes.interface.commands.command_parser import CommandParser
-from hermes.interface.control_panel.base_control_panel import ControlPanel
+from hermes.interface.control_panel import ControlPanel
 from hermes.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.interface.helpers.terminal_coloring import CLIColors
 from hermes.message import (
