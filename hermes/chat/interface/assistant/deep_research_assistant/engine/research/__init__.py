@@ -19,6 +19,14 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
+    def get_parent(self) -> 'ResearchNode | None':
+        pass
+
+    @abstractmethod
+    def get_name(self) -> str:
+        pass
+
+    @abstractmethod
     def get_artifacts(self) -> list[Artifact]:
         pass
 
@@ -30,6 +38,13 @@ class ResearchNode(ABC):
     def get_problem(self) -> ProblemDefinition:
         pass
 
+    @abstractmethod
+    def add_artifact(self, artifact: Artifact) -> None:
+        pass
+
+    @abstractmethod
+    def add_criterion(self, criterion: Criterion) -> None:
+        pass
 
 
 class Research(ABC):
@@ -43,4 +58,8 @@ class Research(ABC):
 
     @abstractmethod
     def load_existing_research(self) -> ResearchNode:
+        pass
+
+    @abstractmethod
+    def get_root_node(self) -> ResearchNode:
         pass
