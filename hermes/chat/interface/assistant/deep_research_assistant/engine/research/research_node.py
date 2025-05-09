@@ -2,4 +2,7 @@ from . import ResearchNode
 
 
 class ResearchNodeImpl(ResearchNode):
-    pass
+    children: list[ResearchNode]
+
+    def __init__(self) -> None:
+        self.children = []

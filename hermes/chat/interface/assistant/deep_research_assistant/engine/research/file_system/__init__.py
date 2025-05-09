@@ -6,11 +6,11 @@ from pathlib import Path
 
 class FileSystem(ABC):
     @abstractmethod
-    def read_file(self, path: Path):
+    def read_file(self, path: Path) -> str:
         pass
 
     @abstractmethod
-    def write_file(self, path: Path, auto_create_directories: bool):
+    def write_file(self, path: Path, content: str, auto_create_directories: bool):
         pass
 
     @staticmethod
@@ -19,4 +19,20 @@ class FileSystem(ABC):
 
     @abstractmethod
     def copy_file(self, origin_path: Path, destination_path: Path):
+        pass
+
+    @abstractmethod
+    def directory_exists(self, path: Path) -> bool:
+        pass
+
+    @abstractmethod
+    def file_exists(self, path: Path) -> bool:
+        pass
+
+    @abstractmethod
+    def create_directory(self, path: Path) -> None:
+        pass
+
+    @abstractmethod
+    def list_files(self, directory: Path, pattern: str | None = None) -> list[Path]:
         pass
