@@ -643,7 +643,7 @@ class DeepResearchEngine:
         """Print the current status of the research to STDOUT"""
         status_printer = StatusPrinter(self.template_manager)
         # Update to pass research directly
-        status_printer.print_status(self.is_root_problem_defined(), self.current_execution_state.active_node, self.research)
+        status_printer.print_status(self.current_execution_state.active_node, self.research)
 
     def set_budget(self, budget: int):
         """Set the budget for the Deep Research Assistant"""

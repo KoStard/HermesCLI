@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system import FileSystem
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.frontmatter_manager import FrontmatterManager
@@ -14,8 +14,8 @@ class KnowledgeEntry:
         title: str,
         content: str,
         timestamp: datetime = None,
-        tags: List[str] = None,
-        source: Optional[str] = None,
+        tags: list[str] = None,
+        source: str | None = None,
         importance: int = 1,
         confidence: int = 1
     ):
@@ -27,7 +27,7 @@ class KnowledgeEntry:
         self.importance = importance
         self.confidence = confidence
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert entry to a dictionary for serialization."""
         return {
             "title": self.title,
@@ -39,7 +39,7 @@ class KnowledgeEntry:
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any], content: str) -> "KnowledgeEntry":
+    def from_dict(data: dict[str, Any], content: str) -> "KnowledgeEntry":
         """Create a KnowledgeEntry from a dictionary and content."""
         return KnowledgeEntry(
             title=data.get("title", "Untitled Entry"),
@@ -58,7 +58,7 @@ class KnowledgeBase:
     def __init__(self, file_system: FileSystem, knowledge_base_path: Path):
         self._file_system = file_system
         self._knowledge_base_path = knowledge_base_path
-        self._entries: List[KnowledgeEntry] = []
+        self._entries: list[KnowledgeEntry] = []
         self._knowledge_separator = "\n\n<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->\n\n"
 
     def load_entries(self) -> None:
@@ -110,6 +110,6 @@ class KnowledgeBase:
         self._entries.append(entry)
         self.save_entries()
 
-    def get_entries(self) -> List[KnowledgeEntry]:
+    def get_entries(self) -> list[KnowledgeEntry]:
         """Get all knowledge base entries."""
         return self._entries.copy()

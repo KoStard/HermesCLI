@@ -41,6 +41,14 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
+    def get_criteria_met_count(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_criteria_total_count(self) -> int:
+        pass
+
+    @abstractmethod
     def get_problem(self) -> ProblemDefinition:
         pass
 
@@ -62,6 +70,10 @@ class ResearchNode(ABC):
 
     @abstractmethod
     def set_problem_status(self, status: ProblemStatus):
+        pass
+
+    @abstractmethod
+    def get_problem_status(self) -> ProblemStatus:
         pass
 
     @abstractmethod

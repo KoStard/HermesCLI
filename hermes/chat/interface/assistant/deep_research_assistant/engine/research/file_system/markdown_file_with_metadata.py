@@ -15,7 +15,8 @@ class FileWithMetadata(ABC):
     def add_user_friendly_name(self, user_friendly_name):
         """
         Each file has a filename.
-        But for markdown files with metadata, we can store the user-friendly name as a property, while save it in a filesystem-friendly filename file.
+        But for markdown files with metadata, we can store the user-friendly name as a property, while save it in a filesystem-friendly
+        filename file.
         We are given with user_friendly_name and we'll build the raw filename. user_friendly_name won't have a file extension either.
         """
         pass

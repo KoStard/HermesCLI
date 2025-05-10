@@ -6,11 +6,11 @@
         node_marker = u"→ " if is_current else ""
         criteria_met = node.get_criteria_met_count()
         criteria_total = node.get_criteria_total_count()
-        artifacts_count = len(node.artifacts)
-        subproblems_count = len(node.subproblems)
-        status_emoji = node.get_status_emoji()
+        artifacts_count = len(node.get_artifacts())
+        subproblems_count = len(node.list_child_nodes())
+        status_emoji = ❓
         new_prefix = prefix + (u"    " if is_last else u"│   ")
-        subproblems = list(node.subproblems.values())
+        subproblems = list(node.list_child_nodes())
     %>\
 ${prefix}${branch}${node_marker}${status_emoji} ${node.title} [${criteria_met}/${criteria_total}]\
 % if artifacts_count > 0:
