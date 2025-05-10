@@ -152,8 +152,7 @@ class DeepResearcherInterface:
         all_data[ProblemPathHierarchyData] = ProblemPathHierarchyData.from_parent_chain(parent_chain=parent_chain, current_node=target_node)
 
         # Knowledge Base - Use factory method
-        # TODO: Update with proper knowledge base access from Research
-        knowledge_base = []  # self.research.get_knowledge_base()
+        knowledge_base = self.research.get_knowledge_base()
         all_data[KnowledgeBaseData] = KnowledgeBaseData.from_knowledge_base(knowledge_base=knowledge_base)
 
         # Goal: No data needed
