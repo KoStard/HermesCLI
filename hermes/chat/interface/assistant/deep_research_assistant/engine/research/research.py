@@ -40,6 +40,9 @@ class ResearchImpl(Research):
         # Create the necessary directories
         self._create_directory_structure()
         
+        # Save metadata about the research
+        self._save_research_metadata()
+        
         self._research_initiated = True
     
     def load_existing_research(self):
@@ -92,3 +95,19 @@ class ResearchImpl(Research):
         # Create external files directory
         external_files_dir = self.root_directory / "_ExternalFiles"
         self.file_system.create_directory(external_files_dir)
+    
+    def _save_research_metadata(self):
+        """Save metadata about the research project"""
+        import json
+        from datetime import datetime
+        
+        metadata_path = self.root_directory / "research_metadata.json"
+        
+        metadata = {
+            "created_at": datetime.now().isoformat(),
+            "last_updated": datetime.now().isoformat(),
+            "root_node_title": self.root_node.get_title() if self.root_node else None,
+        }
+        
+        with open(metadata_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)

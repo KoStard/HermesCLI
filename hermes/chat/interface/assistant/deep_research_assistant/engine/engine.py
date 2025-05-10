@@ -692,6 +692,7 @@ class DeepResearchEngine:
         Returns:
             Generator yielding the full response
         """
+        current_node = self.current_execution_state.active_node
         while True:
             try:
                 response_generator = self.llm_interface.send_request(request)
@@ -699,8 +700,11 @@ class DeepResearchEngine:
                 # Get the full response
                 try:
                     full_llm_response = next(response_generator)
-                    # Log the response
-                    self.llm_interface.log_response(current_node_path, full_llm_response)
+                    # Log the response using node logger
+                    if hasattr(current_node, 'logger') and current_node.logger:
+                        current_node.logger.log_llm_response(full_llm_response)
+                    # Also log using the traditional logger for backward compatibility
+                    self.logger.log_llm_response(current_node_path, full_llm_response)
                     yield full_llm_response
                     break  # Successfully got a response, exit the retry loop
                 except StopIteration:
