@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.frontmatter_manager import FrontmatterManager
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import MarkdownFileWithMetadataImpl
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component import ResearchNodeComponent
 
 
@@ -17,38 +17,26 @@ class Artifact:
     @staticmethod
     def load_from_file(file_path: Path) -> "Artifact":
         """Load an artifact from a file"""
-        with open(file_path, encoding="utf-8") as f:
-            content = f.read()
+        md_file = MarkdownFileWithMetadataImpl.load_from_file(str(file_path))
         
-        frontmatter_manager = FrontmatterManager()
-        metadata, content = frontmatter_manager.extract_frontmatter(content)
-        
-        # Use name from metadata if present, otherwise use derived name
-        name = metadata.get("name", file_path.stem)
-        summary = metadata.get("summary", "")
+        # Use name from metadata if present, otherwise use filename
+        name = md_file.get_metadata().get("name", file_path.stem)
+        summary = md_file.get_metadata().get("summary", "")
         
         return Artifact(
             name=name, 
-            content=content, 
+            content=md_file.get_content(),
             short_summary=summary
         )
 
     def save_to_file(self, file_path: Path) -> None:
         """Save an artifact to a file with metadata"""
-        frontmatter_manager = FrontmatterManager()
+        md_file = MarkdownFileWithMetadataImpl(self.name, self.content)
+        md_file.add_property("name", self.name)
+        md_file.add_property("summary", self.short_summary)
         
-        metadata = {
-            "name": self.name,
-            "summary": self.short_summary
-        }
-        
-        content = frontmatter_manager.add_frontmatter(self.content, metadata)
-        
-        # Ensure parent directory exists
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(content)
+        # MarkdownFileWithMetadataImpl.save_file handles directory creation
+        md_file.save_file(str(file_path))
 
 
 class ArtifactManager(ResearchNodeComponent):

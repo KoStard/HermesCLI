@@ -1,10 +1,3 @@
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history import (
-    ChatHistory,
-)
-from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-    FileSystem,
-)
-
 
 class CommandContext:
     """
@@ -25,8 +18,6 @@ class CommandContext:
         # Reference to engine for special cases and callbacks
         self._engine = engine
 
-        self.file_system = engine.file_system
-        self.chat_history = engine.chat_history
         self._permanent_log = engine.permanent_log
 
     def refresh_from_engine(self):
@@ -44,22 +35,6 @@ class CommandContext:
     @property
     def children_queue(self):
         return self._engine.children_queue
-
-    # File system operations
-    def set_file_system(self, file_system: FileSystem) -> None:
-        """
-        Set the file system reference
-
-        Args:
-            file_system: The file system to use
-        """
-        self.file_system = file_system
-
-    def update_files(self) -> None:
-        """
-        Update files in the file system
-        """
-        self.file_system.update_files()
 
     # Command output operations
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
@@ -87,16 +62,6 @@ class CommandContext:
     def is_finished(self) -> bool:
         """Check if execution is finished"""
         return self._finished
-
-    # Chat history operations
-    def set_chat_history(self, chat_history: ChatHistory) -> None:
-        """
-        Set the chat history reference
-
-        Args:
-            chat_history: The chat history to use
-        """
-        self.chat_history = chat_history
 
     def focus_down(self, subproblem_title: str) -> bool:
         return self._engine.focus_down(subproblem_title)

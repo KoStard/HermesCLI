@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.frontmatter_manager import FrontmatterManager
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import MarkdownFileWithMetadataImpl
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import (
     Artifact,
     ArtifactManager,
@@ -140,15 +140,12 @@ class ResearchNodeImpl(ResearchNode):
         if not self._path:
             return
 
-        # Save problem definition with frontmatter
+        # Save problem definition with metadata
         problem_def_path = self._path / "Problem Definition.md"
-        frontmatter = {"title": self.title, "status": self._status.value}
-
-        frontmatter_manager = FrontmatterManager()
-        content = frontmatter_manager.add_frontmatter(self.problem.content, frontmatter)
-
-        with open(problem_def_path, "w", encoding="utf-8") as f:
-            f.write(content)
+        
+        md_file = MarkdownFileWithMetadataImpl(self.title, self.problem.content)
+        md_file.add_property("status", self._status.value)
+        md_file.save_file(str(problem_def_path))
 
         # Save criteria
         criteria_path = self._path / "Criteria of Definition of Done.md"

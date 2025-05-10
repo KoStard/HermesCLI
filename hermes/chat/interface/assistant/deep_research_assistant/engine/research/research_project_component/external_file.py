@@ -2,7 +2,7 @@ from pathlib import Path
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system import FileSystem
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.filename import Filename
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.frontmatter_manager import FrontmatterManager
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import MarkdownFileWithMetadataImpl
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
 
 
@@ -24,17 +24,15 @@ class ExternalFilesManager:
 
         for file_path in self._file_system.list_files(self._external_files_dir):
             try:
-                content = self._file_system.read_file(file_path)
-
-                frontmatter_manager = FrontmatterManager()
-
-                metadata, content = frontmatter_manager.extract_frontmatter(content)
+                md_file = MarkdownFileWithMetadataImpl.load_from_file(str(file_path))
+                
+                metadata = md_file.get_metadata()
                 name = metadata.get("name", file_path.stem)
                 summary = metadata.get("summary", "")
 
                 artifact = Artifact(
                     name=name,
-                    content=content,
+                    content=md_file.get_content(),
                     short_summary=summary,
                     is_external=True
                 )
@@ -46,8 +44,6 @@ class ExternalFilesManager:
 
     def add_external_file(self, name: str, content: str, summary: str = "") -> None:
         """Add an external file."""
-        frontmatter_manager = FrontmatterManager()
-
         # Create an artifact
         artifact = Artifact(
             name=name,
@@ -63,14 +59,14 @@ class ExternalFilesManager:
         # Ensure directory exists
         self._file_system.create_directory(self._external_files_dir)
 
-        # Add metadata and save
-        file_content = frontmatter_manager.add_frontmatter(
-            content,
-            {"name": name, "summary": summary}
-        )
+        # Create the markdown file with metadata
+        md_file = MarkdownFileWithMetadataImpl(name, content)
+        md_file.add_property("name", name)
+        md_file.add_property("summary", summary)
 
+        # Save the file
         file_path = self._external_files_dir / filename
-        self._file_system.write_file(file_path, file_content, True)
+        md_file.save_file(str(file_path))
 
         # Update the cache
         self._external_files[filename] = artifact

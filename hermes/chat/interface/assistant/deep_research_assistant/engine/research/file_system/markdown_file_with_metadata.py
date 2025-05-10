@@ -46,6 +46,14 @@ class FileWithMetadata(ABC):
         pass
 
     @abstractmethod
+    def set_content(self, content: str):
+        pass
+
+    @abstractmethod
+    def get_content(self) -> str:
+        pass
+
+    @abstractmethod
     @staticmethod
     def load_from_file(filepath: str) -> 'FileWithMetadata':
         pass

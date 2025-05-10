@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system import FileSystem
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.frontmatter_manager import FrontmatterManager
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import MarkdownFileWithMetadataImpl
 
 
 class KnowledgeEntry:
@@ -70,14 +70,21 @@ class KnowledgeBase:
             content = self._file_system.read_file(self._knowledge_base_path)
             entry_blocks = content.split(self._knowledge_separator)
 
-            frontmatter_manager = FrontmatterManager()
-
             for block in entry_blocks:
                 block = block.strip()
                 if not block:
                     continue
                 try:
-                    metadata, content = frontmatter_manager.extract_frontmatter(block)
+                    # Create a temporary file-like object to use with MarkdownFileWithMetadataImpl
+                    from io import StringIO
+                    temp_file = StringIO(block)
+                    
+                    # Use the load_from_string method (we need to add this method)
+                    md_file = self._load_markdown_from_string(block)
+                    
+                    metadata = md_file.get_metadata()
+                    content = md_file.get_content()
+                    
                     if metadata:
                         entry = KnowledgeEntry.from_dict(metadata, content)
                         self._entries.append(entry)
@@ -89,15 +96,23 @@ class KnowledgeBase:
     def save_entries(self) -> None:
         """Save knowledge base entries to file."""
         try:
-            frontmatter_manager = FrontmatterManager()
-
             entry_strings = []
             # Sort by timestamp before saving
             sorted_entries = sorted(self._entries, key=lambda x: x.timestamp)
 
             for entry in sorted_entries:
-                metadata = entry.to_dict()
-                entry_string = frontmatter_manager.add_frontmatter(entry.content, metadata)
+                md_file = MarkdownFileWithMetadataImpl()
+                md_file.set_content(entry.content)
+                
+                # Add all metadata properties
+                for key, value in entry.to_dict().items():
+                    md_file.set_metadata_key(key, value)
+                
+                # Get the content with frontmatter
+                with StringIO() as string_buffer:
+                    md_file.save_file_to_string(string_buffer)
+                    entry_string = string_buffer.getvalue()
+                
                 entry_strings.append(entry_string)
 
             full_content = self._knowledge_separator.join(entry_strings)
@@ -113,3 +128,20 @@ class KnowledgeBase:
     def get_entries(self) -> list[KnowledgeEntry]:
         """Get all knowledge base entries."""
         return self._entries.copy()
+    def _load_markdown_from_string(self, content: str) -> MarkdownFileWithMetadataImpl:
+        """Helper method to load a MarkdownFileWithMetadataImpl from a string."""
+        from io import StringIO
+        
+        # Create a simple markdown file instance
+        md_file = MarkdownFileWithMetadataImpl()
+        
+        # Use the FrontmatterManager directly since we're just parsing
+        from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.frontmatter_manager import FrontmatterManager
+        frontmatter_manager = FrontmatterManager()
+        metadata, parsed_content = frontmatter_manager.extract_frontmatter(content)
+        
+        md_file.set_content(parsed_content)
+        for key, value in metadata.items():
+            md_file.set_metadata_key(key, value)
+        
+        return md_file
