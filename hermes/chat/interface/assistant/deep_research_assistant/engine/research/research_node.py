@@ -12,12 +12,14 @@ class ResearchNodeImpl(ResearchNode):
     artifacts: list[Artifact]
     criteria: list[Criterion]
     problem: ProblemDefinition
+    title: str
 
-    def __init__(self, problem: ProblemDefinition) -> None:
+    def __init__(self, problem: ProblemDefinition, title: str) -> None:
         self.children = []
         self.artifacts = []
         self.criteria = []
         self.problem = problem
+        self.title = title
 
     def list_child_nodes(self) -> list[ResearchNode]:
         return self.children
@@ -39,3 +41,6 @@ class ResearchNodeImpl(ResearchNode):
 
     def add_criterion(self, criterion: Criterion) -> None:
         self.criteria.append(criterion)
+
+    def get_title(self) -> str:
+        return self.title

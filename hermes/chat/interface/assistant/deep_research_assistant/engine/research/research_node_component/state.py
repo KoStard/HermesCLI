@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
@@ -13,19 +14,7 @@ class ProblemStatus(Enum):
     CANCELLED = "CANCELLED"  # Problem was determined to be unnecessary
 
 
-class NodeState(ABC):
-    @abstractmethod
-    def get_artifacts_status(self) -> dict[Artifact, bool]:
-        pass
-
-    @abstractmethod
-    def open_artifact(self, artifact: Artifact):
-        pass
-
-    @abstractmethod
-    def close_artifact(self, artifact: Artifact):
-        pass
-
-    @abstractmethod
-    def get_progress_status(self) -> ProblemStatus:
-        pass
+@dataclass(frozen=True)
+class NodeState:
+    artifacts_status: dict[Artifact, bool]
+    problem_status: ProblemStatus

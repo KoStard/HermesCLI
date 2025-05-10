@@ -50,9 +50,7 @@ class DeepResearchMockApp:
         #     print("\nNo extension commands loaded.")
 
         if not self.engine.is_root_problem_defined():
-            success = self.engine.define_root_problem(self.instruction)
-            if not success:
-                raise ValueError("Failed to define root problem")
+            self.engine.define_root_problem(self.instruction)
 
         # Execute the engine, which will use the mock LLM interface
         final_report = self.engine.execute()

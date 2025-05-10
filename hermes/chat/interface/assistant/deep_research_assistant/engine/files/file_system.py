@@ -11,126 +11,126 @@ from .frontmatter_manager import FrontmatterManager
 from .knowledge_entry import KnowledgeEntry
 
 # Define a unique separator for knowledge base entries in the Markdown file
-_KNOWLEDGE_SEPARATOR = "\n\n<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->\n\n"
+# _KNOWLEDGE_SEPARATOR = "\n\n<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->\n\n"
 
 
-@dataclass
-class Artifact:
-    name: str
-    content: str
-    is_external: bool = False
+# @dataclass
+# class Artifact:
+#     name: str
+#     content: str
+#     is_external: bool = False
 
-    frontmatter_manager = FrontmatterManager()
+#     frontmatter_manager = FrontmatterManager()
 
-    @staticmethod
-    def load_from_file(file_path: Path) -> "Artifact":
-        with open(file_path, encoding="utf-8") as f:
-            content = f.read()
-        metadata, content = FrontmatterManager().extract_frontmatter(content)
-        # Derive name from filename without extension
-        name = file_path.stem
-        # Use name from metadata if present, otherwise use derived name
-        name = metadata.get("name", name)
-        return Artifact(name=name, content=content)
+#     @staticmethod
+#     def load_from_file(file_path: Path) -> "Artifact":
+#         with open(file_path, encoding="utf-8") as f:
+#             content = f.read()
+#         metadata, content = FrontmatterManager().extract_frontmatter(content)
+#         # Derive name from filename without extension
+#         name = file_path.stem
+#         # Use name from metadata if present, otherwise use derived name
+#         name = metadata.get("name", name)
+#         return Artifact(name=name, content=content)
 
-    def save_to_file(self, file_path: Path) -> None:
-        content = self.frontmatter_manager.add_frontmatter(self.content, {"name": self.name})
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(content)
-
-
-class ProblemStatus(Enum):
-    NOT_STARTED = "NOT_STARTED"  # Problem has not been started yet
-    PENDING = "PENDING"  # Problem is temporarily paused (focus moved to child)
-    IN_PROGRESS = "IN_PROGRESS"  # Problem is currently being worked on
-    FINISHED = "FINISHED"  # Problem has been successfully completed
-    FAILED = "FAILED"  # Problem could not be solved
-    CANCELLED = "CANCELLED"  # Problem was determined to be unnecessary
+#     def save_to_file(self, file_path: Path) -> None:
+#         content = self.frontmatter_manager.add_frontmatter(self.content, {"name": self.name})
+#         with open(file_path, "w", encoding="utf-8") as f:
+#             f.write(content)
 
 
-@dataclass
-class Node:
-    title: str
-    problem_definition: str
-    criteria: list[str] = field(default_factory=list)
-    criteria_done: list[bool] = field(default_factory=list)
-    artifacts: dict[str, Artifact] = field(default_factory=dict)
-    subproblems: dict[str, "Node"] = field(default_factory=dict)
-    parent: Optional["Node"] = None
-    path: Path | None = None
-    status: ProblemStatus = ProblemStatus.NOT_STARTED
-    depth_from_root: int = 0
-    visible_artifacts: dict[str, bool] = field(default_factory=dict)  # Track visibility state for all artifacts
+# class ProblemStatus(Enum):
+#     NOT_STARTED = "NOT_STARTED"  # Problem has not been started yet
+#     PENDING = "PENDING"  # Problem is temporarily paused (focus moved to child)
+#     IN_PROGRESS = "IN_PROGRESS"  # Problem is currently being worked on
+#     FINISHED = "FINISHED"  # Problem has been successfully completed
+#     FAILED = "FAILED"  # Problem could not be solved
+#     CANCELLED = "CANCELLED"  # Problem was determined to be unnecessary
 
-    def add_criteria(self, criteria: str) -> int:
-        """Add criteria and return its index"""
-        # Check if criteria already exists
-        if criteria in self.criteria:
-            return self.criteria.index(criteria)
 
-        self.criteria.append(criteria)
-        self.criteria_done.append(False)
-        return len(self.criteria) - 1
+# @dataclass
+# class Node:
+#     title: str
+#     problem_definition: str
+#     criteria: list[str] = field(default_factory=list)
+#     criteria_done: list[bool] = field(default_factory=list)
+#     artifacts: dict[str, Artifact] = field(default_factory=dict)
+#     subproblems: dict[str, "Node"] = field(default_factory=dict)
+#     parent: Optional["Node"] = None
+#     path: Path | None = None
+#     status: ProblemStatus = ProblemStatus.NOT_STARTED
+#     depth_from_root: int = 0
+#     visible_artifacts: dict[str, bool] = field(default_factory=dict)  # Track visibility state for all artifacts
 
-    def mark_criteria_as_done(self, index: int) -> bool:
-        """Mark criteria as done and return success"""
-        if 0 <= index < len(self.criteria):
-            self.criteria_done[index] = True
-            return True
-        return False
+#     def add_criteria(self, criteria: str) -> int:
+#         """Add criteria and return its index"""
+#         # Check if criteria already exists
+#         if criteria in self.criteria:
+#             return self.criteria.index(criteria)
 
-    def add_subproblem(self, title: str, content: str) -> "Node":
-        """Add a subproblem and return it"""
-        # Check if subproblem already exists
-        if title in self.subproblems:
-            return self.subproblems[title]
+#         self.criteria.append(criteria)
+#         self.criteria_done.append(False)
+#         return len(self.criteria) - 1
 
-        subproblem = Node(
-            title=title,
-            problem_definition=content,
-            parent=self,
-            depth_from_root=self.depth_from_root + 1,
-        )
-        self.subproblems[title] = subproblem
-        return subproblem
+#     def mark_criteria_as_done(self, index: int) -> bool:
+#         """Mark criteria as done and return success"""
+#         if 0 <= index < len(self.criteria):
+#             self.criteria_done[index] = True
+#             return True
+#         return False
 
-    def add_artifact(self, name: str, content: str) -> None:
-        """Add an artifact"""
-        self.artifacts[name] = Artifact(name=name, content=content)
+#     def add_subproblem(self, title: str, content: str) -> "Node":
+#         """Add a subproblem and return it"""
+#         # Check if subproblem already exists
+#         if title in self.subproblems:
+#             return self.subproblems[title]
 
-    def append_to_problem_definition(self, content: str) -> None:
-        """Append to the problem definition"""
-        self.problem_definition += "\n\nUPDATE\n" + content
+#         subproblem = Node(
+#             title=title,
+#             problem_definition=content,
+#             parent=self,
+#             depth_from_root=self.depth_from_root + 1,
+#         )
+#         self.subproblems[title] = subproblem
+#         return subproblem
 
-    def get_criteria_met_count(self) -> int:
-        """Get the number of criteria met"""
-        return sum(self.criteria_done)
+#     def add_artifact(self, name: str, content: str) -> None:
+#         """Add an artifact"""
+#         self.artifacts[name] = Artifact(name=name, content=content)
 
-    def get_criteria_total_count(self) -> int:
-        """Get the total number of criteria"""
-        return len(self.criteria)
+#     def append_to_problem_definition(self, content: str) -> None:
+#         """Append to the problem definition"""
+#         self.problem_definition += "\n\nUPDATE\n" + content
 
-    def get_criteria_status(self) -> str:
-        """Get a string representation of criteria status"""
-        met = self.get_criteria_met_count()
-        total = self.get_criteria_total_count()
-        return f"[{met}/{total} criteria met]"
+#     def get_criteria_met_count(self) -> int:
+#         """Get the number of criteria met"""
+#         return sum(self.criteria_done)
 
-    def get_status_emoji(self) -> str:
-        """Get an emoji representation of the problem status"""
-        status_emojis = {
-            ProblemStatus.NOT_STARTED: "🆕",
-            ProblemStatus.PENDING: "⏳",
-            ProblemStatus.IN_PROGRESS: "🔍",
-            ProblemStatus.FINISHED: "✅",
-            ProblemStatus.FAILED: "❌",
-            ProblemStatus.CANCELLED: "🚫",
-        }
-        return status_emojis.get(self.status, "🆕")
+#     def get_criteria_total_count(self) -> int:
+#         """Get the total number of criteria"""
+#         return len(self.criteria)
 
-    def get_status_label(self) -> str:
-        """Get a short label for the problem status"""
-        return self.status.value
+#     def get_criteria_status(self) -> str:
+#         """Get a string representation of criteria status"""
+#         met = self.get_criteria_met_count()
+#         total = self.get_criteria_total_count()
+#         return f"[{met}/{total} criteria met]"
+
+#     def get_status_emoji(self) -> str:
+#         """Get an emoji representation of the problem status"""
+#         status_emojis = {
+#             ProblemStatus.NOT_STARTED: "🆕",
+#             ProblemStatus.PENDING: "⏳",
+#             ProblemStatus.IN_PROGRESS: "🔍",
+#             ProblemStatus.FINISHED: "✅",
+#             ProblemStatus.FAILED: "❌",
+#             ProblemStatus.CANCELLED: "🚫",
+#         }
+#         return status_emojis.get(self.status, "🆕")
+
+#     def get_status_label(self) -> str:
+#         """Get a short label for the problem status"""
+#         return self.status.value
 
 
 class FileSystem:

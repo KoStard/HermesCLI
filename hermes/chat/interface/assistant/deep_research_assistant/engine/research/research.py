@@ -1,6 +1,8 @@
-from . import Research, ResearchNode
+from pathlib import Path
+
+from . import Research
 
 
 class ResearchImpl(Research):
-    def __init__(self, root_node: ResearchNode) -> None:
-        self.root_node = root_node
+    def __init__(self, root_directory: Path) -> None:
+        self.root_directory = root_directory

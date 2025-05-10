@@ -162,46 +162,37 @@ class DeepResearchAssistantInterface(Interface):
             if not self._engine.is_root_problem_defined():
                 if self.instruction:
                     logger.info("Defining root problem.")
-                    success = self._engine.define_root_problem(self.instruction)
-                    self.instruction = None  # Clear instruction after use
-                    if not success:
+                    self._engine.define_root_problem(self.instruction)
+
+                    # Root problem defined, start execution immediately
+                    logger.info("Executing initial research.")
+                    self._engine.execute()  # Runs until awaiting_new_instruction is True
+                    # Check state after execution finishes
+                    if self._engine.is_awaiting_instruction():
+                        # Check if the root node finished/failed to generate the final report
+                        if self._engine.current_node == self._engine.file_system.root_node and self._engine.current_node.status in [
+                            ProblemStatus.FINISHED,
+                            ProblemStatus.FAILED,
+                        ]:
+                            logger.info("Generating final report.")
+                            final_report = self._engine._generate_final_report()
+                            yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                        # Always yield the waiting message after completion
                         yield MessageEvent(
                             TextMessage(
                                 author="assistant",
-                                text="Failed to define the root problem.",
+                                text="Initial research complete. Waiting for next instruction...",
                             )
                         )
-                        return
                     else:
-                        # Root problem defined, start execution immediately
-                        logger.info("Executing initial research.")
-                        self._engine.execute()  # Runs until awaiting_new_instruction is True
-                        # Check state after execution finishes
-                        if self._engine.is_awaiting_instruction():
-                            # Check if the root node finished/failed to generate the final report
-                            if self._engine.current_node == self._engine.file_system.root_node and self._engine.current_node.status in [
-                                ProblemStatus.FINISHED,
-                                ProblemStatus.FAILED,
-                            ]:
-                                logger.info("Generating final report.")
-                                final_report = self._engine._generate_final_report()
-                                yield MessageEvent(TextMessage(author="assistant", text=final_report))
-                            # Always yield the waiting message after completion
-                            yield MessageEvent(
-                                TextMessage(
-                                    author="assistant",
-                                    text="Initial research complete. Waiting for next instruction...",
-                                )
+                        logger.error("Engine did not enter awaiting state after initial execution.")
+                        yield MessageEvent(
+                            TextMessage(
+                                author="assistant",
+                                text="Initial research finished unexpectedly. Please check logs.",
                             )
-                        else:
-                            logger.error("Engine did not enter awaiting state after initial execution.")
-                            yield MessageEvent(
-                                TextMessage(
-                                    author="assistant",
-                                    text="Initial research finished unexpectedly. Please check logs.",
-                                )
-                            )
-                        return  # End processing for this call
+                        )
+                    return  # End processing for this call
                 else:
                     # No root problem and no instruction provided
                     yield MessageEvent(

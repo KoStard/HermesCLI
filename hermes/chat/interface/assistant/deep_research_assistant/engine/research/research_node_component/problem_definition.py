@@ -1,2 +1,6 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class ProblemDefinition:
-    pass
+    content: str

@@ -1,3 +1,4 @@
+from marshal import load
 from collections import defaultdict
 from pathlib import Path
 
@@ -21,11 +22,7 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.context.inte
 )
 
 # Import other necessary components
-from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-    FileSystem,
-    Node,
-    ProblemStatus,
-)
+from hermes.chat.interface.assistant.deep_research_assistant.engine.execution_state import ExecutionState
 from hermes.chat.interface.assistant.deep_research_assistant.engine.files.logger import (
     DeepResearchRequestAndResponseLogger,
 )
@@ -35,10 +32,15 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.report.repor
 from hermes.chat.interface.assistant.deep_research_assistant.engine.report.status_printer import (
     StatusPrinter,
 )
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research import ResearchImpl
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import ProblemDefinition
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import ProblemStatus
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,
 )
 
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node import ResearchNodeImpl
 # Import core command components from the new location
 from hermes.chat.interface.commands.command import (
     Command,
@@ -55,8 +57,8 @@ class _CommandProcessor:
     def __init__(self, engine: "DeepResearchEngine"):
         self.engine = engine
         self.command_parser = engine.command_parser
-        self.chat_history = engine.chat_history
-        self.current_node = engine.current_node
+        self.current_execution_state.active_node.get_history() = engine.chat_history
+        self.current_execution_state.active_node = engine.current_node
         self.command_context = engine.command_context
 
         # Results
@@ -94,12 +96,12 @@ class _CommandProcessor:
     def _handle_shutdown_request(self, text: str) -> bool:
         """Check for emergency shutdown code."""
         # Only shut down if the current node is the root node
-        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() and self.current_node == self.engine.file_system.root_node:
+        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() and self.current_execution_state.active_node == self.engine.file_system.root_node:
             print("Shutdown requested for root node. Engine will await new instructions.")
             self.engine.awaiting_new_instruction = True
             # Mark root as finished to signify completion of this phase
-            if self.current_node:
-                self.current_node.status = ProblemStatus.FINISHED
+            if self.current_execution_state.has_active_node:
+                # self.current_execution_state.active_node.status = ProblemStatus.FINISHED
                 self.engine.file_system.update_files()
             return True
         elif "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
@@ -109,14 +111,14 @@ class _CommandProcessor:
 
     @property
     def _current_history_tag(self):
-        if self.current_node:
-            return self.current_node.title
+        if self.current_execution_state.has_active_node:
+            return self.current_execution_state.active_node.title
         else:
             return "no_node"
 
     def _add_assistant_message_to_history(self, text: str):
         """Add the assistant's message to history for the current node."""
-        self.chat_history.add_message("assistant", text, self._current_history_tag)
+        self.current_execution_state.active_node.get_history().add_message("assistant", text)
 
     def _parse_and_validate_commands(self, text: str) -> list[ParseResult]:
         """Parse commands, handle syntax errors, and perform initial validation."""
@@ -260,7 +262,7 @@ class _CommandProcessor:
 
     def _update_auto_reply(self):
         """Add error reports and confirmation requests to the auto-reply aggregator."""
-        auto_reply_generator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+        auto_reply_generator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
 
         # Add confirmation request if finish/fail was skipped
         if self._finish_or_fail_skipped:
@@ -286,19 +288,22 @@ class _CommandProcessor:
 class DeepResearchEngine:
     """Core engine for Deep Research functionality, independent of UI implementation"""
 
+    research: Research
+
     def __init__(
         self,
         root_dir: Path,
         llm_interface: LLMInterface,
     ):
-        self.file_system = FileSystem(root_dir)
-        self.chat_history = ChatHistory()
+        self.research = ResearchImpl(root_dir)
+        self.current_execution_state = ExecutionState()
+        self.future_execution_state = ExecutionState()
+
+        # self.file_system = FileSystem(root_dir)
         self.command_parser = CommandParser()
-        self.awaiting_new_instruction = False  # Replaces 'finished'
+        self.awaiting_new_instruction = False
         self.logger = DeepResearchRequestAndResponseLogger(root_dir)
         self.llm_interface = llm_interface
-        self.current_node: Node | None = None
-        self.next_node: Node | None = None  # Tracks scheduled focus changes
         # When parent requests activation of multiple children sequentially, we'll track them here
         # Then when the child is finished, and wants to activate the parent again, we'll activate the next in the queue
         # It's a dict, as the child itself might activate other grandchildren
@@ -309,20 +314,15 @@ class DeepResearchEngine:
         self.initial_budget = None  # Store the initial budget for reference
         self.message_cycles_used = 0
         self.budget_warning_shown = False
+
         self.root_completion_message: str | None = None  # To store the final message from the root node
 
-        # Check if problem already exists
-        self.file_system.load_existing_problem()
-
-        # TODO: Could move to the file system
-        self.permanent_log = []
+        if self.research.research_already_exists():
+            self.research.load_existing_research()
+            self.current_execution_state.set_active_node(self.research.get_root_node())
 
         # Create command context for commands to use - shared across all commands
         self.command_context = CommandContext(self)
-
-        # Set current node to root node if problem is already defined
-        if self.is_root_problem_defined():
-            self.manually_choose_and_activate_node()
 
         # Use the templates directory from the Deep Research Assistant package
         templates_dir = Path(__file__).parent / "templates"
@@ -340,9 +340,9 @@ class DeepResearchEngine:
 
     def is_root_problem_defined(self) -> bool:
         """Check if the root problem is already defined"""
-        return self.file_system.root_node is not None
+        return self.research.research_initiated()
 
-    def define_root_problem(self, instruction: str) -> bool:
+    def define_root_problem(self, instruction: str):
         """
         Handle the initial problem definition phase.
 
@@ -352,11 +352,13 @@ class DeepResearchEngine:
         title = instruction[:200]
         if len(instruction) > 200:
             title += "..."
-        self.file_system.create_root_problem("User Request: " + title, instruction)
 
-        self.activate_node(self.file_system.root_node)
+        problem_definition = ProblemDefinition(instruction)
+        node = ResearchNodeImpl(problem_definition, title)
+        self.research.initiate_research(node)
+        self.current_execution_state.set_active_node(self.research.get_root_node())
+
         self._print_current_status()
-        return True
 
     def prepare_for_new_instruction(self, instruction: str):
         """Injects a new user instruction into the current node's context."""
@@ -365,22 +367,20 @@ class DeepResearchEngine:
             # Or raise an error? For now, just return.
             return
 
-        if not self.current_node:
+        if not self.research.research_initiated():
             print("Error: Cannot prepare for new instruction without an active node.")
             # This shouldn't happen if awaiting_new_instruction is true after completion.
             return
 
-        print(f"Preparing node '{self.current_node.title}' for new instruction.")
+        print(f"Preparing node '{self.research.get_root_node().get_title()}' for new instruction.")
         # Format the instruction using the template
         formatted_instruction = self.template_manager.render_template("context/new_user_instruction.mako", instruction=instruction)
 
         # Add the formatted instruction as an internal message to the current node's auto-reply
-        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+        auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
         auto_reply_aggregator.add_internal_message_from(formatted_instruction, "USER MESSAGE")
 
-        # Reset the current node's status to IN_PROGRESS
-        self.current_node.status = ProblemStatus.IN_PROGRESS
-        self.file_system.update_files()  # Save the status change
+        self.research.get_root_node().set_problem_status(ProblemStatus.IN_PROGRESS)
 
         # Clear the flag
         self.awaiting_new_instruction = False
@@ -400,7 +400,7 @@ class DeepResearchEngine:
 
         # Loop should continue as long as we are not awaiting new instructions
         while not self.awaiting_new_instruction:
-            if not self.current_node:
+            if not self.research.research_initiated():
                 # This case should ideally not be reached if awaiting_new_instruction is managed correctly
                 print("Error: No active node during execution loop. Stopping.")
                 self.awaiting_new_instruction = True  # Stop the loop
@@ -409,8 +409,8 @@ class DeepResearchEngine:
             # --- 1. Gather Current Interface State ---
             # Get static content and the *data* for dynamic sections
             static_interface_content, current_dynamic_data = self.interface.render_problem_defined(
-                self.current_node,
-                self.permanent_log,
+                self.current_execution_state.active_node,
+                self.research.get_permanent_logs(),
                 self.budget,
                 self.get_remaining_budget(),
             )
@@ -432,17 +432,17 @@ class DeepResearchEngine:
                 )
 
             # --- 2. Update History & Auto-Reply Aggregator ---
-            current_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+            current_auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
             # Compare current data with last state and update aggregator's list of *changed* sections
             current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
 
             # Commit changes (errors, commands, messages, changed sections) to a new AutoReply block
             # This clears the aggregator for the next cycle.
-            current_auto_reply_block = self.chat_history.commit_and_get_auto_reply(self._current_history_tag)
+            current_auto_reply_block = self.current_execution_state.active_node.get_history().commit_and_get_auto_reply()
 
             # --- 3. Prepare History for LLM (Render Auto-Replies) ---
             history_messages = []
-            compiled_blocks = self.chat_history.get_compiled_blocks(self._current_history_tag)
+            compiled_blocks = self.current_execution_state.active_node.get_history().get_compiled_blocks()
             auto_reply_counter = 0
             auto_reply_max_length = 5000
 
@@ -498,7 +498,7 @@ class DeepResearchEngine:
                 print(console_auto_reply)
 
             # Get the current node path for logging
-            current_node_path = self.current_node.path if self.current_node else self.file_system.root_dir
+            current_node_path = self.current_execution_state.active_node.path if self.current_execution_state.has_active_node else self.file_system.root_dir
 
             # Generate the request
             request = self.llm_interface.generate_request(
@@ -536,8 +536,8 @@ class DeepResearchEngine:
                     print("The assistant will be notified to wrap up quickly.")
 
                     # Add a warning message to the current node's auto reply
-                    if self.current_node:
-                        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+                    if self.current_execution_state.has_active_node:
+                        auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
                         auto_reply_aggregator.add_internal_message_from(
                             "⚠️ BUDGET ALERT: The message cycle budget has been exhausted. "
                             "Please finalize your work as quickly as possible. "
@@ -557,8 +557,8 @@ class DeepResearchEngine:
                         print(f"Added {additional_cycles} more cycles. New budget: {self.budget}")
 
                         # Add a notification to the current node's auto reply
-                        if self.current_node:
-                            auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+                        if self.current_execution_state.has_active_node:
+                            auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
                             auto_reply_aggregator.add_internal_message_from(
                                 f"The budget has been extended with {additional_cycles} additional cycles. "
                                 f"New total: {self.budget} cycles.",
@@ -568,9 +568,8 @@ class DeepResearchEngine:
                         print("Finishing research due to budget constraints. Engine will await new instructions.")
                         self.awaiting_new_instruction = True
                         # Mark current node as failed? Or just stop? Let's mark as failed.
-                        if self.current_node:
-                            self.current_node.status = ProblemStatus.FAILED
-                            self.file_system.update_files()
+                        if self.current_execution_state.has_active_node:
+                            self.current_execution_state.active_node.status = ProblemStatus.FAILED
 
             # Check if approaching budget limit (within 10 cycles)
             elif self.budget is not None and self.is_approaching_budget_limit() and not self.budget_warning_shown:
@@ -579,52 +578,26 @@ class DeepResearchEngine:
                 print(f"Approaching budget limit. {self.get_remaining_budget()} cycles remaining out of {self.budget}.")
 
                 # Add a warning message to the current node's auto reply
-                if self.current_node:
-                    auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+                if self.current_execution_state.has_active_node:
+                    auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
                     auto_reply_aggregator.add_internal_message_from(
                         f"⚠️ BUDGET WARNING: Only {self.get_remaining_budget()} message cycles remaining out of {self.budget}. "
                         "Please prioritize the most important tasks and consider wrapping up soon.",
                         "SYSTEM",
                     )
 
-            # Apply any scheduled focus change now that the cycle is complete
-            if self.next_node is not None:
-                self.activate_node(self.next_node)
-                self.next_node = None
+
+            self.future_execution_state.load_rest_from(self.current_execution_state)
+            self.current_execution_state = self.future_execution_state
+            self.future_execution_state = ExecutionState()
 
             self._print_current_status()
 
         # End of the while loop (awaiting_new_instruction is True)
         print(
-            f"Engine execution cycle complete. Current node: {self.current_node.title if self.current_node else 'None'}. "
+            f"Engine execution cycle complete. Current node: {self.current_execution_state.active_node.title if self.current_execution_state.has_active_node else 'None'}. "
             "Awaiting new instruction."
         )
-
-    def manually_choose_and_activate_node(self):
-        """Allows manual selection of the node to activate, typically used at the start if a problem exists."""
-        all_nodes = self.file_system.get_all_nodes()
-
-        if len(all_nodes) == 1:
-            self.activate_node(all_nodes[0])
-            return
-
-        for index, node in enumerate(all_nodes):
-            print(f"{'*' * (node.depth_from_root + 1)} {index + 1}: {node.title}")
-        print()
-
-        index = None
-        while index is None:
-            try:
-                index = int(input("Choose the node to start from: "))
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-            if not index or index <= 0 or index > len(all_nodes):
-                print("Invalid index. Please try again.")
-                index = None
-
-        index -= 1
-        node = all_nodes[index]
-        self.activate_node(node)
 
     def add_command_output(self, command_name: str, args: dict, output: str, node_title: str) -> None:
         """
@@ -638,7 +611,7 @@ class DeepResearchEngine:
         """
         if not output:
             output = ""
-        auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(node_title)
+        auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator(node_title)
         auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
 
     def process_commands(self, text: str) -> tuple[bool, str, dict]:
@@ -653,15 +626,16 @@ class DeepResearchEngine:
 
     @property
     def _current_history_tag(self):
-        if self.current_node:
-            return self.current_node.title
+        # Reference to the history branch in old system, where history tracking was central, but had branches for different nodes
+        if self.current_execution_state.has_active_node:
+            return self.current_execution_state.active_node.get_title()
         else:
             return "no_node"
 
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
         status_printer = StatusPrinter(self.template_manager)
-        status_printer.print_status(self.is_root_problem_defined(), self.current_node, self.file_system)
+        status_printer.print_status(self.is_root_problem_defined(), self.current_execution_state.active_node, self.file_system)
 
     def set_budget(self, budget: int):
         """Set the budget for the Deep Research Assistant"""
@@ -670,8 +644,8 @@ class DeepResearchEngine:
         self.budget_warning_shown = False
 
         # Add a message to the current node's auto reply
-        if self.current_node:
-            auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(self._current_history_tag)
+        if self.current_execution_state.has_active_node:
+            auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
             auto_reply_aggregator.add_internal_message_from(f"Budget has been set to {budget} message cycles.", "SYSTEM")
 
     def increment_message_cycles(self):
@@ -698,10 +672,6 @@ class DeepResearchEngine:
         # Ensure remaining is not None before comparison
         return remaining is not None and 0 < remaining <= 10
 
-    def activate_node(self, node: Node) -> None:
-        """Set the current node and update chat history"""
-        self.current_node = node
-        node.status = ProblemStatus.IN_PROGRESS
 
     def _handle_llm_request(self, request, current_node_path):
         """
@@ -762,24 +732,20 @@ class DeepResearchEngine:
         Returns:
             bool: True if successful, False otherwise
         """
-        if not self.current_node:
+        if not self.research.research_initiated():
             return False
 
         # Check if the subproblem exists
-        if subproblem_title not in self.current_node.subproblems:
+        if subproblem_title not in self.current_execution_state.active_node.subproblems:
             return False
 
         # Get the subproblem
-        subproblem = self.current_node.subproblems[subproblem_title]
+        subproblem = self.current_execution_state.active_node.subproblems[subproblem_title]
 
         # Set the parent to PENDING
-        self.current_node.status = ProblemStatus.PENDING
+        self.current_execution_state.active_node.status = ProblemStatus.PENDING
 
-        # Schedule the focus change
-        self.next_node = subproblem
-
-        # Update files
-        self.file_system.update_files()
+        self.future_execution_state.set_active_node(subproblem)
 
         return True
 
@@ -795,10 +761,10 @@ class DeepResearchEngine:
         Returns:
             bool: True if successful, False otherwise (e.g., no current node).
         """
-        if not self.current_node:
+        if not self.research.research_initiated():
             return False
 
-        current_node = self.current_node  # Keep a reference before potential change
+        current_node = self.current_execution_state.active_node  # Keep a reference before potential change
         parent_chain = self.file_system.get_parent_chain(current_node)
 
         # If this is the root node, we're done
@@ -809,7 +775,6 @@ class DeepResearchEngine:
             # Root node finished. Set awaiting flag.
             if message:
                 self.root_completion_message = message  # Store final message if any
-            self.file_system.update_files()
             self.awaiting_new_instruction = True
             print(f"Root node '{current_node.title}' finished. Engine awaiting new instruction.")
             return True
@@ -822,7 +787,7 @@ class DeepResearchEngine:
 
         # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
         if parent_node:  # Ensure parent exists before trying to add messages
-            parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(parent_node.title)
+            parent_auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator(parent_node.title)
 
             # 1. Always add the standard status message
             parent_auto_reply_aggregator.add_internal_message_from("Task marked FINISHED, focusing back up.", current_node.title)
@@ -844,16 +809,13 @@ class DeepResearchEngine:
             # Activate the next sibling
             next_sibling = parent_node.subproblems.get(next_sibling_title)
             if next_sibling:
-                self.next_node = next_sibling
+                self.future_execution_state.set_active_node(next_sibling)
             else:
                 # If sibling not found, fall back to parent
-                self.next_node = parent_node
+                self.future_execution_state.set_active_node(parent_node)
         else:
             # No queued siblings, focus up to parent
-            self.next_node = parent_node
-
-        # Update files (will save the FINISHED status of the current node)
-        self.file_system.update_files()
+            self.future_execution_state.set_active_node(parent_node)
 
         return True
 
@@ -868,10 +830,10 @@ class DeepResearchEngine:
         Returns:
             bool: True if successful, False otherwise (e.g., no current node).
         """
-        if not self.current_node:
+        if not self.research.research_initiated():
             return False
 
-        current_node = self.current_node  # Keep a reference
+        current_node = self.current_execution_state.active_node  # Keep a reference
         parent_chain = self.file_system.get_parent_chain(current_node)
 
         # If this is the root node, we're done
@@ -882,7 +844,6 @@ class DeepResearchEngine:
             # Root node failed. Set awaiting flag.
             if message:
                 self.root_completion_message = message  # Store final message if any
-            self.file_system.update_files()
             self.awaiting_new_instruction = True
             print(f"Root node '{current_node.title}' failed. Engine awaiting new instruction.")
             return True
@@ -895,7 +856,7 @@ class DeepResearchEngine:
 
         # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
         if parent_node:  # Ensure parent exists
-            parent_auto_reply_aggregator = self.chat_history.get_auto_reply_aggregator(parent_node.title)
+            parent_auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator(parent_node.title)
 
             # 1. Always add the standard status message
             parent_auto_reply_aggregator.add_internal_message_from("Task marked FAILED, focusing back up.", current_node.title)
@@ -905,10 +866,6 @@ class DeepResearchEngine:
                 # Prefix the custom message for clarity
                 parent_auto_reply_aggregator.add_internal_message_from(f"[Failure Message]: {message}", current_node.title)
 
-        # --- Schedule the focus change ---
-        self.next_node = parent_node
-
-        # Update files (will save the FAILED status of the current node)
-        self.file_system.update_files()
+        self.future_execution_state.set_active_node(parent_node)
 
         return True
