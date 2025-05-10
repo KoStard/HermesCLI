@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import TypeVar
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
@@ -68,6 +69,10 @@ class ResearchNode(ABC):
 
     @abstractmethod
     def get_history(self) -> ResearchNodeHistory:
+        pass
+
+    @abstractmethod
+    def get_path(self) -> Path:
         pass
 
 

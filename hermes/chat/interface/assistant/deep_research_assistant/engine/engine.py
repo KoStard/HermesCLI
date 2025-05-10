@@ -57,8 +57,7 @@ class _CommandProcessor:
     def __init__(self, engine: "DeepResearchEngine"):
         self.engine = engine
         self.command_parser = engine.command_parser
-        self.current_execution_state.active_node.get_history() = engine.chat_history
-        self.current_execution_state.active_node = engine.current_node
+        self.current_execution_state = engine.current_execution_state
         self.command_context = engine.command_context
 
         # Results
@@ -96,13 +95,12 @@ class _CommandProcessor:
     def _handle_shutdown_request(self, text: str) -> bool:
         """Check for emergency shutdown code."""
         # Only shut down if the current node is the root node
-        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() and self.current_execution_state.active_node == self.engine.file_system.root_node:
+        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() and self.current_execution_state.active_node == self.engine.research.get_root_node():
             print("Shutdown requested for root node. Engine will await new instructions.")
             self.engine.awaiting_new_instruction = True
             # Mark root as finished to signify completion of this phase
             if self.current_execution_state.has_active_node:
-                # self.current_execution_state.active_node.status = ProblemStatus.FINISHED
-                self.engine.file_system.update_files()
+                self.current_execution_state.active_node.set_problem_status(ProblemStatus.FINISHED)
             return True
         elif "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
             print("Shutdown command ignored: Not currently focused on the root node.")
@@ -118,7 +116,8 @@ class _CommandProcessor:
 
     def _add_assistant_message_to_history(self, text: str):
         """Add the assistant's message to history for the current node."""
-        self.current_execution_state.active_node.get_history().add_message("assistant", text)
+        history = self.current_execution_state.active_node.get_history()
+        history.add_message("assistant", text)
 
     def _parse_and_validate_commands(self, text: str) -> list[ParseResult]:
         """Parse commands, handle syntax errors, and perform initial validation."""
@@ -295,11 +294,12 @@ class DeepResearchEngine:
         root_dir: Path,
         llm_interface: LLMInterface,
     ):
+        # Initialize the research object which will handle all file system and node operations
         self.research = ResearchImpl(root_dir)
         self.current_execution_state = ExecutionState()
         self.future_execution_state = ExecutionState()
 
-        # self.file_system = FileSystem(root_dir)
+        # Initialize other components
         self.command_parser = CommandParser()
         self.awaiting_new_instruction = False
         self.logger = DeepResearchRequestAndResponseLogger(root_dir)
@@ -331,7 +331,8 @@ class DeepResearchEngine:
         self.renderer_registry: DynamicDataTypeToRendererMap = get_data_type_to_renderer_instance_map(self.template_manager)
 
         commands_help_generator = CommandHelpGenerator()
-        # Update interface with the file system
+        # Update interface with the research object instead of file system
+        # TODO: Update DeepResearcherInterface to use Research instead of FileSystem
         self.interface = DeepResearcherInterface(self.file_system, self.template_manager, commands_help_generator)
 
     def is_awaiting_instruction(self) -> bool:
@@ -353,8 +354,8 @@ class DeepResearchEngine:
         if len(instruction) > 200:
             title += "..."
 
-        problem_definition = ProblemDefinition(instruction)
-        node = ResearchNodeImpl(problem_definition, title)
+        problem_definition = ProblemDefinition(content=instruction)
+        node = ResearchNodeImpl(problem=problem_definition, title=title)
         self.research.initiate_research(node)
         self.current_execution_state.set_active_node(self.research.get_root_node())
 
@@ -377,10 +378,13 @@ class DeepResearchEngine:
         formatted_instruction = self.template_manager.render_template("context/new_user_instruction.mako", instruction=instruction)
 
         # Add the formatted instruction as an internal message to the current node's auto-reply
-        auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
+        root_node = self.research.get_root_node()
+        history = root_node.get_history()
+        auto_reply_aggregator = history.get_auto_reply_aggregator()
         auto_reply_aggregator.add_internal_message_from(formatted_instruction, "USER MESSAGE")
 
-        self.research.get_root_node().set_problem_status(ProblemStatus.IN_PROGRESS)
+        # Mark the root problem as in progress
+        root_node.set_problem_status(ProblemStatus.IN_PROGRESS)
 
         # Clear the flag
         self.awaiting_new_instruction = False
@@ -408,6 +412,7 @@ class DeepResearchEngine:
 
             # --- 1. Gather Current Interface State ---
             # Get static content and the *data* for dynamic sections
+            # TODO: Update interface to use Research instead of FileSystem
             static_interface_content, current_dynamic_data = self.interface.render_problem_defined(
                 self.current_execution_state.active_node,
                 self.research.get_permanent_logs(),
@@ -432,13 +437,15 @@ class DeepResearchEngine:
                 )
 
             # --- 2. Update History & Auto-Reply Aggregator ---
-            current_auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
+            history = self.current_execution_state.active_node.get_history()
+            current_auto_reply_aggregator = history.get_auto_reply_aggregator()
             # Compare current data with last state and update aggregator's list of *changed* sections
             current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
 
             # Commit changes (errors, commands, messages, changed sections) to a new AutoReply block
             # This clears the aggregator for the next cycle.
-            current_auto_reply_block = self.current_execution_state.active_node.get_history().commit_and_get_auto_reply()
+            history = self.current_execution_state.active_node.get_history()
+            current_auto_reply_block = history.commit_and_get_auto_reply()
 
             # --- 3. Prepare History for LLM (Render Auto-Replies) ---
             history_messages = []
@@ -498,7 +505,7 @@ class DeepResearchEngine:
                 print(console_auto_reply)
 
             # Get the current node path for logging
-            current_node_path = self.current_execution_state.active_node.path if self.current_execution_state.has_active_node else self.file_system.root_dir
+            current_node_path = self.current_execution_state.active_node.get_path()
 
             # Generate the request
             request = self.llm_interface.generate_request(
@@ -507,6 +514,7 @@ class DeepResearchEngine:
                 current_node_path,
             )
 
+            # TODO: LLM request/response logging should move at node level
             # Process the request and get the response
             response_generator = self._handle_llm_request(request, current_node_path)
 
@@ -635,6 +643,7 @@ class DeepResearchEngine:
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
         status_printer = StatusPrinter(self.template_manager)
+        # TODO: Update StatusPrinter to use Research and ResearchNode instead of FileSystem and Node
         status_printer.print_status(self.is_root_problem_defined(), self.current_execution_state.active_node, self.file_system)
 
     def set_budget(self, budget: int):
@@ -718,6 +727,7 @@ class DeepResearchEngine:
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research. (Currently not called automatically)"""
+        # TODO: Update ReportGenerator to use Research instead of FileSystem
         report_generator = ReportGenerator(self.file_system, self.template_manager)
         # Pass the root completion message to the generator
         return report_generator.generate_final_report(self.interface, self.root_completion_message)
@@ -735,17 +745,24 @@ class DeepResearchEngine:
         if not self.research.research_initiated():
             return False
 
-        # Check if the subproblem exists
-        if subproblem_title not in self.current_execution_state.active_node.subproblems:
+        current_node = self.current_execution_state.active_node
+
+        # Find the child node with matching title
+        child_nodes = current_node.list_child_nodes()
+        target_child = None
+        for child in child_nodes:
+            if child.get_title() == subproblem_title:
+                target_child = child
+                break
+
+        if target_child is None:
             return False
 
-        # Get the subproblem
-        subproblem = self.current_execution_state.active_node.subproblems[subproblem_title]
-
         # Set the parent to PENDING
-        self.current_execution_state.active_node.status = ProblemStatus.PENDING
+        current_node.set_problem_status(ProblemStatus.PENDING)
 
-        self.future_execution_state.set_active_node(subproblem)
+        # Set the future execution state to the child node
+        self.future_execution_state.set_active_node(target_child)
 
         return True
 
@@ -765,51 +782,60 @@ class DeepResearchEngine:
             return False
 
         current_node = self.current_execution_state.active_node  # Keep a reference before potential change
-        parent_chain = self.file_system.get_parent_chain(current_node)
+        parent_node = current_node.get_parent()
 
-        # If this is the root node, we're done
-        if len(parent_chain) <= 1:
+        # If this is the root node (no parent), we're done
+        if parent_node is None:
             # Mark the root node as FINISHED
-            current_node.status = ProblemStatus.FINISHED
+            current_node.set_problem_status(ProblemStatus.FINISHED)
             # Store the completion message if provided
             # Root node finished. Set awaiting flag.
             if message:
                 self.root_completion_message = message  # Store final message if any
             self.awaiting_new_instruction = True
-            print(f"Root node '{current_node.title}' finished. Engine awaiting new instruction.")
+            print(f"Root node '{current_node.get_title()}' finished. Engine awaiting new instruction.")
             return True
 
         # Mark the current non-root node as FINISHED
-        current_node.status = ProblemStatus.FINISHED
-
-        # Get the parent node (second to last in the chain)
-        parent_node = parent_chain[-2]
+        current_node.set_problem_status(ProblemStatus.FINISHED)
 
         # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
-        if parent_node:  # Ensure parent exists before trying to add messages
-            parent_auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator(parent_node.title)
+        parent_history = parent_node.get_history()
+        parent_auto_reply_aggregator = parent_history.get_auto_reply_aggregator()
 
-            # 1. Always add the standard status message
-            parent_auto_reply_aggregator.add_internal_message_from("Task marked FINISHED, focusing back up.", current_node.title)
+        # 1. Always add the standard status message
+        parent_auto_reply_aggregator.add_internal_message_from(
+            "Task marked FINISHED, focusing back up.",
+            current_node.get_title()
+        )
 
-            # 2. If a custom message was provided, add it as well
-            if message:
-                # Prefix the custom message for clarity
-                parent_auto_reply_aggregator.add_internal_message_from(f"[Completion Message]: {message}", current_node.title)
+        # 2. If a custom message was provided, add it as well
+        if message:
+            # Prefix the custom message for clarity
+            parent_auto_reply_aggregator.add_internal_message_from(
+                f"[Completion Message]: {message}",
+                current_node.get_title()
+            )
 
         # --- Schedule the focus change ---
         # Check if there are queued siblings to activate
-        if parent_node.title in self.children_queue and self.children_queue[parent_node.title]:
+        parent_title = parent_node.get_title()
+        if parent_title in self.children_queue and self.children_queue[parent_title]:
             # Get the next sibling from the queue
-            next_sibling_title = self.children_queue[parent_node.title].pop(0)
+            next_sibling_title = self.children_queue[parent_title].pop(0)
             # If queue is empty after pop, remove the key
-            if not self.children_queue[parent_node.title]:
-                del self.children_queue[parent_node.title]
+            if not self.children_queue[parent_title]:
+                del self.children_queue[parent_title]
 
-            # Activate the next sibling
-            next_sibling = parent_node.subproblems.get(next_sibling_title)
-            if next_sibling:
-                self.future_execution_state.set_active_node(next_sibling)
+            # Find the sibling node with matching title
+            target_sibling = None
+            for child in parent_node.list_child_nodes():
+                if child.get_title() == next_sibling_title:
+                    target_sibling = child
+                    break
+
+            if target_sibling:
+                self.future_execution_state.set_active_node(target_sibling)
             else:
                 # If sibling not found, fall back to parent
                 self.future_execution_state.set_active_node(parent_node)
@@ -834,38 +860,42 @@ class DeepResearchEngine:
             return False
 
         current_node = self.current_execution_state.active_node  # Keep a reference
-        parent_chain = self.file_system.get_parent_chain(current_node)
+        parent_node = current_node.get_parent()
 
-        # If this is the root node, we're done
-        if len(parent_chain) <= 1:
+        # If this is the root node (no parent), we're done
+        if parent_node is None:
             # Mark the root node as FAILED
-            current_node.status = ProblemStatus.FAILED
+            current_node.set_problem_status(ProblemStatus.FAILED)
             # Store the failure message if provided
             # Root node failed. Set awaiting flag.
             if message:
                 self.root_completion_message = message  # Store final message if any
             self.awaiting_new_instruction = True
-            print(f"Root node '{current_node.title}' failed. Engine awaiting new instruction.")
+            print(f"Root node '{current_node.get_title()}' failed. Engine awaiting new instruction.")
             return True
 
         # Mark the current non-root node as FAILED
-        current_node.status = ProblemStatus.FAILED
-
-        # Get the parent node (second to last in the chain)
-        parent_node = parent_chain[-2]
+        current_node.set_problem_status(ProblemStatus.FAILED)
 
         # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
-        if parent_node:  # Ensure parent exists
-            parent_auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator(parent_node.title)
+        parent_history = parent_node.get_history()
+        parent_auto_reply_aggregator = parent_history.get_auto_reply_aggregator()
 
-            # 1. Always add the standard status message
-            parent_auto_reply_aggregator.add_internal_message_from("Task marked FAILED, focusing back up.", current_node.title)
+        # 1. Always add the standard status message
+        parent_auto_reply_aggregator.add_internal_message_from(
+            "Task marked FAILED, focusing back up.",
+            current_node.get_title()
+        )
 
-            # 2. If a custom failure message was provided, add it as well
-            if message:
-                # Prefix the custom message for clarity
-                parent_auto_reply_aggregator.add_internal_message_from(f"[Failure Message]: {message}", current_node.title)
+        # 2. If a custom failure message was provided, add it as well
+        if message:
+            # Prefix the custom message for clarity
+            parent_auto_reply_aggregator.add_internal_message_from(
+                f"[Failure Message]: {message}",
+                current_node.get_title()
+            )
 
+        # TODO: Use the same queue mechanism as in the successful case, even if this one fails, maybe the next one will continue
         self.future_execution_state.set_active_node(parent_node)
 
         return True
