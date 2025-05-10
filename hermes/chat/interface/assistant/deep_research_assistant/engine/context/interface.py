@@ -1,10 +1,7 @@
 from hermes.chat.interface.assistant.deep_research_assistant.engine.commands.commands import (
     register_deep_research_commands,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-    FileSystem,
-    Node,
-)
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research, ResearchNode
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
 from hermes.chat.interface.templates.template_manager import TemplateManager
@@ -49,15 +46,15 @@ class DeepResearcherInterface:
 
     def __init__(
         self,
-        file_system: FileSystem,
+        research: Research,
         template_manager: TemplateManager,
         commands_help_generator: CommandHelpGenerator,
     ):
-        self.file_system = file_system
+        self.research = research
         self.template_manager = template_manager
         self.commands_help_generator = commands_help_generator
 
-    def _get_parent_chain(self, node: Node | None) -> list[Node]:
+    def _get_parent_chain(self, node: ResearchNode | None) -> list[ResearchNode]:
         """Helper to get the parent chain including the given node"""
         if not node:
             return []
@@ -65,12 +62,12 @@ class DeepResearcherInterface:
         current = node
         while current:
             chain.append(current)
-            current = current.parent
+            current = current.get_parent()
         return list(reversed(chain))
 
     def render_problem_defined(
         self,
-        target_node: Node,
+        target_node: ResearchNode,
         permanent_logs: list[str],
         budget: int | None,
         remaining_budget: int | None,
@@ -96,7 +93,7 @@ class DeepResearcherInterface:
         )
         return static_content, dynamic_sections_data
 
-    def _render_static_content(self, target_node: Node) -> str:
+    def _render_static_content(self, target_node: ResearchNode) -> str:
         """Render the static content by rendering the main static.mako template."""
         # Get commands to pass to the template context
         commands = CommandRegistry().get_all_commands()
@@ -111,7 +108,7 @@ class DeepResearcherInterface:
 
     def _gather_dynamic_section_data(
         self,
-        target_node: Node,
+        target_node: ResearchNode,
         permanent_logs: list[str],
         budget: int | None,
         remaining_budget: int | None,
@@ -131,19 +128,18 @@ class DeepResearcherInterface:
         all_data[BudgetSectionData] = BudgetSectionData(budget=budget, remaining_budget=remaining_budget)
 
         # Artifacts
-        external_files = self.file_system.get_external_files()
         node_artifacts_list = []
         # Use target_node directly if root is not yet defined (e.g., during initial define_problem)
-        start_node_for_artifacts = self.file_system.root_node or target_node
-        if start_node_for_artifacts:
-            node_artifacts_list = self._collect_artifacts_recursively(start_node_for_artifacts, target_node)
+        root_node = self.research.get_root_node() if self.research.research_initiated() else target_node
+        if root_node:
+            node_artifacts_list = self._collect_artifacts_recursively(root_node, target_node)
         # Use factory method for ArtifactsSectionData
         all_data[ArtifactsSectionData] = ArtifactsSectionData.from_artifact_lists(
-            external_files_dict=external_files, node_artifacts_list=node_artifacts_list
+            external_files_dict={}, node_artifacts_list=node_artifacts_list
         )
 
         # Problem Hierarchy (Short) - Use factory method
-        all_data[ProblemHierarchyData] = ProblemHierarchyData.from_filesystem_and_node(fs=self.file_system, target_node=target_node)
+        all_data[ProblemHierarchyData] = ProblemHierarchyData.from_research_and_node(research=self.research, target_node=target_node)
 
         # Criteria - Use factory method
         all_data[CriteriaSectionData] = CriteriaSectionData.from_node(target_node=target_node)
@@ -156,7 +152,8 @@ class DeepResearcherInterface:
         all_data[ProblemPathHierarchyData] = ProblemPathHierarchyData.from_parent_chain(parent_chain=parent_chain, current_node=target_node)
 
         # Knowledge Base - Use factory method
-        knowledge_base = self.file_system.get_knowledge_base()
+        # TODO: Update with proper knowledge base access from Research
+        knowledge_base = []  # self.research.get_knowledge_base()
         all_data[KnowledgeBaseData] = KnowledgeBaseData.from_knowledge_base(knowledge_base=knowledge_base)
 
         # Goal: No data needed
@@ -172,7 +169,7 @@ class DeepResearcherInterface:
 
         return ordered_data
 
-    def _collect_artifacts_recursively(self, node: Node, current_node: Node) -> list[tuple[str, str, str, bool]]:
+    def _collect_artifacts_recursively(self, node: ResearchNode, current_node: ResearchNode) -> list[tuple[str, str, str, bool]]:
         """
         Recursively collect artifacts from a node and all its descendants.
 
@@ -188,41 +185,30 @@ class DeepResearcherInterface:
             return artifacts
 
         # Add this node's artifacts
-        for name, artifact in node.artifacts.items():
+        for artifact in node.get_artifacts():
             # Check visibility based on the current_node's perspective
             # An artifact is visible if:
             # 1. It's external OR
             # 2. It belongs to the current_node OR
-            # 3. It belongs to an ancestor of the current_node OR
-            # 4. It belongs to a descendant and current_node explicitly marked it visible
+            # 3. It belongs to an ancestor of the current_node
             is_owned_by_current = node == current_node
             is_owned_by_ancestor = node in self._get_parent_chain(current_node)[:-1]  # Exclude current node itself
 
             # Determine if the artifact *should* be visible based on ownership/ancestry
-            # External files are always visible conceptually.
             should_be_visible = artifact.is_external or is_owned_by_current or is_owned_by_ancestor
 
-            # Check if the current_node has explicitly set visibility (overrides default visibility)
-            # True means "show full", False means "show truncated", None means "use default"
-            explicit_visibility = current_node.visible_artifacts.get(name)
+            # Get visibility state from node state
+            node_state = node.get_node_state()
+            # Default: Visible if owned by current/ancestor or external
+            is_fully_visible = should_be_visible
 
-            # Determine final visibility state
-            if explicit_visibility is True:
-                is_fully_visible = True
-            elif explicit_visibility is False:
-                is_fully_visible = False
-            else:  # explicit_visibility is None, use default logic
-                # Default: Visible if owned by current/ancestor or external. Not fully visible otherwise (implies descendant)
-                is_fully_visible = should_be_visible
+            # Only add the artifact to the list if it should be visible
+            if should_be_visible:
+                artifacts.append((node.get_title(), artifact.name, artifact.content, is_fully_visible))
 
-            # Only add the artifact to the list if it should be visible at all
-            # (Owned by current/ancestor, external, or explicitly marked visible by current node)
-            if should_be_visible or explicit_visibility is not None:
-                artifacts.append((node.title, name, artifact.content, is_fully_visible))
-
-        # Recursively collect artifacts from all subproblems
-        for _, subproblem in node.subproblems.items():
-            artifacts.extend(self._collect_artifacts_recursively(subproblem, current_node))
+        # Recursively collect artifacts from all child nodes
+        for child_node in node.list_child_nodes():
+            artifacts.extend(self._collect_artifacts_recursively(child_node, current_node))
 
         return artifacts
 

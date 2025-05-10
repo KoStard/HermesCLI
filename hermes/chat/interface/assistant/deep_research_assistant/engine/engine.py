@@ -331,9 +331,8 @@ class DeepResearchEngine:
         self.renderer_registry: DynamicDataTypeToRendererMap = get_data_type_to_renderer_instance_map(self.template_manager)
 
         commands_help_generator = CommandHelpGenerator()
-        # Update interface with the research object instead of file system
-        # TODO: Update DeepResearcherInterface to use Research instead of FileSystem
-        self.interface = DeepResearcherInterface(self.file_system, self.template_manager, commands_help_generator)
+        # Update interface to use the research object
+        self.interface = DeepResearcherInterface(self.research, self.template_manager, commands_help_generator)
 
     def is_awaiting_instruction(self) -> bool:
         """Check if the engine is waiting for a new instruction."""
@@ -643,8 +642,8 @@ class DeepResearchEngine:
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
         status_printer = StatusPrinter(self.template_manager)
-        # TODO: Update StatusPrinter to use Research and ResearchNode instead of FileSystem and Node
-        status_printer.print_status(self.is_root_problem_defined(), self.current_execution_state.active_node, self.file_system)
+        # TODO: Update StatusPrinter to use Research and ResearchNode
+        status_printer.print_status(self.is_root_problem_defined(), self.current_execution_state.active_node, self.research)
 
     def set_budget(self, budget: int):
         """Set the budget for the Deep Research Assistant"""
@@ -727,8 +726,7 @@ class DeepResearchEngine:
 
     def _generate_final_report(self) -> str:
         """Generate a summary of all artifacts created during the research. (Currently not called automatically)"""
-        # TODO: Update ReportGenerator to use Research instead of FileSystem
-        report_generator = ReportGenerator(self.file_system, self.template_manager)
+        report_generator = ReportGenerator(self.research, self.template_manager)
         # Pass the root completion message to the generator
         return report_generator.generate_final_report(self.interface, self.root_completion_message)
 

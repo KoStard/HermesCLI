@@ -1,6 +1,4 @@
-from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-    FileSystem,
-)
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research, ResearchNode
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
@@ -9,15 +7,15 @@ class ReportGenerator:
     Responsible for generating reports based on the research data using Mako templates.
     """
 
-    def __init__(self, file_system: FileSystem, template_manager: TemplateManager):
+    def __init__(self, research: Research, template_manager: TemplateManager):
         """
         Initialize ReportGenerator.
 
         Args:
-            file_system: The FileSystem instance containing research data.
+            research: The Research instance containing research data.
             template_manager: An instance of TemplateManager to render templates.
         """
-        self.file_system = file_system
+        self.research = research
         self.template_manager = template_manager
 
     def generate_final_report(self, interface, root_completion_message: str | None = None) -> str:
@@ -33,13 +31,12 @@ class ReportGenerator:
         Returns:
             A string containing the formatted final report.
         """
-        root_node = self.file_system.root_node
+        root_node = self.research.get_root_node()
         artifacts_by_problem: dict[str, list[str]] = {}
 
         if root_node:
             # Collect all artifacts from the entire problem hierarchy
-            # TODO: Consider moving _collect_artifacts_recursively to FileSystem or a helper
-            # to avoid passing the full interface here.
+            # Use the interface's helper for collecting artifacts
             all_artifacts = interface._collect_artifacts_recursively(
                 root_node,
                 root_node,  # Pass root twice for initial call
