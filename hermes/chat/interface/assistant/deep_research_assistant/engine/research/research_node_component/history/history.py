@@ -1,5 +1,11 @@
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.autoreply_aggregator import AutoReplyAggregator
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history_blocks import AutoReply, ChatMessage
+
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.autoreply_aggregator import (
+    AutoReplyAggregator,
+)
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history_blocks import (
+    AutoReply,
+    ChatMessage,
+)
 
 
 class ResearchNodeHistory:
@@ -17,7 +23,7 @@ class ResearchNodeHistory:
         """Get all blocks in the history"""
         return self._compiled_blocks.copy()
 
-    def get_auto_reply_aggregator(self, node_title: str = None) -> AutoReplyAggregator:
+    def get_auto_reply_aggregator(self) -> AutoReplyAggregator:
         """Get the auto-reply aggregator for this history"""
         return self._auto_reply_aggregator
 
@@ -28,18 +34,9 @@ class ResearchNodeHistory:
             return None
 
         # Create the auto-reply block
-        auto_reply = AutoReply(
-            error_report=self._auto_reply_aggregator.error_reports.copy(),
-            command_outputs=self._auto_reply_aggregator.command_outputs.copy(),
-            messages=self._auto_reply_aggregator.internal_messages.copy(),
-            confirmation_request=self._auto_reply_aggregator.confirmation_requests.copy(),
-            dynamic_sections=self._auto_reply_aggregator.dynamic_sections_to_report.copy(),
-        )
+        auto_reply = self._auto_reply_aggregator.compile_and_clear()
 
         # Add to history
         self._compiled_blocks.append(auto_reply)
-
-        # Reset the aggregator
-        self._auto_reply_aggregator = AutoReplyAggregator()
 
         return auto_reply

@@ -4,13 +4,18 @@ from typing import TypeVar
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history import ResearchNodeHistory
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history import (
+    ResearchNodeHistory,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.logger import ResearchNodeLogger
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
     ProblemDefinition,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState, ProblemStatus
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.permanent_log import NodePermanentLogs
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.knowledge_base import KnowledgeBase
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.permanent_log import (
+    NodePermanentLogs,
+)
 
 N = TypeVar('N', bound='ResearchNode')
 
@@ -116,4 +121,8 @@ class Research(ABC):
 
     @abstractmethod
     def get_permanent_logs(self) -> NodePermanentLogs:
+        pass
+
+    @abstractmethod
+    def get_knowledge_base(self) -> KnowledgeBase:
         pass

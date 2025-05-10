@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import MarkdownFileWithMetadataImpl
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import (
+    MarkdownFileWithMetadataImpl,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import (
     Artifact,
     ArtifactManager,
@@ -142,7 +144,7 @@ class ResearchNodeImpl(ResearchNode):
 
         # Save problem definition with metadata
         problem_def_path = self._path / "Problem Definition.md"
-        
+
         md_file = MarkdownFileWithMetadataImpl(self.title, self.problem.content)
         md_file.add_property("status", self._status.value)
         md_file.save_file(str(problem_def_path))

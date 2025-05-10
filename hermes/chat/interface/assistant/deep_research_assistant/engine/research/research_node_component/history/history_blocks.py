@@ -3,8 +3,11 @@ import traceback
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.content_truncator import ContentTruncator
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import DynamicSectionData
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections.registry import DynamicDataTypeToRendererMap
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history import HistoryBlock
 from hermes.chat.interface.templates.template_manager import TemplateManager
+
+
+class HistoryBlock:
+    pass
 
 
 class ChatMessage(HistoryBlock):

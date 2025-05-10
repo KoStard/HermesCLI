@@ -1,5 +1,5 @@
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import DynamicSectionData
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history_blocks import AutoReply
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history_blocks import AutoReply
 
 
 class AutoReplyAggregator:

@@ -11,10 +11,6 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dyna
     DynamicDataTypeToRendererMap,
     get_data_type_to_renderer_instance_map,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history_blocks import (
-    AutoReply,
-    ChatMessage,
-)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.interface import (
     DeepResearcherInterface,
 )
@@ -30,6 +26,10 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.report.statu
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research import ResearchImpl
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node import ResearchNodeImpl
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history_blocks import (
+    AutoReply,
+    ChatMessage,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
     ProblemDefinition,
 )

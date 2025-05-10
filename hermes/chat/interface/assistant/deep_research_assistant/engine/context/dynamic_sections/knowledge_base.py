@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from . import DynamicSectionData, DynamicSectionRenderer
 
-# Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import (
         KnowledgeEntry,
