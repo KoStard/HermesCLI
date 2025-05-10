@@ -40,12 +40,12 @@ class LLMInterface(ABC):
         pass
 
     @abstractmethod
-    def log_response(self, node_path, response: str) -> None:
+    def log_response(self, node, response: str) -> None:
         """
         Log an LLM response
 
         Args:
-            node_path: Path to the current node
+            node: Current research node
             response: The response from the LLM
         """
         pass

@@ -5,6 +5,7 @@ from typing import TypeVar
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history import ResearchNodeHistory
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.logger import ResearchNodeLogger
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
     ProblemDefinition,
 )
@@ -75,6 +76,9 @@ class ResearchNode(ABC):
     def get_path(self) -> Path:
         pass
 
+    @abstractmethod
+    def get_logger(self) -> ResearchNodeLogger:
+        pass
 
 class Research(ABC):
     @abstractmethod

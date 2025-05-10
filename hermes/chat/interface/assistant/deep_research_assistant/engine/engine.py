@@ -1,4 +1,3 @@
-from marshal import load
 from collections import defaultdict
 from pathlib import Path
 
@@ -12,7 +11,6 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dyna
     DynamicDataTypeToRendererMap,
     get_data_type_to_renderer_instance_map,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history import ChatHistory
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.history.history_blocks import (
     AutoReply,
     ChatMessage,
@@ -23,9 +21,6 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.context.inte
 
 # Import other necessary components
 from hermes.chat.interface.assistant.deep_research_assistant.engine.execution_state import ExecutionState
-from hermes.chat.interface.assistant.deep_research_assistant.engine.files.logger import (
-    DeepResearchRequestAndResponseLogger,
-)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.report.report_generator import (
     ReportGenerator,
 )
@@ -34,13 +29,15 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.report.statu
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research import ResearchImpl
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import ProblemDefinition
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node import ResearchNodeImpl
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
+    ProblemDefinition,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import ProblemStatus
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,
 )
 
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node import ResearchNodeImpl
 # Import core command components from the new location
 from hermes.chat.interface.commands.command import (
     Command,
@@ -302,7 +299,7 @@ class DeepResearchEngine:
         # Initialize other components
         self.command_parser = CommandParser()
         self.awaiting_new_instruction = False
-        self.logger = DeepResearchRequestAndResponseLogger(root_dir)
+        # Legacy logger - will be fully removed in future versions
         self.llm_interface = llm_interface
         # When parent requests activation of multiple children sequentially, we'll track them here
         # Then when the child is finished, and wants to activate the parent again, we'll activate the next in the queue
@@ -513,7 +510,10 @@ class DeepResearchEngine:
                 current_node_path,
             )
 
-            # TODO: LLM request/response logging should move at node level
+            # Log the request using node logger if available
+            if hasattr(self.current_execution_state.active_node, 'logger') and self.current_execution_state.active_node.logger:
+                self.current_execution_state.active_node.logger.log_llm_request(history_messages, request)
+
             # Process the request and get the response
             response_generator = self._handle_llm_request(request, current_node_path)
 
@@ -700,11 +700,8 @@ class DeepResearchEngine:
                 # Get the full response
                 try:
                     full_llm_response = next(response_generator)
-                    # Log the response using node logger
-                    if hasattr(current_node, 'logger') and current_node.logger:
-                        current_node.logger.log_llm_response(full_llm_response)
-                    # Also log using the traditional logger for backward compatibility
-                    self.logger.log_llm_response(current_node_path, full_llm_response)
+                    # Log the response using node logger - primary method
+                    current_node.get_logger().log_llm_response(full_llm_response)
                     yield full_llm_response
                     break  # Successfully got a response, exit the retry loop
                 except StopIteration:
