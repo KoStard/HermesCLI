@@ -21,13 +21,13 @@ from . import ResearchNode
 
 
 class ResearchNodeImpl(ResearchNode):
-    def __init__(self, problem: ProblemDefinition, title: str, parent: 'ResearchNodeImpl | None', path: Path) -> None:
+    def __init__(self, problem: ProblemDefinition, title: str, parent: 'ResearchNode | None', path: Path) -> None:
         self.children: list[ResearchNode] = []
         self.artifacts: list[Artifact] = []
         self.criteria: list[Criterion] = []
         self.problem: ProblemDefinition = problem
         self.title: str = title
-        self.parent: ResearchNodeImpl | None = parent
+        self.parent: ResearchNode | None = parent
         self._history: ResearchNodeHistory = ResearchNodeHistory()
         self._path: Path = path
         self._status: ProblemStatus = ProblemStatus.NOT_STARTED

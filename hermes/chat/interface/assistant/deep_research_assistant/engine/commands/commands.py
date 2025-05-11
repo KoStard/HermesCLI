@@ -1,13 +1,14 @@
 import textwrap
 from typing import Any
 
-from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-    Artifact,
-    ProblemStatus,
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node import ResearchNodeImpl
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
+    ProblemDefinition,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import (
-    KnowledgeEntry,
-)
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import ProblemStatus
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.knowledge_base import KnowledgeEntry
 
 # Import the new generic base command and registry
 from hermes.chat.interface.commands.command import Command as BaseCommand
@@ -28,16 +29,17 @@ class AddCriteriaCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Add criteria to the current problem"""
         current_node = context.current_node
-        if not current_node:
-            return
 
         # Check if criteria already exists
         criteria_text = args["criteria"]
-        if criteria_text in current_node.criteria:
+        existing_criteria = [c.content for c in current_node.get_criteria()]
+        if criteria_text in existing_criteria:
             return
 
-        current_node.add_criteria(criteria_text)
-        context.update_files()
+        # Create and add a new criterion
+        criterion = Criterion(content=criteria_text)
+        current_node.add_criterion(criterion)
+
         # Add confirmation output
         context.add_command_output(self.name, args, f"Criteria '{criteria_text}' added.")
 
@@ -53,14 +55,21 @@ class MarkCriteriaAsDoneCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Mark criteria as done"""
         current_node = context.current_node
-        if not current_node:
+
+        # Get criteria list
+        criteria_list = current_node.get_criteria()
+        index = args["index"]
+
+        # Check if index is valid
+        if index < 0 or index >= len(criteria_list):
+            context.add_command_output(self.name, args, f"Error: Criteria {args['criteria_number']} not found.")
             return
 
-        success = current_node.mark_criteria_as_done(args["index"])
-        if success:
-            context.update_files()
-            # Add confirmation output
-            context.add_command_output(self.name, args, f"Criteria {args['criteria_number']} marked as done.")
+        # Update the criterion's completed status
+        criteria_list[index].is_completed = True
+
+        # Add confirmation output
+        context.add_command_output(self.name, args, f"Criteria {args['criteria_number']} marked as done.")
 
     def transform_args(self, args: dict[str, Any]) -> dict[str, Any]:
         """Convert criteria_number to zero-based index"""
@@ -93,22 +102,35 @@ class AddSubproblemCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Add a subproblem to the current problem"""
         current_node = context.current_node
-        if not current_node:
-            return
 
         # Check if subproblem with this title already exists
         title = args["title"]
-        if title in current_node.subproblems:
-            return
+        for child in current_node.list_child_nodes():
+            if child.get_title() == title:
+                return
 
-        subproblem = current_node.add_subproblem(title, args["content"])
-        # Set initial status to NOT_STARTED
-        subproblem.status = ProblemStatus.NOT_STARTED
-        # Create directories for the new subproblem
-        context.file_system._create_node_directories(subproblem)
+        problem_def = ProblemDefinition(content=args["content"])
+
+        # Get the path for the new subproblem
+        parent_path = current_node.get_path()
+        subproblem_path = parent_path / title
+
+        # Create the new node
+        subproblem = ResearchNodeImpl(
+            problem=problem_def,
+            title=title,
+            path=subproblem_path,
+            parent=current_node
+        )
+
+        # Set initial status
+        subproblem.set_problem_status(ProblemStatus.NOT_STARTED)
+
+        # Add as child to current node
+        current_node.add_child_node(subproblem)
+
         # Add confirmation output
         context.add_command_output(self.name, args, f"Subproblem '{title}' added.")
-        context.update_files()
 
 
 class AddArtifactCommand(BaseCommand[CommandContext]):
@@ -123,14 +145,17 @@ class AddArtifactCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Add an artifact to the current problem"""
         current_node = context.current_node
-        if not current_node:
-            return
 
-        artifact = Artifact(name=args["name"], content=args["content"], is_external=True)
-        current_node.artifacts[args["name"]] = artifact
+        artifact = Artifact(
+            name=args["name"],
+            content=args["content"],
+            short_summary=args["name"],  # Use name as summary by default
+            is_external=True
+        )
+        current_node.add_artifact(artifact)
+
         # Add confirmation output
         context.add_command_output(self.name, args, f"Artifact '{args['name']}' added.")
-        context.update_files()
 
 
 class AppendToProblemDefinitionCommand(BaseCommand[CommandContext]):
@@ -144,13 +169,13 @@ class AppendToProblemDefinitionCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Append to the problem definition"""
         current_node = context.current_node
-        if not current_node:
-            return
 
-        current_node.append_to_problem_definition(args["content"])
+        # Get the current problem definition and append to it
+        problem_def = current_node.get_problem()
+        problem_def.content = problem_def.content + "\n\n" + args["content"]
+
         # Add confirmation output
         context.add_command_output(self.name, args, "Problem definition updated.")
-        context.update_files()
 
 
 class AddCriteriaToSubproblemCommand(BaseCommand[CommandContext]):
@@ -165,25 +190,33 @@ class AddCriteriaToSubproblemCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Add criteria to a subproblem"""
         current_node = context.current_node
-        if not current_node:
-            return
 
         # Get the subproblem by title
         title = args["title"]
-        if title not in current_node.subproblems:
-            return
+        child_nodes = current_node.list_child_nodes()
 
-        subproblem = current_node.subproblems[title]
+        # Find the child node with matching title
+        subproblem = None
+        for child in child_nodes:
+            if child.get_title() == title:
+                subproblem = child
+                break
+
+        if not subproblem:
+            return
 
         # Add criteria to the subproblem
         criteria_text = args["criteria"]
-        if criteria_text in subproblem.criteria:
+        existing_criteria = [c.content for c in subproblem.get_criteria()]
+        if criteria_text in existing_criteria:
             return
 
-        subproblem.add_criteria(criteria_text)
+        # Create and add criterion
+        criterion = Criterion(content=criteria_text)
+        subproblem.add_criterion(criterion)
+
         # Add confirmation output
         context.add_command_output(self.name, args, f"Criteria added to subproblem '{title}'.")
-        context.update_files()
 
 
 class FocusDownCommand(BaseCommand[CommandContext]):
@@ -206,17 +239,17 @@ class FocusDownCommand(BaseCommand[CommandContext]):
 
         # Queue up all subproblems for sequential activation
         current_node = context.current_node
-        if not current_node:
-            raise ValueError("No current node")
+        child_nodes = current_node.list_child_nodes()
+        child_node_titles = {node.get_title() for node in child_nodes}
 
         # Validate all subproblems exist before queueing
         for title in titles:
-            if title not in current_node.subproblems:
+            if title not in child_node_titles:
                 raise ValueError(f"Subproblem '{title}' not found")
 
         # Add all titles to the queue except the first one
         if len(titles) > 1:
-            context.children_queue[current_node.title].extend(titles[1:])
+            context.children_queue[current_node.get_title()].extend(titles[1:])
 
         context.add_command_output(
             self.name,
@@ -310,8 +343,8 @@ class FailProblemAndFocusUpCommand(BaseCommand[CommandContext]):
 
         if not result:
             # Keep existing error handling, refine slightly for root node case
-            current_node_title = context.current_node.title if context.current_node else "Unknown"
-            if context.current_node and not context.current_node.parent:
+            current_node_title = context.current_node.get_title()
+            if not context.current_node.get_parent():
                 # Specific error if it's the root node trying to fail with a message meant for a parent
                 if failure_message:
                     raise ValueError(f"Cannot pass a failure message from the root node '{current_node_title}' as there is no parent.")
@@ -337,23 +370,26 @@ class CancelSubproblemCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Cancel a subproblem"""
         current_node = context.current_node
-        if not current_node:
-            return
 
         # Get the subproblem by title
         title = args["title"]
-        if title not in current_node.subproblems:
+        child_nodes = current_node.list_child_nodes()
+
+        # Find the child node with matching title
+        target_child = None
+        for child in child_nodes:
+            if child.get_title() == title:
+                target_child = child
+                break
+
+        if not target_child:
             raise ValueError(f"Subproblem '{title}' not found")
 
-        subproblem = current_node.subproblems[title]
-
         # Mark the subproblem as cancelled
-        subproblem.status = ProblemStatus.CANCELLED
+        target_child.set_problem_status(ProblemStatus.CANCELLED)
 
-        # Update the file system
         # Add confirmation output
         context.add_command_output(self.name, args, f"Subproblem '{title}' cancelled.")
-        context.update_files()
 
 
 class AddLogEntryCommand(BaseCommand[CommandContext]):
@@ -384,60 +420,21 @@ class OpenArtifactCommand(BaseCommand[CommandContext]):
 
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Execute the command to open an artifact"""
-        artifact_name = args.get("name", "")
+        artifact_name = args["name"]
 
         # Find the artifact in the current node or its ancestors
         current_node = context.current_node
-        if not current_node:
-            raise ValueError("No current node")
 
-        # Check current node's artifacts
-        if artifact_name in current_node.artifacts:
-            # Modify the visibility flag on the *current_node* perspective
-            current_node.visible_artifacts[artifact_name] = True
-            context.add_command_output(
-                self.name,
-                args,
-                f"Artifact '{artifact_name}' is now fully visible.",
-            )
-            context.update_files()
-            return
+        node_and_artifacts = context.research.search_artifacts(artifact_name)
 
-        # Check parent chain - visibility is controlled by the current node's perspective
-        parent_chain = context.file_system.get_parent_chain(current_node)
-        for node in parent_chain:
-            if artifact_name in node.artifacts:
-                # Modify the visibility flag on the *current_node* perspective
-                current_node.visible_artifacts[artifact_name] = True
-                context.add_command_output(
-                    self.name,
-                    args,
-                    f"Artifact '{artifact_name}' is now fully visible.",
-                )
-                context.update_files()
-                return
+        for _, artifact in node_and_artifacts:
+            current_node.set_artifact_status(artifact, True)
 
-        # Check all subproblems recursively
-        def search_subproblems(node):
-            for subproblem in node.subproblems.values():
-                if artifact_name in subproblem.artifacts:
-                    current_node.visible_artifacts[artifact_name] = True
-                    return True
-                if search_subproblems(subproblem):
-                    return True
-            return False
-
-        if search_subproblems(context.file_system.root_node):
-            context.add_command_output(
-                self.name,
-                args,
-                f"Artifact '{artifact_name}' is now fully visible.",
-            )
-            context.update_files()
-            return
-
-        # If we get here, the artifact wasn't found
-        raise ValueError(f"Artifact '{artifact_name}' not found")
+        context.add_command_output(
+            self.name,
+            args,
+            f"Artifact '{artifact_name}' is now fully visible.",
+        )
 
 
 class HalfCloseArtifactCommand(BaseCommand[CommandContext]):
@@ -451,60 +448,22 @@ class HalfCloseArtifactCommand(BaseCommand[CommandContext]):
 
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Execute the command to half-close an artifact"""
-        artifact_name = args.get("name", "")
+        artifact_name = args["name"]
 
         # Find the artifact in the current node or its ancestors
         current_node = context.current_node
-        if not current_node:
-            raise ValueError("No current node")
 
-        # Check current node's artifacts
-        if artifact_name in current_node.artifacts:
-            # Modify the visibility flag on the *current_node* perspective
-            current_node.visible_artifacts[artifact_name] = False
-            context.add_command_output(
-                self.name,
-                args,
-                f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
-            )
-            context.update_files()
-            return
+        node_and_artifacts = context.research.search_artifacts(artifact_name)
 
-        # Check parent chain - visibility is controlled by the current node's perspective
-        parent_chain = context.file_system.get_parent_chain(current_node)
-        for node in parent_chain:
-            if artifact_name in node.artifacts:
-                # Modify the visibility flag on the *current_node* perspective
-                current_node.visible_artifacts[artifact_name] = False
-                context.add_command_output(
-                    self.name,
-                    args,
-                    f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
-                )
-                context.update_files()
-                return
+        for _, artifact in node_and_artifacts:
+            current_node.set_artifact_status(artifact, False)
 
-        # Check all subproblems recursively
-        def search_subproblems(node):
-            for subproblem in node.subproblems.values():
-                if artifact_name in subproblem.artifacts:
-                    current_node.visible_artifacts[artifact_name] = False
-                    return True
-                if search_subproblems(subproblem):
-                    return True
-            return False
-
-        if search_subproblems(context.file_system.root_node):
-            context.add_command_output(
-                self.name,
-                args,
-                f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
-            )
-            context.update_files()
-            return
-
-        # If we get here, the artifact wasn't found
-        raise ValueError(f"Artifact '{artifact_name}' not found")
+        # For now, just report that the artifact is half-closed
+        context.add_command_output(
+            self.name,
+            args,
+            f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
+        )
 
 
 class ThinkCommand(BaseCommand[CommandContext]):
@@ -529,7 +488,7 @@ class AddKnowledgeCommand(BaseCommand[CommandContext]):
             "Add an entry to the shared knowledge base for all assistants.",
         )
         self.add_section("content", True, "The main content of the knowledge entry.")
-        self.add_section("title", False, "Optional short title/summary for the entry.")
+        self.add_section("title", True, "Optional short title/summary for the entry.")
         self.add_section(
             "tag",
             False,
@@ -540,14 +499,6 @@ class AddKnowledgeCommand(BaseCommand[CommandContext]):
     def execute(self, context: CommandContext, args: dict[str, Any]) -> None:
         """Add an entry to the shared knowledge base."""
         current_node = context.current_node
-        if not current_node:
-            # Should ideally not happen if a problem is defined, but good practice
-            context.add_command_output(
-                self.name,
-                args,
-                "Error: Cannot add knowledge without an active problem node.",
-            )
-            return
 
         tags = args.get("tag", [])
         # Ensure tags is a list, even if only one is provided
@@ -555,13 +506,14 @@ class AddKnowledgeCommand(BaseCommand[CommandContext]):
             tags = [tags]
 
         entry = KnowledgeEntry(
-            content=args.get("content"),
-            author_node_title=current_node.title,
-            title=args.get("title"),
+            content=args["content"],
+            author_node_title=current_node.get_title(),
+            title=args["title"],
             tags=tags,
         )
 
-        context.file_system.add_knowledge_entry(entry)
+        # Use the research object to add the knowledge entry
+        context._engine.research.get_knowledge_base().add_entry(entry)
         # Provide confirmation output using context
         entry_identifier = f"'{entry.title}'" if entry.title else "entry"
         context.add_command_output(self.name, args, f"Knowledge {entry_identifier} added successfully.")

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research_assistant.engine.engine import DeepResearchEngine
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research, ResearchNode
 
 
 class CommandContext:
@@ -30,6 +30,10 @@ class CommandContext:
         pass
 
     @property
+    def research(self) -> Research:
+        return self._engine.research
+
+    @property
     def current_node(self) -> ResearchNode:
         return self._engine.current_execution_state.active_node
 
@@ -46,7 +50,7 @@ class CommandContext:
     def add_to_permanent_log(self, content: str) -> None:
         """Add content to the permanent log"""
         if content:
-            # Update engine if available
+            # Update permanent logs
             self._engine.research.get_permanent_logs().add_log(content)
 
     def focus_down(self, subproblem_title: str) -> bool:

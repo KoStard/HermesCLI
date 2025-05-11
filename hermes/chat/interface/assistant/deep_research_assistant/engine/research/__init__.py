@@ -141,3 +141,7 @@ class Research(ABC):
     @abstractmethod
     def get_external_file_manager(self) -> ExternalFilesManager:
         pass
+
+    @abstractmethod
+    def search_artifacts(self, name: str) -> list[tuple[ResearchNode, Artifact]]:
+        pass
