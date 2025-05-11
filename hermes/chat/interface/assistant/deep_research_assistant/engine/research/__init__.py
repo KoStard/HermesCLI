@@ -12,6 +12,9 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
     ProblemDefinition,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState, ProblemStatus
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.external_file import (
+    ExternalFilesManager,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.knowledge_base import KnowledgeBase
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.permanent_log import (
     NodePermanentLogs,
@@ -97,6 +100,10 @@ class ResearchNode(ABC):
     def get_logger(self) -> ResearchNodeLogger:
         pass
 
+    @abstractmethod
+    def get_depth_from_root(self) -> int:
+        pass
+
 class Research(ABC):
     @abstractmethod
     def research_already_exists(self) -> bool:
@@ -120,9 +127,17 @@ class Research(ABC):
         pass
 
     @abstractmethod
+    def get_root_directory(self) -> Path:
+        pass
+
+    @abstractmethod
     def get_permanent_logs(self) -> NodePermanentLogs:
         pass
 
     @abstractmethod
     def get_knowledge_base(self) -> KnowledgeBase:
+        pass
+
+    @abstractmethod
+    def get_external_file_manager(self) -> ExternalFilesManager:
         pass

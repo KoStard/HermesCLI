@@ -5,9 +5,7 @@ from . import DynamicSectionData, DynamicSectionRenderer
 
 # Use TYPE_CHECKING to avoid circular imports at runtime for type hints
 if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-        Artifact,
-    )
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
     from hermes.chat.interface.templates.template_manager import (
         TemplateManager,
     )

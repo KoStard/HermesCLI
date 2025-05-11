@@ -15,6 +15,7 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.engine impor
 from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
     ProblemStatus,
 )
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.knowledge_base import KnowledgeEntry
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface_impl import (
     ChatModelLLMInterface,
 )
@@ -107,10 +108,11 @@ class DeepResearchAssistantInterface(Interface):
 
         for file_details in textual_files:
             filename, file_content = file_details
-            self._engine.file_system.add_external_file(filename, file_content)
+            self._engine.research.get_external_file_manager().add_external_file(filename, file_content)
+
 
         # Ensure external files are loaded/updated in the engine's file system
-        self._engine.file_system.load_external_files()
+        self._engine.research.get_external_file_manager().load_external_files()
 
         # No need to yield anything here as we'll process in get_input
         yield from []
@@ -134,7 +136,7 @@ class DeepResearchAssistantInterface(Interface):
             if not filename and message.text_filepath:
                 filename = os.path.basename(message.text_filepath)
             if not filename:
-                filename = f"external_file_{hash(str(file_content))[:8]}.txt"  # Add extension for clarity
+                filename = f"external_file_{str(hash(str(file_content)))[:8]}.md"  # Add extension for clarity
 
             return filename, file_content
         return None  # Return None if no content
@@ -170,7 +172,8 @@ class DeepResearchAssistantInterface(Interface):
                     # Check state after execution finishes
                     if self._engine.is_awaiting_instruction():
                         # Check if the root node finished/failed to generate the final report
-                        if self._engine.current_node == self._engine.file_system.root_node and self._engine.current_node.status in [
+                        if self._engine.current_execution_state.active_node == self._engine.research.get_root_node() \
+                        and self._engine.current_execution_state.active_node.get_problem_status() in [
                             ProblemStatus.FINISHED,
                             ProblemStatus.FAILED,
                         ]:
@@ -215,7 +218,8 @@ class DeepResearchAssistantInterface(Interface):
                     # Check state after execution finishes
                     if self._engine.is_awaiting_instruction():
                         # Check if the root node finished/failed to generate the final report
-                        if self._engine.current_node == self._engine.file_system.root_node and self._engine.current_node.status in [
+                        if self._engine.current_execution_state.active_node == self._engine.research.get_root_node() \
+                        and self._engine.current_execution_state.active_node.get_problem_status() in [
                             ProblemStatus.FINISHED,
                             ProblemStatus.FAILED,
                         ]:

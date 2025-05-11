@@ -1,6 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
+from typing import Sequence
 
 from hermes.chat.interface.assistant.models.prompt_builder.base import PromptBuilderFactory
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 """
 RequestBuilder is responsible for building the actual API request to the LLM provider.
-It should be able to handle all the model details, the API requirements, 
+It should be able to handle all the model details, the API requirements,
 translate the internal message format to the provider's message format.
 """
 
@@ -43,7 +44,7 @@ class RequestBuilder(ABC):
 
         self._url_contents = {}
 
-    def build_request(self, messages: list[Message]) -> any:
+    def build_request(self, messages: Sequence[Message]) -> any:
         self.initialize_request()
 
         for message in messages:

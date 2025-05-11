@@ -139,7 +139,7 @@ class DeepResearcherInterface:
         )
 
         # Problem Hierarchy (Short) - Use factory method
-        all_data[ProblemHierarchyData] = ProblemHierarchyData.from_research_and_node(research=self.research, target_node=target_node)
+        all_data[ProblemHierarchyData] = ProblemHierarchyData.from_research_node(target_node=target_node, root_node=self.research.get_root_node())
 
         # Criteria - Use factory method
         all_data[CriteriaSectionData] = CriteriaSectionData.from_node(target_node=target_node)
@@ -196,8 +196,6 @@ class DeepResearcherInterface:
             # Determine if the artifact *should* be visible based on ownership/ancestry
             should_be_visible = artifact.is_external or is_owned_by_current or is_owned_by_ancestor
 
-            # Get visibility state from node state
-            node_state = node.get_node_state()
             # Default: Visible if owned by current/ancestor or external
             is_fully_visible = should_be_visible
 

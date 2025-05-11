@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
+
 from . import DynamicSectionData, DynamicSectionRenderer
 
 # Import PrimitiveSubproblemData needed for sibling representation
@@ -8,9 +10,6 @@ from .subproblems import PrimitiveSubproblemData
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-        Node,
-    )
     from hermes.chat.interface.templates.template_manager import (
         TemplateManager,
     )
@@ -34,17 +33,17 @@ class PrimitiveNodePathData:
 
     @staticmethod
     def from_node(
-        node: "Node",
+        node: "ResearchNode",
         is_current: bool,
         sibling_subproblems_data: tuple[PrimitiveSubproblemData, ...] = (),
     ) -> "PrimitiveNodePathData":
         return PrimitiveNodePathData(
-            title=node.title,
-            problem_definition=node.problem_definition,
-            criteria=tuple(node.criteria),
-            criteria_done=tuple(node.criteria_done),
-            artifacts_count=len(node.artifacts),
-            depth=node.depth_from_root,
+            title=node.get_title(),
+            problem_definition=node.get_problem().content,
+            criteria=tuple(e.content for e in node.get_criteria()),
+            criteria_done=tuple(e.is_completed for e in node.get_criteria()),
+            artifacts_count=len(node.get_artifacts()),
+            depth=node.get_depth_from_root(),
             is_current=is_current,
             sibling_subproblems=sibling_subproblems_data,
         )
@@ -57,7 +56,7 @@ class ProblemPathHierarchyData(DynamicSectionData):
     path_nodes: tuple[PrimitiveNodePathData, ...]
 
     @staticmethod
-    def from_parent_chain(parent_chain: list["Node"], current_node: "Node") -> "ProblemPathHierarchyData":
+    def from_parent_chain(parent_chain: list["ResearchNode"], current_node: "ResearchNode") -> "ProblemPathHierarchyData":
         path_data_list = []
         for i, node in enumerate(parent_chain):
             is_current_node_in_path = node == current_node
@@ -65,7 +64,7 @@ class ProblemPathHierarchyData(DynamicSectionData):
 
             # Collect data for sibling subproblems (those not the next node in the path)
             sibling_data = []
-            for _, sub_node in sorted(node.subproblems.items()):
+            for sub_node in node.list_child_nodes():
                 if sub_node != next_node_in_path:
                     # Use the factory from subproblems.py
                     sibling_data.append(PrimitiveSubproblemData.from_node(sub_node))

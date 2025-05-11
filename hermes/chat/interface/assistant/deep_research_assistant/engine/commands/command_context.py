@@ -1,4 +1,11 @@
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.engine import DeepResearchEngine
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
+
+
 class CommandContext:
     """
     Context object for commands to access engine functionality without direct engine dependency.
@@ -8,7 +15,7 @@ class CommandContext:
     access to only the functionality they need while hiding implementation details.
     """
 
-    def __init__(self, engine=None):
+    def __init__(self, engine: 'DeepResearchEngine'):
         """
         Initialize the command context, optionally with a reference to the engine.
 
@@ -18,19 +25,13 @@ class CommandContext:
         # Reference to engine for special cases and callbacks
         self._engine = engine
 
-        self._permanent_log = engine.permanent_log
-
     def refresh_from_engine(self):
         """Refresh context data from the engine"""
         pass
 
     @property
-    def current_node(self):
-        return self._engine.current_node
-
-    @property
-    def finished(self):
-        return self._engine.finished
+    def current_node(self) -> ResearchNode:
+        return self._engine.current_execution_state.active_node
 
     @property
     def children_queue(self):
@@ -39,29 +40,14 @@ class CommandContext:
     # Command output operations
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
         """Add command output to be included in the automatic response"""
-        self._engine.add_command_output(command_name, args, output, self.current_node.title)
+        self._engine.add_command_output(command_name, args, output, self.current_node.get_title())
 
     # Log operations
     def add_to_permanent_log(self, content: str) -> None:
         """Add content to the permanent log"""
         if content:
             # Update engine if available
-            self._engine.permanent_log.append(content)
-
-    def is_problem_defined(self) -> bool:
-        """Check if the problem is defined"""
-        return self._engine.is_root_problem_defined()
-
-    # Execution state operations
-    def set_finished(self, finished: bool) -> None:
-        """Set whether execution is finished"""
-        self._finished = finished
-        # Update engine if available
-        self._engine.finished = finished
-
-    def is_finished(self) -> bool:
-        """Check if execution is finished"""
-        return self._finished
+            self._engine.research.get_permanent_logs().add_log(content)
 
     def focus_down(self, subproblem_title: str) -> bool:
         return self._engine.focus_down(subproblem_title)

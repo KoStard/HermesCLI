@@ -87,14 +87,3 @@ class MockLLMInterface(LLMInterface):
 
         full_response = "\n".join(response_lines)
         yield full_response
-
-    def log_response(self, node_path, response: str) -> None:
-        """
-        Log an LLM response
-
-        Args:
-            node_path: Path to the current node
-            response: The response from the LLM
-        """
-        # In the mock implementation, we don't need to log responses
-        pass

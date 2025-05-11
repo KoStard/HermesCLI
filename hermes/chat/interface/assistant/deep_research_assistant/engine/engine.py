@@ -92,7 +92,8 @@ class _CommandProcessor:
     def _handle_shutdown_request(self, text: str) -> bool:
         """Check for emergency shutdown code."""
         # Only shut down if the current node is the root node
-        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() and self.current_execution_state.active_node == self.engine.research.get_root_node():
+        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() \
+        and self.current_execution_state.active_node == self.engine.research.get_root_node():
             print("Shutdown requested for root node. Engine will await new instructions.")
             self.engine.awaiting_new_instruction = True
             # Mark root as finished to signify completion of this phase
@@ -107,7 +108,7 @@ class _CommandProcessor:
     @property
     def _current_history_tag(self):
         if self.current_execution_state.has_active_node:
-            return self.current_execution_state.active_node.title
+            return self.current_execution_state.active_node.get_title()
         else:
             return "no_node"
 
@@ -351,7 +352,7 @@ class DeepResearchEngine:
             title += "..."
 
         problem_definition = ProblemDefinition(content=instruction)
-        node = ResearchNodeImpl(problem=problem_definition, title=title)
+        node = ResearchNodeImpl(problem=problem_definition, title=title, path=self.research.get_root_directory(), parent=None)
         self.research.initiate_research(node)
         self.current_execution_state.set_active_node(self.research.get_root_node())
 
@@ -411,7 +412,7 @@ class DeepResearchEngine:
             # TODO: Update interface to use Research instead of FileSystem
             static_interface_content, current_dynamic_data = self.interface.render_problem_defined(
                 self.current_execution_state.active_node,
-                self.research.get_permanent_logs(),
+                self.research.get_permanent_logs().get_logs(),
                 self.budget,
                 self.get_remaining_budget(),
             )
@@ -510,9 +511,8 @@ class DeepResearchEngine:
                 current_node_path,
             )
 
-            # Log the request using node logger if available
-            if hasattr(self.current_execution_state.active_node, 'logger') and self.current_execution_state.active_node.logger:
-                self.current_execution_state.active_node.logger.log_llm_request(history_messages, request)
+            # Log the request using node logger
+            self.current_execution_state.active_node.get_logger().log_llm_request(history_messages, request)
 
             # Process the request and get the response
             response_generator = self._handle_llm_request(request, current_node_path)
@@ -531,6 +531,8 @@ class DeepResearchEngine:
 
             # Check if budget is exhausted
             if self.is_budget_exhausted():
+                assert self.budget is not None
+
                 if not self.budget_warning_shown:
                     self.budget_warning_shown = True
                     print("\n===== BUDGET ALERT =====")
@@ -576,7 +578,7 @@ class DeepResearchEngine:
                         self.awaiting_new_instruction = True
                         # Mark current node as failed? Or just stop? Let's mark as failed.
                         if self.current_execution_state.has_active_node:
-                            self.current_execution_state.active_node.status = ProblemStatus.FAILED
+                            self.current_execution_state.active_node.set_problem_status(ProblemStatus.FAILED)
 
             # Check if approaching budget limit (within 10 cycles)
             elif self.budget is not None and self.is_approaching_budget_limit() and not self.budget_warning_shown:
@@ -602,7 +604,7 @@ class DeepResearchEngine:
 
         # End of the while loop (awaiting_new_instruction is True)
         print(
-            f"Engine execution cycle complete. Current node: {self.current_execution_state.active_node.title if self.current_execution_state.has_active_node else 'None'}. "
+            f"Engine execution cycle complete. Current node: {self.current_execution_state.active_node.get_title() if self.current_execution_state.has_active_node else 'None'}. "
             "Awaiting new instruction."
         )
 
@@ -618,7 +620,7 @@ class DeepResearchEngine:
         """
         if not output:
             output = ""
-        auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator(node_title)
+        auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
         auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
 
     def process_commands(self, text: str) -> tuple[bool, str, dict]:

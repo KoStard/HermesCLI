@@ -8,7 +8,9 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
     ArtifactManager,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history import ResearchNodeHistory
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history import (
+    ResearchNodeHistory,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.logger import ResearchNodeLogger
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
     ProblemDefinition,
@@ -19,7 +21,7 @@ from . import ResearchNode
 
 
 class ResearchNodeImpl(ResearchNode):
-    def __init__(self, problem: ProblemDefinition, title: str, parent: 'ResearchNodeImpl' = None) -> None:
+    def __init__(self, problem: ProblemDefinition, title: str, parent: 'ResearchNodeImpl | None', path: Path) -> None:
         self.children: list[ResearchNode] = []
         self.artifacts: list[Artifact] = []
         self.criteria: list[Criterion] = []
@@ -27,28 +29,35 @@ class ResearchNodeImpl(ResearchNode):
         self.title: str = title
         self.parent: ResearchNodeImpl | None = parent
         self._history: ResearchNodeHistory = ResearchNodeHistory()
-        self._path: Path | None = None
+        self._path: Path = path
         self._status: ProblemStatus = ProblemStatus.NOT_STARTED
         self._artifacts_status: dict[Artifact, bool] = {}
 
         # Component managers
-        self.artifact_manager: ArtifactManager | None = None
-        self.logger: ResearchNodeLogger | None = None
+        self.artifact_manager: ArtifactManager = ArtifactManager(self)
+        self.logger: ResearchNodeLogger = ResearchNodeLogger(self)
 
         # Initialize file system components if path is set
         self._init_components()
 
     def _init_components(self):
         """Initialize node components"""
-        # Create artifact manager
-        self.artifact_manager = ArtifactManager(self)
+        if not self._path.exists():
+            self._path.mkdir(parents=True, exist_ok=True)
 
-        # Create logger
-        self.logger = ResearchNodeLogger(self)
+        # Create artifacts directory
+        artifacts_dir = self._path / "Artifacts"
+        artifacts_dir.mkdir(exist_ok=True)
 
-        # Load initial artifacts if available
-        if self.artifact_manager is not None:
-            self.artifacts = self.artifact_manager.artifacts
+        # Create subproblems directory
+        subproblems_dir = self._path / "Subproblems"
+        subproblems_dir.mkdir(exist_ok=True)
+
+        # Create logs directory
+        logs_dir = self._path / "logs_and_debug"
+        logs_dir.mkdir(exist_ok=True)
+
+        self.artifacts = self.artifact_manager.artifacts
 
     def list_child_nodes(self) -> list[ResearchNode]:
         return self.children
@@ -68,6 +77,16 @@ class ResearchNodeImpl(ResearchNode):
 
     def get_criteria(self) -> list[Criterion]:
         return self.criteria
+
+    def get_criteria_met_count(self) -> int:
+        count = 0
+        for criterion in self.criteria:
+            if criterion.is_completed:
+                count += 1
+        return count
+
+    def get_criteria_total_count(self) -> int:
+        return len(self.criteria)
 
     def get_problem(self) -> ProblemDefinition:
         return self.problem
@@ -99,6 +118,9 @@ class ResearchNodeImpl(ResearchNode):
         self._status = status
         self.save()
 
+    def get_problem_status(self) -> ProblemStatus:
+        return self._status
+
     def set_artifact_status(self, artifact: Artifact, is_open: bool):
         if artifact in self._artifacts_status:
             self._artifacts_status[artifact] = is_open
@@ -107,35 +129,17 @@ class ResearchNodeImpl(ResearchNode):
     def get_history(self) -> ResearchNodeHistory:
         return self._history
 
-    def get_path(self) -> Path | None:
+    def get_path(self) -> Path:
         return self._path
 
-    def set_path(self, path: Path):
-        self._path = path
+    def get_logger(self) -> ResearchNodeLogger:
+        return self.logger
 
-        # Create necessary directories
-        if path and not path.exists():
-            path.mkdir(parents=True, exist_ok=True)
-
-        # Create the standard structure
-        if path:
-            # Create artifacts directory
-            artifacts_dir = path / "Artifacts"
-            artifacts_dir.mkdir(exist_ok=True)
-
-            # Create subproblems directory
-            subproblems_dir = path / "Subproblems"
-            subproblems_dir.mkdir(exist_ok=True)
-
-            # Create logs directory
-            logs_dir = path / "logs_and_debug"
-            logs_dir.mkdir(exist_ok=True)
-
-        # Re-init components with new path
-        self._init_components()
-
-        # Save node data to disk
-        self.save()
+    def get_depth_from_root(self) -> int:
+        parent = self.get_parent()
+        if parent:
+            return parent.get_depth_from_root() + 1
+        return 0
 
     def save(self):
         """Save the node data to disk"""

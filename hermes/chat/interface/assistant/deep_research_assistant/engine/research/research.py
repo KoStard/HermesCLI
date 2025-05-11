@@ -6,7 +6,6 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.knowledge_base import (
     KnowledgeBase,
-    KnowledgeEntry,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.permanent_log import (
     NodePermanentLogs,
@@ -40,9 +39,7 @@ class ResearchImpl(Research):
     def initiate_research(self, root_node: ResearchNode):
         """Initialize a new research project"""
         self.root_node = root_node
-        # Set the root node path
-        if isinstance(root_node, ResearchNode):
-            root_node.set_path(self.root_directory)
+        assert root_node.get_path() == self.root_directory
 
         # Create the necessary directories
         self._create_directory_structure()
@@ -64,27 +61,21 @@ class ResearchImpl(Research):
         """Get the root node of the research"""
         if not self.research_initiated():
             raise ValueError("Research not initiated")
+        assert self.root_node is not None
         return self.root_node
+
+    def get_root_directory(self) -> Path:
+        return self.root_directory
 
     def get_permanent_logs(self) -> NodePermanentLogs:
         """Get the permanent logs for the research"""
         return self._permanent_logs
 
-    def add_knowledge_entry(self, entry: KnowledgeEntry) -> None:
-        """Add a new entry to the knowledge base"""
-        self._knowledge_base.add_entry(entry)
+    def get_knowledge_base(self) -> KnowledgeBase:
+        return self._knowledge_base
 
-    def get_knowledge_base(self) -> list[KnowledgeEntry]:
-        """Get all knowledge base entries"""
-        return self._knowledge_base.get_entries()
-
-    def add_external_file(self, name: str, content: str, summary: str = "") -> None:
-        """Add an external file"""
-        self._external_files_manager.add_external_file(name, content, summary)
-
-    def get_external_files(self) -> dict:
-        """Get all external files"""
-        return self._external_files_manager.get_external_files()
+    def get_external_file_manager(self):
+        return self._external_files_manager
 
     def _create_directory_structure(self):
         """Create the necessary directory structure for the research"""

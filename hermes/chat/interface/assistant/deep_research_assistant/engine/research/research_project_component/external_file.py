@@ -2,7 +2,9 @@ from pathlib import Path
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system import FileSystem
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.filename import Filename
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import MarkdownFileWithMetadataImpl
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import (
+    MarkdownFileWithMetadataImpl,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
 
 
@@ -25,7 +27,7 @@ class ExternalFilesManager:
         for file_path in self._file_system.list_files(self._external_files_dir):
             try:
                 md_file = MarkdownFileWithMetadataImpl.load_from_file(str(file_path))
-                
+
                 metadata = md_file.get_metadata()
                 name = metadata.get("name", file_path.stem)
                 summary = metadata.get("summary", "")

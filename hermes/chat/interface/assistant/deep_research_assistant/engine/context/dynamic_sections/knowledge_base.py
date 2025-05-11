@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 from . import DynamicSectionData, DynamicSectionRenderer
 
 if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.files.knowledge_entry import (
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.knowledge_base import (
+        KnowledgeBase,
         KnowledgeEntry,
     )
     from hermes.chat.interface.templates.template_manager import (
@@ -28,7 +29,7 @@ class PrimitiveKnowledgeEntryData:
         return PrimitiveKnowledgeEntryData(
             content=entry.content,
             author_node_title=entry.author_node_title,
-            timestamp=entry.timestamp,
+            timestamp=entry.timestamp.isoformat(),
             title=entry.title,
             tags=tuple(entry.tags),  # Convert list to tuple
         )
@@ -42,12 +43,12 @@ class KnowledgeBaseData(DynamicSectionData):
 
     @staticmethod
     def from_knowledge_base(
-        knowledge_base: list["KnowledgeEntry"],
+        knowledge_base: KnowledgeBase,
     ) -> "KnowledgeBaseData":
         entry_data = tuple(
             PrimitiveKnowledgeEntryData.from_entry(entry)
             # Sort by timestamp descending for consistent order (newest first)
-            for entry in sorted(knowledge_base, key=lambda x: x.timestamp, reverse=True)
+            for entry in sorted(knowledge_base.get_entries(), key=lambda x: x.timestamp, reverse=True)
         )
         return KnowledgeBaseData(knowledge_entries=entry_data)
 

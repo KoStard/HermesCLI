@@ -5,9 +5,7 @@ from . import DynamicSectionData, DynamicSectionRenderer
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-        Node,
-    )
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
     from hermes.chat.interface.templates.template_manager import (
         TemplateManager,
     )
@@ -21,10 +19,10 @@ class CriteriaSectionData(DynamicSectionData):
     criteria_done: tuple[bool, ...]
 
     @staticmethod
-    def from_node(target_node: "Node") -> "CriteriaSectionData":
+    def from_node(target_node: "ResearchNode") -> "CriteriaSectionData":
         return CriteriaSectionData(
-            criteria=tuple(target_node.criteria),
-            criteria_done=tuple(target_node.criteria_done),
+            criteria=tuple(e.content for e in target_node.get_criteria()),
+            criteria_done=tuple(e.is_completed for e in target_node.get_criteria()),
         )
 
 

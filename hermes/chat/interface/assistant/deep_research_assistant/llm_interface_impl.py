@@ -5,9 +5,7 @@ from pathlib import Path
 from hermes.chat.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
-)
-from hermes.chat.interface.assistant.deep_research_assistant.engine.files.logger import (
-    DeepResearchRequestAndResponseLogger,
+    ThinkingLLMResponse,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,
@@ -23,7 +21,6 @@ class ChatModelLLMInterface(LLMInterface):
 
     def __init__(self, model: ChatModel, research_dir: Path):
         self.model = model
-        self.deep_research_logger = DeepResearchRequestAndResponseLogger(research_dir)
 
     def generate_request(
         self,
@@ -47,8 +44,6 @@ class ChatModelLLMInterface(LLMInterface):
 
         # Build and return the request
         request = request_builder.build_request(rendered_messages)
-
-        self.deep_research_logger.log_llm_request(node_path, logging_history, request)
 
         return request
 
@@ -74,6 +69,7 @@ class ChatModelLLMInterface(LLMInterface):
                 llm_response.append(response.text)
                 logger.debug(response.text)
             else:
+                assert isinstance(response, ThinkingLLMResponse)
                 if not is_thinking:
                     is_thinking = True
                     print("Thinking...", end="", flush=True)
@@ -85,10 +81,6 @@ class ChatModelLLMInterface(LLMInterface):
         # Join the response parts and yield the final result
         full_llm_response = "".join(llm_response)
         yield full_llm_response
-
-    def log_response(self, node_path, response: str) -> None:
-        """Log an LLM response"""
-        self.deep_research_logger.log_llm_response(node_path, response)
 
     def _handle_string_output(self, llm_response_generator: Generator[str, None, None]) -> Generator[BaseLLMResponse, None, None]:
         """

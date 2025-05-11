@@ -38,14 +38,3 @@ class LLMInterface(ABC):
             Generator[str, None, None]: Generator yielding LLM responses
         """
         pass
-
-    @abstractmethod
-    def log_response(self, node, response: str) -> None:
-        """
-        Log an LLM response
-
-        Args:
-            node: Current research node
-            response: The response from the LLM
-        """
-        pass
