@@ -53,8 +53,8 @@ class FileWithMetadata(ABC):
     def get_content(self) -> str:
         pass
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def load_from_file(filepath: str) -> 'FileWithMetadata':
         pass
 
@@ -93,7 +93,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
 
     def get_metadata(self) -> dict[str, Any]:
         """Get the metadata dictionary."""
-        return self.metadata.copy()
+        return self.metadata.copy() if self.metadata else {}
 
     def set_metadata_key(self, key: str, value: Any):
         """Set a specific metadata key."""

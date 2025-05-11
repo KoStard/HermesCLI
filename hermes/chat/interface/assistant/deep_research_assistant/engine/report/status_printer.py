@@ -1,4 +1,5 @@
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research, ResearchNode
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import ProblemStatus
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
@@ -15,6 +16,18 @@ class StatusPrinter:
             template_manager: An instance of TemplateManager to render templates.
         """
         self.template_manager = template_manager
+        self.status_emojis = {
+            ProblemStatus.NOT_STARTED: "🆕",
+            ProblemStatus.PENDING: "⏳",
+            ProblemStatus.IN_PROGRESS: "🔍",
+            ProblemStatus.FINISHED: "✅",
+            ProblemStatus.FAILED: "❌",
+            ProblemStatus.CANCELLED: "🚫",
+        }
+
+    def get_status_emoji(self, status: ProblemStatus) -> str:
+        """Get an emoji representation of the problem status"""
+        return self.status_emojis.get(status, "❓")
 
     def print_status(
         self,
@@ -25,6 +38,7 @@ class StatusPrinter:
         context = {
             "current_node": current_node,
             "root_node": research.get_root_node(),
+            "get_status_emoji": self.get_status_emoji,
         }
         status_output = self.template_manager.render_template("report/status_report.mako", **context)
         # Add a newline before and after the report for better separation

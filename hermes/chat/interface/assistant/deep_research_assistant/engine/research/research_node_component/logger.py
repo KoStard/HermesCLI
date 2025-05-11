@@ -1,14 +1,15 @@
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component import ResearchNodeComponent
+if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
 
 
-class ResearchNodeLogger(ResearchNodeComponent):
+class ResearchNodeLogger:
     """Logger for research node that saves requests and responses to files"""
 
-    def __init__(self, node: ResearchNode):
+    def __init__(self, node: 'ResearchNode'):
         self.node = node
         self._logs_dir = None
 

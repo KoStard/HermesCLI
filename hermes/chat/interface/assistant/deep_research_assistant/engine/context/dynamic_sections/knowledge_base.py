@@ -43,7 +43,7 @@ class KnowledgeBaseData(DynamicSectionData):
 
     @staticmethod
     def from_knowledge_base(
-        knowledge_base: KnowledgeBase,
+        knowledge_base: 'KnowledgeBase',
     ) -> "KnowledgeBaseData":
         entry_data = tuple(
             PrimitiveKnowledgeEntryData.from_entry(entry)

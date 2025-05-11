@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.disk_file_system import DiskFileSystem
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.external_file import (
     ExternalFilesManager,
 )
@@ -76,6 +77,42 @@ class ResearchImpl(Research):
 
     def get_external_file_manager(self):
         return self._external_files_manager
+
+    def search_artifacts(self, name: str) -> list[tuple[ResearchNode, Artifact]]:
+        """
+        Search for artifacts with matching names across all research nodes.
+
+        Args:
+            name: The name to search for in artifact names
+
+        Returns:
+            List of (node, artifact) tuples for all matching artifacts
+        """
+        if not self.research_initiated():
+            return []
+
+        result = []
+        assert self.root_node is not None
+        self._search_artifacts_recursive(self.root_node, name.lower(), result)
+        return result
+
+    def _search_artifacts_recursive(self, node: ResearchNode, search_term: str, result: list[tuple[ResearchNode, Artifact]]) -> None:
+        """
+        Recursively search for artifacts in a node and its children.
+
+        Args:
+            node: The node to search in
+            search_term: Lowercase search term to match against artifact names
+            result: List to collect matching (node, artifact) tuples
+        """
+        # Check artifacts in current node
+        for artifact in node.get_artifacts():
+            if search_term in artifact.name.lower():
+                result.append((node, artifact))
+
+        # Recursively search in child nodes
+        for child in node.list_child_nodes():
+            self._search_artifacts_recursive(child, search_term, result)
 
     def _create_directory_structure(self):
         """Create the necessary directory structure for the research"""

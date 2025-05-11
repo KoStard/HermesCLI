@@ -65,6 +65,7 @@ class KnowledgeBase:
         self._file_system = file_system
         self._knowledge_base_path = knowledge_base_path
         self._entries: list[KnowledgeEntry] = []
+        # Define a unique separator for knowledge base entries in the Markdown file
         self._knowledge_separator = "\n\n<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->\n\n"
 
     def load_entries(self) -> None:

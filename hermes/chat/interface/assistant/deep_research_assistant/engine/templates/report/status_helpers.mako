@@ -8,7 +8,7 @@
         criteria_total = node.get_criteria_total_count()
         artifacts_count = len(node.get_artifacts())
         subproblems_count = len(node.list_child_nodes())
-        status_emoji = ❓
+        status_emoji = get_status_emoji(node.get_problem_status())
         new_prefix = prefix + (u"    " if is_last else u"│   ")
         subproblems = list(node.list_child_nodes())
     %>\

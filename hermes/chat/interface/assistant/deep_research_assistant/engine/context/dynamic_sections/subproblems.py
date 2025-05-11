@@ -5,9 +5,7 @@ from . import DynamicSectionData, DynamicSectionRenderer
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.files.file_system import (
-        Node,
-    )
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
     from hermes.chat.interface.templates.template_manager import (
         TemplateManager,
     )
@@ -49,10 +47,10 @@ class SubproblemsSectionData(DynamicSectionData):
     subproblems: tuple[PrimitiveSubproblemData, ...]
 
     @staticmethod
-    def from_node(target_node: "Node") -> "SubproblemsSectionData":
+    def from_node(target_node: "ResearchNode") -> "SubproblemsSectionData":
         subproblem_data = tuple(
             PrimitiveSubproblemData.from_node(subproblem)
-            for title, subproblem in sorted(target_node.subproblems.items())  # Sort for consistent order
+            for subproblem in target_node.list_child_nodes()
         )
         return SubproblemsSectionData(subproblems=subproblem_data)
 

@@ -1,19 +1,20 @@
 from pathlib import Path
 
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import (
-    MarkdownFileWithMetadataImpl,
-)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import (
     Artifact,
     ArtifactManager,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria_manager import CriteriaManager
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history import (
     ResearchNodeHistory,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.logger import ResearchNodeLogger
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
     ProblemDefinition,
+)
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import (
+    ProblemDefinitionManager,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState, ProblemStatus
 
@@ -24,7 +25,6 @@ class ResearchNodeImpl(ResearchNode):
     def __init__(self, problem: ProblemDefinition, title: str, parent: 'ResearchNode | None', path: Path) -> None:
         self.children: list[ResearchNode] = []
         self.artifacts: list[Artifact] = []
-        self.criteria: list[Criterion] = []
         self.problem: ProblemDefinition = problem
         self.title: str = title
         self.parent: ResearchNode | None = parent
@@ -35,7 +35,14 @@ class ResearchNodeImpl(ResearchNode):
 
         # Component managers
         self.artifact_manager: ArtifactManager = ArtifactManager(self)
+        self.criteria_manager: CriteriaManager = CriteriaManager(self)
         self.logger: ResearchNodeLogger = ResearchNodeLogger(self)
+        self.problem_manager: ProblemDefinitionManager = ProblemDefinitionManager(self)
+
+        # Set initial values in the problem manager
+        self.problem_manager.problem_definition = problem
+        self.problem_manager.title = title
+        self.problem_manager.status = self._status
 
         # Initialize file system components if path is set
         self._init_components()
@@ -57,14 +64,16 @@ class ResearchNodeImpl(ResearchNode):
         logs_dir = self._path / "logs_and_debug"
         logs_dir.mkdir(exist_ok=True)
 
+        # Load artifacts and criteria
         self.artifacts = self.artifact_manager.artifacts
+        self.criteria_manager = CriteriaManager.load_for_research_node(self)[0]
 
     def list_child_nodes(self) -> list[ResearchNode]:
         return self.children
 
     def add_child_node(self, child_node: ResearchNode):
         self.children.append(child_node)
-        self.save()
+        # Each child node manages its own saving through its components
 
     def get_parent(self) -> ResearchNode | None:
         return self.parent
@@ -76,17 +85,34 @@ class ResearchNodeImpl(ResearchNode):
         return self.artifacts
 
     def get_criteria(self) -> list[Criterion]:
-        return self.criteria
+        return self.criteria_manager.criteria
+
+    def mark_criterion_as_done(self, index: int) -> bool:
+        """
+        Mark criterion as done and return success
+
+        Args:
+            index: Index of the criterion to mark as done
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.criteria_manager.mark_criterion_as_done(index)
 
     def get_criteria_met_count(self) -> int:
-        count = 0
-        for criterion in self.criteria:
-            if criterion.is_completed:
-                count += 1
-        return count
+        return self.criteria_manager.get_criteria_met_count()
 
     def get_criteria_total_count(self) -> int:
-        return len(self.criteria)
+        return self.criteria_manager.get_criteria_total_count()
+
+    def append_to_problem_definition(self, content: str) -> None:
+        """
+        Append additional content to the problem definition
+
+        Args:
+            content: The content to append
+        """
+        self.problem_manager.append_to_definition(content)
 
     def get_problem(self) -> ProblemDefinition:
         return self.problem
@@ -101,9 +127,12 @@ class ResearchNodeImpl(ResearchNode):
             self.artifact_manager.artifacts = self.artifacts
             self.artifact_manager.save()
 
-    def add_criterion(self, criterion: Criterion) -> None:
-        self.criteria.append(criterion)
-        self.save()
+    def add_criterion(self, criterion: Criterion):
+        """
+        Add a criterion and return its index
+        If the criterion already exists, return its index
+        """
+        self.criteria_manager.add_criterion(criterion)
 
     def get_title(self) -> str:
         return self.title
@@ -116,7 +145,7 @@ class ResearchNodeImpl(ResearchNode):
 
     def set_problem_status(self, status: ProblemStatus):
         self._status = status
-        self.save()
+        self.problem_manager.update_status(status)
 
     def get_problem_status(self) -> ProblemStatus:
         return self._status
@@ -124,7 +153,7 @@ class ResearchNodeImpl(ResearchNode):
     def set_artifact_status(self, artifact: Artifact, is_open: bool):
         if artifact in self._artifacts_status:
             self._artifacts_status[artifact] = is_open
-            self.save()
+            # No save needed as this is just in-memory state
 
     def get_history(self) -> ResearchNodeHistory:
         return self._history
@@ -140,31 +169,3 @@ class ResearchNodeImpl(ResearchNode):
         if parent:
             return parent.get_depth_from_root() + 1
         return 0
-
-    def save(self):
-        """Save the node data to disk"""
-        if not self._path:
-            return
-
-        # Save problem definition with metadata
-        problem_def_path = self._path / "Problem Definition.md"
-
-        md_file = MarkdownFileWithMetadataImpl(self.title, self.problem.content)
-        md_file.add_property("status", self._status.value)
-        md_file.save_file(str(problem_def_path))
-
-        # Save criteria
-        criteria_path = self._path / "Criteria of Definition of Done.md"
-        with open(criteria_path, "w", encoding="utf-8") as f:
-            for i, criterion in enumerate(self.criteria):
-                status = "[x]" if criterion.is_completed else "[ ]"
-                f.write(f"{i + 1}. {status} {criterion.content}\n")
-
-        # Save artifacts using artifact manager
-        if self.artifact_manager:
-            self.artifact_manager.save()
-
-        # Save each child node
-        for child in self.children:
-            if isinstance(child, ResearchNodeImpl) and child.get_path():
-                child.save()

@@ -30,11 +30,11 @@ class CommandContext:
         pass
 
     @property
-    def research(self) -> Research:
+    def research(self) -> 'Research':
         return self._engine.research
 
     @property
-    def current_node(self) -> ResearchNode:
+    def current_node(self) -> 'ResearchNode':
         return self._engine.current_execution_state.active_node
 
     @property
