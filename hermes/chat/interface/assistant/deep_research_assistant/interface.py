@@ -12,7 +12,9 @@ from hermes.chat.interface import Interface
 from hermes.chat.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import ProblemStatus
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import (
+    ProblemStatus,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface_impl import (
     ChatModelLLMInterface,
 )

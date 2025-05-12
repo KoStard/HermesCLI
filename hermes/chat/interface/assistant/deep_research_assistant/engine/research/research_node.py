@@ -4,19 +4,20 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
     Artifact,
     ArtifactManager,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria_manager import CriteriaManager
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria_manager import (
+    CriteriaManager,
+    Criterion,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history import (
     ResearchNodeHistory,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.logger import ResearchNodeLogger
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
-    ProblemDefinition,
-)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import (
+    ProblemDefinition,
     ProblemDefinitionManager,
+    ProblemStatus,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState, ProblemStatus
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState
 
 from . import ResearchNode
 
@@ -28,17 +29,13 @@ class ResearchNodeImpl(ResearchNode):
         self._history: ResearchNodeHistory = ResearchNodeHistory()
         self._path: Path = path
         self._artifacts_status: dict[Artifact, bool] = {}
+        self._title = title
 
         # Component managers
         self.artifact_manager: ArtifactManager = ArtifactManager(self)
         self.criteria_manager: CriteriaManager = CriteriaManager(self)
         self.logger: ResearchNodeLogger = ResearchNodeLogger(self)
-        self.problem_manager: ProblemDefinitionManager = ProblemDefinitionManager(self)
-
-        # Set initial values in the problem manager
-        self.problem_manager.problem_definition = problem
-        self.problem_manager.title = title
-        self.problem_manager.status = ProblemStatus.NOT_STARTED
+        self.problem_manager: ProblemDefinitionManager = ProblemDefinitionManager(self, problem, ProblemStatus.NOT_STARTED)
 
         # Initialize file system components if path is set
         self._init_components()
@@ -72,9 +69,6 @@ class ResearchNodeImpl(ResearchNode):
 
     def get_parent(self) -> ResearchNode | None:
         return self.parent
-
-    def get_name(self) -> str:
-        return self.problem_manager.title
 
     def get_artifacts(self) -> list[Artifact]:
         return self.artifact_manager.artifacts
@@ -115,7 +109,7 @@ class ResearchNodeImpl(ResearchNode):
     def add_artifact(self, artifact: Artifact) -> None:
         # Default to open status
         self._artifacts_status[artifact] = True
-        
+
         # Add to artifact manager and save
         self.artifact_manager.artifacts.append(artifact)
         self.artifact_manager.save()
@@ -128,7 +122,7 @@ class ResearchNodeImpl(ResearchNode):
         self.criteria_manager.add_criterion(criterion)
 
     def get_title(self) -> str:
-        return self.problem_manager.title
+        return self._title
 
     def get_node_state(self) -> NodeState:
         return NodeState(

@@ -30,10 +30,9 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
     AutoReply,
     ChatMessage,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
-    ProblemDefinition,
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import (
+    ProblemStatus, ProblemDefinition
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import ProblemStatus
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,
 )

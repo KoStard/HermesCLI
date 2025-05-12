@@ -65,7 +65,7 @@ class ReportGenerator:
             fallback_report = "# Deep Research Report Generation Failed\n\n"
             fallback_report += f"An error occurred while generating the final report: {e}\n"
             if root_node:
-                fallback_report += f"Root Problem: {root_node.get_name()}\n"
+                fallback_report += f"Root Problem: {root_node.get_title()}\n"
             if artifacts_by_problem:
                 fallback_report += f"Found artifacts for {len(artifacts_by_problem)} problems.\n"
             return fallback_report

@@ -3,11 +3,11 @@ from typing import Any
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node import ResearchNodeImpl
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria_manager import Criterion
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import (
     ProblemDefinition,
+    ProblemStatus,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import ProblemStatus
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.knowledge_base import KnowledgeEntry
 
 # Import the new generic base command and registry

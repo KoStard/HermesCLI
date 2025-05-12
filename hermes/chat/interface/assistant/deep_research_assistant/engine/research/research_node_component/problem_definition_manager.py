@@ -1,15 +1,27 @@
+from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import (
     MarkdownFileWithMetadataImpl,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
-    ProblemDefinition,
-)
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import ProblemStatus
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
+
+
+class ProblemStatus(Enum):
+    NOT_STARTED = "NOT_STARTED"  # Problem has not been started yet
+    PENDING = "PENDING"  # Problem is temporarily paused (focus moved to child)
+    IN_PROGRESS = "IN_PROGRESS"  # Problem is currently being worked on
+    FINISHED = "FINISHED"  # Problem has been successfully completed
+    FAILED = "FAILED"  # Problem could not be solved
+    CANCELLED = "CANCELLED"  # Problem was determined to be unnecessary
+
+
+@dataclass
+class ProblemDefinition:
+    content: str
 
 
 class ProblemDefinitionManager:

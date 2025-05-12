@@ -3,15 +3,16 @@ from pathlib import Path
 from typing import TypeVar
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria_manager import Criterion
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history import (
     ResearchNodeHistory,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.logger import ResearchNodeLogger
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition import (
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import (
     ProblemDefinition,
+    ProblemStatus,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState, ProblemStatus
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.external_file import (
     ExternalFilesManager,
 )
@@ -34,10 +35,6 @@ class ResearchNode(ABC):
 
     @abstractmethod
     def get_parent(self) -> 'ResearchNode | None':
-        pass
-
-    @abstractmethod
-    def get_name(self) -> str:
         pass
 
     @abstractmethod

@@ -1,9 +1,16 @@
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
-
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.criteria import Criterion
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
+
+
+@dataclass
+class Criterion:
+    """A criterion for determining if a problem is done"""
+
+    content: str
+    is_completed: bool = False
 
 
 class CriteriaManager:

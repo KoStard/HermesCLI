@@ -66,7 +66,7 @@ class KnowledgeBase:
         self._knowledge_base_path = knowledge_base_path
         self._entries: list[KnowledgeEntry] = []
         # Define a unique separator for knowledge base entries in the Markdown file
-        self._knowledge_separator = "\n\n<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->\n\n"
+        self._knowledge_separator = "\n<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->\n"
 
     def load_entries(self) -> None:
         """Load knowledge base entries from file."""
@@ -102,10 +102,9 @@ class KnowledgeBase:
 
             for entry in sorted_entries:
                 entry_string = frontmatter_manager.add_frontmatter(entry.content, entry.get_metadata_dict())
-
                 entry_strings.append(entry_string)
 
-            full_content = self._knowledge_separator.join(entry_strings)
+            full_content = ("\n" + self._knowledge_separator + "\n").join(entry_strings)
             self._file_system.write_file(self._knowledge_base_path, full_content, True)
         except Exception as e:
             print(f"Error saving knowledge base: {e}")
