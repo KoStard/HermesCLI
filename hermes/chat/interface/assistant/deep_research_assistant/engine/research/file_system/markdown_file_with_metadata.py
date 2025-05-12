@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.filename import Filename
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.filename import MarkdownFilename
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.frontmatter_manager import FrontmatterManager
 
 
@@ -78,7 +78,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
     def add_user_friendly_name(self, user_friendly_name):
         """Set the user-friendly name and generate a filesystem-friendly filename."""
         self._user_friendly_name = user_friendly_name
-        filename_handler = Filename(user_friendly_name)
+        filename_handler = MarkdownFilename(user_friendly_name)
         self._filename = filename_handler.get_os_aware_path()
 
     def get_filename(self) -> str:
