@@ -108,26 +108,12 @@ class AddSubproblemCommand(BaseCommand[CommandContext]):
         for child in current_node.list_child_nodes():
             if child.get_title() == title:
                 return
-
-        problem_def = ProblemDefinition(content=args["content"])
-
-        # Get the path for the new subproblem
-        parent_path = current_node.get_path()
-        subproblem_path = parent_path / title
-
-        # Create the new node
-        subproblem = ResearchNodeImpl(
-            problem=problem_def,
+                
+        # Create the child node using the encapsulated method
+        current_node.create_child_node(
             title=title,
-            path=subproblem_path,
-            parent=current_node
+            problem_content=args["content"]
         )
-
-        # Set initial status
-        subproblem.set_problem_status(ProblemStatus.NOT_STARTED)
-
-        # Add as child to current node
-        current_node.add_child_node(subproblem)
 
         # Add confirmation output
         context.add_command_output(self.name, args, f"Subproblem '{title}' added.")

@@ -73,6 +73,42 @@ class ResearchNodeImpl(ResearchNode):
         self.children.append(child_node)
         # Each child node manages its own saving through its components
 
+    def create_child_node(self, title: str, problem_content: str) -> ResearchNode:
+        """
+        Create a new child node with the given title and problem content.
+        This method handles path construction and node initialization internally.
+
+        Args:
+            title: Title of the child node
+            problem_content: Content for the child node's problem definition
+
+        Returns:
+            The newly created child node
+        """
+        # Create problem definition
+
+        problem_def = ProblemDefinition(content=problem_content)
+
+        # Construct proper path within Subproblems directory
+        subproblems_dir = self._path / "Subproblems"
+        child_path = subproblems_dir / title
+
+        # Create the new node
+        child_node = ResearchNodeImpl(
+            problem=problem_def,
+            title=title,
+            path=child_path,
+            parent=self
+        )
+
+        # Set initial status
+        child_node.set_problem_status(ProblemStatus.NOT_STARTED)
+
+        # Add to children
+        self.add_child_node(child_node)
+
+        return child_node
+
     def get_parent(self) -> ResearchNode | None:
         return self.parent
 

@@ -102,6 +102,20 @@ class ResearchNode(ABC):
     @abstractmethod
     def get_depth_from_root(self) -> int:
         pass
+        
+    @abstractmethod
+    def create_child_node(self, title: str, problem_content: str) -> 'ResearchNode':
+        """
+        Create a new child node for this research node.
+        
+        Args:
+            title: Title of the child node
+            problem_content: Content for the child node's problem definition
+            
+        Returns:
+            The newly created child node
+        """
+        pass
 
 class Research(ABC):
     @abstractmethod
