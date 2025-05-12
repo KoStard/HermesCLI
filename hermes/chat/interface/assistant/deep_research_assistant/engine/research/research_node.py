@@ -17,7 +17,10 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
     ProblemDefinitionManager,
     ProblemStatus,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import (
+    NodeState,
+    StateManager,
+)
 
 from . import ResearchNode
 
@@ -26,16 +29,19 @@ class ResearchNodeImpl(ResearchNode):
     def __init__(self, problem: ProblemDefinition, title: str, parent: 'ResearchNode | None', path: Path) -> None:
         self.children: list[ResearchNode] = []
         self.parent: ResearchNode | None = parent
-        self._history: ResearchNodeHistory = ResearchNodeHistory()
         self._path: Path = path
-        self._artifacts_status: dict[Artifact, bool] = {}
         self._title = title
+
+        # Initialize history with proper file path
+        history_path = path / "history.json"
+        self._history: ResearchNodeHistory = ResearchNodeHistory(history_path)
 
         # Component managers
         self.artifact_manager: ArtifactManager = ArtifactManager(self)
         self.criteria_manager: CriteriaManager = CriteriaManager(self)
         self.logger: ResearchNodeLogger = ResearchNodeLogger(self)
         self.problem_manager: ProblemDefinitionManager = ProblemDefinitionManager(self, problem, ProblemStatus.NOT_STARTED)
+        self.state_manager: StateManager = StateManager(self)
 
         # Initialize file system components if path is set
         self._init_components()
@@ -107,12 +113,12 @@ class ResearchNodeImpl(ResearchNode):
         return self.problem_manager.problem_definition
 
     def add_artifact(self, artifact: Artifact) -> None:
-        # Default to open status
-        self._artifacts_status[artifact] = True
-
         # Add to artifact manager and save
         self.artifact_manager.artifacts.append(artifact)
         self.artifact_manager.save()
+
+        # Default to open status in state manager
+        self.state_manager.set_artifact_status(artifact, True)
 
     def add_criterion(self, criterion: Criterion):
         """
@@ -125,21 +131,17 @@ class ResearchNodeImpl(ResearchNode):
         return self._title
 
     def get_node_state(self) -> NodeState:
-        return NodeState(
-            artifacts_status=self._artifacts_status.copy(),
-            problem_status=self.problem_manager.status
-        )
+        return self.state_manager.get_state()
 
     def set_problem_status(self, status: ProblemStatus):
         self.problem_manager.update_status(status)
+        self.state_manager.set_problem_status(status)
 
     def get_problem_status(self) -> ProblemStatus:
-        return self.problem_manager.status
+        return self.state_manager.get_problem_status()
 
     def set_artifact_status(self, artifact: Artifact, is_open: bool):
-        if artifact in self._artifacts_status:
-            self._artifacts_status[artifact] = is_open
-            # No save needed as this is just in-memory state
+        self.state_manager.set_artifact_status(artifact, is_open)
 
     def get_history(self) -> ResearchNodeHistory:
         return self._history

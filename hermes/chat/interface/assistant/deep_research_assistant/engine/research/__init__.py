@@ -12,7 +12,9 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
     ProblemDefinition,
     ProblemStatus,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import NodeState
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.state import (
+    NodeState,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.external_file import (
     ExternalFilesManager,
 )
