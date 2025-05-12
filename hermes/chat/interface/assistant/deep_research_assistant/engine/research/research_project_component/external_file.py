@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system import FileSystem
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.filename import Filename
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import (
     MarkdownFileWithMetadataImpl,
 )

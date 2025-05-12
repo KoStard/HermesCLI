@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
 
 from hermes.chat.interface.assistant.models.prompt_builder.base import PromptBuilderFactory
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter

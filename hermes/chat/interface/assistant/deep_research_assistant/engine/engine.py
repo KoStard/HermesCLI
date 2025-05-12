@@ -325,7 +325,7 @@ class DeepResearchEngine:
         # Use the templates directory from the Deep Research Assistant package
         templates_dir = Path(__file__).parent / "templates"
         self.template_manager = TemplateManager(templates_dir)
-        # Create the renderer registry
+        # Create the renderer registry and register all dynamic section types
         self.renderer_registry: DynamicDataTypeToRendererMap = get_data_type_to_renderer_instance_map(self.template_manager)
 
         commands_help_generator = CommandHelpGenerator()
@@ -595,6 +595,10 @@ class DeepResearchEngine:
                         "SYSTEM",
                     )
 
+
+            # Ensure the current node's history is saved before potentially changing nodes
+            if self.current_execution_state.has_active_node:
+                self.current_execution_state.active_node.get_history().save()
 
             self.future_execution_state.load_rest_from(self.current_execution_state)
             self.current_execution_state = self.future_execution_state

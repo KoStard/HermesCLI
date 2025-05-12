@@ -3,7 +3,7 @@ Research completed, but no root problem was defined or processed.
 % else: # Root node exists
 ${'#'} Deep Research Completed
 
-${'##'} Problem: ${root_node.title}
+${'##'} Problem: ${root_node.get_title()}
 
 % if root_completion_message:
 ${'##'} Final Message from Root Task

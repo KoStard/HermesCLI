@@ -22,21 +22,19 @@ class PrimitiveSubproblemData:
     criteria: tuple[str, ...]
     criteria_done: tuple[bool, ...]
     artifacts_count: int
-    status_emoji: str
     status_label: str
     criteria_status: str  # Combined criteria met/total string
 
     @staticmethod
-    def from_node(node: "Node") -> "PrimitiveSubproblemData":
+    def from_node(node: "ResearchNode") -> "PrimitiveSubproblemData":
         return PrimitiveSubproblemData(
-            title=node.title,
-            problem_definition=node.problem_definition,
-            criteria=tuple(node.criteria),
-            criteria_done=tuple(node.criteria_done),
-            artifacts_count=len(node.artifacts),
-            status_emoji=node.get_status_emoji(),
-            status_label=node.get_status_label(),
-            criteria_status=node.get_criteria_status(),
+            title=node.get_title(),
+            problem_definition=node.get_problem().content,
+            criteria=tuple(e.content for e in node.get_criteria()),
+            criteria_done=tuple(e.is_completed for e in node.get_criteria()),
+            artifacts_count=len(node.get_artifacts()),
+            status_label=node.get_problem_status().name,
+            criteria_status=f"[{node.get_criteria_met_count()}/{node.get_criteria_total_count()} criteria met]",
         )
 
 

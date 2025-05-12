@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
+from . import DynamicSectionData, DynamicSectionRenderer
+
 if TYPE_CHECKING:
     from hermes.chat.interface.templates.template_manager import TemplateManager
-
-    from . import DynamicSectionData, DynamicSectionRenderer
 
 
 # Type alias for the registry
@@ -27,6 +27,9 @@ def get_data_type_to_renderer_instance_map(template_manager: "TemplateManager") 
     )
     from .subproblems import SubproblemsSectionData, SubproblemsSectionRenderer
 
+    # Register all dynamic section data classes for serialization/deserialization
+    _register_dynamic_section_data_types()
+
     registry: DynamicDataTypeToRendererMap = {
         HeaderSectionData: HeaderSectionRenderer(template_manager),
         PermanentLogsData: PermanentLogsRenderer(template_manager),
@@ -40,3 +43,29 @@ def get_data_type_to_renderer_instance_map(template_manager: "TemplateManager") 
         GoalSectionData: GoalSectionRenderer(template_manager),
     }
     return registry
+
+def _register_dynamic_section_data_types() -> None:
+    """Register all dynamic section data types in the DynamicSectionData registry."""
+    from .artifacts import ArtifactsSectionData
+    from .budget import BudgetSectionData
+    from .criteria import CriteriaSectionData
+    from .goal import GoalSectionData
+    from .header import HeaderSectionData
+    from .knowledge_base import KnowledgeBaseData
+    from .permanent_logs import PermanentLogsData
+    from .problem_hierarchy import ProblemHierarchyData
+    from .problem_path_hierarchy import ProblemPathHierarchyData
+    from .subproblems import SubproblemsSectionData
+
+    # Register all concrete DynamicSectionData types
+    DynamicSectionData.register_type(HeaderSectionData)
+    DynamicSectionData.register_type(PermanentLogsData)
+    DynamicSectionData.register_type(BudgetSectionData)
+    DynamicSectionData.register_type(ArtifactsSectionData)
+    DynamicSectionData.register_type(CriteriaSectionData)
+    DynamicSectionData.register_type(GoalSectionData)
+    DynamicSectionData.register_type(KnowledgeBaseData)
+    DynamicSectionData.register_type(PermanentLogsData)
+    DynamicSectionData.register_type(ProblemHierarchyData)
+    DynamicSectionData.register_type(ProblemPathHierarchyData)
+    DynamicSectionData.register_type(SubproblemsSectionData)

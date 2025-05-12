@@ -2,7 +2,7 @@
 
 ================================================================================
 === Deep Research Assistant - Comprehensive Progress Report ===
-Current Problem: ${current_node.get_name()}
+Current Problem: ${current_node.get_title()}
 Criteria Status: ${current_node.get_criteria_met_count()}/${current_node.get_criteria_total_count()} met
 
 === Full Problem Tree ===

@@ -1,11 +1,12 @@
 import json
 import os
-from dataclasses import asdict, dataclass, field
-from pathlib import Path
-from typing import TYPE_CHECKING, Dict
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import ProblemStatus
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import (
+    ProblemStatus,
+)
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research_assistant.engine.research import ResearchNode
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 @dataclass
 class NodeState:
     """State of a research node, including open/closed artifacts and problem status"""
-    artifacts_status: Dict[str, bool] = field(default_factory=dict)  # Using artifact names as keys for serialization
+    artifacts_status: dict[str, bool] = field(default_factory=dict)  # Using artifact names as keys for serialization
     problem_status: ProblemStatus = ProblemStatus.NOT_STARTED
 
 

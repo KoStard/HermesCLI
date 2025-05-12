@@ -1,10 +1,9 @@
 import configparser
 import logging
-import os
-from pathlib import Path
 import sys
 import textwrap
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 
 from hermes.chat.engine import Engine
 from hermes.chat.history import History

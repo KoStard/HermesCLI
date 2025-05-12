@@ -1,11 +1,13 @@
+from typing import Any
+
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dynamic_sections import DynamicSectionData
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history_blocks import AutoReply
 
 
 class AutoReplyAggregator:
     def __init__(self):
-        self.error_reports = []
-        self.command_outputs = []
+        self.error_reports: list[str] = []
+        self.command_outputs: list[tuple[str, dict[str, Any]]] = []
         self.internal_messages: list[tuple[str, str]] = []
         self.confirmation_requests: list[str] = []
         # Stores the *data* objects for changed sections and their original index
@@ -92,3 +94,56 @@ class AutoReplyAggregator:
         )
         self.clear()  # Clears reports, outputs, messages, requests, and changed sections list
         return auto_reply
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize the aggregator state"""
+        # Fully serialize dynamic sections using their serialization methods
+        dynamic_sections = []
+        for idx, section_data in self.dynamic_sections_to_report:
+            dynamic_sections.append({
+                "index": idx,
+                "section_data": section_data.serialize() if section_data else None
+            })
+
+        last_sections_state = []
+        for data in self.last_dynamic_sections_state:
+            if data:
+                last_sections_state.append(data.serialize())
+
+        return {
+            "error_reports": self.error_reports,
+            "command_outputs": self.command_outputs,
+            "internal_messages": self.internal_messages,
+            "confirmation_requests": self.confirmation_requests,
+            "dynamic_sections_to_report": dynamic_sections,
+            "last_dynamic_sections_state": last_sections_state
+        }
+
+    def deserialize(self, data: dict[str, Any]) -> None:
+        """Deserialize aggregator state from JSON data"""
+        # Track if we're making significant changes that would require parent history to save
+
+        self.error_reports = data.get("error_reports", [])
+        self.command_outputs = data.get("command_outputs", [])
+        self.internal_messages = data.get("internal_messages", [])
+        self.confirmation_requests = data.get("confirmation_requests", [])
+
+        # Restore dynamic sections using DynamicSectionData deserialization
+        self.dynamic_sections_to_report = []
+        dynamic_sections_data = data.get("dynamic_sections_to_report", [])
+        for section in dynamic_sections_data:
+            idx = section.get("index")
+            serialized_section = section.get("section_data")
+
+            if idx is not None and serialized_section:
+                deserialized_section = DynamicSectionData.deserialize(serialized_section)
+                if deserialized_section:
+                    self.dynamic_sections_to_report.append((idx, deserialized_section))
+
+        # Restore last dynamic sections state
+        self.last_dynamic_sections_state = []
+        for serialized_section in data.get("last_sections_state", []):
+            if serialized_section:
+                deserialized_section = DynamicSectionData.deserialize(serialized_section)
+                if deserialized_section:
+                    self.last_dynamic_sections_state.append(deserialized_section)

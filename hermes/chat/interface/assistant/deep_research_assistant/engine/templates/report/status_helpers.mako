@@ -12,7 +12,7 @@
         new_prefix = prefix + (u"    " if is_last else u"│   ")
         subproblems = list(node.list_child_nodes())
     %>\
-${prefix}${branch}${node_marker}${status_emoji} ${node.title} [${criteria_met}/${criteria_total}]\
+${prefix}${branch}${node_marker}${status_emoji} ${node.get_title()} [${criteria_met}/${criteria_total}]\
 % if artifacts_count > 0:
  🗂️${artifacts_count}\
 % endif
