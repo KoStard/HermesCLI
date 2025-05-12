@@ -3,6 +3,7 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research imp
 
 class ExecutionState:
     _active_node: ResearchNode | None = None
+    _should_finish: bool | None = None
 
     @property
     def has_active_node(self) -> bool:
@@ -21,3 +22,12 @@ class ExecutionState:
     def load_rest_from(self, old_execution_state: 'ExecutionState'):
         if not self._active_node:
             self._active_node = old_execution_state._active_node
+
+        if self._should_finish is None:
+            self._should_finish = old_execution_state._should_finish
+
+    def set_should_finish(self, should_finish: bool):
+        self._should_finish = should_finish
+
+    def should_finish(self) -> bool:
+        return self._should_finish or False

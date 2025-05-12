@@ -168,32 +168,22 @@ class DeepResearchAssistantInterface(Interface):
                     # Root problem defined, start execution immediately
                     logger.info("Executing initial research.")
                     self._engine.execute()  # Runs until awaiting_new_instruction is True
-                    # Check state after execution finishes
-                    if self._engine.is_awaiting_instruction():
-                        # Check if the root node finished/failed to generate the final report
-                        if self._engine.current_execution_state.active_node == self._engine.research.get_root_node() \
-                        and self._engine.current_execution_state.active_node.get_problem_status() in [
-                            ProblemStatus.FINISHED,
-                            ProblemStatus.FAILED,
-                        ]:
-                            logger.info("Generating final report.")
-                            final_report = self._engine._generate_final_report()
-                            yield MessageEvent(TextMessage(author="assistant", text=final_report))
-                        # Always yield the waiting message after completion
-                        yield MessageEvent(
-                            TextMessage(
-                                author="assistant",
-                                text="Initial research complete. Waiting for next instruction...",
-                            )
+                    # Check if the root node finished/failed to generate the final report
+                    if self._engine.current_execution_state.active_node == self._engine.research.get_root_node() \
+                    and self._engine.current_execution_state.active_node.get_problem_status() in [
+                        ProblemStatus.FINISHED,
+                        ProblemStatus.FAILED,
+                    ]:
+                        logger.info("Generating final report.")
+                        final_report = self._engine._generate_final_report()
+                        yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                    # Always yield the waiting message after completion
+                    yield MessageEvent(
+                        TextMessage(
+                            author="assistant",
+                            text="Initial research complete. Waiting for next instruction...",
                         )
-                    else:
-                        logger.error("Engine did not enter awaiting state after initial execution.")
-                        yield MessageEvent(
-                            TextMessage(
-                                author="assistant",
-                                text="Initial research finished unexpectedly. Please check logs.",
-                            )
-                        )
+                    )
                     return  # End processing for this call
                 else:
                     # No root problem and no instruction provided
@@ -207,60 +197,37 @@ class DeepResearchAssistantInterface(Interface):
 
             # --- Continuous Interaction Cycle ---
             # Engine exists and root problem is defined. Check state.
-            if self._engine.is_awaiting_instruction():
-                if self.instruction:
-                    logger.info("Received new instruction. Preparing engine.")
-                    self._engine.prepare_for_new_instruction(self.instruction)
-                    self.instruction = None  # Clear instruction after use
-                    logger.info("Executing new instruction.")
-                    self._engine.execute()  # Runs until awaiting_new_instruction is True again
-                    # Check state after execution finishes
-                    if self._engine.is_awaiting_instruction():
-                        # Check if the root node finished/failed to generate the final report
-                        if self._engine.current_execution_state.active_node == self._engine.research.get_root_node() \
-                        and self._engine.current_execution_state.active_node.get_problem_status() in [
-                            ProblemStatus.FINISHED,
-                            ProblemStatus.FAILED,
-                        ]:
-                            logger.info("Generating final report after follow-up instruction.")
-                            final_report = self._engine._generate_final_report()
-                            yield MessageEvent(TextMessage(author="assistant", text=final_report))
-                        # Always yield the waiting message after completion
-                        yield MessageEvent(
-                            TextMessage(
-                                author="assistant",
-                                text="Processing complete. Waiting for next instruction...",
-                            )
-                        )
-                    else:
-                        logger.error("Engine did not enter awaiting state after processing new instruction.")
-                        yield MessageEvent(
-                            TextMessage(
-                                author="assistant",
-                                text="Processing finished unexpectedly. Please check logs.",
-                            )
-                        )
-                    return  # End processing for this call
-                else:
-                    # Awaiting but no new instruction provided in this call
-                    logger.info("Engine is awaiting instruction.")
-                    yield MessageEvent(
-                        TextMessage(
-                            author="assistant",
-                            text="Research complete. Waiting for next instruction...",
-                        )
-                    )
-                    return  # End processing for this call
-            else:
-                # Engine is not awaiting instruction. This implies it might still be running
-                # from a previous call, or an error occurred.
-                # In a synchronous model where execute() blocks, this state shouldn't be reached
-                # unless get_input is called again before execute finishes.
-                logger.warning("get_input called while engine is not awaiting instruction.")
+            if self.instruction:
+                logger.info("Received new instruction. Preparing engine.")
+                self._engine.add_new_instruction(self.instruction)
+                self.instruction = None  # Clear instruction after use
+                logger.info("Executing new instruction.")
+                self._engine.execute()  # Runs until awaiting_new_instruction is True again
+                # Check state after execution finishes
+                # Check if the root node finished/failed to generate the final report
+                if self._engine.current_execution_state.active_node == self._engine.research.get_root_node() \
+                and self._engine.current_execution_state.active_node.get_problem_status() in [
+                    ProblemStatus.FINISHED,
+                    ProblemStatus.FAILED,
+                ]:
+                    logger.info("Generating final report after follow-up instruction.")
+                    final_report = self._engine._generate_final_report()
+                    yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                # Always yield the waiting message after completion
                 yield MessageEvent(
                     TextMessage(
                         author="assistant",
-                        text="Engine is currently processing. Please wait.",
+                        text="Processing complete. Waiting for next instruction...",
+                    )
+                )
+                return  # End processing for this call
+            else:
+                # Awaiting but no new instruction provided in this call
+                logger.info("Engine is awaiting instruction.")
+                yield MessageEvent(
+                    TextMessage(
+                        author="assistant",
+                        text="Research complete. Waiting for next instruction...",
                     )
                 )
                 return  # End processing for this call

@@ -106,7 +106,7 @@ class AddSubproblemCommand(BaseCommand[CommandContext]):
         for child in current_node.list_child_nodes():
             if child.get_title() == title:
                 return
-                
+
         # Create the child node using the encapsulated method
         current_node.create_child_node(
             title=title,
@@ -134,7 +134,7 @@ class AddArtifactCommand(BaseCommand[CommandContext]):
             name=args["name"],
             content=args["content"],
             short_summary=args["name"],  # Use name as summary by default
-            is_external=True
+            is_external=False
         )
         current_node.add_artifact(artifact)
 
