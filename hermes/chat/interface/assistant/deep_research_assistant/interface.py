@@ -37,9 +37,16 @@ class DeepResearchAssistantInterface(Interface):
         self.research_dir = research_path
         # Store extension command *classes* or *instances*
         self.extension_command_defs = extension_commands or []
-        self._engine: DeepResearchEngine | None = None
-        self.instruction = None
-        self._pending_budget = None  # Store budget until engine is initialized
+
+        llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
+        # Create the engine *without* passing extension commands initially
+        self._engine: DeepResearchEngine = DeepResearchEngine(
+            self.research_dir,
+            llm_interface,
+        )
+
+        self._instruction = None
+        self._initialized = False
 
     def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """Render the interface with the given history and events"""
@@ -49,7 +56,7 @@ class DeepResearchAssistantInterface(Interface):
         textual_files = []
 
         # Initialize the engine if it doesn't exist yet
-        if not self._engine:
+        if not self._initialized:
             # Process all external files from history
             for message in history_snapshot:
                 if message.author == "user":
@@ -72,18 +79,10 @@ class DeepResearchAssistantInterface(Interface):
                     else:
                         instruction_pieces.append(message.get_content_for_assistant())
 
-        self.instruction = "\n".join(instruction_pieces)
+        self._instruction = "\n".join(instruction_pieces)
 
-        if not self._engine:
-            # Create LLM interface
-            llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
-
-            # Create the engine *without* passing extension commands initially
-            self._engine = DeepResearchEngine(
-                self.research_dir,
-                llm_interface,
-            )
-
+        if not self._initialized:
+            self._initialized = True
             # Register extension commands *after* engine creation
             # This ensures the core commands are registered first by the engine's command module import
             registry = CommandRegistry()
@@ -99,11 +98,6 @@ class DeepResearchAssistantInterface(Interface):
                         logger.error(f"Failed to instantiate and register extension command {cmd_def.__name__}: {e}")
                 else:
                     logger.warning(f"Ignoring invalid extension command definition: {cmd_def}")
-
-            # Apply any pending budget
-            if self._pending_budget is not None:
-                self._engine.set_budget(self._pending_budget)
-                self._pending_budget = None
 
         for file_details in textual_files:
             filename, file_content = file_details
@@ -148,7 +142,7 @@ class DeepResearchAssistantInterface(Interface):
         logger.debug("Processing instruction in Deep Research Assistant")
 
         # Ensure engine is initialized (should be done by render)
-        if not self._engine:
+        if not self._initialized:
             logger.error("Engine not initialized before get_input call.")
             yield MessageEvent(
                 TextMessage(
@@ -161,9 +155,9 @@ class DeepResearchAssistantInterface(Interface):
         try:
             # --- Initial Problem Definition ---
             if not self._engine.is_root_problem_defined():
-                if self.instruction:
+                if self._instruction:
                     logger.info("Defining root problem.")
-                    self._engine.define_root_problem(self.instruction)
+                    self._engine.define_root_problem(self._instruction)
 
                     # Root problem defined, start execution immediately
                     logger.info("Executing initial research.")
@@ -197,10 +191,10 @@ class DeepResearchAssistantInterface(Interface):
 
             # --- Continuous Interaction Cycle ---
             # Engine exists and root problem is defined. Check state.
-            if self.instruction:
+            if self._instruction:
                 logger.info("Received new instruction. Preparing engine.")
-                self._engine.add_new_instruction(self.instruction)
-                self.instruction = None  # Clear instruction after use
+                self._engine.add_new_instruction(self._instruction)
+                self._instruction = None  # Clear instruction after use
                 logger.info("Executing new instruction.")
                 self._engine.execute()  # Runs until awaiting_new_instruction is True again
                 # Check state after execution finishes
@@ -251,8 +245,4 @@ class DeepResearchAssistantInterface(Interface):
 
     def set_budget(self, budget: int):
         """Set the budget for the Deep Research Assistant"""
-        if self._engine:
-            self._engine.set_budget(budget)
-        else:
-            # Store the budget to be set when the engine is initialized
-            self._pending_budget = budget
+        self._engine.set_budget(budget)
