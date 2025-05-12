@@ -47,11 +47,6 @@ class ResearchNodeLogger:
             for msg in rendered_messages:
                 f.write(f"[{msg.get('author', 'unknown')}]: {msg.get('content', '')}\n\n")
 
-            # Also log the request data
-            f.write("\n== Request Data ==\n")
-            for key, value in request_data.items():
-                f.write(f"{key}: {value}\n")
-
     def log_llm_response(self, response: str) -> None:
         """Log an LLM response to a file"""
         logs_dir = self._ensure_logs_directory()

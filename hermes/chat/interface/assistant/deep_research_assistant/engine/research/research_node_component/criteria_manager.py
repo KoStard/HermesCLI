@@ -86,7 +86,7 @@ class CriteriaManager:
             True if successful, False otherwise
         """
         if 0 <= index < len(self.criteria):
-            self.criteria[index].complete()
+            self.criteria[index].is_completed = True
             self.save()
             return True
         return False

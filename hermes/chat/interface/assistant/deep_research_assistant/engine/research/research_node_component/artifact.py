@@ -33,7 +33,7 @@ class Artifact:
             is_external=False  # File-based artifacts default to non-external
         )
 
-    def save_to_file(self, file_path: Path) -> None:
+    def save_to_file(self, directory_path: Path) -> None:
         """Save an artifact to a file with metadata"""
         md_file = MarkdownFileWithMetadataImpl(self.name, self.content)
         md_file.add_property("name", self.name)
@@ -44,7 +44,7 @@ class Artifact:
             md_file.add_property("is_external", True)
 
         # MarkdownFileWithMetadataImpl.save_file handles directory creation
-        md_file.save_file(str(file_path))
+        md_file.save_file(directory_path)
 
     def __str__(self) -> str:
         """String representation of the artifact"""
@@ -92,5 +92,4 @@ class ArtifactManager:
 
         # Save each artifact
         for artifact in self.artifacts:
-            filename = f"{artifact.name}.md"
-            artifact.save_to_file(artifacts_dir / filename)
+            artifact.save_to_file(artifacts_dir)

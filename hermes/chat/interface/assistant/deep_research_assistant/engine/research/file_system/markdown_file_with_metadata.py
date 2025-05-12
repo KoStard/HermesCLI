@@ -42,7 +42,7 @@ class FileWithMetadata(ABC):
         pass
 
     @abstractmethod
-    def save_file(self, filepath: str):
+    def save_file(self, directory_path: Path) -> Path:
         pass
 
     @abstractmethod
@@ -112,12 +112,13 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         """Get the content of the markdown file."""
         return self._content
 
-    def save_file(self, filepath: str):
+    def save_file(self, directory_path: Path) -> Path:
         """Save the markdown file with metadata as frontmatter."""
         full_content = self._frontmatter_manager.add_frontmatter(self._content, self.metadata)
-        path = Path(filepath)
+        assert self._filename is not None
+        path = directory_path / self._filename
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             f.write(full_content)
 
     @staticmethod

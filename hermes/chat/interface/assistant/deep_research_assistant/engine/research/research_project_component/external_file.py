@@ -54,24 +54,18 @@ class ExternalFilesManager:
             is_external=True
         )
 
-        # Sanitize filename
-        filename_handler = Filename(name)
-        filename = filename_handler.get_os_aware_path() + ".md"
-
         # Ensure directory exists
         self._file_system.create_directory(self._external_files_dir)
 
         # Create the markdown file with metadata
         md_file = MarkdownFileWithMetadataImpl(name, content)
-        md_file.add_property("name", name)
         md_file.add_property("summary", summary)
 
         # Save the file
-        file_path = self._external_files_dir / filename
-        md_file.save_file(str(file_path))
+        file_path = md_file.save_file(self._external_files_dir)
 
         # Update the cache
-        self._external_files[filename] = artifact
+        self._external_files[file_path.name] = artifact
 
     def get_external_files(self) -> dict[str, Artifact]:
         """Get all external files."""

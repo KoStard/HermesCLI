@@ -24,13 +24,9 @@ from . import ResearchNode
 class ResearchNodeImpl(ResearchNode):
     def __init__(self, problem: ProblemDefinition, title: str, parent: 'ResearchNode | None', path: Path) -> None:
         self.children: list[ResearchNode] = []
-        self.artifacts: list[Artifact] = []
-        self.problem: ProblemDefinition = problem
-        self.title: str = title
         self.parent: ResearchNode | None = parent
         self._history: ResearchNodeHistory = ResearchNodeHistory()
         self._path: Path = path
-        self._status: ProblemStatus = ProblemStatus.NOT_STARTED
         self._artifacts_status: dict[Artifact, bool] = {}
 
         # Component managers
@@ -42,7 +38,7 @@ class ResearchNodeImpl(ResearchNode):
         # Set initial values in the problem manager
         self.problem_manager.problem_definition = problem
         self.problem_manager.title = title
-        self.problem_manager.status = self._status
+        self.problem_manager.status = ProblemStatus.NOT_STARTED
 
         # Initialize file system components if path is set
         self._init_components()
@@ -64,8 +60,7 @@ class ResearchNodeImpl(ResearchNode):
         logs_dir = self._path / "logs_and_debug"
         logs_dir.mkdir(exist_ok=True)
 
-        # Load artifacts and criteria
-        self.artifacts = self.artifact_manager.artifacts
+        # Load criteria
         self.criteria_manager = CriteriaManager.load_for_research_node(self)[0]
 
     def list_child_nodes(self) -> list[ResearchNode]:
@@ -79,10 +74,10 @@ class ResearchNodeImpl(ResearchNode):
         return self.parent
 
     def get_name(self) -> str:
-        return self.title
+        return self.problem_manager.title
 
     def get_artifacts(self) -> list[Artifact]:
-        return self.artifacts
+        return self.artifact_manager.artifacts
 
     def get_criteria(self) -> list[Criterion]:
         return self.criteria_manager.criteria
@@ -115,17 +110,15 @@ class ResearchNodeImpl(ResearchNode):
         self.problem_manager.append_to_definition(content)
 
     def get_problem(self) -> ProblemDefinition:
-        return self.problem
+        return self.problem_manager.problem_definition
 
     def add_artifact(self, artifact: Artifact) -> None:
-        self.artifacts.append(artifact)
         # Default to open status
         self._artifacts_status[artifact] = True
-
-        # Save to disk if artifact manager is available
-        if self.artifact_manager:
-            self.artifact_manager.artifacts = self.artifacts
-            self.artifact_manager.save()
+        
+        # Add to artifact manager and save
+        self.artifact_manager.artifacts.append(artifact)
+        self.artifact_manager.save()
 
     def add_criterion(self, criterion: Criterion):
         """
@@ -135,20 +128,19 @@ class ResearchNodeImpl(ResearchNode):
         self.criteria_manager.add_criterion(criterion)
 
     def get_title(self) -> str:
-        return self.title
+        return self.problem_manager.title
 
     def get_node_state(self) -> NodeState:
         return NodeState(
             artifacts_status=self._artifacts_status.copy(),
-            problem_status=self._status
+            problem_status=self.problem_manager.status
         )
 
     def set_problem_status(self, status: ProblemStatus):
-        self._status = status
         self.problem_manager.update_status(status)
 
     def get_problem_status(self) -> ProblemStatus:
-        return self._status
+        return self.problem_manager.status
 
     def set_artifact_status(self, artifact: Artifact, is_open: bool):
         if artifact in self._artifacts_status:
