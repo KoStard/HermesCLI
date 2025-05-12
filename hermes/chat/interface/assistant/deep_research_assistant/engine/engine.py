@@ -31,7 +31,8 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
     ChatMessage,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.problem_definition_manager import (
-    ProblemStatus, ProblemDefinition
+    ProblemDefinition,
+    ProblemStatus,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,

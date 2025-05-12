@@ -20,7 +20,7 @@ class ResearchImpl(Research):
         self.root_directory = root_directory
         self.file_system = DiskFileSystem()
         self.root_node = None
-        self._permanent_logs = NodePermanentLogs()
+        self._permanent_logs = NodePermanentLogs(root_directory / "_permanent_logs.txt")
         self._research_initiated = False
 
         # Create instances for knowledge base and external files
