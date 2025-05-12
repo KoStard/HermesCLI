@@ -31,12 +31,9 @@ class ChatModelLLMInterface(LLMInterface):
         """Generate a request for the LLM based on the rendered interface and history"""
         request_builder = self.model.get_request_builder()
 
-        logging_history = list(history_messages)
-
         # Convert history messages to TextMessage objects
         # First the static interface
         rendered_messages = [TextMessage(author="user", text=help_interface)]
-        logging_history.insert(0, {"author": "user", "content": help_interface})
 
         # Add history messages
         for message in history_messages:

@@ -136,16 +136,19 @@ class ResearchNodeImpl(ResearchNode):
         logs_dir = self._path / "logs_and_debug"
         logs_dir.mkdir(exist_ok=True)
 
+        # Save the problem definition to disk if it's a new node
+        problem_def_path = self._path / "Problem Definition.md"
+        if not problem_def_path.exists():
+            self.problem_manager.save()
+        else:
+            # If it exists, load from disk to ensure we have the latest version
+            self.problem_manager = ProblemDefinitionManager.load_for_research_node(self)
+
         # Load all components from disk
         self.criteria_manager = CriteriaManager.load_for_research_node(self)[0]
         self.artifact_manager = ArtifactManager.load_for_research_node(self)[0]
         self.state_manager = StateManager.load_for_research_node(self)[0]
         self.logger = ResearchNodeLogger.load_for_research_node(self)[0]
-
-        # The problem_manager is already initialized in the constructor, but we should ensure it's properly loaded
-        problem_def_path = self._path / "Problem Definition.md"
-        if problem_def_path.exists():
-            self.problem_manager = ProblemDefinitionManager.load_for_research_node(self)
 
     def list_child_nodes(self) -> list[ResearchNode]:
         return self.children

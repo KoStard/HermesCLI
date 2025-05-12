@@ -512,7 +512,7 @@ class DeepResearchEngine:
             )
 
             # Log the request using node logger
-            self.current_execution_state.active_node.get_logger().log_llm_request(history_messages, request)
+            self.current_execution_state.active_node.get_logger().log_llm_request(history_messages, request, initial_interface_content_by_node[self._current_history_tag])
 
             # Process the request and get the response
             response_generator = self._handle_llm_request(request, current_node_path)
