@@ -9,6 +9,8 @@ This document captures the development philosophy you should follow throughout a
 - Never try to solve vague problem directly. Instead, ask for clarifications or more information, write a high level plan and review, then break down into subproblems, create a tracker document with a checklist, and step by step solve while maintaining the tracker document.
 - Use """ for multiline strings
 - Avoid hacks and workarounds at all costs. Remember, single purpose components, as written in Clean Code. The thing you want to use, was it built for this? If the answer is not a sound yes, go into deeper design.
+- We are still in development, don't aim to keep everything backwards compatible
+- For internal-only changes, don't worry about backwards compatibility between modules, go ahead and change everything that needs to be changed to use the new interfaces
 
 ## Project Management
 - Employ iterative development: Plan phases, deliver incrementally, and adapt based on feedback or changing requirements.

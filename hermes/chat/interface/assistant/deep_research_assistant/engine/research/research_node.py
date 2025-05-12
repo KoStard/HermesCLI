@@ -65,12 +65,12 @@ class ResearchNodeImpl(ResearchNode):
         Returns:
             Loaded ResearchNode instance
         """
-        prob_def_path = node_path / "Problem Definition.md"
-        if not prob_def_path.exists():
+        # Check if problem definition exists using the new API
+        if not MarkdownFileWithMetadataImpl.file_exists(node_path, "Problem Definition"):
             raise FileNotFoundError(f"Problem definition file not found at {node_path}")
 
         # Load the problem definition file
-        md_file = MarkdownFileWithMetadataImpl.load_from_file(str(prob_def_path))
+        md_file = MarkdownFileWithMetadataImpl.load_from_directory(node_path, "Problem Definition")
         problem_def = ProblemDefinition(content=md_file.get_content())
 
         # Get status from metadata
@@ -109,7 +109,7 @@ class ResearchNodeImpl(ResearchNode):
             return
 
         for child_dir in subproblems_dir.iterdir():
-            if child_dir.is_dir() and (child_dir / "Problem Definition.md").exists():
+            if child_dir.is_dir() and MarkdownFileWithMetadataImpl.file_exists(child_dir, "Problem Definition"):
                 try:
                     # Load the child node from disk
                     child_node = cls._load_from_directory(child_dir, parent_node)

@@ -22,10 +22,6 @@ class FileWithMetadata(ABC):
         pass
 
     @abstractmethod
-    def get_filename(self) -> str:
-        pass
-
-    @abstractmethod
     def get_user_friendly_name(self) -> str:
         pass
 
@@ -55,7 +51,19 @@ class FileWithMetadata(ABC):
 
     @staticmethod
     @abstractmethod
-    def load_from_file(filepath: str) -> 'FileWithMetadata':
+    def load_from_file(filepath: Path) -> 'FileWithMetadata':
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def load_from_directory(directory_path: Path, user_friendly_name: str) -> 'FileWithMetadata':
+        """Load a file with metadata from a directory using its user-friendly name"""
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def file_exists(directory_path: Path, user_friendly_name: str) -> bool:
+        """Check if a file with the given user-friendly name exists in the directory"""
         pass
 
 
@@ -78,13 +86,8 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
     def add_user_friendly_name(self, user_friendly_name):
         """Set the user-friendly name and generate a filesystem-friendly filename."""
         self._user_friendly_name = user_friendly_name
-        filename_handler = MarkdownFilename(user_friendly_name)
-        self._filename = filename_handler.get_os_aware_path()
-
-    def get_filename(self) -> str:
-        """Get the filesystem-friendly filename."""
-        assert self._filename is not None
-        return self._filename
+        self.set_metadata_key("name", user_friendly_name)
+        self._filename = self._get_sanitizen_filename(user_friendly_name)
 
     def get_user_friendly_name(self) -> str:
         """Get the user-friendly name."""
@@ -120,12 +123,21 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
             f.write(full_content)
+        return path
 
     @staticmethod
-    def load_from_file(filepath: str) -> 'FileWithMetadata':
-        """Load a markdown file with frontmatter."""
-        path = Path(filepath)
-        if not path.exists():
+    def _get_sanitizen_filename(user_friendly_name: str) -> str:
+        """Convert a user-friendly name to a filesystem-safe filename."""
+        filename_handler = MarkdownFilename(user_friendly_name)
+        return filename_handler.get_os_aware_path()
+
+    @staticmethod
+    def load_from_directory(directory_path: Path, user_friendly_name: str) -> 'FileWithMetadata':
+        """Load a markdown file with frontmatter using its user-friendly name."""
+        filename = MarkdownFileWithMetadataImpl._get_sanitizen_filename(user_friendly_name)
+        filepath = directory_path / filename
+
+        if not filepath.exists():
             raise FileNotFoundError(f"File not found: {filepath}")
 
         with open(filepath, encoding='utf-8') as f:
@@ -134,10 +146,33 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         frontmatter_manager = FrontmatterManager()
         metadata, content = frontmatter_manager.extract_frontmatter(file_content)
 
-        # Extract filename without extension for user-friendly name
-        filename = path.stem
+        # Use the provided user-friendly name
+        md_file = MarkdownFileWithMetadataImpl(user_friendly_name, content)
+        md_file.metadata = metadata
 
-        md_file = MarkdownFileWithMetadataImpl(filename, content)
+        return md_file
+
+    @staticmethod
+    def file_exists(directory_path: Path, user_friendly_name: str) -> bool:
+        """Check if a file with the given user-friendly name exists in the directory."""
+        filename = MarkdownFileWithMetadataImpl._get_sanitizen_filename(user_friendly_name)
+        filepath = directory_path / filename
+        return filepath.exists()
+
+    @staticmethod
+    def load_from_file(filepath: Path) -> 'FileWithMetadata':
+        """Load a markdown file with frontmatter."""
+        if not filepath.exists():
+            raise FileNotFoundError(f"File not found: {filepath}")
+
+        with open(filepath, encoding='utf-8') as f:
+            file_content = f.read()
+
+        frontmatter_manager = FrontmatterManager()
+        metadata, content = frontmatter_manager.extract_frontmatter(file_content)
+
+        # Use the provided user-friendly name
+        md_file = MarkdownFileWithMetadataImpl(metadata.get("name", filepath.stem), content)
         md_file.metadata = metadata
 
         return md_file

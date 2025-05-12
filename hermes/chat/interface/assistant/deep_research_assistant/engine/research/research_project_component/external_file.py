@@ -25,10 +25,13 @@ class ExternalFilesManager:
 
         for file_path in self._file_system.list_files(self._external_files_dir):
             try:
-                md_file = MarkdownFileWithMetadataImpl.load_from_file(str(file_path))
+                # Extract user-friendly name from the file
+                user_friendly_name = file_path.stem
+                # Use load_from_directory with external_files_dir and user_friendly_name
+                md_file = MarkdownFileWithMetadataImpl.load_from_directory(self._external_files_dir, user_friendly_name)
 
                 metadata = md_file.get_metadata()
-                name = metadata.get("name", file_path.stem)
+                name = metadata.get("name", user_friendly_name)
                 summary = metadata.get("summary", "")
 
                 artifact = Artifact(

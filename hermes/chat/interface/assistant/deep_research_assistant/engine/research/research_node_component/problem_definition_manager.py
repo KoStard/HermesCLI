@@ -36,16 +36,15 @@ class ProblemDefinitionManager:
     def load_for_research_node(cls, research_node: 'ResearchNode') -> "ProblemDefinitionManager":
         """Load problem definition for a research node"""
         node_path = research_node.get_path()
-        problem_def_path = node_path / "Problem Definition.md"
-        md_file = MarkdownFileWithMetadataImpl.load_from_file(str(problem_def_path))
-        
+        md_file = MarkdownFileWithMetadataImpl.load_from_directory(node_path, "Problem Definition")
+
         # Get status as proper enum
         status_value = md_file.get_metadata().get('status', ProblemStatus.NOT_STARTED.value)
         try:
             status = ProblemStatus(status_value)
         except ValueError:
             status = ProblemStatus.NOT_STARTED
-            
+
         return ProblemDefinitionManager(
             node=research_node,
             problem_definition=ProblemDefinition(md_file.get_content()),
