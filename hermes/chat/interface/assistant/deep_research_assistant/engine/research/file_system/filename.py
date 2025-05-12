@@ -21,19 +21,15 @@ class MarkdownFilename:
         - Removes leading/trailing whitespace and punctuation
         - Replaces multiple consecutive underscores with a single one
         - Handles empty filenames
-        - Truncates to a reasonable length if needed
 
         Returns:
             A filesystem-safe version of the filename
         """
-        import hashlib
-
-        _MAX_COMPONENT_LENGTH = 50  # Maximum length for base filename
-
         original_filename = original_filename.strip()
         if not original_filename:
+            import uuid
             # Generate a unique name for empty filename
-            return "unnamed_" + hashlib.sha1(os.urandom(16)).hexdigest()[:8]
+            return "unnamed_" + str(uuid.uuid4())
 
         # Separate base name and extension
         base_name, extension = os.path.splitext(original_filename)
@@ -48,12 +44,6 @@ class MarkdownFilename:
 
         if not sanitized_base:
             sanitized_base = "sanitized"
-
-        # Truncate if too long
-        if len(sanitized_base) > _MAX_COMPONENT_LENGTH:
-            # Generate a hash of the original name for uniqueness
-            name_hash = hashlib.sha1(original_filename.encode("utf-8")).hexdigest()[:8]
-            sanitized_base = sanitized_base[:(_MAX_COMPONENT_LENGTH-9)] + "_" + name_hash
 
         # Ensure we have a .md extension for markdown files
         if not extension or extension != ".md":
