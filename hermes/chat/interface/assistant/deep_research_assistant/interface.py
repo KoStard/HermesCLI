@@ -2,6 +2,7 @@ import logging
 import os
 from collections.abc import Generator
 from pathlib import Path
+from typing import Sequence
 
 # Import other necessary types
 from hermes.chat.event import Event, MessageEvent
@@ -34,19 +35,21 @@ class DeepResearchAssistantInterface(Interface):
     def __init__(self, model: ChatModel, research_path: Path, extension_commands=None):
         self.model = model
         self.model.initialize()
-        self.research_dir = research_path
-        # Store extension command *classes* or *instances*
-        self.extension_command_defs = extension_commands or []
 
-        llm_interface = ChatModelLLMInterface(self.model, self.research_dir)
+        llm_interface = ChatModelLLMInterface(self.model, research_path)
         # Create the engine *without* passing extension commands initially
         self._engine: DeepResearchEngine = DeepResearchEngine(
-            self.research_dir,
+            research_path,
             llm_interface,
         )
 
+        registry = CommandRegistry()
+        if extension_commands:
+            for cmd_def in extension_commands:
+                registry.register(cmd_def)
+
         self._instruction = None
-        self._initialized = False
+        self._history_has_been_imported = False
 
     def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         """Render the interface with the given history and events"""
@@ -56,59 +59,31 @@ class DeepResearchAssistantInterface(Interface):
         textual_files = []
 
         # Initialize the engine if it doesn't exist yet
-        if not self._initialized:
-            # Process all external files from history
-            for message in history_snapshot:
-                if message.author == "user":
-                    if isinstance(message, TextualFileMessage):
-                        file_details = self._process_textual_file_message(message)
-                        if file_details:
-                            textual_files.append(file_details)
-                    else:
-                        instruction_pieces.append(message.get_content_for_assistant())
+        if not self._history_has_been_imported:
+            self._add_data_from_messages(history_snapshot, textual_files, instruction_pieces)
+            self._history_has_been_imported = True
 
         # Process new messages and file uploads
-        for event in events:
-            if isinstance(event, MessageEvent):
-                message = event.get_message()
-                if message.author == "user":
-                    if isinstance(message, TextualFileMessage):
-                        file_details = self._process_textual_file_message(message)
-                        if file_details:
-                            textual_files.append(file_details)
-                    else:
-                        instruction_pieces.append(message.get_content_for_assistant())
+        messages = [event.get_message() for event in events if isinstance(event, MessageEvent)]
+        self._add_data_from_messages(messages, textual_files, instruction_pieces)
 
         self._instruction = "\n".join(instruction_pieces)
 
-        if not self._initialized:
-            self._initialized = True
-            # Register extension commands *after* engine creation
-            # This ensures the core commands are registered first by the engine's command module import
-            registry = CommandRegistry()
-            for cmd_def in self.extension_command_defs:
-                if isinstance(cmd_def, Command):
-                    # If it's already an instance
-                    registry.register(cmd_def)
-                elif isinstance(cmd_def, type) and issubclass(cmd_def, Command):
-                    # If it's a class, instantiate and register
-                    try:
-                        registry.register(cmd_def())
-                    except Exception as e:
-                        logger.error(f"Failed to instantiate and register extension command {cmd_def.__name__}: {e}")
-                else:
-                    logger.warning(f"Ignoring invalid extension command definition: {cmd_def}")
-
-        for file_details in textual_files:
-            filename, file_content = file_details
+        for filename, file_content in textual_files:
             self._engine.research.get_external_file_manager().add_external_file(filename, file_content)
-
-
-        # Ensure external files are loaded/updated in the engine's file system
-        self._engine.research.get_external_file_manager().load_external_files()
 
         # No need to yield anything here as we'll process in get_input
         yield from []
+
+    def _add_data_from_messages(self, messages: Sequence[Message], textual_files: list, instruction_pieces: list):
+        for message in messages:
+            if message.author == "user":
+                if isinstance(message, TextualFileMessage):
+                    file_details = self._process_textual_file_message(message)
+                    if file_details:
+                        textual_files.append(file_details)
+                else:
+                    instruction_pieces.append(message.get_content_for_assistant())
 
     def _process_textual_file_message(self, message: TextualFileMessage):
         """Process a TextualFileMessage, saving it as an external file"""
@@ -116,10 +91,8 @@ class DeepResearchAssistantInterface(Interface):
 
         # If the message has a filepath but no content, try to read it
         if not file_content and message.text_filepath:
-            content, success = FileReader.read_file(message.text_filepath)
-            if success:
-                file_content = content
-            else:
+            file_content, success = FileReader.read_file(message.text_filepath)
+            if not success:
                 logger.error(f"Failed to read file {message.text_filepath}")
                 return
 
@@ -142,7 +115,7 @@ class DeepResearchAssistantInterface(Interface):
         logger.debug("Processing instruction in Deep Research Assistant")
 
         # Ensure engine is initialized (should be done by render)
-        if not self._initialized:
+        if not self._history_has_been_imported:
             logger.error("Engine not initialized before get_input call.")
             yield MessageEvent(
                 TextMessage(
