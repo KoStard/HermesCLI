@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, fields
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
+
+import jsonpickle
 
 if TYPE_CHECKING:
     from hermes.chat.interface.templates.template_manager import TemplateManager
@@ -16,11 +18,11 @@ class DynamicSectionData:
     def serialize(self) -> dict[str, Any]:
         """
         Serialize this instance to a dictionary for JSON storage.
-        Default implementation uses dataclasses.asdict.
+        Uses jsonpickle for robust serialization of nested structures.
         """
         return {
             "type": self.__class__.__name__,
-            "data": asdict(self)
+            "data": jsonpickle.encode(self)
         }
 
     @classmethod
@@ -32,6 +34,7 @@ class DynamicSectionData:
     def deserialize(cls, data: dict[str, Any]) -> Optional['DynamicSectionData']:
         """
         Deserialize from a dictionary (previously serialized with serialize()).
+        Uses jsonpickle for robust deserialization of nested structures.
         """
         if not data or "type" not in data or "data" not in data:
             return None
@@ -41,15 +44,9 @@ class DynamicSectionData:
             print(f"Warning: Unknown dynamic section type '{type_name}' during deserialization")
             return None
 
-        data_class = cls._registry[type_name]
-
-        # Filter the data dictionary to only include fields present in the dataclass
-        field_names = {f.name for f in fields(data_class)}
-        filtered_data = {k: v for k, v in data["data"].items() if k in field_names}
-
         try:
-            # Create an instance of the dataclass with the deserialized data
-            return data_class(**filtered_data)
+            # Use jsonpickle to decode the serialized object
+            return jsonpickle.decode(data["data"])
         except Exception as e:
             print(f"Error deserializing {type_name}: {e}")
             return None

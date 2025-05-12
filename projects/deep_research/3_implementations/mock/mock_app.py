@@ -1,3 +1,4 @@
+from pathlib import Path
 from hermes.chat.interface.assistant.deep_research_assistant.engine.engine import (
     DeepResearchEngine,
 )
@@ -23,7 +24,7 @@ class DeepResearchMockApp:
 
         # Initialize the engine with the mock LLM interface and extensions
         self.engine = DeepResearchEngine(
-            root_dir,
+            Path(root_dir),
             self.llm_interface,
             # deep_research_commands,
         )
@@ -39,18 +40,10 @@ class DeepResearchMockApp:
         print("The system will show you the interface and you'll respond as if you were the AI.")
         print("Type 'END_RESPONSE' on a new line when you've finished your response.")
 
-        # Print information about loaded extensions
-        # if self.engine._extension_commands:
-        #     print(
-        #         f"\nLoaded {len(self.engine._extension_commands)} extension commands:"
-        #     )
-        #     for cmd_class in self.engine._extension_commands:
-        #         print(f"- {cmd_class.__name__}")
-        # else:
-        #     print("\nNo extension commands loaded.")
-
         if not self.engine.is_root_problem_defined():
             self.engine.define_root_problem(self.instruction)
+        else:
+            self.engine.add_new_instruction(self.instruction)
 
         # Execute the engine, which will use the mock LLM interface
         final_report = self.engine.execute()

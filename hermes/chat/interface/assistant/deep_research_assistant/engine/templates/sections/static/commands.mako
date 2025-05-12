@@ -55,3 +55,7 @@ subproblem title 2
 ${'####'} Q: When to use finish_problem?
 
 A: You should always verify the results (not details, but the completeness) before finishing the task. For example, you should wait until subtasks are finished, receive response, then finish.
+
+${'####'} Q: What happens if I include in my response same command multiple times?
+
+It will be executed multiple times, and might cause issues. Make sure to use the command syntax only when you intend to send a command, while drafting or thinking, don't use the command syntax, or add a comment sign before the commands.

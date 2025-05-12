@@ -21,7 +21,6 @@ class ResearchNodeHistory:
         self._compiled_blocks: list[HistoryBlock] = []
         self._auto_reply_aggregator = AutoReplyAggregator()
         self._history_file_path = history_file_path
-        self._blocks_changed = False
 
         # Load history if file exists
         if os.path.exists(history_file_path):
@@ -30,7 +29,6 @@ class ResearchNodeHistory:
     def add_message(self, author: str, content: str) -> None:
         """Add a message to the history"""
         self._compiled_blocks.append(ChatMessage(author=author, content=content))
-        self._blocks_changed = True
         self.save()
 
     def get_compiled_blocks(self) -> list:
@@ -52,7 +50,6 @@ class ResearchNodeHistory:
 
         # Add to history
         self._compiled_blocks.append(auto_reply)
-        self._blocks_changed = True
 
         # Ensure history is saved immediately after adding auto_reply
         # This is a critical moment for recovery
@@ -62,9 +59,6 @@ class ResearchNodeHistory:
 
     def save(self) -> None:
         """Save history to file"""
-        if not self._blocks_changed:
-            return
-
         try:
             # Ensure directory exists
             os.makedirs(os.path.dirname(self._history_file_path), exist_ok=True)
@@ -79,7 +73,6 @@ class ResearchNodeHistory:
             with open(self._history_file_path, 'w', encoding='utf-8') as file:
                 json.dump(serialized_data, file, indent=2)
 
-            self._blocks_changed = False
         except Exception as e:
             print(f"Error saving history: {e}")
 
@@ -97,10 +90,6 @@ class ResearchNodeHistory:
                     aggregator_data = data.get("auto_reply_aggregator")
                     if aggregator_data:
                         self._auto_reply_aggregator.deserialize(aggregator_data)
-
-            # Only reset the changed flag if there were no significant changes
-            if not self._blocks_changed:
-                self._blocks_changed = False
         except Exception as e:
             print(f"Error loading history: {e}")
 
@@ -126,10 +115,12 @@ class ResearchNodeHistory:
                             "section_data": section_data.serialize() if section_data else None
                         })
 
+                # Use jsonpickle for command_outputs to handle complex nested structures
+                import jsonpickle
                 serialized.append({
                     "type": "AutoReply",
                     "error_report": block.error_report,
-                    "command_outputs": block.command_outputs,
+                    "command_outputs": jsonpickle.encode(block.command_outputs),
                     "messages": block.messages,
                     "confirmation_request": block.confirmation_request,
                     "dynamic_sections": dynamic_sections
@@ -140,6 +131,7 @@ class ResearchNodeHistory:
     def _deserialize_blocks(self, serialized_blocks: list[dict[str, Any]]) -> list[HistoryBlock]:
         """Deserialize history blocks from JSON data"""
         blocks = []
+        import jsonpickle
 
         for block_data in serialized_blocks:
             block_type = block_data.get("type")
@@ -162,9 +154,17 @@ class ResearchNodeHistory:
                         if deserialized_section:
                             dynamic_sections.append((idx, deserialized_section))
 
+                # Use jsonpickle to decode command outputs
+                command_outputs = []
+                try:
+                    command_outputs_str = block_data.get("command_outputs", "[]")
+                    command_outputs = jsonpickle.decode(command_outputs_str)
+                except Exception as e:
+                    print(f"Error decoding command outputs: {e}")
+
                 blocks.append(AutoReply(
                     error_report=block_data.get("error_report", ""),
-                    command_outputs=block_data.get("command_outputs", []),
+                    command_outputs=command_outputs,
                     messages=block_data.get("messages", []),
                     confirmation_request=block_data.get("confirmation_request"),
                     dynamic_sections=dynamic_sections

@@ -80,6 +80,12 @@ class ArtifactManager:
 
         return [manager]
 
+    def add_artifact(self, artifact):
+        if artifact.name in (a.name for a in self.artifacts):
+            raise ValueError("One node can't have multiple artifacts with same name, please check the commands.")
+        self.artifacts.append(artifact)
+        self.save()
+
     def save(self):
         """Save artifacts to disk"""
         node_path = self.node.get_path()

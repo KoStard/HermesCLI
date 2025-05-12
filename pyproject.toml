@@ -30,6 +30,7 @@ dependencies = [
     "sounddevice>=0.5.1",
     "soundfile>=0.12.1",
     "tenacity>=9.0.0",
+    "jsonpickle>=4.0.5",
 ]
 
 [project.scripts]

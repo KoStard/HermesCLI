@@ -97,6 +97,8 @@ class AutoReplyAggregator:
 
     def serialize(self) -> dict[str, Any]:
         """Serialize the aggregator state"""
+        import jsonpickle
+
         # Fully serialize dynamic sections using their serialization methods
         dynamic_sections = []
         for idx, section_data in self.dynamic_sections_to_report:
@@ -112,7 +114,7 @@ class AutoReplyAggregator:
 
         return {
             "error_reports": self.error_reports,
-            "command_outputs": self.command_outputs,
+            "command_outputs": jsonpickle.encode(self.command_outputs),
             "internal_messages": self.internal_messages,
             "confirmation_requests": self.confirmation_requests,
             "dynamic_sections_to_report": dynamic_sections,
@@ -121,10 +123,18 @@ class AutoReplyAggregator:
 
     def deserialize(self, data: dict[str, Any]) -> None:
         """Deserialize aggregator state from JSON data"""
-        # Track if we're making significant changes that would require parent history to save
+        import jsonpickle
 
         self.error_reports = data.get("error_reports", [])
-        self.command_outputs = data.get("command_outputs", [])
+
+        # Deserialize command outputs with jsonpickle
+        try:
+            command_outputs_data = data.get("command_outputs", "[]")
+            self.command_outputs = jsonpickle.decode(command_outputs_data)
+        except Exception as e:
+            print(f"Error decoding command outputs in aggregator: {e}")
+            self.command_outputs = []
+
         self.internal_messages = data.get("internal_messages", [])
         self.confirmation_requests = data.get("confirmation_requests", [])
 

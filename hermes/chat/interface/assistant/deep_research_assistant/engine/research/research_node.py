@@ -233,9 +233,7 @@ class ResearchNodeImpl(ResearchNode):
         return self.problem_manager.problem_definition
 
     def add_artifact(self, artifact: Artifact) -> None:
-        # Add to artifact manager and save
-        self.artifact_manager.artifacts.append(artifact)
-        self.artifact_manager.save()
+        self.artifact_manager.add_artifact(artifact)
 
         # Default to open status in state manager
         self.state_manager.set_artifact_status(artifact, True)
