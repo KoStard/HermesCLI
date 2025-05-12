@@ -21,6 +21,7 @@ class ResearchNodeHistory:
         self._compiled_blocks: list[HistoryBlock] = []
         self._auto_reply_aggregator = AutoReplyAggregator()
         self._history_file_path = history_file_path
+        self._initial_interface_content: str | None = None
 
         # Load history if file exists
         if os.path.exists(history_file_path):
@@ -38,6 +39,15 @@ class ResearchNodeHistory:
     def get_auto_reply_aggregator(self) -> AutoReplyAggregator:
         """Get the auto-reply aggregator for this history"""
         return self._auto_reply_aggregator
+        
+    def set_initial_interface_content(self, content: str) -> None:
+        """Set the initial interface content shown to the LLM"""
+        self._initial_interface_content = content
+        self.save()
+        
+    def get_initial_interface_content(self) -> str | None:
+        """Get the initial interface content shown to the LLM"""
+        return self._initial_interface_content
 
     def commit_and_get_auto_reply(self) -> AutoReply | None:
         """Commit the current auto-reply and return it"""
@@ -66,7 +76,8 @@ class ResearchNodeHistory:
             # Serialize history blocks
             serialized_data = {
                 "blocks": self._serialize_blocks(self._compiled_blocks),
-                "auto_reply_aggregator": self._auto_reply_aggregator.serialize()
+                "auto_reply_aggregator": self._auto_reply_aggregator.serialize(),
+                "initial_interface_content": self._initial_interface_content
             }
 
             # Write to file with pretty formatting
@@ -90,6 +101,9 @@ class ResearchNodeHistory:
                     aggregator_data = data.get("auto_reply_aggregator")
                     if aggregator_data:
                         self._auto_reply_aggregator.deserialize(aggregator_data)
+                        
+                    # Load initial interface content
+                    self._initial_interface_content = data.get("initial_interface_content")
         except Exception as e:
             print(f"Error loading history: {e}")
 

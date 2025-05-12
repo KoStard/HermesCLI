@@ -106,13 +106,6 @@ class _CommandProcessor:
             # Optionally add an error message to auto-reply here
         return False
 
-    @property
-    def _current_history_tag(self):
-        if self.current_execution_state.has_active_node:
-            return self.current_execution_state.active_node.get_title()
-        else:
-            return "no_node"
-
     def _add_assistant_message_to_history(self, text: str):
         """Add the assistant's message to history for the current node."""
         history = self.current_execution_state.active_node.get_history()
@@ -387,7 +380,6 @@ class DeepResearchEngine:
         if not self.is_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
 
-        initial_interface_content_by_node = defaultdict(str)
         self.current_execution_state.set_should_finish(False)
 
         # Loop should continue as long as we are not awaiting new instructions
@@ -398,7 +390,6 @@ class DeepResearchEngine:
 
             # --- 1. Gather Current Interface State ---
             # Get static content and the *data* for dynamic sections
-            # TODO: Update interface to use Research instead of FileSystem
             static_interface_content, current_dynamic_data = self.interface.render_problem_defined(
                 self.current_execution_state.active_node,
                 self.research.get_permanent_logs().get_logs(),
@@ -406,8 +397,11 @@ class DeepResearchEngine:
                 self.get_remaining_budget(),
             )
 
+            # Get the current node's history
+            node_history = self.current_execution_state.active_node.get_history()
+
             # Store the initial full interface view if not already done for this node
-            if self._current_history_tag not in initial_interface_content_by_node:
+            if not node_history.get_initial_interface_content():
                 # Render the initial dynamic sections *without* future changes for the first message
                 initial_rendered_dynamics = []
                 for data_instance in current_dynamic_data:
@@ -418,9 +412,12 @@ class DeepResearchEngine:
                     else:
                         initial_rendered_dynamics.append(f"<error>Missing renderer for {type(data_instance).__name__}</error>")
 
-                initial_interface_content_by_node[self._current_history_tag] = "\n\n".join(
+                initial_interface_content = "\n\n".join(
                     [static_interface_content] + initial_rendered_dynamics
                 )
+
+                # Store in the node's history
+                node_history.set_initial_interface_content(initial_interface_content)
 
             # --- 2. Update History & Auto-Reply Aggregator ---
             history = self.current_execution_state.active_node.get_history()
@@ -493,15 +490,20 @@ class DeepResearchEngine:
             # Get the current node path for logging
             current_node_path = self.current_execution_state.active_node.get_path()
 
+            # Get the initial interface content from the node's history
+            initial_interface_content = self.current_execution_state.active_node.get_history().get_initial_interface_content()
+            if not initial_interface_content:
+                raise Exception("No initial content, something is wrong, please start a new research")
+
             # Generate the request
             request = self.llm_interface.generate_request(
-                initial_interface_content_by_node[self._current_history_tag],
+                initial_interface_content,
                 history_messages,
                 current_node_path,
             )
 
             # Log the request using node logger
-            self.current_execution_state.active_node.get_logger().log_llm_request(history_messages, request, initial_interface_content_by_node[self._current_history_tag])
+            self.current_execution_state.active_node.get_logger().log_llm_request(history_messages, request, initial_interface_content)
 
             # Process the request and get the response
             response_generator = self._handle_llm_request(request, current_node_path)
@@ -631,14 +633,6 @@ class DeepResearchEngine:
         """
         processor = _CommandProcessor(self)
         return processor.process(text)
-
-    @property
-    def _current_history_tag(self):
-        # Reference to the history branch in old system, where history tracking was central, but had branches for different nodes
-        if self.current_execution_state.has_active_node:
-            return self.current_execution_state.active_node.get_title()
-        else:
-            return "no_node"
 
     def _print_current_status(self):
         """Print the current status of the research to STDOUT"""
