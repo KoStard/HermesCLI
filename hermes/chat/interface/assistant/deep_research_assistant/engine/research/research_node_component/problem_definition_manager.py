@@ -38,10 +38,18 @@ class ProblemDefinitionManager:
         node_path = research_node.get_path()
         problem_def_path = node_path / "Problem Definition.md"
         md_file = MarkdownFileWithMetadataImpl.load_from_file(str(problem_def_path))
+        
+        # Get status as proper enum
+        status_value = md_file.get_metadata().get('status', ProblemStatus.NOT_STARTED.value)
+        try:
+            status = ProblemStatus(status_value)
+        except ValueError:
+            status = ProblemStatus.NOT_STARTED
+            
         return ProblemDefinitionManager(
             node=research_node,
             problem_definition=ProblemDefinition(md_file.get_content()),
-            status=md_file.get_metadata().get('status', ProblemStatus.NOT_STARTED)
+            status=status
         )
 
 

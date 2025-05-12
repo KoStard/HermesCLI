@@ -8,6 +8,7 @@ This document captures the development philosophy you should follow throughout a
 - Always leave the codebase in better shape than before you touched it. If you see small syntax issues, go ahead and solve. If you see bigger problems, create tasks in backlog.
 - Never try to solve vague problem directly. Instead, ask for clarifications or more information, write a high level plan and review, then break down into subproblems, create a tracker document with a checklist, and step by step solve while maintaining the tracker document.
 - Use """ for multiline strings
+- Avoid hacks and workarounds at all costs. Remember, single purpose components, as written in Clean Code. The thing you want to use, was it built for this? If the answer is not a sound yes, go into deeper design.
 
 ## Project Management
 - Employ iterative development: Plan phases, deliver incrementally, and adapt based on feedback or changing requirements.

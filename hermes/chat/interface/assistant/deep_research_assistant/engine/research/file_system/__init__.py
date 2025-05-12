@@ -36,3 +36,7 @@ class FileSystem(ABC):
     @abstractmethod
     def list_files(self, directory: Path, pattern: str | None = None) -> list[Path]:
         pass
+
+    @abstractmethod
+    def is_empty(self, directory: Path) -> bool:
+        pass

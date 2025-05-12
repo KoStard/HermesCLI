@@ -1,3 +1,4 @@
+import os
 import shutil
 from pathlib import Path
 
@@ -100,3 +101,6 @@ class DiskFileSystem(file_system.FileSystem):
         if pattern:
             return list(directory.glob(pattern))
         return [p for p in directory.iterdir() if p.is_file()]
+
+    def is_empty(self, directory: Path) -> bool:
+        return not any(os.scandir(directory))

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.disk_file_system import DiskFileSystem
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node import ResearchNodeImpl
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import Artifact
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_project_component.external_file import (
     ExternalFilesManager,
@@ -30,8 +31,7 @@ class ResearchImpl(Research):
     def research_already_exists(self) -> bool:
         """Check if research data already exists in the root directory"""
         # Look for the research metadata file
-        metadata_path = self.root_directory / "research_metadata.json"
-        return self.file_system.file_exists(metadata_path)
+        return self.root_directory.exists() and not self.file_system.is_empty(self.root_directory)
 
     def research_initiated(self) -> bool:
         """Return whether research has been initiated"""
@@ -45,9 +45,6 @@ class ResearchImpl(Research):
         # Create the necessary directories
         self._create_directory_structure()
 
-        # Save metadata about the research
-        self._save_research_metadata()
-
         self._research_initiated = True
 
     def load_existing_research(self):
@@ -56,7 +53,10 @@ class ResearchImpl(Research):
         self._knowledge_base.load_entries()
         self._external_files_manager.load_external_files()
 
-        self._research_initiated = True
+        # Load the root node from disk using the node's static loading method
+        root_node = ResearchNodeImpl.load_from_directory(self.root_directory)
+
+        self.initiate_research(root_node)
 
     def get_root_node(self) -> ResearchNode:
         """Get the root node of the research"""
@@ -119,30 +119,3 @@ class ResearchImpl(Research):
         # Create the root directory if it doesn't exist
         if not self.file_system.directory_exists(self.root_directory):
             self.file_system.create_directory(self.root_directory)
-
-        # Create other necessary directories
-        artifacts_dir = self.root_directory / "artifacts"
-        self.file_system.create_directory(artifacts_dir)
-
-        logs_dir = self.root_directory / "logs"
-        self.file_system.create_directory(logs_dir)
-
-        # Create external files directory
-        external_files_dir = self.root_directory / "_ExternalFiles"
-        self.file_system.create_directory(external_files_dir)
-
-    def _save_research_metadata(self):
-        """Save metadata about the research project"""
-        import json
-        from datetime import datetime
-
-        metadata_path = self.root_directory / "research_metadata.json"
-
-        metadata = {
-            "created_at": datetime.now().isoformat(),
-            "last_updated": datetime.now().isoformat(),
-            "root_node_title": self.root_node.get_title() if self.root_node else None,
-        }
-
-        with open(metadata_path, "w", encoding="utf-8") as f:
-            json.dump(metadata, f, indent=2)

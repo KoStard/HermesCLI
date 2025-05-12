@@ -1,5 +1,8 @@
 from pathlib import Path
 
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research.file_system.markdown_file_with_metadata import (
+    MarkdownFileWithMetadataImpl,
+)
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.artifact import (
     Artifact,
     ArtifactManager,
@@ -46,6 +49,76 @@ class ResearchNodeImpl(ResearchNode):
         # Initialize file system components if path is set
         self._init_components()
 
+    @classmethod
+    def load_from_directory(cls, node_path: Path) -> 'ResearchNode':
+        return cls._load_from_directory(node_path, None)
+
+    @classmethod
+    def _load_from_directory(cls, node_path: Path, parent_node: 'ResearchNode | None' = None) -> 'ResearchNode':
+        """
+        Load a node and all its children from a directory.
+
+        Args:
+            node_path: Path to the node directory
+            parent_node: Parent node, or None for the root node
+
+        Returns:
+            Loaded ResearchNode instance
+        """
+        prob_def_path = node_path / "Problem Definition.md"
+        if not prob_def_path.exists():
+            raise FileNotFoundError(f"Problem definition file not found at {node_path}")
+
+        # Load the problem definition file
+        md_file = MarkdownFileWithMetadataImpl.load_from_file(str(prob_def_path))
+        problem_def = ProblemDefinition(content=md_file.get_content())
+
+        # Get status from metadata
+        status_str = md_file.get_metadata().get('status', ProblemStatus.NOT_STARTED.value)
+        try:
+            status = ProblemStatus(status_str)
+        except ValueError:
+            status = ProblemStatus.NOT_STARTED
+
+        # Create the node with the loaded problem definition
+        node = ResearchNodeImpl(
+            problem=problem_def,
+            title=node_path.name,
+            path=node_path,
+            parent=parent_node
+        )
+
+        # Update node status (which might have been loaded incorrectly during initialization)
+        node.set_problem_status(status)
+
+        # Load child nodes
+        cls._load_child_nodes_for(node)
+
+        return node
+
+    @classmethod
+    def _load_child_nodes_for(cls, parent_node: 'ResearchNode') -> None:
+        """
+        Load child nodes for a parent node from the file system.
+
+        Args:
+            parent_node: The parent node to load children for
+        """
+        subproblems_dir = parent_node.get_path() / "Subproblems"
+        if not subproblems_dir.exists():
+            return
+
+        for child_dir in subproblems_dir.iterdir():
+            if child_dir.is_dir() and (child_dir / "Problem Definition.md").exists():
+                try:
+                    # Load the child node from disk
+                    child_node = cls._load_from_directory(child_dir, parent_node)
+
+                    # Add child to parent
+                    parent_node.add_child_node(child_node)
+                except Exception as e:
+                    print(f"Error loading child node {child_dir.name}: {e}")
+
     def _init_components(self):
         """Initialize node components"""
         if not self._path.exists():
@@ -63,8 +136,16 @@ class ResearchNodeImpl(ResearchNode):
         logs_dir = self._path / "logs_and_debug"
         logs_dir.mkdir(exist_ok=True)
 
-        # Load criteria
+        # Load all components from disk
         self.criteria_manager = CriteriaManager.load_for_research_node(self)[0]
+        self.artifact_manager = ArtifactManager.load_for_research_node(self)[0]
+        self.state_manager = StateManager.load_for_research_node(self)[0]
+        self.logger = ResearchNodeLogger.load_for_research_node(self)[0]
+
+        # The problem_manager is already initialized in the constructor, but we should ensure it's properly loaded
+        problem_def_path = self._path / "Problem Definition.md"
+        if problem_def_path.exists():
+            self.problem_manager = ProblemDefinitionManager.load_for_research_node(self)
 
     def list_child_nodes(self) -> list[ResearchNode]:
         return self.children
