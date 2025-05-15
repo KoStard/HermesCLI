@@ -301,12 +301,7 @@ class DeepResearchEngine:
 
         # Initialize other components
         self.command_parser = CommandParser()
-        # Legacy logger - will be fully removed in future versions
         self.llm_interface = llm_interface
-        # When parent requests activation of multiple children sequentially, we'll track them here
-        # Then when the child is finished, and wants to activate the parent again, we'll activate the next in the queue
-        # It's a dict, as the child itself might activate other grandchildren
-        self.children_queue = defaultdict(list)  # Queue for activating siblings sequentially
 
         # Budget tracking
         self.budget: int | None = None  # No budget by default

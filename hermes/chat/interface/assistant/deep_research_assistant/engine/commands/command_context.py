@@ -37,10 +37,6 @@ class CommandContext:
     def research(self) -> 'Research':
         return self._engine.research
 
-    @property
-    def children_queue(self):
-        return self._engine.children_queue
-
     # Command output operations
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
         """Add command output to be included in the automatic response"""
@@ -58,10 +54,8 @@ class CommandContext:
 
     def focus_up(self, message: str | None = None) -> bool:
         # Pass the message and current node to the engine's method
-        assert self.current_state_machine_node
         return self._engine.focus_up(message=message, current_state_machine_node=self.current_state_machine_node)
 
     def fail_and_focus_up(self, message: str | None = None) -> bool:
         # Pass the message and current node to the engine's method
-        assert self.current_state_machine_node
         return self._engine.fail_and_focus_up(message=message, current_state_machine_node=self.current_state_machine_node)

@@ -231,20 +231,17 @@ class FocusDownCommand(BaseCommand[CommandContext]):
             if title not in child_node_titles:
                 raise ValueError(f"Subproblem '{title}' not found")
 
-        # Add all titles to the queue except the first one
-        if len(titles) > 1:
-            context.children_queue[current_node.get_title()].extend(titles[1:])
+        # Add all titles as nodes to the state machine
+        for title in titles:
+            result = context.focus_down(title)
+            if not result:
+                raise ValueError(f"Failed to activate subproblem '{titles[0]}'. Make sure the subproblem exists.")
 
         context.add_command_output(
             self.name,
             args,
-            f"Focusing on {titles[0]}.",
+            f"Queued subproblems for sequential activation: {', '.join(titles)}.",
         )
-
-        # Activate the first subproblem
-        result = context.focus_down(titles[0])
-        if not result:
-            raise ValueError(f"Failed to activate subproblem '{titles[0]}'. Make sure the subproblem exists.")
 
     def should_be_last_in_message(self):
         return True
