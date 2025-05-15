@@ -85,8 +85,11 @@ class StateMachineImpl(StateMachine):
             if self._active_node == self._root_node:
                 return None
 
-            # Otherwise, move up to parent
             parent = self._active_node.get_parent()
+            if parent.has_pending_children():
+                self._active_node = parent.get_next_child()
+                return self._active_node
+
             self._active_node = parent
             return self._active_node
 

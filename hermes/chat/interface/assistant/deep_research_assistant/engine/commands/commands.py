@@ -501,9 +501,8 @@ class AddKnowledgeCommand(BaseCommand[CommandContext]):
 
 
 # Explicitly register all commands defined in this file
-def register_deep_research_commands():
-    """Registers all built-in Deep Research commands."""
-    registry = CommandRegistry()
+def register_deep_research_commands(registry: CommandRegistry):
+    """Registers all built-in Deep Research commands to the given registry."""
     commands_to_register = [
         AddCriteriaCommand(),
         MarkCriteriaAsDoneCommand(),

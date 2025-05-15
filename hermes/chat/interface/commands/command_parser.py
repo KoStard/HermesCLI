@@ -33,9 +33,9 @@ class ParseResult:
 class CommandParser:
     """Parses text containing command blocks (<<< ... >>>) with sections (///...)."""
 
-    def __init__(self):
-        # Get the singleton instance of the registry
-        self.registry = CommandRegistry()
+    def __init__(self, command_registry: CommandRegistry):
+        # Use the provided instance of the registry
+        self.registry = command_registry
 
     def parse_text(self, text: str) -> list[ParseResult]:
         """

@@ -1,8 +1,7 @@
 import logging
 import os
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from pathlib import Path
-from typing import Sequence
 
 # Import other necessary types
 from hermes.chat.event import Event, MessageEvent
@@ -22,7 +21,7 @@ from hermes.chat.interface.assistant.deep_research_assistant.llm_interface_impl 
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 
 # Import core command components
-from hermes.chat.interface.commands.command import Command, CommandRegistry
+from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.message import Message, TextMessage, TextualFileMessage
 from hermes.utils.file_reader import FileReader
 
@@ -37,16 +36,18 @@ class DeepResearchAssistantInterface(Interface):
         self.model.initialize()
 
         llm_interface = ChatModelLLMInterface(self.model, research_path)
-        # Create the engine *without* passing extension commands initially
+        self.command_registry = CommandRegistry()
+
+        if extension_commands:
+            for cmd_def in extension_commands:
+                self.command_registry.register(cmd_def)
+
+        # Create the engine, passing the command registry
         self._engine: DeepResearchEngine = DeepResearchEngine(
             research_path,
             llm_interface,
+            self.command_registry,
         )
-
-        registry = CommandRegistry()
-        if extension_commands:
-            for cmd_def in extension_commands:
-                registry.register(cmd_def)
 
         self._instruction = None
         self._history_has_been_imported = False

@@ -50,11 +50,11 @@ class ChatAssistantControlPanel(ControlPanel):
         # Create a command context that will be passed to commands during execution
         self.command_context = ChatAssistantCommandContext(self)
 
-        # Get the global command registry
+        # Create a command registry instance for this control panel
         self.command_registry = CommandRegistry()
 
-        # Create the command parser
-        self.command_parser = CommandParser()
+        # Create the command parser, passing the specific registry
+        self.command_parser = CommandParser(self.command_registry)
 
         # Add help content
         self._add_initial_help_content()

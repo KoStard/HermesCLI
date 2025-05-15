@@ -21,8 +21,6 @@ from .dynamic_sections.subproblems import SubproblemsSectionData
 
 # Import types needed for factory methods (still required here for _gather_dynamic_section_data)
 
-register_deep_research_commands()
-
 # Define the consistent order of dynamic sections using the imported types
 DYNAMIC_SECTION_ORDER: list[type[DynamicSectionData]] = [
     HeaderSectionData,
@@ -49,10 +47,12 @@ class DeepResearcherInterface:
         research: Research,
         template_manager: TemplateManager,
         commands_help_generator: CommandHelpGenerator,
+        command_registry: CommandRegistry,
     ):
         self.research = research
         self.template_manager = template_manager
         self.commands_help_generator = commands_help_generator
+        self.command_registry = command_registry
 
     def _get_parent_chain(self, node: ResearchNode | None) -> list[ResearchNode]:
         """Helper to get the parent chain including the given node"""
@@ -96,7 +96,7 @@ class DeepResearcherInterface:
     def _render_static_content(self, target_node: ResearchNode) -> str:
         """Render the static content by rendering the main static.mako template."""
         # Get commands to pass to the template context
-        commands = CommandRegistry().get_all_commands()
+        commands = self.command_registry.get_all_commands()
 
         context = {
             "target_node": target_node,
@@ -212,6 +212,6 @@ class DeepResearcherInterface:
     def _generate_command_help(self) -> str:
         """Generate help text for all registered commands by rendering the command_help template."""
         # Get all registered commands suitable for the problem-defined interface
-        commands = CommandRegistry().get_all_commands()
+        commands = self.command_registry.get_all_commands()
 
         return self.commands_help_generator.generate_help(commands)

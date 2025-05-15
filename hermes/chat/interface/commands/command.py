@@ -118,17 +118,10 @@ class Command(ABC, Generic[ContextType]):
 
 
 class CommandRegistry:
-    """Registry for all available commands (Singleton)."""
+    """Registry for all available commands."""
 
-    _instance = None
-    _commands: dict[str, Command[Any]]  # Store commands generically
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            # Initialize command storage in the instance
-            cls._instance._commands = {}
-        return cls._instance
+    def __init__(self):
+        self._commands: dict[str, Command[Any]] = {}
 
     def register(self, command: Command[Any]) -> None:
         """Register a command instance."""
