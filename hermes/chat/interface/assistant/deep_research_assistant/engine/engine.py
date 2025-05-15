@@ -15,16 +15,13 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.context.dyna
 from hermes.chat.interface.assistant.deep_research_assistant.engine.context.interface import (
     DeepResearcherInterface,
 )
-
-# Import other necessary components
-from hermes.chat.interface.assistant.deep_research_assistant.engine.execution_state import ExecutionState
 from hermes.chat.interface.assistant.deep_research_assistant.engine.report.report_generator import (
     ReportGenerator,
 )
 from hermes.chat.interface.assistant.deep_research_assistant.engine.report.status_printer import (
     StatusPrinter,
 )
-from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research
+from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research, ResearchNode
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research import ResearchImpl
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node import ResearchNodeImpl
 from hermes.chat.interface.assistant.deep_research_assistant.engine.research.research_node_component.history.history_blocks import (
@@ -35,6 +32,10 @@ from hermes.chat.interface.assistant.deep_research_assistant.engine.research.res
     ProblemDefinition,
     ProblemStatus,
 )
+
+# Import other necessary components
+from hermes.chat.interface.assistant.deep_research_assistant.engine.state_machine import StateMachineNode
+from hermes.chat.interface.assistant.deep_research_assistant.engine.state_machine.state_machine import StateMachineImpl
 from hermes.chat.interface.assistant.deep_research_assistant.llm_interface import (
     LLMInterface,
 )
@@ -55,8 +56,6 @@ class _CommandProcessor:
     def __init__(self, engine: "DeepResearchEngine"):
         self.engine = engine
         self.command_parser = engine.command_parser
-        self.current_execution_state = engine.current_execution_state
-        self.command_context = engine.command_context
 
         # Results
         self.commands_executed = False
@@ -66,49 +65,49 @@ class _CommandProcessor:
         self._execution_failed_commands = []
         self._finish_or_fail_skipped = False
 
-    def process(self, text: str) -> tuple[bool, str, dict]:
+    def process(self, text: str, current_state_machine_node: "StateMachineNode") -> tuple[bool, str, dict]:
         """
         Process commands from text.
 
         Returns:
             tuple: (commands_executed, final_error_report, execution_status)
         """
-        if self._handle_shutdown_request(text):
+        if self._handle_shutdown_request(text, current_state_machine_node):
             return (
                 True,
                 "System shutdown requested and executed.",
                 {"shutdown": "success"},
             )
 
-        self._add_assistant_message_to_history(text)
+        self._add_assistant_message_to_history(text, current_state_machine_node)
 
         parse_results = self._parse_and_validate_commands(text)
 
-        self._execute_commands(parse_results)
+        self._execute_commands(parse_results, current_state_machine_node)
         self._generate_final_report()
-        self._update_auto_reply()
+        self._update_auto_reply(current_state_machine_node)
 
         return self.commands_executed, self.final_error_report, self.execution_status
 
-    def _handle_shutdown_request(self, text: str) -> bool:
+    def _handle_shutdown_request(self, text: str, current_state_machine_node: "StateMachineNode") -> bool:
         """Check for emergency shutdown code."""
         # Only shut down if the current node is the root node
+        research_node = current_state_machine_node.get_research_node()
         if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() \
-        and self.current_execution_state.active_node == self.engine.research.get_root_node():
+        and research_node == self.engine.research.get_root_node():
             print("Shutdown requested for root node. Engine will await new instructions.")
             self.engine.finish_with_this_cycle()
             # Mark root as finished to signify completion of this phase
-            if self.current_execution_state.has_active_node:
-                self.current_execution_state.active_node.set_problem_status(ProblemStatus.FINISHED)
+            research_node.set_problem_status(ProblemStatus.FINISHED)
             return True
         elif "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
             print("Shutdown command ignored: Not currently focused on the root node.")
             # Optionally add an error message to auto-reply here
         return False
 
-    def _add_assistant_message_to_history(self, text: str):
+    def _add_assistant_message_to_history(self, text: str, current_state_machine_node: "StateMachineNode"):
         """Add the assistant's message to history for the current node."""
-        history = self.current_execution_state.active_node.get_history()
+        history = current_state_machine_node.get_research_node().get_history()
         history.add_message("assistant", text)
 
     def _parse_and_validate_commands(self, text: str) -> list[ParseResult]:
@@ -120,7 +119,7 @@ class _CommandProcessor:
 
         return parse_results
 
-    def _execute_commands(self, parse_results: list[ParseResult]):
+    def _execute_commands(self, parse_results: list[ParseResult], current_state_machine_node: "StateMachineNode"):
         """Execute valid commands and track status."""
         command_that_should_be_last_reached = False
         has_parsing_errors = bool(self._parsing_error_report)  # Check if initial parsing found errors
@@ -157,7 +156,7 @@ class _CommandProcessor:
                 continue
 
             # --- Execute the command ---
-            command, execution_error = self._execute_single_command(result)
+            command, execution_error = self._execute_single_command(result, current_state_machine_node)
 
             # --- Update Status ---
             cmd_key = f"{result.command_name}_{i}"
@@ -182,12 +181,13 @@ class _CommandProcessor:
                     command_that_should_be_last_reached = True
             # else: command was None (e.g., unknown command, handled during parsing)
 
-    def _execute_single_command(self, result: ParseResult) -> tuple[Command | None, Exception | None]:
+    def _execute_single_command(self, result: ParseResult, current_state_machine_node: "StateMachineNode") -> tuple[Command | None, Exception | None]:
         """Execute a single command and return the command object and any execution error."""
         command_name = result.command_name
         args = result.args
         error = None
         command: Command[CommandContext] | None = None  # Type hint for clarity
+        command_context = CommandContext(self.engine, current_state_machine_node)
 
         try:
             # Use the singleton registry instance directly
@@ -203,10 +203,10 @@ class _CommandProcessor:
                 raise ValueError("Only 'define_problem' command is allowed before a problem is defined.")
 
             # Update command context before execution
-            self.command_context.refresh_from_engine()
+            command_context.refresh_from_engine()
 
             # Execute the command
-            command.execute(self.command_context, args)
+            command.execute(command_context, args)
 
         except ValueError as e:
             error = e
@@ -251,9 +251,9 @@ class _CommandProcessor:
             else:  # Only execution errors or syntax errors
                 self.final_error_report += "\n" + execution_report
 
-    def _update_auto_reply(self):
+    def _update_auto_reply(self, current_state_machine_node: "StateMachineNode"):
         """Add error reports and confirmation requests to the auto-reply aggregator."""
-        auto_reply_generator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
+        auto_reply_generator = current_state_machine_node.get_research_node().get_history().get_auto_reply_aggregator()
 
         # Add confirmation request if finish/fail was skipped
         if self._finish_or_fail_skipped:
@@ -297,8 +297,7 @@ class DeepResearchEngine:
 
         # Initialize the research object which will handle all file system and node operations
         self.research = ResearchImpl(root_dir)
-        self.current_execution_state = ExecutionState()
-        self.future_execution_state = ExecutionState()
+        self.state_machine = StateMachineImpl()
 
         # Initialize other components
         self.command_parser = CommandParser()
@@ -319,10 +318,7 @@ class DeepResearchEngine:
 
         if self.research.research_already_exists():
             self.research.load_existing_research()
-            self.current_execution_state.set_active_node(self.research.get_root_node())
-
-        # Create command context for commands to use - shared across all commands
-        self.command_context = CommandContext(self)
+            self.state_machine.set_root_research_node(self.research.get_root_node())
 
         commands_help_generator = CommandHelpGenerator()
         # Update interface to use the research object
@@ -346,9 +342,9 @@ class DeepResearchEngine:
         problem_definition = ProblemDefinition(content=instruction)
         node = ResearchNodeImpl(problem=problem_definition, title=title, path=self.research.get_root_directory(), parent=None)
         self.research.initiate_research(node)
-        self.current_execution_state.set_active_node(self.research.get_root_node())
+        self.state_machine.set_root_research_node(self.research.get_root_node())
 
-        self._print_current_status()
+        self._print_current_status(self.research.get_root_node())
 
     def add_new_instruction(self, instruction: str):
         """Injects a new user instruction into the current node's context."""
@@ -368,6 +364,7 @@ class DeepResearchEngine:
 
         # Mark the root problem as in progress
         root_node.set_problem_status(ProblemStatus.IN_PROGRESS)
+        self.state_machine.reactivate_root_node(root_node)
 
         print("Engine ready to execute new instruction.")
 
@@ -380,10 +377,16 @@ class DeepResearchEngine:
         if not self.is_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
 
-        self.current_execution_state.set_should_finish(False)
+        should_finish = False
 
-        # Loop should continue as long as we are not awaiting new instructions
         while True:
+            # Get the next node from the state machine - this should be the ONLY call to next() per cycle
+            current_state_machine_node = self.state_machine.next()
+            if current_state_machine_node is None:
+                break
+
+            research_node = current_state_machine_node.get_research_node()
+
             if not self.research.research_initiated():
                 print("Error: No active node during execution loop. Stopping.")
                 break
@@ -391,14 +394,14 @@ class DeepResearchEngine:
             # --- 1. Gather Current Interface State ---
             # Get static content and the *data* for dynamic sections
             static_interface_content, current_dynamic_data = self.interface.render_problem_defined(
-                self.current_execution_state.active_node,
+                research_node,
                 self.research.get_permanent_logs().get_logs(),
                 self.budget,
                 self.get_remaining_budget(),
             )
 
             # Get the current node's history
-            node_history = self.current_execution_state.active_node.get_history()
+            node_history = research_node.get_history()
 
             # Store the initial full interface view if not already done for this node
             if not node_history.get_initial_interface_content():
@@ -420,19 +423,19 @@ class DeepResearchEngine:
                 node_history.set_initial_interface_content(initial_interface_content)
 
             # --- 2. Update History & Auto-Reply Aggregator ---
-            history = self.current_execution_state.active_node.get_history()
+            history = research_node.get_history()
             current_auto_reply_aggregator = history.get_auto_reply_aggregator()
             # Compare current data with last state and update aggregator's list of *changed* sections
             current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
 
             # Commit changes (errors, commands, messages, changed sections) to a new AutoReply block
             # This clears the aggregator for the next cycle.
-            history = self.current_execution_state.active_node.get_history()
+            history = research_node.get_history()
             current_auto_reply_block = history.commit_and_get_auto_reply()
 
             # --- 3. Prepare History for LLM (Render Auto-Replies) ---
             history_messages = []
-            compiled_blocks = self.current_execution_state.active_node.get_history().get_compiled_blocks()
+            compiled_blocks = research_node.get_history().get_compiled_blocks()
             auto_reply_counter = 0
             auto_reply_max_length = 5000
 
@@ -488,10 +491,10 @@ class DeepResearchEngine:
                 print(console_auto_reply)
 
             # Get the current node path for logging
-            current_node_path = self.current_execution_state.active_node.get_path()
+            current_node_path = research_node.get_path()
 
             # Get the initial interface content from the node's history
-            initial_interface_content = self.current_execution_state.active_node.get_history().get_initial_interface_content()
+            initial_interface_content = research_node.get_history().get_initial_interface_content()
             if not initial_interface_content:
                 raise Exception("No initial content, something is wrong, please start a new research")
 
@@ -503,10 +506,10 @@ class DeepResearchEngine:
             )
 
             # Log the request using node logger
-            self.current_execution_state.active_node.get_logger().log_llm_request(history_messages, request, initial_interface_content)
+            research_node.get_logger().log_llm_request(history_messages, request, initial_interface_content)
 
             # Process the request and get the response
-            response_generator = self._handle_llm_request(request, current_node_path)
+            response_generator = self._handle_llm_request(request, current_node_path, research_node)
 
             # Get the full response
             try:
@@ -515,7 +518,7 @@ class DeepResearchEngine:
                 full_llm_response = ""
 
             # Process the commands in the response
-            self.process_commands(full_llm_response)
+            self.process_commands(full_llm_response, current_state_machine_node)
 
             # Increment message cycles and check budget
             self.increment_message_cycles()
@@ -536,14 +539,13 @@ class DeepResearchEngine:
                     print("The assistant will be notified to wrap up quickly.")
 
                     # Add a warning message to the current node's auto reply
-                    if self.current_execution_state.has_active_node:
-                        auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
-                        auto_reply_aggregator.add_internal_message_from(
-                            "⚠️ BUDGET ALERT: The message cycle budget has been exhausted. "
-                            "Please finalize your work as quickly as possible. "
-                            "You have a buffer of 10 additional cycles to complete your work.",
-                            "SYSTEM",
-                        )
+                    auto_reply_aggregator = research_node.get_history().get_auto_reply_aggregator()
+                    auto_reply_aggregator.add_internal_message_from(
+                        "⚠️ BUDGET ALERT: The message cycle budget has been exhausted. "
+                        "Please finalize your work as quickly as possible. "
+                        "You have a buffer of 10 additional cycles to complete your work.",
+                        "SYSTEM",
+                    )
                 elif self.message_cycles_used >= self.budget:
                     # Buffer is also exhausted
                     print("\n===== BUDGET COMPLETELY EXHAUSTED =====")
@@ -557,19 +559,17 @@ class DeepResearchEngine:
                         print(f"Added {additional_cycles} more cycles. New budget: {self.budget}")
 
                         # Add a notification to the current node's auto reply
-                        if self.current_execution_state.has_active_node:
-                            auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
-                            auto_reply_aggregator.add_internal_message_from(
-                                f"The budget has been extended with {additional_cycles} additional cycles. "
-                                f"New total: {self.budget} cycles.",
-                                "SYSTEM",
-                            )
+                        auto_reply_aggregator = research_node.get_history().get_auto_reply_aggregator()
+                        auto_reply_aggregator.add_internal_message_from(
+                            f"The budget has been extended with {additional_cycles} additional cycles. "
+                            f"New total: {self.budget} cycles.",
+                            "SYSTEM",
+                        )
                     else:
                         print("Finishing research due to budget constraints. Engine will await new instructions.")
-                        self.finish_with_this_cycle()
+                        should_finish = True
                         # Mark current node as failed? Or just stop? Let's mark as failed.
-                        if self.current_execution_state.has_active_node:
-                            self.current_execution_state.active_node.set_problem_status(ProblemStatus.FAILED)
+                        research_node.set_problem_status(ProblemStatus.FAILED)
 
             # Check if approaching budget limit (within 10 cycles)
             elif self.budget is not None and self.is_approaching_budget_limit() and not self.budget_warning_shown:
@@ -578,38 +578,31 @@ class DeepResearchEngine:
                 print(f"Approaching budget limit. {self.get_remaining_budget()} cycles remaining out of {self.budget}.")
 
                 # Add a warning message to the current node's auto reply
-                if self.current_execution_state.has_active_node:
-                    auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
-                    auto_reply_aggregator.add_internal_message_from(
-                        f"⚠️ BUDGET WARNING: Only {self.get_remaining_budget()} message cycles remaining out of {self.budget}. "
-                        "Please prioritize the most important tasks and consider wrapping up soon.",
-                        "SYSTEM",
-                    )
-
+                auto_reply_aggregator = research_node.get_history().get_auto_reply_aggregator()
+                auto_reply_aggregator.add_internal_message_from(
+                    f"⚠️ BUDGET WARNING: Only {self.get_remaining_budget()} message cycles remaining out of {self.budget}. "
+                    "Please prioritize the most important tasks and consider wrapping up soon.",
+                    "SYSTEM",
+                )
 
             # Ensure the current node's history is saved before potentially changing nodes
-            if self.current_execution_state.has_active_node:
-                self.current_execution_state.active_node.get_history().save()
+            research_node.get_history().save()
 
-            self.future_execution_state.load_rest_from(self.current_execution_state)
-            self.current_execution_state = self.future_execution_state
-
-            if self.current_execution_state.should_finish():
+            # Check if we should finish this cycle
+            if should_finish:
                 break
 
-            self.future_execution_state = ExecutionState()
+            current_state_machine_node.finish()
+            self._print_current_status(current_state_machine_node.get_research_node())
 
-            self._print_current_status()
-
-        print(
-            f"Engine execution cycle complete. Current node: {self.current_execution_state.active_node.get_title() if self.current_execution_state.has_active_node else 'None'}. "
-            "Awaiting new instruction."
-        )
+        print("Engine execution cycle complete. Awaiting new instruction.")
 
     def finish_with_this_cycle(self):
-        self.future_execution_state.set_should_finish(True)
+        # No need to set future_execution_state anymore
+        # We'll check the should_finish flag locally in the execute method
+        pass
 
-    def add_command_output(self, command_name: str, args: dict, output: str, node_title: str) -> None:
+    def add_command_output(self, command_name: str, args: dict, output: str, node_title: str, current_state_machine_node: "StateMachineNode") -> None:
         """
         Add command output to be included in the automatic response
 
@@ -618,38 +611,53 @@ class DeepResearchEngine:
             args: Arguments passed to the command
             output: Output text to display
             node_title: The title of the node for which the output is being added
+            current_state_machine_node: The current state machine node (optional, pass from context)
         """
         if not output:
             output = ""
-        auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
+
+        auto_reply_aggregator = current_state_machine_node.get_research_node().get_history().get_auto_reply_aggregator()
         auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
 
-    def process_commands(self, text: str) -> tuple[bool, str, dict]:
+    def process_commands(self, text: str, current_state_machine_node: "StateMachineNode") -> tuple[bool, str, dict]:
         """
         Process commands from text using the _CommandProcessor helper class.
+
+        Args:
+            text: The text containing commands to process
+            current_state_machine_node: The current state machine node (optional, pass from context)
 
         Returns:
             tuple: (commands_executed, error_report, execution_status)
         """
         processor = _CommandProcessor(self)
-        return processor.process(text)
+        return processor.process(text, current_state_machine_node)
 
-    def _print_current_status(self):
-        """Print the current status of the research to STDOUT"""
+    def _print_current_status(self, current_node: 'ResearchNode'):
+        """
+        Print the current status of the research to STDOUT
+
+        Args:
+            current_node: The current research node.
+        """
         status_printer = StatusPrinter(self.template_manager)
         # Update to pass research directly
-        status_printer.print_status(self.current_execution_state.active_node, self.research)
+        status_printer.print_status(current_node, self.research)
 
-    def set_budget(self, budget: int):
-        """Set the budget for the Deep Research Assistant"""
+    def set_budget(self, budget: int, current_state_machine_node: 'StateMachineNode'):
+        """
+        Set the budget for the Deep Research Assistant
+
+        Args:
+            budget: The budget value to set
+            current_state_machine_node: The current state machine node.
+        """
         self.budget = budget
         self.initial_budget = budget
         self.budget_warning_shown = False
 
-        # Add a message to the current node's auto reply
-        if self.current_execution_state.has_active_node:
-            auto_reply_aggregator = self.current_execution_state.active_node.get_history().get_auto_reply_aggregator()
-            auto_reply_aggregator.add_internal_message_from(f"Budget has been set to {budget} message cycles.", "SYSTEM")
+        auto_reply_aggregator = current_state_machine_node.get_research_node().get_history().get_auto_reply_aggregator()
+        auto_reply_aggregator.add_internal_message_from(f"Budget has been set to {budget} message cycles.", "SYSTEM")
 
     def increment_message_cycles(self):
         """Increment the message cycles counter"""
@@ -676,18 +684,18 @@ class DeepResearchEngine:
         return remaining is not None and 0 < remaining <= 10
 
 
-    def _handle_llm_request(self, request, current_node_path):
+    def _handle_llm_request(self, request, current_node_path, research_node):
         """
         Handle the LLM request with retry capability
 
         Args:
             request: Request object to send to LLM
             current_node_path: Path to current node for logging
+            research_node: The current research node
 
         Returns:
             Generator yielding the full response
         """
-        current_node = self.current_execution_state.active_node
         while True:
             try:
                 response_generator = self.llm_interface.send_request(request)
@@ -696,7 +704,7 @@ class DeepResearchEngine:
                 try:
                     full_llm_response = next(response_generator)
                     # Log the response using node logger - primary method
-                    current_node.get_logger().log_llm_response(full_llm_response)
+                    research_node.get_logger().log_llm_response(full_llm_response)
                     yield full_llm_response
                     break  # Successfully got a response, exit the retry loop
                 except StopIteration:
@@ -724,23 +732,21 @@ class DeepResearchEngine:
         # Pass the root completion message to the generator
         return report_generator.generate_final_report(self.interface, self.root_completion_message)
 
-    def focus_down(self, subproblem_title: str) -> bool:
+    def focus_down(self, subproblem_title: str, current_state_machine_node: 'StateMachineNode') -> bool:
         """
         Schedule focus down to a subproblem after the current cycle is complete
 
         Args:
             subproblem_title: Title of the subproblem to focus on
+            current_state_machine_node: The current state machine node.
 
         Returns:
             bool: True if successful, False otherwise
         """
-        if not self.research.research_initiated():
-            return False
-
-        current_node = self.current_execution_state.active_node
+        current_research_node = current_state_machine_node.get_research_node()
 
         # Find the child node with matching title
-        child_nodes = current_node.list_child_nodes()
+        child_nodes = current_research_node.list_child_nodes()
         target_child = None
         for child in child_nodes:
             if child.get_title() == subproblem_title:
@@ -751,14 +757,14 @@ class DeepResearchEngine:
             return False
 
         # Set the parent to PENDING
-        current_node.set_problem_status(ProblemStatus.PENDING)
+        current_research_node.set_problem_status(ProblemStatus.PENDING)
 
-        # Set the future execution state to the child node
-        self.future_execution_state.set_active_node(target_child)
+        # Add the child node to the state machine
+        current_state_machine_node.add_and_schedule_subnode(target_child)
 
         return True
 
-    def focus_up(self, message: str | None = None) -> bool:
+    def focus_up(self, message: str | None, current_state_machine_node: 'StateMachineNode') -> bool:
         """
         Schedule focus up to the parent problem after the current cycle is complete.
         Adds a standard notification and an optional custom message from the child
@@ -766,30 +772,28 @@ class DeepResearchEngine:
 
         Args:
             message: Optional custom message from the child node to the parent.
+            current_state_machine_node: The current state machine node.
 
         Returns:
             bool: True if successful, False otherwise (e.g., no current node).
         """
-        if not self.research.research_initiated():
-            return False
-
-        current_node = self.current_execution_state.active_node  # Keep a reference before potential change
-        parent_node = current_node.get_parent()
+        current_research_node = current_state_machine_node.get_research_node()
+        parent_node = current_research_node.get_parent()
 
         # If this is the root node (no parent), we're done
         if parent_node is None:
             # Mark the root node as FINISHED
-            current_node.set_problem_status(ProblemStatus.FINISHED)
+            current_research_node.set_problem_status(ProblemStatus.FINISHED)
             # Store the completion message if provided
             # Root node finished. Set awaiting flag.
             if message:
                 self.root_completion_message = message  # Store final message if any
-            self.finish_with_this_cycle()
-            print(f"Root node '{current_node.get_title()}' finished. Engine awaiting new instruction.")
+            # Current node will finish at the end of this cycle
+            print(f"Root node '{current_research_node.get_title()}' finished. Engine awaiting new instruction.")
             return True
 
         # Mark the current non-root node as FINISHED
-        current_node.set_problem_status(ProblemStatus.FINISHED)
+        current_research_node.set_problem_status(ProblemStatus.FINISHED)
 
         # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
         parent_history = parent_node.get_history()
@@ -798,7 +802,7 @@ class DeepResearchEngine:
         # 1. Always add the standard status message
         parent_auto_reply_aggregator.add_internal_message_from(
             "Task marked FINISHED, focusing back up.",
-            current_node.get_title()
+            current_research_node.get_title()
         )
 
         # 2. If a custom message was provided, add it as well
@@ -806,68 +810,42 @@ class DeepResearchEngine:
             # Prefix the custom message for clarity
             parent_auto_reply_aggregator.add_internal_message_from(
                 f"[Completion Message]: {message}",
-                current_node.get_title()
+                current_research_node.get_title()
             )
 
-        # --- Schedule the focus change ---
-        # Check if there are queued siblings to activate
-        parent_title = parent_node.get_title()
-        if parent_title in self.children_queue and self.children_queue[parent_title]:
-            # Get the next sibling from the queue
-            next_sibling_title = self.children_queue[parent_title].pop(0)
-            # If queue is empty after pop, remove the key
-            if not self.children_queue[parent_title]:
-                del self.children_queue[parent_title]
-
-            # Find the sibling node with matching title
-            target_sibling = None
-            for child in parent_node.list_child_nodes():
-                if child.get_title() == next_sibling_title:
-                    target_sibling = child
-                    break
-
-            if target_sibling:
-                self.future_execution_state.set_active_node(target_sibling)
-            else:
-                # If sibling not found, fall back to parent
-                self.future_execution_state.set_active_node(parent_node)
-        else:
-            # No queued siblings, focus up to parent
-            self.future_execution_state.set_active_node(parent_node)
+        # The node will be finished at the end of this cycle
+        # State machine will automatically return to parent node via next()
 
         return True
 
-    def fail_and_focus_up(self, message: str | None = None) -> bool:
+    def fail_and_focus_up(self, message: str | None, current_state_machine_node: 'StateMachineNode') -> bool:
         """
         Mark the current problem as FAILED, schedule focus up, and add notifications
         (standard and optional custom) to the parent's auto-reply.
 
         Args:
             message: Optional custom message explaining the failure.
+            current_state_machine_node: The current state machine node.
 
         Returns:
             bool: True if successful, False otherwise (e.g., no current node).
         """
-        if not self.research.research_initiated():
-            return False
-
-        current_node = self.current_execution_state.active_node  # Keep a reference
-        parent_node = current_node.get_parent()
+        current_research_node = current_state_machine_node.get_research_node()
+        parent_node = current_research_node.get_parent()
 
         # If this is the root node (no parent), we're done
         if parent_node is None:
             # Mark the root node as FAILED
-            current_node.set_problem_status(ProblemStatus.FAILED)
+            current_research_node.set_problem_status(ProblemStatus.FAILED)
             # Store the failure message if provided
             # Root node failed. Set awaiting flag.
             if message:
                 self.root_completion_message = message  # Store final message if any
-            self.finish_with_this_cycle()
-            print(f"Root node '{current_node.get_title()}' failed. Engine awaiting new instruction.")
+            print(f"Root node '{current_research_node.get_title()}' failed. Engine awaiting new instruction.")
             return True
 
         # Mark the current non-root node as FAILED
-        current_node.set_problem_status(ProblemStatus.FAILED)
+        current_research_node.set_problem_status(ProblemStatus.FAILED)
 
         # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
         parent_history = parent_node.get_history()
@@ -876,7 +854,7 @@ class DeepResearchEngine:
         # 1. Always add the standard status message
         parent_auto_reply_aggregator.add_internal_message_from(
             "Task marked FAILED, focusing back up.",
-            current_node.get_title()
+            current_research_node.get_title()
         )
 
         # 2. If a custom failure message was provided, add it as well
@@ -884,10 +862,10 @@ class DeepResearchEngine:
             # Prefix the custom message for clarity
             parent_auto_reply_aggregator.add_internal_message_from(
                 f"[Failure Message]: {message}",
-                current_node.get_title()
+                current_research_node.get_title()
             )
 
-        # TODO: Use the same queue mechanism as in the successful case, even if this one fails, maybe the next one will continue
-        self.future_execution_state.set_active_node(parent_node)
+        # The node will be finished at the end of this cycle
+        # State machine will automatically return to parent node via next()
 
         return True

@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research_assistant.engine.engine import DeepResearchEngine
-    from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research, ResearchNode
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.research import Research
+    from hermes.chat.interface.assistant.deep_research_assistant.engine.state_machine import StateMachineNode
 
 
 class CommandContext:
@@ -15,15 +16,18 @@ class CommandContext:
     access to only the functionality they need while hiding implementation details.
     """
 
-    def __init__(self, engine: 'DeepResearchEngine'):
+    def __init__(self, engine: 'DeepResearchEngine', current_state_machine_node: 'StateMachineNode'):
         """
         Initialize the command context, optionally with a reference to the engine.
 
         Args:
             engine: Optional reference to the engine for initialization
+            current_node: The current state machine node
         """
         # Reference to engine for special cases and callbacks
         self._engine = engine
+        self.current_state_machine_node = current_state_machine_node
+        self.current_node = current_state_machine_node.get_research_node()
 
     def refresh_from_engine(self):
         """Refresh context data from the engine"""
@@ -34,17 +38,13 @@ class CommandContext:
         return self._engine.research
 
     @property
-    def current_node(self) -> 'ResearchNode':
-        return self._engine.current_execution_state.active_node
-
-    @property
     def children_queue(self):
         return self._engine.children_queue
 
     # Command output operations
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
         """Add command output to be included in the automatic response"""
-        self._engine.add_command_output(command_name, args, output, self.current_node.get_title())
+        self._engine.add_command_output(command_name, args, output, self.current_node.get_title(), self.current_state_machine_node)
 
     # Log operations
     def add_to_permanent_log(self, content: str) -> None:
@@ -54,12 +54,14 @@ class CommandContext:
             self._engine.research.get_permanent_logs().add_log(content)
 
     def focus_down(self, subproblem_title: str) -> bool:
-        return self._engine.focus_down(subproblem_title)
+        return self._engine.focus_down(subproblem_title, self.current_state_machine_node)
 
     def focus_up(self, message: str | None = None) -> bool:
-        # Pass the message to the engine's method
-        return self._engine.focus_up(message=message)
+        # Pass the message and current node to the engine's method
+        assert self.current_state_machine_node
+        return self._engine.focus_up(message=message, current_state_machine_node=self.current_state_machine_node)
 
     def fail_and_focus_up(self, message: str | None = None) -> bool:
-        # Pass the message to the engine's method
-        return self._engine.fail_and_focus_up(message=message)
+        # Pass the message and current node to the engine's method
+        assert self.current_state_machine_node
+        return self._engine.fail_and_focus_up(message=message, current_state_machine_node=self.current_state_machine_node)

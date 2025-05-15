@@ -136,8 +136,8 @@ class DeepResearchAssistantInterface(Interface):
                     logger.info("Executing initial research.")
                     self._engine.execute()  # Runs until awaiting_new_instruction is True
                     # Check if the root node finished/failed to generate the final report
-                    if self._engine.current_execution_state.active_node == self._engine.research.get_root_node() \
-                    and self._engine.current_execution_state.active_node.get_problem_status() in [
+                    root_node = self._engine.research.get_root_node()
+                    if root_node.get_problem_status() in [
                         ProblemStatus.FINISHED,
                         ProblemStatus.FAILED,
                     ]:
@@ -172,8 +172,8 @@ class DeepResearchAssistantInterface(Interface):
                 self._engine.execute()  # Runs until awaiting_new_instruction is True again
                 # Check state after execution finishes
                 # Check if the root node finished/failed to generate the final report
-                if self._engine.current_execution_state.active_node == self._engine.research.get_root_node() \
-                and self._engine.current_execution_state.active_node.get_problem_status() in [
+                root_node = self._engine.research.get_root_node()
+                if root_node.get_problem_status() in [
                     ProblemStatus.FINISHED,
                     ProblemStatus.FAILED,
                 ]:
