@@ -55,17 +55,21 @@ class ArtifactManager:
     """Manages artifacts for a research node"""
 
     def __init__(self, node: 'ResearchNode'):
-        self.node = node
-        self.artifacts: list[Artifact] = []
+        self._node = node
+        self._artifacts: list[Artifact] = []
+
+    @property
+    def artifacts(self):
+        return self._artifacts
 
     @classmethod
     def load_for_research_node(cls, research_node: 'ResearchNode') -> list["ArtifactManager"]:
         """Load artifacts for a research node"""
-        manager = cls(research_node)
+        artifacts_manager = cls(research_node)
 
         node_path = research_node.get_path()
         if not node_path:
-            return [manager]
+            return [artifacts_manager]
 
         # Load artifacts from the artifacts directory
         artifacts_dir = node_path / "Artifacts"
@@ -74,21 +78,21 @@ class ArtifactManager:
                 if artifact_file.is_file() and artifact_file.suffix == ".md":
                     try:
                         artifact = Artifact.load_from_file(artifact_file)
-                        manager.artifacts.append(artifact)
+                        artifacts_manager._artifacts.append(artifact)
                     except Exception as e:
                         print(f"Error loading artifact {artifact_file}: {e}")
 
-        return [manager]
+        return [artifacts_manager]
 
     def add_artifact(self, artifact):
-        if artifact.name in (a.name for a in self.artifacts):
+        if artifact.name in (a.name for a in self._artifacts):
             raise ValueError("One node can't have multiple artifacts with same name, please check the commands.")
-        self.artifacts.append(artifact)
+        self._artifacts.append(artifact)
         self.save()
 
     def save(self):
         """Save artifacts to disk"""
-        node_path = self.node.get_path()
+        node_path = self._node.get_path()
         if not node_path:
             return
 
@@ -97,5 +101,5 @@ class ArtifactManager:
         artifacts_dir.mkdir(exist_ok=True)
 
         # Save each artifact
-        for artifact in self.artifacts:
+        for artifact in self._artifacts:
             artifact.save_to_file(artifacts_dir)
