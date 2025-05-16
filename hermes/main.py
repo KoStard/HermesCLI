@@ -226,9 +226,7 @@ def main():
         elif is_deep_research_mode:
             # Use the Deep Research Assistant interface with the specified path
             research_path = Path(cli_args.deep_research).absolute().resolve()
-            from hermes.chat.interface.assistant.deep_research_assistant.interface import (
-                DeepResearchAssistantInterface,
-            )
+            from hermes.chat.interface.assistant.agent.deep_research.interface import DeepResearchAssistantInterface
 
             deep_research_interface = DeepResearchAssistantInterface(
                 model=model,
@@ -248,7 +246,7 @@ def main():
             textwrap.dedent(
                 f"""
             Welcome to Hermes!
-            
+
             Using model {model_info_string}
             """
             )

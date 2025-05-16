@@ -1,8 +1,6 @@
 from pathlib import Path
 
-from hermes.chat.interface.assistant.deep_research_assistant.engine.engine import (
-    DeepResearchEngine,
-)
+from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
 from hermes.extensions_loader import load_extensions
 
 from .mock_llm_interface import MockLLMInterface
@@ -24,7 +22,7 @@ class DeepResearchMockApp:
         self.llm_interface = MockLLMInterface(root_dir)
 
         # Initialize the engine with the mock LLM interface and extensions
-        self.engine = DeepResearchEngine(
+        self.engine = AgentEngine(
             Path(root_dir),
             self.llm_interface,
             # deep_research_commands,

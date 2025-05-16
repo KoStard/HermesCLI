@@ -1,0 +1,2 @@
+class CommandContext:
+    pass
