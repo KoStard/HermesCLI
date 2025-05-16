@@ -234,17 +234,6 @@ class AgentEngine(Generic[CommandContextType]):
 
             history_messages = history_messages[::-1]
 
-            # --- 4. Print Latest Auto-Reply to Console (Optional) ---
-            # Render the *last* auto-reply added (if any) for console view, without future changes/truncation
-            if current_auto_reply_block:
-                console_auto_reply = current_auto_reply_block.generate_auto_reply(
-                    template_manager=self.template_manager,
-                    renderer_registry=self.renderer_registry,
-                    future_changes_map={},  # No future changes for console view
-                    per_command_output_maximum_length=None,  # No truncation for console
-                )
-                print(console_auto_reply)
-
             # Get the current node path for logging
             current_node_path = research_node.get_path()
 

@@ -86,6 +86,7 @@ class StateMachineImpl(StateMachine):
                 return None
 
             parent = self._active_node.get_parent()
+            assert parent
             if parent.has_pending_children():
                 self._active_node = parent.get_next_child()
                 return self._active_node
