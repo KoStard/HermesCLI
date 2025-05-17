@@ -117,3 +117,26 @@ Simplify the command processing flow by moving execution logic from the engine t
 
 **Rationale:**
 This change simplifies the architecture by removing an unnecessary layer of indirection. It should make the code more maintainable, easier to understand, and potentially more performant by eliminating the event passing overhead.
+
+## Task 5: Refactor Command Processing and Focus Logic
+
+**Status:** Completed
+
+**Description:**
+Refactor the command processing flow and focus change logic.
+The `CommandContext` should have a reference to the `CommandProcessor` that created it.
+The `AgentEngine`'s focus change methods (`focus_down`, `focus_up`, `fail_and_focus_up`) should be moved to the `CommandProcessor`.
+
+**Acceptance Criteria:**
+- [X] 1. `CommandContextFactory` and its implementations are updated to pass the `CommandProcessor` instance to the `CommandContext` constructor.
+- [X] 2. `CommandContext` (specifically `CommandContextImpl`) stores and uses this `CommandProcessor` reference.
+- [X] 3. The `focus_down`, `focus_up`, and `fail_and_focus_up` methods are moved from `AgentEngine` to `CommandProcessor`.
+- [X] 4. `CommandContextImpl` updates its focus methods to call the methods on its `CommandProcessor` reference.
+- [X] 5. All existing functionality related to command execution and focus changes remains intact.
+- [X] 6. Code remains clean, well-documented, and type-hinted.
+
+**Rationale:**
+This refactoring aims to:
+- Improve separation of concerns: `CommandProcessor` becomes more responsible for the command lifecycle, including focus changes triggered by commands.
+- Enhance encapsulation: `CommandContext` receives its dependencies explicitly.
+- Centralize related logic: Focus changes, often initiated by commands, are now managed closer to the command execution mechanism.

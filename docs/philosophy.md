@@ -35,6 +35,7 @@ This document captures the development philosophy you should follow throughout a
 
 ## Coding
 - Use Clean Code principles. Approach to this like craftsmanship.
+- Minimize unnecessary comments. If there is need for comments, there is likely need to simplify. Either do it or create a task for that.
 
 ## Testing
 - Create unit tests for each package, verifying the public methods

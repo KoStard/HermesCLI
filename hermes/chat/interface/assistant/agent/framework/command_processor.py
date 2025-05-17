@@ -1,16 +1,11 @@
 from typing import TYPE_CHECKING, Generic
 
 from hermes.chat.interface.assistant.agent.framework.commands.command_context_factory import CommandContextFactory, CommandContextType
-
-# Import the registry creation function and type alias
+from hermes.chat.interface.assistant.agent.framework.research import ResearchNode # Added for type hint
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
-
-# Import other necessary components
 from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
-
-# Import core command components from the new location
 from hermes.chat.interface.commands.command import (
     Command,
     CommandRegistry,
@@ -151,7 +146,9 @@ class CommandProcessor(Generic[CommandContextType]):
         args = result.args
         error = None
         command: Command[CommandContextType] | None = None  # Type hint for clarity
-        command_context = self.command_context_factory.create_command_context(self.engine, current_state_machine_node)
+        command_context = self.command_context_factory.create_command_context(
+            self.engine, current_state_machine_node, self
+        )
 
         try:
             # Use the provided command registry instance
@@ -234,3 +231,139 @@ class CommandProcessor(Generic[CommandContextType]):
             else:
                 report_to_add = self.final_error_report
             auto_reply_generator.add_error_report(report_to_add)
+
+    def focus_down(self, subproblem_title: str, current_state_machine_node: "TaskTreeNode") -> bool:
+        """
+        Schedule focus down to a subproblem after the current cycle is complete.
+
+        Args:
+            subproblem_title: Title of the subproblem to focus on.
+            current_state_machine_node: The current state machine node.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        current_research_node = current_state_machine_node.get_research_node()
+
+        # Find the child node with matching title
+        child_nodes = current_research_node.list_child_nodes()
+        target_child = None
+        for child in child_nodes:
+            if child.get_title() == subproblem_title:
+                target_child = child
+                break
+
+        if target_child is None:
+            return False
+
+        # Set the parent to PENDING
+        current_research_node.set_problem_status(ProblemStatus.PENDING)
+
+        # Add the child node to the state machine
+        current_state_machine_node.add_and_schedule_subnode(target_child)
+
+        return True
+
+    def focus_up(self, message: str | None, current_state_machine_node: "TaskTreeNode") -> bool:
+        """
+        Schedule focus up to the parent problem after the current cycle is complete.
+        Adds a standard notification and an optional custom message from the child
+        to the parent's auto-reply.
+
+        Args:
+            message: Optional custom message from the child node to the parent.
+            current_state_machine_node: The current state machine node.
+
+        Returns:
+            bool: True if successful, False otherwise (e.g., no current node).
+        """
+        current_research_node = current_state_machine_node.get_research_node()
+        parent_node = current_research_node.get_parent()
+        current_state_machine_node.finish()
+
+        # If this is the root node (no parent), we're done
+        if parent_node is None:
+            # Mark the root node as FINISHED
+            current_research_node.set_problem_status(ProblemStatus.FINISHED)
+            # Store the completion message if provided
+            # Root node finished. Set awaiting flag.
+            if message:
+                self.engine.root_completion_message = message  # Store final message if any
+            # Current node will finish at the end of this cycle
+            print(f"Root node '{current_research_node.get_title()}' finished. Engine awaiting new instruction.")
+            return True
+
+        # Mark the current non-root node as FINISHED
+        current_research_node.set_problem_status(ProblemStatus.FINISHED)
+
+        # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
+        parent_history = parent_node.get_history()
+        parent_auto_reply_aggregator = parent_history.get_auto_reply_aggregator()
+
+        # 1. Always add the standard status message
+        parent_auto_reply_aggregator.add_internal_message_from(
+            "Task marked FINISHED, focusing back up.", current_research_node.get_title()
+        )
+
+        # 2. If a custom message was provided, add it as well
+        if message:
+            # Prefix the custom message for clarity
+            parent_auto_reply_aggregator.add_internal_message_from(
+                f"[Completion Message]: {message}", current_research_node.get_title()
+            )
+
+        # The node will be finished at the end of this cycle
+        # State machine will automatically return to parent node via next()
+
+        return True
+
+    def fail_and_focus_up(self, message: str | None, current_state_machine_node: "TaskTreeNode") -> bool:
+        """
+        Mark the current problem as FAILED, schedule focus up, and add notifications
+        (standard and optional custom) to the parent's auto-reply.
+
+        Args:
+            message: Optional custom message explaining the failure.
+            current_state_machine_node: The current state machine node.
+
+        Returns:
+            bool: True if successful, False otherwise (e.g., no current node).
+        """
+        current_research_node = current_state_machine_node.get_research_node()
+        parent_node = current_research_node.get_parent()
+        current_state_machine_node.finish()
+
+        # If this is the root node (no parent), we're done
+        if parent_node is None:
+            # Mark the root node as FAILED
+            current_research_node.set_problem_status(ProblemStatus.FAILED)
+            # Store the failure message if provided
+            # Root node failed. Set awaiting flag.
+            if message:
+                self.engine.root_completion_message = message  # Store final message if any
+            print(f"Root node '{current_research_node.get_title()}' failed. Engine awaiting new instruction.")
+            return True
+
+        # Mark the current non-root node as FAILED
+        current_research_node.set_problem_status(ProblemStatus.FAILED)
+
+        # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
+        parent_history = parent_node.get_history()
+        parent_auto_reply_aggregator = parent_history.get_auto_reply_aggregator()
+
+        # 1. Always add the standard status message
+        parent_auto_reply_aggregator.add_internal_message_from(
+            "Task marked FAILED, focusing back up.", current_research_node.get_title()
+        )
+
+        # 2. If a custom failure message was provided, add it as well
+        if message:
+            # Prefix the custom message for clarity
+            parent_auto_reply_aggregator.add_internal_message_from(
+                f"[Failure Message]: {message}", current_research_node.get_title()
+            )
+
+        # The node will be finished at the end of this cycle
+        # State machine will automatically return to parent node via next()
+
+        return True
