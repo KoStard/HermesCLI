@@ -1,13 +1,14 @@
 import os
+from typing import Callable
 
 
 class TreeGenerator:
-    def __init__(self, exclusions: list[callable] = None):
+    def __init__(self, exclusions: list[Callable] | None = None):
         if exclusions is None:
             exclusions = [lambda x: x.startswith("."), lambda x: x == "__pycache__"]
         self.exclusions = exclusions
 
-    def generate_tree(self, root_path: str, depth: int = None) -> str:
+    def generate_tree(self, root_path: str, depth: int) -> str:
         """
         Generates a text-based tree representation of a directory structure.
 
@@ -57,9 +58,3 @@ class TreeGenerator:
                 tree_string += f"{prefix}{'-' if not prefix else '--'}{entry}\n"
 
         return tree_string
-
-
-if __name__ == "__main__":
-    generator = TreeGenerator()
-    tree_message = generator.generate_tree(".")
-    print(tree_message.text)

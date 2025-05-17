@@ -4,6 +4,7 @@ from collections.abc import Generator
 
 from hermes.chat.event import Event
 from hermes.chat.history import History
+from hermes.chat.interface import Interface
 from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.chat.interface.debug.debug_interface import DebugInterface
 from hermes.chat.interface.user.interface.user_interface import UserInterface
@@ -64,7 +65,7 @@ class DebugParticipant(Participant):
 
 
 class LLMParticipant(Participant):
-    def __init__(self, interface: ChatAssistantInterface):
+    def __init__(self, interface: Interface):
         self.interface = interface
 
     def consume_events(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:

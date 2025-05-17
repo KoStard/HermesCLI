@@ -35,7 +35,7 @@ class UserInterface(Interface):
         *,
         control_panel: UserControlPanel,
         command_completer: CommandCompleter,
-        markdown_highlighter: MarkdownHighlighter,
+        markdown_highlighter: MarkdownHighlighter | None,
         stt_input_handler: STTInputHandler | None,
         notifications_printer: CLINotificationsPrinter,
         user_input_from_cli: str,
