@@ -500,7 +500,6 @@ class AddKnowledgeCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, f"Knowledge {entry_identifier} added successfully.")
 
 
-# Explicitly register all commands defined in this file
 def register_deep_research_commands(registry: CommandRegistry):
     """Registers all built-in Deep Research commands to the given registry."""
     commands_to_register = [

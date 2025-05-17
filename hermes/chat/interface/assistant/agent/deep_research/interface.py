@@ -11,7 +11,6 @@ from hermes.chat.interface.assistant.agent.deep_research.commands.command_contex
 from hermes.chat.interface.assistant.agent.deep_research.commands.commands import register_deep_research_commands
 from hermes.chat.interface.assistant.agent.deep_research.context.dynamic_sections.registry import (
     get_data_type_to_renderer_instance_map,
-    register_all_dynamic_section_types,
 )
 from hermes.chat.interface.assistant.agent.deep_research.context.interface import DeepResearcherInterface
 from hermes.chat.interface.assistant.agent.deep_research.report.report_generator import ReportGeneratorImpl
@@ -51,7 +50,6 @@ class DeepResearchAssistantInterface(Interface):
                 self.command_registry.register(cmd_def)
 
         register_deep_research_commands(self.command_registry)
-        register_all_dynamic_section_types()
 
         templates_dir = Path(__file__).parent / "templates"
         template_manager = TemplateManager(templates_dir)

@@ -12,9 +12,6 @@ if TYPE_CHECKING:
 class DynamicSectionData:
     """Base class for dynamic section data. Frozen makes instances hashable."""
 
-    # Class registry for type lookup during deserialization
-    _registry: ClassVar[dict[str, type['DynamicSectionData']]] = {}
-
     def serialize(self) -> dict[str, Any]:
         """
         Serialize this instance to a dictionary for JSON storage.
@@ -26,11 +23,6 @@ class DynamicSectionData:
         }
 
     @classmethod
-    def register_type(cls, data_class: type['DynamicSectionData']) -> None:
-        """Register a DynamicSectionData subclass in the registry."""
-        cls._registry[data_class.__name__] = data_class
-
-    @classmethod
     def deserialize(cls, data: dict[str, Any]) -> Optional['DynamicSectionData']:
         """
         Deserialize from a dictionary (previously serialized with serialize()).
@@ -40,9 +32,6 @@ class DynamicSectionData:
             return None
 
         type_name = data["type"]
-        if type_name not in cls._registry:
-            print(f"Warning: Unknown dynamic section type '{type_name}' during deserialization")
-            return None
 
         try:
             # Use jsonpickle to decode the serialized object
