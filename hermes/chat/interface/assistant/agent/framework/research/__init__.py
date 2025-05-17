@@ -123,7 +123,7 @@ class Research(ABC):
         pass
 
     @abstractmethod
-    def research_initiated(self) -> bool:
+    def is_research_initiated(self) -> bool:
         # Return true if research has been loaded or created already
         pass
 

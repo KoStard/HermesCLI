@@ -33,7 +33,7 @@ class ResearchImpl(Research):
         # Look for the research metadata file
         return self.root_directory.exists() and not self.file_system.is_empty(self.root_directory)
 
-    def research_initiated(self) -> bool:
+    def is_research_initiated(self) -> bool:
         """Return whether research has been initiated"""
         return self._research_initiated and self.root_node is not None
 
@@ -60,7 +60,7 @@ class ResearchImpl(Research):
 
     def get_root_node(self) -> ResearchNode:
         """Get the root node of the research"""
-        if not self.research_initiated():
+        if not self.is_research_initiated():
             raise ValueError("Research not initiated")
         assert self.root_node is not None
         return self.root_node
@@ -88,7 +88,7 @@ class ResearchImpl(Research):
         Returns:
             List of (node, artifact) tuples for all matching artifacts
         """
-        if not self.research_initiated():
+        if not self.is_research_initiated():
             return []
 
         result = []

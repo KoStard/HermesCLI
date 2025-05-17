@@ -129,7 +129,7 @@ class DeepResearcherInterface(AgentInterface):
         # Artifacts
         node_artifacts_list = []
         # Use target_node directly if root is not yet defined (e.g., during initial define_problem)
-        root_node = research.get_root_node() if research.research_initiated() else target_node
+        root_node = research.get_root_node() if research.is_research_initiated() else target_node
         if root_node:
             node_artifacts_list = self._collect_artifacts_recursively(root_node, target_node)
         # Use factory method for ArtifactsSectionData

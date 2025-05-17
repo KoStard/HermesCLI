@@ -21,8 +21,8 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
     ProblemDefinition,
     ProblemStatus,
 )
-from hermes.chat.interface.assistant.agent.framework.state_machine import StateMachineNode
-from hermes.chat.interface.assistant.agent.framework.state_machine.state_machine import StateMachineImpl
+from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
+from hermes.chat.interface.assistant.agent.framework.task_tree.task_tree import TaskTreeImpl
 from hermes.chat.interface.assistant.agent.framework.status_printer import StatusPrinter
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.command_parser import CommandParser
@@ -55,7 +55,7 @@ class AgentEngine(Generic[CommandContextType]):
 
         # Initialize the research object which will handle all file system and node operations
         self.research = ResearchImpl(root_dir)
-        self.state_machine = StateMachineImpl()
+        self.task_tree = TaskTreeImpl()
         self.command_registry = command_registry
 
 
@@ -73,11 +73,11 @@ class AgentEngine(Generic[CommandContextType]):
 
         if self.research.research_already_exists():
             self.research.load_existing_research()
-            self.state_machine.set_root_research_node(self.research.get_root_node())
+            self.task_tree.set_root_research_node(self.research.get_root_node())
 
     def is_root_problem_defined(self) -> bool:
         """Check if the root problem is already defined"""
-        return self.research.research_initiated()
+        return self.research.is_research_initiated()
 
     def define_root_problem(self, instruction: str):
         """
@@ -93,13 +93,13 @@ class AgentEngine(Generic[CommandContextType]):
         problem_definition = ProblemDefinition(content=instruction)
         node = ResearchNodeImpl(problem=problem_definition, title=title, path=self.research.get_root_directory(), parent=None)
         self.research.initiate_research(node)
-        self.state_machine.set_root_research_node(self.research.get_root_node())
+        self.task_tree.set_root_research_node(self.research.get_root_node())
 
         self._print_current_status(self.research.get_root_node())
 
     def add_new_instruction(self, instruction: str):
         """Injects a new user instruction into the current node's context."""
-        if not self.research.research_initiated():
+        if not self.research.is_research_initiated():
             print("Error: Cannot prepare for new instruction without an active node.")
             return
 
@@ -115,7 +115,7 @@ class AgentEngine(Generic[CommandContextType]):
 
         # Mark the root problem as in progress
         root_node.set_problem_status(ProblemStatus.IN_PROGRESS)
-        self.state_machine.reactivate_root_node(root_node)
+        self.task_tree.reactivate_root_node(root_node)
 
         print("Engine ready to execute new instruction.")
 
@@ -135,13 +135,13 @@ class AgentEngine(Generic[CommandContextType]):
             if (not current_state_machine_node
                     or current_state_machine_node.is_finished()
                     or current_state_machine_node.has_pending_children()):
-                current_state_machine_node = self.state_machine.next()
+                current_state_machine_node = self.task_tree.next()
                 if current_state_machine_node is None:
                     break
 
             research_node = current_state_machine_node.get_research_node()
 
-            if not self.research.research_initiated():
+            if not self.research.is_research_initiated():
                 print("Error: No active node during execution loop. Stopping.")
                 break
 
@@ -346,7 +346,7 @@ class AgentEngine(Generic[CommandContextType]):
         pass
 
     def add_command_output(
-        self, command_name: str, args: dict, output: str, node_title: str, current_state_machine_node: "StateMachineNode"):
+        self, command_name: str, args: dict, output: str, node_title: str, current_state_machine_node: "TaskTreeNode"):
         """
         Add command output to be included in the automatic response
 
@@ -363,7 +363,7 @@ class AgentEngine(Generic[CommandContextType]):
         auto_reply_aggregator = current_state_machine_node.get_research_node().get_history().get_auto_reply_aggregator()
         auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})
 
-    def process_commands(self, text: str, current_state_machine_node: "StateMachineNode") -> tuple[bool, str, dict]:
+    def process_commands(self, text: str, current_state_machine_node: "TaskTreeNode") -> tuple[bool, str, dict]:
         """
         Process commands from text using the CommandProcessor helper class.
 
@@ -471,7 +471,7 @@ class AgentEngine(Generic[CommandContextType]):
         """Generate a summary of all artifacts created during the research. (Currently not called automatically)"""
         return self.report_generator.generate_final_report(self.research, self.interface, self.root_completion_message)
 
-    def focus_down(self, subproblem_title: str, current_state_machine_node: 'StateMachineNode') -> bool:
+    def focus_down(self, subproblem_title: str, current_state_machine_node: 'TaskTreeNode') -> bool:
         """
         Schedule focus down to a subproblem after the current cycle is complete
 
@@ -503,7 +503,7 @@ class AgentEngine(Generic[CommandContextType]):
 
         return True
 
-    def focus_up(self, message: str | None, current_state_machine_node: 'StateMachineNode') -> bool:
+    def focus_up(self, message: str | None, current_state_machine_node: 'TaskTreeNode') -> bool:
         """
         Schedule focus up to the parent problem after the current cycle is complete.
         Adds a standard notification and an optional custom message from the child
@@ -558,7 +558,7 @@ class AgentEngine(Generic[CommandContextType]):
 
         return True
 
-    def fail_and_focus_up(self, message: str | None, current_state_machine_node: 'StateMachineNode') -> bool:
+    def fail_and_focus_up(self, message: str | None, current_state_machine_node: 'TaskTreeNode') -> bool:
         """
         Mark the current problem as FAILED, schedule focus up, and add notifications
         (standard and optional custom) to the parent's auto-reply.

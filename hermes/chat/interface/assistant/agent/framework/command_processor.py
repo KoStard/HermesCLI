@@ -10,7 +10,7 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
 )
 
 # Import other necessary components
-from hermes.chat.interface.assistant.agent.framework.state_machine import StateMachineNode
+from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 
 # Import core command components from the new location
 from hermes.chat.interface.commands.command import (
@@ -39,7 +39,7 @@ class CommandProcessor(Generic[CommandContextType]):
         self._execution_failed_commands = []
         self._finish_or_fail_skipped = False
 
-    def process(self, text: str, current_state_machine_node: "StateMachineNode") -> tuple[bool, str, dict]:
+    def process(self, text: str, current_state_machine_node: "TaskTreeNode") -> tuple[bool, str, dict]:
         """
         Process commands from text.
 
@@ -63,7 +63,7 @@ class CommandProcessor(Generic[CommandContextType]):
 
         return self.commands_executed, self.final_error_report, self.execution_status
 
-    def _handle_shutdown_request(self, text: str, current_state_machine_node: "StateMachineNode") -> bool:
+    def _handle_shutdown_request(self, text: str, current_state_machine_node: "TaskTreeNode") -> bool:
         """Check for emergency shutdown code."""
         # Only shut down if the current node is the root node
         research_node = current_state_machine_node.get_research_node()
@@ -79,7 +79,7 @@ class CommandProcessor(Generic[CommandContextType]):
             # Optionally add an error message to auto-reply here
         return False
 
-    def _add_assistant_message_to_history(self, text: str, current_state_machine_node: "StateMachineNode"):
+    def _add_assistant_message_to_history(self, text: str, current_state_machine_node: "TaskTreeNode"):
         """Add the assistant's message to history for the current node."""
         history = current_state_machine_node.get_research_node().get_history()
         history.add_message("assistant", text)
@@ -93,7 +93,7 @@ class CommandProcessor(Generic[CommandContextType]):
 
         return parse_results
 
-    def _execute_commands(self, parse_results: list[ParseResult], current_state_machine_node: "StateMachineNode"):
+    def _execute_commands(self, parse_results: list[ParseResult], current_state_machine_node: "TaskTreeNode"):
         """Execute valid commands and track status."""
         command_that_should_be_last_reached = False
         has_parsing_errors = bool(self._parsing_error_report)  # Check if initial parsing found errors
@@ -155,7 +155,7 @@ class CommandProcessor(Generic[CommandContextType]):
                     command_that_should_be_last_reached = True
             # else: command was None (e.g., unknown command, handled during parsing)
 
-    def _execute_single_command(self, result: ParseResult, current_state_machine_node: "StateMachineNode") -> tuple[Command | None, Exception | None]:
+    def _execute_single_command(self, result: ParseResult, current_state_machine_node: "TaskTreeNode") -> tuple[Command | None, Exception | None]:
         """Execute a single command and return the command object and any execution error."""
         command_name = result.command_name
         args = result.args
@@ -221,7 +221,7 @@ class CommandProcessor(Generic[CommandContextType]):
             else:  # Only execution errors or syntax errors
                 self.final_error_report += "\n" + execution_report
 
-    def _update_auto_reply(self, current_state_machine_node: "StateMachineNode"):
+    def _update_auto_reply(self, current_state_machine_node: "TaskTreeNode"):
         """Add error reports and confirmation requests to the auto-reply aggregator."""
         auto_reply_generator = current_state_machine_node.get_research_node().get_history().get_auto_reply_aggregator()
 

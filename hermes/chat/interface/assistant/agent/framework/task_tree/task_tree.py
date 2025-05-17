@@ -2,11 +2,11 @@ from collections import deque
 from typing import Optional
 
 from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
-from hermes.chat.interface.assistant.agent.framework.state_machine import StateMachine, StateMachineNode
+from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree, TaskTreeNode
 
 
-class StateMachineNodeImpl(StateMachineNode):
-    def __init__(self, research_node: ResearchNode, parent: Optional['StateMachineNode'] = None):
+class TaskTreeNodeImpl(TaskTreeNode):
+    def __init__(self, research_node: ResearchNode, parent: Optional['TaskTreeNode'] = None):
         self._is_finished = False
         self._research_node = research_node
         self._parent = parent
@@ -25,7 +25,7 @@ class StateMachineNodeImpl(StateMachineNode):
         """
         Add a child node to be processed next when this node is active
         """
-        child_node = StateMachineNodeImpl(research_node, self)
+        child_node = TaskTreeNodeImpl(research_node, self)
         self._children_queue.append(child_node)
 
     def get_research_node(self) -> 'ResearchNode':
@@ -40,7 +40,7 @@ class StateMachineNodeImpl(StateMachineNode):
         """
         return len(self._children_queue) > 0
 
-    def get_next_child(self) -> Optional['StateMachineNode']:
+    def get_next_child(self) -> Optional['TaskTreeNode']:
         """
         Get the next child node from the queue, if any
         """
@@ -48,19 +48,19 @@ class StateMachineNodeImpl(StateMachineNode):
             return None
         return self._children_queue.popleft()
 
-    def get_parent(self) -> Optional['StateMachineNode']:
+    def get_parent(self) -> Optional['TaskTreeNode']:
         """
         Get the parent node, if any
         """
         return self._parent
 
 
-class StateMachineImpl(StateMachine):
+class TaskTreeImpl(TaskTree):
     def __init__(self):
         self._root_node = None
         self._active_node = None
 
-    def next(self) -> StateMachineNode | None:
+    def next(self) -> TaskTreeNode | None:
         """
         Should automatically identify which nodes are finished and find the next one that should be picked up.
         No explicit focus_up needed.
@@ -101,7 +101,7 @@ class StateMachineImpl(StateMachine):
         """
         Set the root research node and reset the state machine
         """
-        self._root_node = StateMachineNodeImpl(root_research_node)
+        self._root_node = TaskTreeNodeImpl(root_research_node)
         self._active_node = None  # Reset active node
 
     def reactivate_root_node(self, root_research_node: 'ResearchNode'):

@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
 
 
-class StateMachineNode(ABC):
+class TaskTreeNode(ABC):
     @abstractmethod
     def finish(self):
         """
@@ -30,17 +30,17 @@ class StateMachineNode(ABC):
         pass
 
     @abstractmethod
-    def get_next_child(self) -> Optional['StateMachineNode']:
+    def get_next_child(self) -> Optional['TaskTreeNode']:
         pass
 
     @abstractmethod
-    def get_parent(self) -> Optional['StateMachineNode']:
+    def get_parent(self) -> Optional['TaskTreeNode']:
         pass
 
 
-class StateMachine(ABC):
+class TaskTree(ABC):
     @abstractmethod
-    def next(self) -> StateMachineNode | None:
+    def next(self) -> TaskTreeNode | None:
         """
         Should automatically identify which nodes are finished and find the next one that should be picked up.
         No explicit focus_up needed.

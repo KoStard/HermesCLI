@@ -5,9 +5,9 @@ from hermes.chat.interface.assistant.agent.framework.commands.command_context_fa
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
-    from hermes.chat.interface.assistant.agent.framework.state_machine import StateMachineNode
+    from hermes.chat.interface.assistant.agent.framework.state_machine import TaskTreeNode
 
 
 class CommandContextFactoryImpl(CommandContextFactory[CommandContextImpl]):
-    def create_command_context(self, engine: "AgentEngine", current_state_machine_node: "StateMachineNode") -> CommandContextImpl:
+    def create_command_context(self, engine: "AgentEngine", current_state_machine_node: "TaskTreeNode") -> CommandContextImpl:
         return CommandContextImpl(engine, current_state_machine_node)

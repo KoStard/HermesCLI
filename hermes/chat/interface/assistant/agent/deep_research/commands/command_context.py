@@ -6,7 +6,7 @@ from hermes.chat.interface.assistant.agent.framework.commands.command_context im
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
     from hermes.chat.interface.assistant.agent.framework.research import Research
-    from hermes.chat.interface.assistant.agent.framework.state_machine import StateMachineNode
+    from hermes.chat.interface.assistant.agent.framework.state_machine import TaskTreeNode
 
 
 class CommandContextImpl(CommandContext):
@@ -18,7 +18,7 @@ class CommandContextImpl(CommandContext):
     access to only the functionality they need while hiding implementation details.
     """
 
-    def __init__(self, engine: 'AgentEngine', current_state_machine_node: 'StateMachineNode'):
+    def __init__(self, engine: 'AgentEngine', current_state_machine_node: 'TaskTreeNode'):
         """
         Initialize the command context, optionally with a reference to the engine.
 
