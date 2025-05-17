@@ -9,7 +9,7 @@ description = "An extendable CLI interface for LLMs"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "appdirs>=1.4.4", # Added for cross-platform config directory
+    "appdirs>=1.4.4",             # Added for cross-platform config directory
     "anthropic>=0.40.0",
     "boto3>=1.37.0",
     "exa-py>=1.7.3",
@@ -41,7 +41,7 @@ dev = [
     "ipython>=8.31.0",
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
-    "pytest-mock>=3.12.0"
+    "pytest-mock>=3.12.0",
 ]
 
 [tool.pytest.ini_options]
@@ -50,15 +50,10 @@ python_files = ["test_*.py"]
 addopts = "-v"
 
 [tool.hatch.build]
-include = [
-  "hermes",
-]
+include = ["hermes"]
 
 [dependency-groups]
-dev = [
-    "invoke>=2.2.0",
-    "ruff>=0.11.8",
-]
+dev = ["invoke>=2.2.0", "pyright>=1.1.400", "ruff>=0.11.8"]
 
 [tool.ruff.lint]
 select = [
@@ -78,3 +73,6 @@ select = [
 
 [tool.ruff]
 line-length = 140
+
+[tool.pyright]
+python.pythonPath = ".venv/bin/python"

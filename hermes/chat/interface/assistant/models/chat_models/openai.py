@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import Any
 
 from hermes.chat.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
@@ -26,7 +27,7 @@ class OpenAIModel(ChatModel):
         self.model = self.config.get("model", "gpt-4o")
         self.client = openai.Client(api_key=api_key, base_url=base_url)
 
-    def send_request(self, request: any) -> Generator[str, None, None]:
+    def send_request(self, request: Any) -> Generator[str, None, None]:
         import openai
 
         try:

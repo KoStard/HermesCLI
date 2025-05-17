@@ -9,13 +9,13 @@ How can you pass a generator to another function, such that it consumes only par
 """
 
 from collections.abc import Generator
-from typing import TypeVar
+from typing import Iterator, TypeVar
 
 T = TypeVar("T")
 
 
 class PeekableGenerator:
-    def __init__(self, generator: Generator[T, None, None]):
+    def __init__(self, generator: Iterator):
         self._generator = generator
         self._cache = []
 

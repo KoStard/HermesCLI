@@ -18,9 +18,9 @@ from hermes.chat.message import TextMessage
 class DebugInterface(ChatAssistantInterface):
     def __init__(
         self,
+        control_panel: ChatAssistantControlPanel,
+        model: ChatModel,
         port=12345,
-        control_panel: ChatAssistantControlPanel = None,
-        model: ChatModel = None,
     ):
         self.port = port
         self.socket = None

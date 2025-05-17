@@ -9,13 +9,15 @@ import importlib.util
 import logging
 import sys
 from pathlib import Path
+from types import ModuleType
+from typing import Callable
 
 from hermes.chat.interface.commands.command import Command
 from hermes.chat.interface.control_panel import ControlPanelCommand
 from hermes.utils.config_utils import get_extensions_dir_path
 
 
-def load_extension_module(extension_path: Path) -> object | None:
+def load_extension_module(extension_path: Path) -> ModuleType | None:
     """Load a Python module from a file path"""
     try:
         spec = importlib.util.spec_from_file_location(f"hermes_extension_{extension_path.parent.name}", extension_path)
@@ -32,7 +34,7 @@ def load_extension_module(extension_path: Path) -> object | None:
         return None
 
 
-def get_extension_commands(module: object, function_name: str) -> list[ControlPanelCommand]:
+def get_extension_commands(module: ModuleType, function_name: str) -> list[ControlPanelCommand]:
     """Get commands from an extension module using the specified function"""
     try:
         if hasattr(module, function_name):
@@ -50,7 +52,7 @@ def get_extension_commands(module: object, function_name: str) -> list[ControlPa
 def load_extensions() -> tuple[
     list[ControlPanelCommand],
     list[ControlPanelCommand],
-    list[callable],
+    list[Callable],
     list[type[Command]],
 ]:
     """

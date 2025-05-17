@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import Any
 
 from hermes.chat.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
@@ -38,7 +39,7 @@ class Gemini2Model(ChatModel):
     def _supports_thinking(self) -> bool:
         return "thinking" in self.model_tag
 
-    def send_request(self, request: any) -> Generator[str, None, None]:
+    def send_request(self, request: Any) -> Generator[str, None, None]:
         from google.genai.errors import ClientError
         from google.genai.types import GenerateContentConfig
         from tenacity import (

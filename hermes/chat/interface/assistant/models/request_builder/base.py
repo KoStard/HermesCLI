@@ -2,6 +2,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from typing import Any
 
 from hermes.chat.interface.assistant.models.prompt_builder.base import PromptBuilderFactory
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -44,7 +45,7 @@ class RequestBuilder(ABC):
 
         self._url_contents = {}
 
-    def build_request(self, messages: Sequence[Message]) -> any:
+    def build_request(self, messages: Sequence[Message]) -> Any:
         self.initialize_request()
 
         for message in messages:
@@ -138,8 +139,8 @@ class RequestBuilder(ABC):
         text: str,
         author: str,
         message_id: int,
-        name: str = None,
-        text_role: str = None,
+        name: str | None = None,
+        text_role: str | None = None,
     ):
         self.notifications_printer.print_error(f"Text message not supported by {self.model_tag}. Discarding message.")
 
@@ -181,7 +182,7 @@ class RequestBuilder(ABC):
         self.notifications_printer.print_error(f"URL message not supported by {self.model_tag}. Discarding message.")
 
     @abstractmethod
-    def compile_request(self) -> any:
+    def compile_request(self) -> Any:
         pass
 
     @abstractmethod

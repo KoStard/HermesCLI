@@ -18,7 +18,7 @@ class ControlPanelCommand:
     command_label: str
     description: str
     short_description: str
-    parser: Callable[[str], Event]
+    parser: Callable[[str], Event | None]
     priority: int = 0
     with_argument: bool = True
     # For user commands only

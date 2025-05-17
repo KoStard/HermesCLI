@@ -4,7 +4,7 @@ from .base import PromptBuilder, PromptBuilderFactory
 
 
 class SimplePromptTextPiece:
-    def __init__(self, text: str, name: str = None, text_role: str = None):
+    def __init__(self, text: str, name: str | None = None, text_role: str | None = None):
         self.text = text
         self.name = name
         self.text_role = text_role
@@ -16,7 +16,7 @@ class SimplePromptBuilder(PromptBuilder):
     def __init__(self):
         self.text_pieces: list[SimplePromptTextPiece] = []
 
-    def add_text(self, text: str, name: str = None, text_role: str = None):
+    def add_text(self, text: str, name: str | None = None, text_role: str | None = None):
         """
         Adds a piece of text to the prompt.
 
@@ -59,10 +59,10 @@ class SimplePromptBuilderFactory(PromptBuilderFactory):
     def get_help_message(self) -> str:
         return textwrap.dedent(
             """
-        You are a helpful assistant. Your response is not limited to XML. In fact, you can respond with any text, including markdown, 
+        You are a helpful assistant. Your response is not limited to XML. In fact, you can respond with any text, including markdown,
         and should not use xml unless directly asked, as it's frustrating for the user.
-        The user prompts are wrapped in simple xml tags to help you understand the structure of the prompt. 
-        This structure is applied only to the user prompts, not to the assistant responses. 
+        The user prompts are wrapped in simple xml tags to help you understand the structure of the prompt.
+        This structure is applied only to the user prompts, not to the assistant responses.
         Check other instructions for assistant response format.
         """
         )

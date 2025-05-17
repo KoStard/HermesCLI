@@ -39,8 +39,8 @@ class OpenAIRequestBuilder(RequestBuilder):
         text: str,
         author: str,
         message_id: int,
-        name: str = None,
-        text_role: str = None,
+        name: str | None = None,
+        text_role: str | None = None,
     ):
         if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()

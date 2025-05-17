@@ -1,5 +1,6 @@
 import time
 from collections.abc import Generator
+from typing import Any
 
 from hermes.chat.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
@@ -39,11 +40,11 @@ class BedrockModel(ChatModel):
                 retries={"max_attempts": 5, "mode": "adaptive"},
             ),
         )
-        self._low_reasoning_tokens = self.config.get("low_reasoning_tokens", 1024)
-        self._medium_reasoning_tokens = self.config.get("low_reasoning_tokens", 1024 * 5)
-        self._high_reasoning_tokens = self.config.get("low_reasoning_tokens", 1024 * 10)
+        self._low_reasoning_tokens: int = self.config.get("low_reasoning_tokens", 1024)
+        self._medium_reasoning_tokens: int = self.config.get("low_reasoning_tokens", 1024 * 5)
+        self._high_reasoning_tokens: int = self.config.get("low_reasoning_tokens", 1024 * 10)
 
-    def send_request(self, request: any) -> Generator[str, None, None]:
+    def send_request(self, request: Any) -> Generator[str, None, None]:
         response = self._call_and_retry_if_needed(request)
 
         for event in response["stream"]:
@@ -101,14 +102,15 @@ class BedrockModel(ChatModel):
 
     def set_thinking_level(self, level: str):
         if hasattr(self.request_builder, "set_reasoning_effort"):
+            numeric_level: int | None = None
             if level == "low":
-                level = self._low_reasoning_tokens
+                numeric_level = self._low_reasoning_tokens
             elif level == "medium":
-                level = self._medium_reasoning_tokens
+                numeric_level = self._medium_reasoning_tokens
             elif level == "high":
-                level = self._high_reasoning_tokens
+                numeric_level = self._high_reasoning_tokens
             elif level == "off":
-                level = None
+                numeric_level = None
             else:
                 raise ValueError(f"Invalid thinking level: {level}")
-            self.request_builder.set_reasoning_effort(level)
+            self.request_builder.set_reasoning_effort(numeric_level)

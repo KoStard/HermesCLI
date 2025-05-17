@@ -41,7 +41,7 @@ class ChatAssistantCommandContext:
         """Get the current working directory."""
         return self._cwd
 
-    def create_assistant_notification(self, message: str, name: str = None) -> MessageEvent:
+    def create_assistant_notification(self, message: str, name: str | None = None) -> MessageEvent:
         """Create a notification that's only visible to the assistant."""
         return MessageEvent(AssistantNotificationMessage(text=message, name=name))
 
@@ -184,7 +184,7 @@ class CreateFileCommand(Command[ChatAssistantCommandContext]):
             "create_file",
             """Create a new file with the specified content.
 
-**IMPORTANT:** When the user asks you to "create a file", "make a file", "generate a file", 
+**IMPORTANT:** When the user asks you to "create a file", "make a file", "generate a file",
 or uses similar wording that implies the creation of a new file, you **MUST** use this command.
 
 The content will be written to the file as-is, without any additional formatting.
@@ -292,8 +292,8 @@ How the section path works:
 1. You point at the section with the section path. The section path doesn't say what happens with the content.
 2. The section path includes everything in its scope. Except for __preface, it also includes all the children (sections with higher level)
 3. You specify the section path by writing the section titles (without the #) separated by '>'. Example: T1 > T2 > T3
-4. It's possible you'll have content in the given parent section before the child section starts. To point at that content, 
-   add '__preface' at the end of the section path. This will target the content inside that section, 
+4. It's possible you'll have content in the given parent section before the child section starts. To point at that content,
+   add '__preface' at the end of the section path. This will target the content inside that section,
    before any other section starts (even child sections).
    Example:
    T1 > T2 > __preface
@@ -302,7 +302,7 @@ How the section path works:
    ### T2
    Some content <<< This content will be targeted
    #### T3
-5. The section path must start from the root node, which is the top-level header of the document. If there are multiple top-level headers, 
+5. The section path must start from the root node, which is the top-level header of the document. If there are multiple top-level headers,
 include the one where the target section is.
 
 The section path must exactly match the headers in the document.
@@ -377,7 +377,7 @@ Example:
     ## Chapter 1
     ### Section 1.1
     ### Section 1.2
-    
+
     Using this command:
     <<< markdown_append_section
     ///path
@@ -393,7 +393,7 @@ Example:
     ### Section 1.1
     ### Section 1.2
     This content will be appended to the end of Chapter 1.
-    
+
 This command doesn't work on non-markdown files.""",
         )
         self.add_section("path", True, "Path to the markdown file")

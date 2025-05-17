@@ -7,7 +7,7 @@ Maybe here we can talk about a tree of prompt pieces, with depths, etc.
 
 class PromptBuilder(ABC):
     @abstractmethod
-    def add_text(self, text: str, name: str = None, text_role: str = None):
+    def add_text(self, text: str, name: str | None = None, text_role: str | None = None):
         pass
 
     @abstractmethod

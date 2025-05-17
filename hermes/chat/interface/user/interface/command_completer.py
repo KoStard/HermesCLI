@@ -5,7 +5,7 @@ class CommandCompleter(Completer):
     def __init__(self, commands: list[str]):
         self.commands = commands
 
-    def fuzzy_match(self, pattern: str, command: str) -> tuple[bool, int]:
+    def fuzzy_match(self, pattern: str, command: str) -> tuple[bool, float]:
         """
         Returns (is_match, score) where:
         - is_match is True if pattern chars appear in order in command

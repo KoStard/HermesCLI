@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import Any
 
 from hermes.chat.interface.assistant.models.prompt_builder.simple_prompt_builder import (
     SimplePromptBuilderFactory,
@@ -20,7 +21,7 @@ class ClaudeModel(ChatModel):
             raise ValueError("API key is required for Claude model")
         self.client = anthropic.Anthropic(api_key=api_key, default_headers={"anthropic-beta": "pdfs-2024-09-25"})
 
-    def send_request(self, request: any) -> Generator[str, None, None]:
+    def send_request(self, request: Any) -> Generator[str, None, None]:
         with self.client.messages.stream(**request) as stream:
             yield from stream.text_stream
 

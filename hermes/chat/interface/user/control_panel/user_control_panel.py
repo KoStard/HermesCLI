@@ -44,7 +44,7 @@ class UserControlPanel(ControlPanel):
         self,
         *,
         notifications_printer: CLINotificationsPrinter,
-        extra_commands: list[ControlPanelCommand] = None,
+        extra_commands: list[ControlPanelCommand],
         exa_client: ExaClient | None = None,
         llm_control_panel=None,
         is_deep_research_mode=False,
@@ -359,7 +359,7 @@ class UserControlPanel(ControlPanel):
 
         return None
 
-    def _parse_set_deep_research_budget_command(self, content: str) -> Event:
+    def _parse_set_deep_research_budget_command(self, content: str) -> Event | None:
         """Parse the /set_deep_research_budget command"""
         try:
             budget = int(content.strip())
@@ -374,7 +374,7 @@ class UserControlPanel(ControlPanel):
             )
             return None
 
-    def _parse_fuzzy_select_command(self, content: str) -> Event:
+    def _parse_fuzzy_select_command(self, content: str) -> list[Event]:
         """Parse the /fuzzy_select command"""
         try:
             fuzzy_selector = FuzzyFilesSelector()

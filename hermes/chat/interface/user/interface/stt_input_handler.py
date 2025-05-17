@@ -93,7 +93,7 @@ class STTInputHandler:
                 temperature=0,
                 response_format="text",
             )
-        return transcript
+        return transcript.text
 
     def cleanup(self, audio_file: str):
         os.remove(audio_file)

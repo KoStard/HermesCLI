@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Generator
+from typing import Any
 
 from hermes.chat.event import (
     Event,
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class ChatAssistantInterface(Interface):
     model: ChatModel
-    request: any
+    request: Any
 
     def __init__(self, model: ChatModel, control_panel: ChatAssistantControlPanel):
         self.model = model

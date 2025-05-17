@@ -76,6 +76,9 @@ class MarkdownHighlighter:
             original_text += line
             buffer += line
             parsed = ast(buffer)
+            if type(parsed) != list:
+                continue
+            assert isinstance(parsed, list)
             if len(parsed) == len(old_parsed):
                 continue
             old_parsed = parsed

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator
+from typing import Any
 
 from hermes.chat.interface.assistant.models.request_builder.base import RequestBuilder
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -21,7 +22,7 @@ class ChatModel(ABC):
         pass
 
     @abstractmethod
-    def send_request(self, request: any) -> Generator[str, None, None]:
+    def send_request(self, request: Any) -> Generator[str, None, None]:
         pass
 
     @abstractmethod

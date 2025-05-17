@@ -1,7 +1,8 @@
 from collections.abc import Generator
+from typing import Iterable
 
 
-def chunks_to_lines(chunks: Generator[str, None, None]) -> Generator[str, None, None]:
+def chunks_to_lines(chunks: Iterable[str]) -> Generator[str, None, None]:
     buffer = ""
     for chunk in chunks:
         buffer += chunk

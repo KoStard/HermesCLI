@@ -1,4 +1,5 @@
 from base64 import b64encode
+from typing import Any
 
 from hermes.chat.interface.assistant.models.request_builder.all_messages_aggregator import (
     AllMessagesAggregator,
@@ -27,7 +28,7 @@ class ClaudeRequestBuilder(RequestBuilder):
         )
         self.text_messages_aggregator.clear()
 
-    def compile_request(self) -> any:
+    def compile_request(self) -> Any:
         self._flush_text_messages()
 
         final_messages = []
@@ -45,8 +46,8 @@ class ClaudeRequestBuilder(RequestBuilder):
         text: str,
         author: str,
         message_id: int,
-        name: str = None,
-        text_role: str = None,
+        name: str | None = None,
+        text_role: str | None = None,
     ):
         if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()

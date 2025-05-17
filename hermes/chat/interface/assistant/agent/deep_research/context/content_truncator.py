@@ -1,6 +1,6 @@
 class ContentTruncator:
     @staticmethod
-    def truncate(content: str, max_length: int, additional_help: str = None) -> str:
+    def truncate(content: str, max_length: int, additional_help: str | None = None) -> str:
         """
         Truncates content to the specified maximum length, ending at a line break.
 

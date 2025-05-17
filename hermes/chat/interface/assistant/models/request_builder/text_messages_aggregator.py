@@ -14,8 +14,8 @@ class TextMessagesAggregator:
         message: str,
         author: str,
         message_id: int,
-        name: str = None,
-        text_role: str = None,
+        name: str | None = None,
+        text_role: str | None = None,
     ):
         if message:
             msg = {"role": author, "content": message}
@@ -28,7 +28,7 @@ class TextMessagesAggregator:
                 msg["content"] = f"[{current_time}] {msg['content']}"
             self.messages.append(msg)
 
-    def get_current_author(self) -> str:
+    def get_current_author(self) -> str | None:
         if not self.messages:
             return None
         return self.messages[-1]["role"]

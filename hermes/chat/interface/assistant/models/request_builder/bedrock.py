@@ -1,3 +1,4 @@
+from typing import Any
 from hermes.chat.interface.assistant.models.request_builder.all_messages_aggregator import (
     AllMessagesAggregator,
 )
@@ -10,7 +11,7 @@ from hermes.chat.interface.assistant.models.request_builder.text_messages_aggreg
 class BedrockRequestBuilder(RequestBuilder):
     def __init__(self, model_tag, notifications_printer, prompt_builder_factory):
         super().__init__(model_tag, notifications_printer, prompt_builder_factory)
-        self.reasoning_effort: int = None
+        self.reasoning_effort: int | None = None
 
     def initialize_request(self):
         self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
@@ -20,7 +21,7 @@ class BedrockRequestBuilder(RequestBuilder):
     def _add_content(self, content: dict, author: str):
         self.all_messages_aggregator.add_message(content, author)
 
-    def compile_request(self) -> any:
+    def compile_request(self) -> Any:
         self._flush_text_messages()
 
         final_messages = []
@@ -56,8 +57,8 @@ class BedrockRequestBuilder(RequestBuilder):
         text: str,
         author: str,
         message_id: int,
-        name: str = None,
-        text_role: str = None,
+        name: str | None = None,
+        text_role: str | None = None,
     ):
         if self.text_messages_aggregator.get_current_author() != author and not self.text_messages_aggregator.is_empty():
             self._flush_text_messages()
@@ -150,5 +151,5 @@ class BedrockRequestBuilder(RequestBuilder):
     def handle_url_message(self, url: str, author: str, message_id: int):
         return self._default_handle_url_message(url, author, message_id)
 
-    def set_reasoning_effort(self, level: int):
+    def set_reasoning_effort(self, level: int | None):
         self.reasoning_effort = level

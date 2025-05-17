@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from hermes.chat.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
@@ -37,11 +38,11 @@ class Message(ABC):
         self.timestamp = timestamp or datetime.now()
 
     @abstractmethod
-    def get_content_for_user(self) -> str:
+    def get_content_for_user(self) -> str | Generator[str]:
         pass
 
     @abstractmethod
-    def get_content_for_assistant(self) -> any:
+    def get_content_for_assistant(self) -> Any:
         pass
 
     @abstractmethod
@@ -552,7 +553,7 @@ class UrlMessage(Message):
 class ThinkingAndResponseGeneratorMessage(Message):
     """Class for messages that contain both thinking and response generators"""
 
-    thinking_and_response_generator: Generator[BaseLLMResponse, None, None]
+    thinking_and_response_generator: PeekableGenerator
     thinking_text: str
     response_text: str
     thinking_finished: bool
