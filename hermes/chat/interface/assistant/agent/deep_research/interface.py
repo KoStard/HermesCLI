@@ -156,7 +156,7 @@ class DeepResearchAssistantInterface(Interface):
 
         try:
             # --- Initial Problem Definition ---
-            if not self._engine.is_root_problem_defined():
+            if not self._engine.is_research_initiated():
                 if self._instruction:
                     logger.info("Defining root problem.")
                     self._engine.define_root_problem(self._instruction)

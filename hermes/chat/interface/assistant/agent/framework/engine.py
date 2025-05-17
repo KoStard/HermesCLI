@@ -58,14 +58,12 @@ class AgentEngine(Generic[CommandContextType]):
         self.task_tree = TaskTreeImpl()
         self.command_registry = command_registry
 
-
         # Initialize other components
         self.command_parser = CommandParser(self.command_registry)
         self.llm_interface = llm_interface
 
         # Budget tracking
         self.budget: int | None = None  # No budget by default
-        self.initial_budget = None  # Store the initial budget for reference
         self.message_cycles_used = 0
         self.budget_warning_shown = False
 
@@ -75,8 +73,8 @@ class AgentEngine(Generic[CommandContextType]):
             self.research.load_existing_research()
             self.task_tree.set_root_research_node(self.research.get_root_node())
 
-    def is_root_problem_defined(self) -> bool:
-        """Check if the root problem is already defined"""
+    def is_research_initiated(self) -> bool:
+        """Check if the research is already initiated"""
         return self.research.is_research_initiated()
 
     def define_root_problem(self, instruction: str):
@@ -125,13 +123,13 @@ class AgentEngine(Generic[CommandContextType]):
         (node finished/failed and focus returns to root, or budget exhausted, or shutdown).
         """
         # Check if root problem is defined
-        if not self.is_root_problem_defined():
+        if not self.is_research_initiated():
             raise ValueError("Root problem must be defined before execution")
 
-        should_finish = False
+        self._should_finish = False
         current_state_machine_node = None
 
-        while True:
+        while not self._should_finish:
             if (not current_state_machine_node
                     or current_state_machine_node.is_finished()
                     or current_state_machine_node.has_pending_children()):
@@ -293,7 +291,6 @@ class AgentEngine(Generic[CommandContextType]):
                 elif self.message_cycles_used >= self.budget:
                     # Buffer is also exhausted
                     print("\n===== BUDGET COMPLETELY EXHAUSTED =====")
-                    print(f"Initial budget: {self.initial_budget} cycles")
                     print(f"Current usage: {self.message_cycles_used} cycles (including buffer)")
 
                     user_input = input("Would you like to add 20 more cycles to continue? (y/N): ").strip().lower()
@@ -311,7 +308,7 @@ class AgentEngine(Generic[CommandContextType]):
                         )
                     else:
                         print("Finishing research due to budget constraints. Engine will await new instructions.")
-                        should_finish = True
+                        self._should_finish = True
                         # Mark current node as failed? Or just stop? Let's mark as failed.
                         research_node.set_problem_status(ProblemStatus.FAILED)
 
@@ -332,18 +329,12 @@ class AgentEngine(Generic[CommandContextType]):
             # Ensure the current node's history is saved before potentially changing nodes
             research_node.get_history().save()
 
-            # Check if we should finish this cycle
-            if should_finish:
-                break
-
             self._print_current_status(current_state_machine_node.get_research_node())
 
         print("Engine execution cycle complete. Awaiting new instruction.")
 
-    def finish_with_this_cycle(self):
-        # No need to set future_execution_state anymore
-        # We'll check the should_finish flag locally in the execute method
-        pass
+    def emergency_shutdown(self):
+        self._should_finish = True
 
     def add_command_output(
         self, command_name: str, args: dict, output: str, node_title: str, current_state_machine_node: "TaskTreeNode"):
@@ -395,7 +386,6 @@ class AgentEngine(Generic[CommandContextType]):
             current_state_machine_node: The current state machine node.
         """
         self.budget = budget
-        self.initial_budget = budget
         self.budget_warning_shown = False
 
         # TODO: Show information about increase of budget in a shared system information

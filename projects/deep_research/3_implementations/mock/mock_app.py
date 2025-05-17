@@ -39,7 +39,7 @@ class DeepResearchMockApp:
         print("The system will show you the interface and you'll respond as if you were the AI.")
         print("Type 'END_RESPONSE' on a new line when you've finished your response.")
 
-        if not self.engine.is_root_problem_defined():
+        if not self.engine.is_research_initiated():
             self.engine.define_root_problem(self.instruction)
         else:
             self.engine.add_new_instruction(self.instruction)

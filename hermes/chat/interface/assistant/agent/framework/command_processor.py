@@ -1,5 +1,3 @@
-
-# Import the specific context for Deep Research
 from typing import TYPE_CHECKING, Generic
 
 from hermes.chat.interface.assistant.agent.framework.commands.command_context_factory import CommandContextFactory, CommandContextType
@@ -67,16 +65,9 @@ class CommandProcessor(Generic[CommandContextType]):
         """Check for emergency shutdown code."""
         # Only shut down if the current node is the root node
         research_node = current_state_machine_node.get_research_node()
-        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower() \
-        and research_node == self.engine.research.get_root_node():
-            print("Shutdown requested for root node. Engine will await new instructions.")
-            self.engine.finish_with_this_cycle()
-            # Mark root as finished to signify completion of this phase
-            research_node.set_problem_status(ProblemStatus.FINISHED)
+        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
+            self.engine.emergency_shutdown()
             return True
-        elif "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
-            print("Shutdown command ignored: Not currently focused on the root node.")
-            # Optionally add an error message to auto-reply here
         return False
 
     def _add_assistant_message_to_history(self, text: str, current_state_machine_node: "TaskTreeNode"):
@@ -153,7 +144,6 @@ class CommandProcessor(Generic[CommandContextType]):
                 self.commands_executed = True
                 if command.should_be_last_in_message():
                     command_that_should_be_last_reached = True
-            # else: command was None (e.g., unknown command, handled during parsing)
 
     def _execute_single_command(self, result: ParseResult, current_state_machine_node: "TaskTreeNode") -> tuple[Command | None, Exception | None]:
         """Execute a single command and return the command object and any execution error."""
@@ -172,7 +162,7 @@ class CommandProcessor(Generic[CommandContextType]):
                 # This should ideally be caught during parsing, but handle defensively
                 raise ValueError(f"Command '{command_name}' not found in registry.")
 
-            if not self.engine.is_root_problem_defined() and command_name != "define_problem":
+            if not self.engine.is_research_initiated() and command_name != "define_problem":
                 raise ValueError("Only 'define_problem' command is allowed before a problem is defined.")
 
             # Execute the command
