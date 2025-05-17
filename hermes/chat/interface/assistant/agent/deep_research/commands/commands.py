@@ -406,7 +406,7 @@ class OpenArtifactCommand(BaseCommand[CommandContextImpl]):
         # Find the artifact in the current node or its ancestors
         current_node = context.current_node
 
-        node_and_artifacts = context.research.search_artifacts(artifact_name)
+        node_and_artifacts = context.search_artifacts(artifact_name)
 
         for _, artifact in node_and_artifacts:
             current_node.set_artifact_status(artifact, True)
@@ -434,7 +434,7 @@ class HalfCloseArtifactCommand(BaseCommand[CommandContextImpl]):
         # Find the artifact in the current node or its ancestors
         current_node = context.current_node
 
-        node_and_artifacts = context.research.search_artifacts(artifact_name)
+        node_and_artifacts = context.search_artifacts(artifact_name)
 
         for _, artifact in node_and_artifacts:
             current_node.set_artifact_status(artifact, False)
@@ -493,8 +493,8 @@ class AddKnowledgeCommand(BaseCommand[CommandContextImpl]):
             tags=tags,
         )
 
-        # Use the research object to add the knowledge entry
-        context._engine.research.get_knowledge_base().add_entry(entry)
+        # Add the knowledge entry via the context
+        context.add_knowledge_entry(entry)
         # Provide confirmation output using context
         entry_identifier = f"'{entry.title}'" if entry.title else "entry"
         context.add_command_output(self.name, args, f"Knowledge {entry_identifier} added successfully.")

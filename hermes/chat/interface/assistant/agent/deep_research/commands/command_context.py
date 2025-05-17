@@ -5,8 +5,7 @@ from hermes.chat.interface.assistant.agent.framework.commands.command_context im
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
-    from hermes.chat.interface.assistant.agent.framework.research import Research
-    from hermes.chat.interface.assistant.agent.framework.state_machine import TaskTreeNode
+    from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 
 
 class CommandContextImpl(CommandContext):
@@ -31,9 +30,6 @@ class CommandContextImpl(CommandContext):
         self.current_state_machine_node = current_state_machine_node
         self.current_node = current_state_machine_node.get_research_node()
 
-    @property
-    def research(self) -> 'Research':
-        return self._engine.research
 
     # Command output operations
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
@@ -57,3 +53,11 @@ class CommandContextImpl(CommandContext):
     def fail_and_focus_up(self, message: str | None = None) -> bool:
         # Pass the message and current node to the engine's method
         return self._engine.fail_and_focus_up(message=message, current_state_machine_node=self.current_state_machine_node)
+
+    def search_artifacts(self, artifact_name: str):
+        """Search for artifacts by name in the research."""
+        return self._engine.research.search_artifacts(artifact_name)
+
+    def add_knowledge_entry(self, entry) -> None:
+        """Add a knowledge entry to the shared knowledge base."""
+        self._engine.research.get_knowledge_base().add_entry(entry)
