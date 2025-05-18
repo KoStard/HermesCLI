@@ -54,12 +54,12 @@ class FaultyTransformCommand(Command[str]):
 
 class CommandParserTest(unittest.TestCase):
     def setUp(self):
-        self.parser = CommandParser()
         self.registry = CommandRegistry()
         self.registry.clear()
         self.command = TestParserCommand()
         self.registry.register(self.command)
         self.registry.register(FaultyTransformCommand())
+        self.parser = CommandParser(self.registry)
 
     def test_parse_valid_command(self):
         """Test parsing a valid command block."""
@@ -136,7 +136,7 @@ class CommandParserTest(unittest.TestCase):
         text = """
         <<< test_cmd
         ///required_sec
-        
+
         ///optional_sec
         Valid content
         >>>
@@ -185,9 +185,9 @@ class CommandParserTest(unittest.TestCase):
         text = """
         <<< unclosed_block
         Content without closing tag
-        
+
         >>> closing_without_opening
-        
+
         <<< nested_block
         <<< inner_block
         >>> inner_closing
@@ -238,9 +238,9 @@ class CommandParserTest(unittest.TestCase):
         ///required_sec
         First command
         >>>
-        
+
         Some text in between
-        
+
         <<< test_cmd
         ///required_sec
         Second command
@@ -250,6 +250,31 @@ class CommandParserTest(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0].args["required_sec"], "First command")
         self.assertEqual(results[1].args["required_sec"], "Second command")
+
+    def test_single_section_command_without_marker(self):
+        """Test parsing a command with one section defined but no section marker."""
+        # Create a simple command with only one section
+        class SingleSectionCommand(Command[str]):
+            def __init__(self):
+                super().__init__("single_sec", "Command with a single section")
+                self.add_section("content", required=True, help_text="The only section")
+
+            def execute(self, context: str, args: dict[str, Any]) -> None:
+                pass
+
+        self.registry.register(SingleSectionCommand())
+
+        text = """
+        <<< single_sec
+        This content should be automatically assigned to the 'content' section
+        without needing the ///content marker.
+        >>>
+        """
+        results = self.parser.parse_text(text)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].errors, [])  # No errors expected
+        self.assertIn("content", results[0].args)
+        self.assertIn("automatically assigned", results[0].args["content"])
 
     def test_generate_error_report(self):
         """Test generating an error report from ParseResults."""

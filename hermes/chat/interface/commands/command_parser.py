@@ -226,7 +226,7 @@ class CommandParser:
         # Regex to find sections: ///name content (until next ///or end)
         # It captures the name (group 1) and the content (group 2)
         # (?s) makes . match newlines. Non-greedy .*? ensures it stops at the first ///
-        section_matches = re.finditer(r"///(\w+)\s*(.*?)(?=\s*///|\Z)", content, re.MULTILINE | re.DOTALL)
+        section_matches = re.finditer(r"(?:\n|^)\s*///(\w+)\s*(.*?)(?=\s*///|\Z)", content, re.MULTILINE | re.DOTALL)
 
         sections_found: dict[str, list[tuple[str, int]]] = defaultdict(list)
         last_pos = 0
@@ -278,6 +278,10 @@ class CommandParser:
         # Check for content after the last section marker
         content_after_last_marker = content[last_pos:].strip()
         if content_after_last_marker:
+            if len(command.get_all_sections()) == 1 and not sections_found[command.get_all_sections()[0]]:
+                # TODO
+                pass
+
             line_num = content_start_line + content.count("\n", 0, last_pos)
             errors.append(
                 CommandError(

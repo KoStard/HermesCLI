@@ -151,10 +151,6 @@ class AgentEngine(Generic[CommandContextType]):
             self.research, self.interface, final_root_completion_message
         )
 
-    def emergency_shutdown(self):
-        # TODO
-        pass
-
     def _print_current_status(self, current_node: 'ResearchNode'):
         """
         Print the current status of the research to STDOUT
