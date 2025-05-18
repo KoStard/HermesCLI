@@ -8,8 +8,8 @@ This answers the question:
 How can you pass a generator to another function, such that it consumes only part of it?
 """
 
-from collections.abc import Generator
-from typing import Iterator, TypeVar
+from collections.abc import Generator, Iterator
+from typing import TypeVar
 
 T = TypeVar("T")
 

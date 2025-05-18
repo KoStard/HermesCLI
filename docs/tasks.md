@@ -140,3 +140,34 @@ This refactoring aims to:
 - Improve separation of concerns: `CommandProcessor` becomes more responsible for the command lifecycle, including focus changes triggered by commands.
 - Enhance encapsulation: `CommandContext` receives its dependencies explicitly.
 - Centralize related logic: Focus changes, often initiated by commands, are now managed closer to the command execution mechanism.
+
+## Task 6: Implement Immutable State for Command Processing and Refactor AgentEngine
+
+**Status:** Completed
+
+**Description:**
+Refactor `AgentEngine` and `CommandProcessor` to use an immutable state pattern for command processing. This enhances predictability and prepares for potential parallelism. Additionally, improve `AgentEngine` structure by breaking down large methods and modifying LLM request handling.
+
+**Acceptance Criteria:**
+- [X] 1. **Immutable State for Command Processing:**
+    - [X] 1.1. Define a `frozen=True` dataclass `EngineProcessingState` to hold relevant engine control flow and command processing outcomes (e.g., `should_finish`, `root_completion_message`, command execution results).
+    - [X] 1.2. Implement `with_...` methods on `EngineProcessingState` using `dataclasses.replace` for immutable updates.
+- [X] 2. **Stateless CommandProcessor:**
+    - [X] 2.1. Modify `CommandProcessor.process` to accept the current `EngineProcessingState` and return a new `EngineProcessingState`.
+    - [X] 2.2. Remove instance variables from `CommandProcessor` that previously held turn-specific state.
+    - [X] 2.3. Adapt `CommandProcessor` helper methods (including `focus_up`, `fail_and_focus_up`) to operate with and contribute to the `EngineProcessingState`.
+    - [X] 2.4. `CommandContextImpl` updated to facilitate passing necessary state changes (like `should_finish_engine` from focus commands) back to `CommandProcessor`.
+- [X] 3. **AgentEngine Manages Immutable State:**
+    - [X] 3.1. `AgentEngine.execute` initializes and updates its `EngineProcessingState` based on the output from command processing.
+    - [X] 3.2. Control flow in `AgentEngine.execute` (e.g., loop termination) is driven by `EngineProcessingState.should_finish`.
+    - [X] 3.3. `AgentEngine` sources its final `root_completion_message` from the terminal `EngineProcessingState`.
+- [X] 4. **Refactor `AgentEngine._handle_llm_request`:**
+    - [X] 4.1. Method returns the full LLM response string directly (instead of yielding).
+    - [X] 4.2. Method re-raises `KeyboardInterrupt` if it occurs.
+- [X] 5. **Refactor Long Methods in AgentEngine:**
+    - [X] 5.1. Break down `AgentEngine.execute` into smaller, focused private helper methods (e.g., `_prepare_interface_and_history_for_node`, `_compile_history_for_llm`, `_manage_budget`, `_render_auto_reply_block_for_llm`, `_handle_budget_exhaustion`, `_handle_initial_budget_depletion`, `_handle_approaching_budget_warning`).
+    - [X] 5.2. Other `AgentEngine` methods (e.g., `add_new_instruction`) are also broken down if overly long (`_create_and_add_new_instruction_message`).
+    - [X] 5.3. Aim for helper methods to be around 10-15 lines, promoting clarity and maintainability.
+
+**Rationale:**
+Adopting an immutable state pattern for command processing reduces side effects and makes the engine's state transitions more explicit and easier to reason about. This is a crucial step towards enabling more complex features like parallel task execution. Breaking down large methods in `AgentEngine` improves code readability, testability, and adherence to clean code principles ("Uncle Bob's effect").

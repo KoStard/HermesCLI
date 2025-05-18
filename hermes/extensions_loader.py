@@ -8,9 +8,9 @@
 import importlib.util
 import logging
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Callable
 
 from hermes.chat.interface.commands.command import Command
 from hermes.chat.interface.control_panel import ControlPanelCommand

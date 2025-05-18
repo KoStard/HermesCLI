@@ -5,7 +5,6 @@ from collections.abc import Generator
 from hermes.chat.event import Event
 from hermes.chat.history import History
 from hermes.chat.interface import Interface
-from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.chat.interface.debug.debug_interface import DebugInterface
 from hermes.chat.interface.user.interface.user_interface import UserInterface
 from hermes.chat.message import Message

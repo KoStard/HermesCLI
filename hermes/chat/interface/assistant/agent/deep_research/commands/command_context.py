@@ -1,5 +1,5 @@
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from hermes.chat.interface.assistant.agent.framework.commands.command_context import CommandContext
 
@@ -34,6 +34,10 @@ class CommandContextImpl(CommandContext):
         self.current_state_machine_node = current_state_machine_node
         self.current_node = current_state_machine_node.get_research_node()
 
+        # Attributes to store signals from focus_up/fail_and_focus_up
+        self._last_focus_should_finish_engine_value: bool | None = None
+        self._last_focus_root_message_value: str | None = None
+
 
     # Command output operations
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
@@ -51,13 +55,36 @@ class CommandContextImpl(CommandContext):
         return self._command_processor.focus_down(subproblem_title, self.current_state_machine_node)
 
     def focus_up(self, message: str | None = None) -> bool:
-        return self._command_processor.focus_up(message=message, current_state_machine_node=self.current_state_machine_node)
-
-    def fail_and_focus_up(self, message: str | None = None) -> bool:
-        return self._command_processor.fail_and_focus_up(
+        # Store effects for CommandProcessor._execute_single_command to retrieve
+        success, should_finish, root_msg = self._command_processor.focus_up(
             message=message, current_state_machine_node=self.current_state_machine_node
         )
+        self._last_focus_should_finish_engine_value = should_finish
+        self._last_focus_root_message_value = root_msg
+        return success
 
+    def fail_and_focus_up(self, message: str | None = None) -> bool:
+        success, should_finish, root_msg = self._command_processor.fail_and_focus_up(
+            message=message, current_state_machine_node=self.current_state_machine_node
+        )
+        self._last_focus_should_finish_engine_value = should_finish
+        self._last_focus_root_message_value = root_msg
+        return success
+
+    # --- Implementation of abstract methods from base CommandContext ---
+    def pop_engine_finish_signal(self) -> bool | None:
+        """Retrieves and clears the engine finish signal."""
+        signal = self._last_focus_should_finish_engine_value
+        self._last_focus_should_finish_engine_value = None  # Clear after retrieving
+        return signal
+
+    def pop_root_completion_message_signal(self) -> str | None:
+        """Retrieves and clears the root completion message signal."""
+        message = self._last_focus_root_message_value
+        self._last_focus_root_message_value = None  # Clear after retrieving
+        return message
+
+    # --- Other context methods ---
     def search_artifacts(self, artifact_name: str):
         """Search for artifacts by name in the research."""
         return self._engine.research.search_artifacts(artifact_name)

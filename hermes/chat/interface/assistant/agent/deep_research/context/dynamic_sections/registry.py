@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.agent.framework.context.dynamic_sections import DynamicDataTypeToRendererMap, DynamicSectionData
+from hermes.chat.interface.assistant.agent.framework.context.dynamic_sections import DynamicDataTypeToRendererMap
 
 if TYPE_CHECKING:
     from hermes.chat.interface.templates.template_manager import TemplateManager

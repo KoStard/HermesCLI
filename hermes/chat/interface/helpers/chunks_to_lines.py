@@ -1,5 +1,4 @@
-from collections.abc import Generator
-from typing import Iterable
+from collections.abc import Generator, Iterable
 
 
 def chunks_to_lines(chunks: Iterable[str]) -> Generator[str, None, None]:
