@@ -84,6 +84,10 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
+    def set_resolution_message(self, message: str | None) -> None:
+        pass
+
+    @abstractmethod
     def set_artifact_status(self, artifact: Artifact, is_open: bool):
         pass
 

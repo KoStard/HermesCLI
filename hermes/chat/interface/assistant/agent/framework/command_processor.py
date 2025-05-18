@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Any, Generic
 
 from hermes.chat.interface.assistant.agent.framework.commands.command_context_factory import CommandContextFactory, CommandContextType
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
@@ -13,6 +13,7 @@ from hermes.chat.interface.commands.command import (
 from hermes.chat.interface.commands.command_parser import CommandParser, ParseResult
 
 if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
     from hermes.chat.interface.assistant.agent.framework.task_processor import TaskProcessor
 
 
@@ -32,316 +33,322 @@ class CommandProcessor(Generic[CommandContextType]):
         self.command_context_factory = command_context_factory
 
     def process(self, text: str, current_task_tree_node: "TaskTreeNode", initial_state: TaskProcessingState) -> TaskProcessingState:
-        """
-        Process commands from text. Operates on and returns a TaskProcessingState.
-        """
-        current_processing_state = initial_state
-
+        """Process commands from text and return updated state."""
         if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
-            return current_processing_state.with_engine_shutdown_requested(True).with_command_results(
-                executed=True,
-                report="System shutdown requested.", # Message adjusted
-                status={"shutdown_request": "processed"}, # Status adjusted
-            )
+            return self._handle_shutdown_command(initial_state)
 
-        self._add_assistant_message_to_history(text, current_task_tree_node)
+        self._add_message_to_history(text, current_task_tree_node)
 
-        parsing_error_report, parse_results = self._parse_and_validate_commands(text)
+        parsing_report, commands = self._parse_commands(text)
 
-        (
-            commands_executed,
-            execution_failed_commands,
-            finish_or_fail_skipped,
-            execution_status,
-        ) = self._execute_commands(parse_results, current_task_tree_node, parsing_error_report)
-
-        final_error_report = self._generate_final_report(parsing_error_report, execution_failed_commands)
-        self._update_auto_reply(current_task_tree_node, final_error_report, finish_or_fail_skipped)
-
-        # Check if current task is now finished/failed due to command execution
-        current_node_status = current_task_tree_node.get_research_node().get_problem_status()
-        task_is_terminal = current_node_status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
-
-        # Update the state based on command execution outcomes
-        # engine_shutdown_requested is handled if "SHUT_DOWN" was in text
-        # current_task_finished_or_failed is set if node status became terminal
-        updated_state = current_processing_state.with_command_results(
-            executed=commands_executed,
-            report=final_error_report,
-            status=execution_status
-        ).with_current_task_finished_or_failed(
-            current_processing_state.current_task_finished_or_failed or task_is_terminal
+        commands_executed, failed_commands, needs_confirmation, status = self._execute_valid_commands(
+            commands, current_task_tree_node, parsing_report
         )
-        return updated_state
 
+        error_report = self._build_error_report(parsing_report, failed_commands)
 
-    def _add_assistant_message_to_history(self, text: str, current_task_tree_node: "TaskTreeNode"):
-        """Add the assistant's message to history for the current node."""
-        history = current_task_tree_node.get_research_node().get_history()
+        self._add_to_auto_reply(current_task_tree_node, error_report, needs_confirmation)
+
+        return self._create_updated_state(
+            initial_state,
+            current_task_tree_node,
+            commands_executed,
+            error_report,
+            status
+        )
+
+    def _handle_shutdown_command(self, state: TaskProcessingState) -> TaskProcessingState:
+        """Handle shutdown command and return updated state."""
+        return state.with_engine_shutdown_requested(True).with_command_results(
+            executed=True,
+            report="System shutdown requested.",
+            status={"shutdown_request": "processed"},
+        )
+
+    def _add_message_to_history(self, text: str, task_tree_node: "TaskTreeNode") -> None:
+        """Add the assistant's message to history."""
+        history = task_tree_node.get_research_node().get_history()
         history.add_message("assistant", text)
 
-    def _parse_and_validate_commands(self, text: str) -> tuple[str, list[ParseResult]]:
-        """Parse commands, handle syntax errors, and perform initial validation."""
-        parse_results = self.command_parser.parse_text(text)
-        parsing_error_report = self.command_parser.generate_error_report(parse_results)
-        return parsing_error_report, parse_results
+    def _parse_commands(self, text: str) -> tuple[str, list[ParseResult]]:
+        """Parse commands from text and generate error report."""
+        results = self.command_parser.parse_text(text)
+        error_report = self.command_parser.generate_error_report(results)
+        return error_report, results
 
-    def _execute_commands(
-        self, parse_results: list[ParseResult], current_task_tree_node: "TaskTreeNode", parsing_error_report: str
+    def _create_updated_state(
+        self,
+        initial_state: TaskProcessingState,
+        task_tree_node: "TaskTreeNode",
+        commands_executed: bool,
+        error_report: str,
+        execution_status: dict[str, Any]
+    ) -> TaskProcessingState:
+        """Create updated state based on command execution results."""
+        # Check if task is now finished/failed
+        current_node = task_tree_node.get_research_node()
+        node_status = current_node.get_problem_status()
+        is_terminal = node_status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
+
+        return initial_state.with_command_results(
+            executed=commands_executed,
+            report=error_report,
+            status=execution_status
+        ).with_current_task_finished_or_failed(
+            initial_state.current_task_finished_or_failed or is_terminal
+        )
+
+    def _execute_valid_commands(
+        self,
+        commands: list[ParseResult],
+        task_tree_node: "TaskTreeNode",
+        parsing_error_report: str
     ) -> tuple[bool, list[dict], bool, dict]:
-        """Execute valid commands and track status.
-        Returns:
-            commands_executed (bool)
-            execution_failed_commands (list[dict])
-            finish_or_fail_skipped (bool)
-            execution_status (dict)
-        """
-        commands_executed = False
-        execution_failed_commands: list[dict] = []
-        finish_or_fail_skipped = False
-        execution_status: dict = {}
-
-        command_that_should_be_last_reached = False
+        """Execute valid commands and return execution results."""
         has_parsing_errors = bool(parsing_error_report)
+        status_map = {}
+        failed_commands = []
+        finish_or_fail_skipped = False
+        commands_executed = False
+        last_command_reached = False
 
-        for i, result in enumerate(parse_results):
-            cmd_key = f"{result.command_name}_{i}"
-            line_num = result.errors[0].line_number if result.errors else None
-
-            if result.errors: # Skipped due to parsing errors in this command
+        for i, cmd in enumerate(commands):
+            # Skip commands with syntax errors
+            if cmd.errors or last_command_reached:
                 continue
 
-            if command_that_should_be_last_reached:
-                execution_status[cmd_key] = self._mark_as_skipped_dict(result, "came after a command that has to be the last in the message", line_num)
-                continue
+            cmd_key = f"{cmd.command_name}_{i}"
+            line_num = cmd.errors[0].line_number if cmd.errors else None
 
-            is_finish_or_fail = result.command_name in ["finish_problem", "fail_problem"]
-            has_any_errors_so_far = has_parsing_errors or bool(execution_failed_commands)
-
-            if is_finish_or_fail and has_any_errors_so_far:
+            # Skip finish/fail commands if there are errors
+            if self._is_terminal_command_with_errors(cmd, has_parsing_errors, failed_commands):
                 finish_or_fail_skipped = True
-                execution_status[cmd_key] = self._mark_as_skipped_dict(result, "other errors detected in the message, do you really want to go ahead?", line_num)
+                status_map[cmd_key] = self._create_skipped_status(
+                    cmd, "other errors detected in the message", line_num
+                )
                 continue
 
-            command, execution_error = self._execute_single_command(result, current_task_tree_node)
+            # Execute the command
+            result, exception = self._run_command(cmd, task_tree_node)
 
-            if execution_error:
+            # Handle execution result
+            if exception:  # Error occurred
                 failed_info = {
-                    "name": result.command_name, "status": f"failed: {str(execution_error)}", "line": line_num
+                    "name": cmd.command_name,
+                    "status": f"failed: {str(exception)}",
+                    "line": line_num
                 }
-                execution_status[cmd_key] = failed_info
-                execution_failed_commands.append(failed_info)
-            elif command:
-                execution_status[cmd_key] = {"name": result.command_name, "status": "success", "line": line_num}
+                status_map[cmd_key] = failed_info
+                failed_commands.append(failed_info)
+            elif result:  # Command executed successfully
+                status_map[cmd_key] = {
+                    "name": cmd.command_name,
+                    "status": "success",
+                    "line": line_num
+                }
                 commands_executed = True
-                if command.should_be_last_in_message():
-                    command_that_should_be_last_reached = True
 
-        return commands_executed, execution_failed_commands, finish_or_fail_skipped, execution_status
+                # Check if this command should be the last in the message
+                if result.should_be_last_in_message():
+                    last_command_reached = True
+
+        return commands_executed, failed_commands, finish_or_fail_skipped, status_map
+
+    def _is_terminal_command_with_errors(
+        self,
+        cmd: ParseResult,
+        has_parsing_errors: bool,
+        failed_commands: list[dict]
+    ) -> bool:
+        """Check if this is a terminal command when there are errors."""
+        is_terminal = cmd.command_name in ["finish_problem", "fail_problem"]
+        has_errors = has_parsing_errors or bool(failed_commands)
+        return is_terminal and has_errors
+
+    def _create_skipped_status(self, cmd: ParseResult, reason: str, line: int | None) -> dict:
+        """Create a status dict for skipped commands."""
+        return {
+            "name": cmd.command_name,
+            "status": f"skipped: {reason}",
+            "line": line
+        }
 
 
-    def _execute_single_command(
-        self, result: ParseResult, current_task_tree_node: "TaskTreeNode"
+    def _run_command(
+        self,
+        result: ParseResult,
+        task_tree_node: "TaskTreeNode"
     ) -> tuple[Command | None, Exception | None]:
-        """
-        Execute a single command.
-        Returns:
-            command (Command | None): The executed command object if successful.
-            error (Exception | None): Exception if execution failed.
-        """
+        """Execute a single command and return results."""
         command_name = result.command_name
-        args = result.args
-        error = None
-        command: Command[CommandContextType] | None = None
 
-        command_context = self.command_context_factory.create_command_context(
-            self.task_processor, current_task_tree_node, self
+        # Create command context
+        context = self.command_context_factory.create_command_context(
+            self.task_processor, task_tree_node, self
         )
 
         try:
-            command = self.command_registry.get_command(command_name) # type: ignore
+            # Get and execute command
+            assert command_name
+            command = self.command_registry.get_command(command_name)
             if not command:
                 raise ValueError(f"Command '{command_name}' not found in registry.")
 
-            command.execute(command_context, args)
+            command.execute(context, result.args)
+            return command, None
 
-        except ValueError as e:
-            error = e
         except Exception as e:
-            error = e
             import traceback
-            print(f"Unexpected error executing command '{command_name}':")
+            print(f"Error executing '{command_name}':")
             print(traceback.format_exc())
+            return None, e
 
-        return command, error
+    def _build_error_report(self, parsing_report: str, execution_errors: list[dict]) -> str:
+        """Build comprehensive error report from parsing and execution errors."""
+        if not parsing_report and not execution_errors:
+            return ""
 
-    def _mark_as_skipped_dict(self, result: ParseResult, reason: str, line_num: int | None) -> dict:
-        """Helper to create a skipped status dictionary."""
-        return {
-            "name": result.command_name,
-            "status": f"skipped: {reason}",
-            "line": line_num,
-        }
+        # Start with parsing errors
+        final_report = parsing_report
 
-    def _generate_final_report(self, parsing_error_report: str, execution_failed_commands: list[dict]) -> str:
-        """Combine parsing and execution errors into the final report."""
-        final_error_report = parsing_error_report
+        # Add execution errors if any exist
+        if execution_errors:
+            exec_report = ["### Execution Status Report:"]
 
-        execution_report_parts = []
-        if execution_failed_commands:
-            execution_report_parts.append("\n### Execution Status Report:")
-            for info in execution_failed_commands:
-                cmd_name = info["name"]
-                status = info["status"]
-                line_num = info["line"]
-                line_info = f" at line {line_num}" if line_num is not None else ""
-                execution_report_parts.append(f"- Command '{cmd_name}'{line_info} {status}")
+            for error in execution_errors:
+                cmd_name = error["name"]
+                status = error["status"]
+                line_info = f" at line {error['line']}" if error.get("line") is not None else ""
+                exec_report.append(f"- Command '{cmd_name}'{line_info} {status}")
 
-        full_execution_report = "\n".join(execution_report_parts)
+            exec_report_text = "\n".join(exec_report)
 
-        if not final_error_report:
-            final_error_report = full_execution_report.strip()
-        elif execution_failed_commands : # Only add if there are execution errors
-            if parsing_error_report and "### Errors report:" in parsing_error_report:
-                final_error_report += "\n---\n" + full_execution_report
+            # Combine reports appropriately
+            if not final_report:
+                final_report = exec_report_text
+            elif "### Errors report:" in final_report:
+                final_report += f"\n---\n{exec_report_text}"
             else:
-                final_error_report += "\n" + full_execution_report
-        return final_error_report
+                final_report += f"\n{exec_report_text}"
 
-    def _update_auto_reply(self, current_state_machine_node: "TaskTreeNode", final_error_report: str, finish_or_fail_skipped: bool):
-        """Add error reports and confirmation requests to the auto-reply aggregator."""
-        auto_reply_generator = current_state_machine_node.get_research_node().get_history().get_auto_reply_aggregator()
+        # Ensure proper formatting
+        if final_report and not (
+            "### Errors report:" in final_report or
+            "### Execution Status Report:" in final_report
+        ):
+            final_report = f"### Errors report:\n{final_report}"
 
-        if finish_or_fail_skipped:
-            confirmation_msg = (
+        return final_report
+
+    def _add_to_auto_reply(
+        self,
+        task_tree_node: "TaskTreeNode",
+        error_report: str,
+        needs_confirmation: bool
+    ) -> None:
+        """Add reports and confirmation requests to auto-reply."""
+        auto_reply = task_tree_node.get_research_node().get_history().get_auto_reply_aggregator()
+
+        # Add confirmation request if needed
+        if needs_confirmation:
+            auto_reply.add_confirmation_request(
                 "You attempted to finish or fail the current problem, but there were errors "
                 "in your message (see report below).\n"
                 "Please review the errors. If you still want to finish/fail the problem, "
                 "resend the `finish_problem` or `fail_problem` command **without** the errors.\n"
                 "Otherwise, correct the errors and continue working on the problem."
             )
-            auto_reply_generator.add_confirmation_request(confirmation_msg)
 
-        if final_error_report:
-            report_to_add = final_error_report
-            if "### Errors report:" not in report_to_add and "### Execution Status Report:" not in report_to_add:
-                report_to_add = "### Errors report:\n" + report_to_add
-            auto_reply_generator.add_error_report(report_to_add)
+        # Add error report if any
+        if error_report:
+            auto_reply.add_error_report(error_report)
 
 
-    def focus_down(self, subproblem_title: str, current_state_machine_node: "TaskTreeNode") -> bool:
-        """
-        Schedule focus down to a subproblem after the current cycle is complete.
+    def focus_down(self, subproblem_title: str, task_tree_node: "TaskTreeNode") -> bool:
+        """Focus down to a subproblem."""
+        research_node = task_tree_node.get_research_node()
 
-        Args:
-            subproblem_title: Title of the subproblem to focus on.
-            current_state_machine_node: The current state machine node.
-
-        Returns:
-            bool: True if successful, False otherwise.
-        """
-        current_research_node = current_state_machine_node.get_research_node()
-
-        # Find the child node with matching title
-        child_nodes = current_research_node.list_child_nodes()
+        # Find target child node
         target_child = None
-        for child in child_nodes:
+        for child in research_node.list_child_nodes():
             if child.get_title() == subproblem_title:
                 target_child = child
                 break
 
-        if target_child is None:
+        if not target_child:
             return False
 
-        # Set the parent to PENDING
-        current_research_node.set_problem_status(ProblemStatus.PENDING)
-
-        # Add the child node to the state machine
-        current_state_machine_node.add_and_schedule_subnode(target_child)
-
+        # Update status and schedule subnode
+        research_node.set_problem_status(ProblemStatus.PENDING)
+        task_tree_node.add_and_schedule_subnode(target_child)
         return True
 
-    def focus_up(
-        self, message: str | None, current_state_machine_node: "TaskTreeNode"
-    ) -> bool:
-        """
-        Schedule focus up to the parent problem.
-        Args:
-            message: Optional custom message from the child node to the parent.
-            current_state_machine_node: The current state machine node.
-        Returns:
-            Tuple of (success: bool, should_finish_engine: bool, root_completion_message: str | None)
-        """
-        current_research_node = current_state_machine_node.get_research_node()
-        parent_node = current_research_node.get_parent()
-        current_state_machine_node.finish() # Mark task tree node as finished
+    def focus_up(self, message: str | None, task_tree_node: "TaskTreeNode") -> bool:
+        """Mark task as finished and focus up to parent node."""
+        research_node = task_tree_node.get_research_node()
+        parent_node = research_node.get_parent()
 
-        if parent_node is None: # Current node is the root node
-            current_research_node.set_problem_status(ProblemStatus.FINISHED)
-            print(f"Root node '{current_research_node.get_title()}' finished. Engine awaiting new instruction.")
+        # Mark task as finished
+        task_tree_node.finish()
+        research_node.set_problem_status(ProblemStatus.FINISHED)
+
+        # Handle root node case
+        if not parent_node:
+            research_node.set_resolution_message(message)
             return True
 
-        current_research_node.set_problem_status(ProblemStatus.FINISHED) # Non-root node
-
-        # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
-        parent_history = parent_node.get_history()
-        parent_auto_reply_aggregator = parent_history.get_auto_reply_aggregator()
-
-        # 1. Always add the standard status message
-        parent_auto_reply_aggregator.add_internal_message_from(
-            "Task marked FINISHED, focusing back up.", current_research_node.get_title()
+        # Add messages to parent's auto-reply
+        self._add_status_message_to_parent(
+            parent_node,
+            research_node,
+            "Task marked FINISHED, focusing back up.",
+            message,
+            "[Completion Message]: "
         )
 
-        # 2. If a custom message was provided, add it as well
-        if message:
-            # Prefix the custom message for clarity
-            parent_auto_reply_aggregator.add_internal_message_from(
-                f"[Completion Message]: {message}", current_research_node.get_title()
-            )
-
-        # The node will be finished at the end of this cycle
-        # State machine will automatically return to parent node via next()
         return True
 
-    def fail_and_focus_up(
-        self, message: str | None, current_state_machine_node: "TaskTreeNode"
-    ) -> bool:
-        """
-        Mark the current problem as FAILED and schedule focus up.
-        Args:
-            message: Optional custom message explaining the failure.
-            current_state_machine_node: The current state machine node.
-        Returns:
-            Tuple of (success: bool, should_finish_engine: bool, root_completion_message: str | None)
-        """
-        current_research_node = current_state_machine_node.get_research_node()
-        parent_node = current_research_node.get_parent()
-        current_state_machine_node.finish() # Mark task tree node as finished
+    def fail_and_focus_up(self, message: str | None, task_tree_node: "TaskTreeNode") -> bool:
+        """Mark task as failed and focus up to parent node."""
+        research_node = task_tree_node.get_research_node()
+        parent_node = research_node.get_parent()
 
+        # Mark task as failed
+        task_tree_node.finish()
+        research_node.set_problem_status(ProblemStatus.FAILED)
 
-        if parent_node is None: # Current node is the root node
-            current_research_node.set_problem_status(ProblemStatus.FAILED)
-            print(f"Root node '{current_research_node.get_title()}' failed. Engine awaiting new instruction.")
+        # Handle root node case
+        if not parent_node:
+            research_node.set_resolution_message(message)
             return True
 
-        current_research_node.set_problem_status(ProblemStatus.FAILED) # Non-root node
-
-        # --- Add messages to parent's auto-reply BEFORE scheduling focus ---
-        parent_history = parent_node.get_history()
-        parent_auto_reply_aggregator = parent_history.get_auto_reply_aggregator()
-
-        # 1. Always add the standard status message
-        parent_auto_reply_aggregator.add_internal_message_from(
-            "Task marked FAILED, focusing back up.", current_research_node.get_title()
+        # Add messages to parent's auto-reply
+        self._add_status_message_to_parent(
+            parent_node,
+            research_node,
+            "Task marked FAILED, focusing back up.",
+            message,
+            "[Failure Message]: "
         )
 
-        # 2. If a custom failure message was provided, add it as well
-        if message:
-            # Prefix the custom message for clarity
-            parent_auto_reply_aggregator.add_internal_message_from(
-                f"[Failure Message]: {message}", current_research_node.get_title()
-            )
-
-        # The node will be finished at the end of this cycle
-        # State machine will automatically return to parent node via next()
         return True
+
+    def _add_status_message_to_parent(
+        self,
+        parent_node: "ResearchNode",
+        research_node: "ResearchNode",
+        status_msg: str,
+        custom_msg: str | None = None,
+        prefix: str = ""
+    ) -> None:
+        """Add status and optional custom message to parent's auto-reply."""
+        source_title = research_node.get_title()
+
+        aggregator = parent_node.get_history().get_auto_reply_aggregator()
+
+        # Add standard status message
+        aggregator.add_internal_message_from(status_msg, source_title)
+
+        # Add custom message if provided
+        if custom_msg:
+            aggregator.add_internal_message_from(f"{prefix}{custom_msg}", source_title)

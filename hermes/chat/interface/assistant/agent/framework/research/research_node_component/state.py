@@ -53,7 +53,8 @@ class StateManager:
         """Set the problem status"""
         self._state.problem_status = status
 
-        if status in [ProblemStatus.NOT_STARTED, ProblemStatus.IN_PROGRESS, ProblemStatus.PENDING]:
+        if status in [ProblemStatus.NOT_STARTED, ProblemStatus.IN_PROGRESS]:
+            print("Resetting the resolution message")
             self._state.resolution_message = None
         self.save()
 
@@ -63,6 +64,7 @@ class StateManager:
 
     def set_resolution_message(self, message: str | None) -> None:
         """Set the resolution message and save"""
+        print("Setting resolution message", message)
         self._state.resolution_message = message
         self.save()
 

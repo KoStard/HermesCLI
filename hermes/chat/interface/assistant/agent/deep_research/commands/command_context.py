@@ -55,12 +55,12 @@ class CommandContextImpl(CommandContext):
 
     def focus_up(self, message: str | None = None) -> bool:
         return self._command_processor.focus_up(
-            message=message, current_state_machine_node=self._current_task_tree_node
+            message, self._current_task_tree_node
         )
 
     def fail_and_focus_up(self, message: str | None = None) -> bool:
         return self._command_processor.fail_and_focus_up(
-            message=message, current_state_machine_node=self._current_task_tree_node
+            message, self._current_task_tree_node
         )
 
     def search_artifacts(self, artifact_name: str) -> list[tuple["ResearchNode", "Artifact"]]:

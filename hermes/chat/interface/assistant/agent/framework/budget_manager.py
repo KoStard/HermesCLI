@@ -55,19 +55,30 @@ class BudgetManager:
         Returns True if budget constraints dictate that research should stop.
         """
         if self.budget is None:
-            return False # No budget set, no action needed
-
+            return False # No budget set
+            
+        return self._handle_budget_state(research_node)
+        
+    def _handle_budget_state(self, research_node: "ResearchNode") -> bool:
+        """Handle the current budget state and return if research should stop."""
         if self.is_budget_exhausted():
-            if not self.budget_warning_shown: # First time hitting budget, add buffer
-                self._handle_initial_budget_depletion(research_node)
-                return False # Continue with the buffer
-            else: # Buffer already used, or warning shown; truly exhausted
-                if self.message_cycles_used >= self.budget: # Check again in case buffer was just added
-                    return self._handle_final_budget_exhaustion(research_node)
+            return self._handle_budget_exhaustion(research_node)
         elif self.is_approaching_budget_limit() and not self.budget_warning_shown:
             self._handle_approaching_budget_warning(research_node)
-
-        return False # No budget-forced stop by default
+            
+        return False
+        
+    def _handle_budget_exhaustion(self, research_node: "ResearchNode") -> bool:
+        """Handle budget exhaustion cases."""
+        if not self.budget_warning_shown:
+            # First time hitting budget, add buffer
+            self._handle_initial_budget_depletion(research_node)
+            return False
+        elif self.message_cycles_used >= self.budget:
+            # Budget truly exhausted after buffer
+            return self._handle_final_budget_exhaustion(research_node)
+            
+        return False
 
     def _handle_final_budget_exhaustion(self, research_node: "ResearchNode") -> bool:
         """Handles logic when budget (including buffer) is fully exhausted. Returns True if research should finish."""
