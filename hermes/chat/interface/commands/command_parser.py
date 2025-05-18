@@ -226,7 +226,7 @@ class CommandParser:
         # Regex to find sections: ///name content (until next ///or end)
         # It captures the name (group 1) and the content (group 2)
         # (?s) makes . match newlines. Non-greedy .*? ensures it stops at the first ///
-        section_matches = re.finditer(r"(?:\n|^)\s*///(\w+)\s*(.*?)(?=\s*///|\Z)", content, re.MULTILINE | re.DOTALL)
+        section_matches = re.finditer(r"\s*///(\w+)\s*(.*?)(?=///|\Z)", content, re.MULTILINE | re.DOTALL)
 
         sections_found: dict[str, list[tuple[str, int]]] = defaultdict(list)
         last_pos = 0
@@ -278,24 +278,27 @@ class CommandParser:
         # Check for content after the last section marker
         content_after_last_marker = content[last_pos:].strip()
         if content_after_last_marker:
-            if len(command.get_all_sections()) == 1 and not sections_found[command.get_all_sections()[0]]:
-                # TODO
-                pass
-
+            sections = command.get_all_sections()
             line_num = content_start_line + content.count("\n", 0, last_pos)
-            errors.append(
-                CommandError(
-                    command_name=command.name,
-                    message="Content found after the last '///section' marker.",
-                    line_number=line_num,
+
+            if len(sections) == 1 and not sections_found[sections[0]]:
+                section_name = sections[0]
+                section_content = content_after_last_marker
+                sections_found[section_name].append((section_content, line_num))
+            else:
+                errors.append(
+                    CommandError(
+                        command_name=command.name,
+                        message="Content found after the last '///section' marker.",
+                        line_number=line_num,
+                    )
                 )
-            )
 
         # Process found sections based on command definition (allow_multiple)
         allow_multiple_dict = {section.name: section.allow_multiple for section in command.sections}
 
         for name, content_list in sections_found.items():
-            allows_multiple = allow_multiple_dict.get(name, False)  # Default to False if section somehow not in command.sections
+            allows_multiple = allow_multiple_dict.get(name, False)
             if len(content_list) > 1 and not allows_multiple:
                 # Report error for the second occurrence onwards
                 for _, line_num in content_list[1:]:

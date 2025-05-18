@@ -9,7 +9,7 @@ from hermes.chat.interface.commands.command_parser import (
 )
 
 
-class TestParserCommand(Command[str]):
+class DummyParserCommand(Command[str]):
     def __init__(self):
         super().__init__("test_cmd", "Test command help text")
         self.add_section("required_sec", required=True, help_text="Required section")
@@ -56,7 +56,7 @@ class CommandParserTest(unittest.TestCase):
     def setUp(self):
         self.registry = CommandRegistry()
         self.registry.clear()
-        self.command = TestParserCommand()
+        self.command = DummyParserCommand()
         self.registry.register(self.command)
         self.registry.register(FaultyTransformCommand())
         self.parser = CommandParser(self.registry)
@@ -218,9 +218,18 @@ class CommandParserTest(unittest.TestCase):
 
     def test_content_after_last_marker(self):
         """Test detection of content after the last section marker."""
+        class MultiSectionCommand(Command[str]):
+            def __init__(self):
+                super().__init__("single_sec", "Command with a single section")
+                self.add_section("content", required=True, help_text="Section")
+                self.add_section("content2", required=True, help_text="Section")
+
+            def execute(self, context: str, args: dict[str, Any]) -> None:
+                pass
+
+        self.registry.register(MultiSectionCommand())
         text = """
         <<< test_cmd
-        ///required_sec
         Required content
         Content after last section
         >>>
@@ -228,7 +237,7 @@ class CommandParserTest(unittest.TestCase):
         results = self.parser.parse_text(text)
         self.assertEqual(len(results), 1)
         result = results[0]
-        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(len(result.errors), 2)
         self.assertIn("Content found after the last", result.errors[0].message)
 
     def test_multiple_commands(self):
@@ -267,7 +276,7 @@ class CommandParserTest(unittest.TestCase):
         text = """
         <<< single_sec
         This content should be automatically assigned to the 'content' section
-        without needing the ///content marker.
+        without needing the content marker.
         >>>
         """
         results = self.parser.parse_text(text)
