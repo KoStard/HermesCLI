@@ -16,6 +16,7 @@ class NodeState:
     """State of a research node, including open/closed artifacts and problem status"""
     artifacts_status: dict[str, bool] = field(default_factory=dict)  # Using artifact names as keys for serialization
     problem_status: ProblemStatus = ProblemStatus.NOT_STARTED
+    resolution_message: str | None = None
 
 
 class StateManager:
@@ -51,11 +52,23 @@ class StateManager:
     def set_problem_status(self, status: ProblemStatus) -> None:
         """Set the problem status"""
         self._state.problem_status = status
+
+        if status in [ProblemStatus.NOT_STARTED, ProblemStatus.IN_PROGRESS, ProblemStatus.PENDING]:
+            self._state.resolution_message = None
         self.save()
 
     def get_problem_status(self) -> ProblemStatus:
         """Get the problem status"""
         return self._state.problem_status
+
+    def set_resolution_message(self, message: str | None) -> None:
+        """Set the resolution message and save"""
+        self._state.resolution_message = message
+        self.save()
+
+    def get_resolution_message(self) -> str | None:
+        """Get the resolution message"""
+        return self._state.resolution_message
 
     def save(self) -> None:
         """Save state to file"""
@@ -68,7 +81,8 @@ class StateManager:
 
             state_dict = {
                 "artifacts_status": self._state.artifacts_status,
-                "problem_status": self._state.problem_status.value
+                "problem_status": self._state.problem_status.value,
+                "resolution_message": self._state.resolution_message
             }
 
             with open(self._state_file_path, 'w', encoding='utf-8') as f:
@@ -94,6 +108,8 @@ class StateManager:
                 self._state.problem_status = ProblemStatus(status_value)
             except ValueError:
                 self._state.problem_status = ProblemStatus.NOT_STARTED
+
+            self._state.resolution_message = data.get("resolution_message")
 
         except Exception as e:
             print(f"Error loading node state: {e}")

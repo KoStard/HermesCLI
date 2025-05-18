@@ -33,7 +33,7 @@ class ResearchNodeImpl(ResearchNode):
         self.children: list[ResearchNode] = []
         self.parent: ResearchNode | None = parent
         self._path: Path = path
-        self._title = title
+        self._title = self._prepare_title(title)
 
         # Initialize history with proper file path
         history_path = path / "history.json"
@@ -48,6 +48,11 @@ class ResearchNodeImpl(ResearchNode):
 
         # Initialize file system components if path is set
         self._init_components()
+
+    def _prepare_title(self, title: str) -> str:
+        if len(title) > 200:
+            title = title[:200] + "..."
+        return title
 
     @classmethod
     def load_from_directory(cls, node_path: Path) -> 'ResearchNode':
@@ -257,6 +262,14 @@ class ResearchNodeImpl(ResearchNode):
 
     def get_problem_status(self) -> ProblemStatus:
         return self.state_manager.get_problem_status()
+
+    def get_resolution_message(self) -> str | None:
+        """Get the resolution message for this node from the state manager."""
+        return self.state_manager.get_resolution_message()
+
+    def set_resolution_message(self, message: str | None) -> None:
+        """Set the resolution message for this node via the state manager."""
+        self.state_manager.set_resolution_message(message)
 
     def set_artifact_status(self, artifact: Artifact, is_open: bool):
         self.state_manager.set_artifact_status(artifact, is_open)

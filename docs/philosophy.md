@@ -2,6 +2,7 @@ This document captures the development philosophy you should follow throughout a
 
 ## Generic
 - This codebase follows Daoism. The code should flow like water, non-doing, not forced, natural code.
+- The code follows Uncle Bob's definition of Clean Code. Follow all the best practices, in exceptional cases, when breaking them, ask for confirmation.
 - The code should remain flexible. Don't repeat, don't create many tests for the same capability, keep things lean, to easily adjust and change
 - Development is partitioned by subpackage. Don't spread development throughout multiple subpackages. Start development on one module, finish, run the tests, then move to the next. Don't parallelize.
 - Always write production code. Code that you can happily publish online or let a teammate to review. Don't leave unnecessary comments.
@@ -11,6 +12,7 @@ This document captures the development philosophy you should follow throughout a
 - Avoid hacks and workarounds at all costs. Remember, single purpose components, as written in Clean Code. The thing you want to use, was it built for this? If the answer is not a sound yes, go into deeper design.
 - We are still in development, don't aim to keep everything backwards compatible
 - For internal-only changes, don't worry about backwards compatibility between modules, go ahead and change everything that needs to be changed to use the new interfaces
+- Programming is closest to painting. So remember to think about your work also from aesthetic point of view, it should be clean and beautiful.
 
 ## Project Management
 - Employ iterative development: Plan phases, deliver incrementally, and adapt based on feedback or changing requirements.
@@ -36,6 +38,8 @@ This document captures the development philosophy you should follow throughout a
 ## Coding
 - Use Clean Code principles. Approach to this like craftsmanship.
 - Minimize unnecessary comments. If there is need for comments, there is likely need to simplify. Either do it or create a task for that.
+- Functions do single things. Functions are verbs.
+- Classes are single things. Classes are nouns.
 
 ## Testing
 - Create unit tests for each package, verifying the public methods

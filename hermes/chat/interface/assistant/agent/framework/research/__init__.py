@@ -117,6 +117,10 @@ class ResearchNode(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_resolution_message(self) -> str | None:
+        pass
+
 class Research(ABC):
     @abstractmethod
     def research_already_exists(self) -> bool:

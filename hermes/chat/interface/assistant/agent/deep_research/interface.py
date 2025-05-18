@@ -20,9 +20,6 @@ from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
 from hermes.chat.interface.assistant.agent.framework.llm_interface_impl import (
     ChatModelLLMInterface,
 )
-from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
-    ProblemStatus,
-)
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 
 # Import core command components
@@ -163,16 +160,11 @@ class DeepResearchAssistantInterface(Interface):
 
                     # Root problem defined, start execution immediately
                     logger.info("Executing initial research.")
-                    self._engine.execute()  # Runs until awaiting_new_instruction is True
-                    # Check if the root node finished/failed to generate the final report
-                    root_node = self._engine.research.get_root_node()
-                    if root_node.get_problem_status() in [
-                        ProblemStatus.FINISHED,
-                        ProblemStatus.FAILED,
-                    ]:
-                        logger.info("Generating final report.")
-                        final_report = self._engine._generate_final_report()
-                        yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                    final_report_str = self._engine.execute()
+                    if final_report_str:
+                        logger.info("Yielding final report after initial research.")
+                        yield MessageEvent(TextMessage(author="assistant", text=final_report_str))
+                    
                     # Always yield the waiting message after completion
                     yield MessageEvent(
                         TextMessage(
@@ -198,17 +190,11 @@ class DeepResearchAssistantInterface(Interface):
                 self._engine.add_new_instruction(self._instruction)
                 self._instruction = None  # Clear instruction after use
                 logger.info("Executing new instruction.")
-                self._engine.execute()  # Runs until awaiting_new_instruction is True again
-                # Check state after execution finishes
-                # Check if the root node finished/failed to generate the final report
-                root_node = self._engine.research.get_root_node()
-                if root_node.get_problem_status() in [
-                    ProblemStatus.FINISHED,
-                    ProblemStatus.FAILED,
-                ]:
-                    logger.info("Generating final report after follow-up instruction.")
-                    final_report = self._engine._generate_final_report()
-                    yield MessageEvent(TextMessage(author="assistant", text=final_report))
+                final_report_str = self._engine.execute()
+                if final_report_str:
+                    logger.info("Yielding final report after follow-up instruction.")
+                    yield MessageEvent(TextMessage(author="assistant", text=final_report_str))
+
                 # Always yield the waiting message after completion
                 yield MessageEvent(
                     TextMessage(
@@ -245,6 +231,6 @@ class DeepResearchAssistantInterface(Interface):
         if hasattr(self.model, "set_thinking_level"):
             self.model.set_thinking_level(level)
 
-    def set_budget(self, budget: int):
+    def set_budget(self, budget: int | None):
         """Set the budget for the Deep Research Assistant"""
         self._engine.set_budget(budget)

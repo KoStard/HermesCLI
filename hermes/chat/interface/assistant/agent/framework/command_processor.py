@@ -1,46 +1,50 @@
 from typing import TYPE_CHECKING, Generic
 
 from hermes.chat.interface.assistant.agent.framework.commands.command_context_factory import CommandContextFactory, CommandContextType
-from hermes.chat.interface.assistant.agent.framework.engine_processing_state import EngineProcessingState
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
+from hermes.chat.interface.assistant.agent.framework.task_processing_state import TaskProcessingState
 from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 from hermes.chat.interface.commands.command import (
     Command,
     CommandRegistry,
 )
-from hermes.chat.interface.commands.command_parser import ParseResult
+from hermes.chat.interface.commands.command_parser import CommandParser, ParseResult
 
 if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
+    from hermes.chat.interface.assistant.agent.framework.task_processor import TaskProcessor
 
 
 class CommandProcessor(Generic[CommandContextType]):
-    """Helper class to encapsulate command processing logic."""
+    """Helper class to encapsulate command processing logic, operating within a TaskProcessor."""
 
-    def __init__(self, engine: "AgentEngine", command_registry: CommandRegistry, command_context_factory: CommandContextFactory[CommandContextType]):
-        self.engine = engine  # Engine reference is still needed for context and some direct calls
-        self.command_parser = engine.command_parser # This parser was created with the same registry
+    def __init__(
+        self,
+        task_processor: "TaskProcessor[CommandContextType]",
+        command_parser: CommandParser,
+        command_registry: CommandRegistry,
+        command_context_factory: CommandContextFactory[CommandContextType]
+    ):
+        self.task_processor = task_processor
+        self.command_parser = command_parser
         self.command_registry = command_registry
         self.command_context_factory = command_context_factory
 
-    def process(self, text: str, current_state_machine_node: "TaskTreeNode", initial_engine_state: EngineProcessingState) -> EngineProcessingState:
+    def process(self, text: str, current_task_tree_node: "TaskTreeNode", initial_state: TaskProcessingState) -> TaskProcessingState:
         """
-        Process commands from text. Operates on and returns an EngineProcessingState.
+        Process commands from text. Operates on and returns a TaskProcessingState.
         """
-        current_processing_state = initial_engine_state
+        current_processing_state = initial_state
 
-        if self._handle_shutdown_request(text, current_state_machine_node):
-            # If shutdown is requested, engine's emergency_shutdown is called,
-            # and we return a state indicating it should finish.
-            return current_processing_state.with_should_finish(True).with_command_results(
+        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
+            return current_processing_state.with_engine_shutdown_requested(True).with_command_results(
                 executed=True,
-                report="System shutdown requested and executed.",
-                status={"shutdown": "success"},
+                report="System shutdown requested.", # Message adjusted
+                status={"shutdown_request": "processed"}, # Status adjusted
             )
 
-        self._add_assistant_message_to_history(text, current_state_machine_node)
+        self._add_assistant_message_to_history(text, current_task_tree_node)
 
         parsing_error_report, parse_results = self._parse_and_validate_commands(text)
 
@@ -49,33 +53,31 @@ class CommandProcessor(Generic[CommandContextType]):
             execution_failed_commands,
             finish_or_fail_skipped,
             execution_status,
-            accumulated_should_finish, # From focus_up/fail_and_focus_up commands
-            accumulated_root_message   # From focus_up/fail_and_focus_up commands
-        ) = self._execute_commands(parse_results, current_state_machine_node, parsing_error_report)
+        ) = self._execute_commands(parse_results, current_task_tree_node, parsing_error_report)
 
         final_error_report = self._generate_final_report(parsing_error_report, execution_failed_commands)
-        self._update_auto_reply(current_state_machine_node, final_error_report, finish_or_fail_skipped)
+        self._update_auto_reply(current_task_tree_node, final_error_report, finish_or_fail_skipped)
 
-        new_should_finish = current_processing_state.should_finish or accumulated_should_finish
-        new_root_message = accumulated_root_message if accumulated_root_message is not None else current_processing_state.root_completion_message
+        # Check if current task is now finished/failed due to command execution
+        current_node_status = current_task_tree_node.get_research_node().get_problem_status()
+        task_is_terminal = current_node_status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
 
-        return current_processing_state.with_command_results(
+        # Update the state based on command execution outcomes
+        # engine_shutdown_requested is handled if "SHUT_DOWN" was in text
+        # current_task_finished_or_failed is set if node status became terminal
+        updated_state = current_processing_state.with_command_results(
             executed=commands_executed,
             report=final_error_report,
             status=execution_status
-        ).with_should_finish(new_should_finish).with_root_completion_message(new_root_message)
+        ).with_current_task_finished_or_failed(
+            current_processing_state.current_task_finished_or_failed or task_is_terminal
+        )
+        return updated_state
 
 
-    def _handle_shutdown_request(self, text: str, current_state_machine_node: "TaskTreeNode") -> bool:
-        """Check for emergency shutdown code. Calls engine's shutdown if detected."""
-        if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
-            self.engine.emergency_shutdown() # emergency_shutdown sets a flag on the engine itself
-            return True
-        return False
-
-    def _add_assistant_message_to_history(self, text: str, current_state_machine_node: "TaskTreeNode"):
+    def _add_assistant_message_to_history(self, text: str, current_task_tree_node: "TaskTreeNode"):
         """Add the assistant's message to history for the current node."""
-        history = current_state_machine_node.get_research_node().get_history()
+        history = current_task_tree_node.get_research_node().get_history()
         history.add_message("assistant", text)
 
     def _parse_and_validate_commands(self, text: str) -> tuple[str, list[ParseResult]]:
@@ -85,16 +87,14 @@ class CommandProcessor(Generic[CommandContextType]):
         return parsing_error_report, parse_results
 
     def _execute_commands(
-        self, parse_results: list[ParseResult], current_state_machine_node: "TaskTreeNode", parsing_error_report: str
-    ) -> tuple[bool, list[dict], bool, dict, bool, str | None]:
+        self, parse_results: list[ParseResult], current_task_tree_node: "TaskTreeNode", parsing_error_report: str
+    ) -> tuple[bool, list[dict], bool, dict]:
         """Execute valid commands and track status.
         Returns:
             commands_executed (bool)
             execution_failed_commands (list[dict])
             finish_or_fail_skipped (bool)
             execution_status (dict)
-            accumulated_should_finish (bool) - True if any focus_up/fail_and_focus_up on root occurs
-            accumulated_root_message (str | None) - Message from focus_up/fail_and_focus_up on root
         """
         commands_executed = False
         execution_failed_commands: list[dict] = []
@@ -103,11 +103,6 @@ class CommandProcessor(Generic[CommandContextType]):
 
         command_that_should_be_last_reached = False
         has_parsing_errors = bool(parsing_error_report)
-
-        # For effects from focus_up/fail_and_focus_up commands
-        accumulated_should_finish = False
-        accumulated_root_message: str | None = None
-
 
         for i, result in enumerate(parse_results):
             cmd_key = f"{result.command_name}_{i}"
@@ -128,13 +123,7 @@ class CommandProcessor(Generic[CommandContextType]):
                 execution_status[cmd_key] = self._mark_as_skipped_dict(result, "other errors detected in the message, do you really want to go ahead?", line_num)
                 continue
 
-            command, execution_error, cmd_should_finish, cmd_root_message = self._execute_single_command(result, current_state_machine_node)
-
-            if cmd_should_finish: # prioritize this signal
-                accumulated_should_finish = True
-            if cmd_root_message is not None: # prioritize this signal
-                accumulated_root_message = cmd_root_message
-
+            command, execution_error = self._execute_single_command(result, current_task_tree_node)
 
             if execution_error:
                 failed_info = {
@@ -148,49 +137,33 @@ class CommandProcessor(Generic[CommandContextType]):
                 if command.should_be_last_in_message():
                     command_that_should_be_last_reached = True
 
-        return commands_executed, execution_failed_commands, finish_or_fail_skipped, execution_status, accumulated_should_finish, accumulated_root_message
+        return commands_executed, execution_failed_commands, finish_or_fail_skipped, execution_status
+
 
     def _execute_single_command(
-        self, result: ParseResult, current_state_machine_node: "TaskTreeNode"
-    ) -> tuple[Command | None, Exception | None, bool | None, str | None]:
+        self, result: ParseResult, current_task_tree_node: "TaskTreeNode"
+    ) -> tuple[Command | None, Exception | None]:
         """
         Execute a single command.
         Returns:
             command (Command | None): The executed command object if successful.
             error (Exception | None): Exception if execution failed.
-            should_finish_engine (bool): True if this command implies the engine should finish (e.g. focus_up on root).
-            root_completion_message (str | None): Message if this command implies a root completion message.
         """
         command_name = result.command_name
         args = result.args
         error = None
         command: Command[CommandContextType] | None = None
 
-        # Signals from commands that change focus (focus_up, fail_and_focus_up)
-        cmd_should_finish_engine = False
-        cmd_root_completion_message: str | None = None
-
         command_context = self.command_context_factory.create_command_context(
-            self.engine, current_state_machine_node, self
+            self.task_processor, current_task_tree_node, self
         )
 
         try:
             command = self.command_registry.get_command(command_name) # type: ignore
             if not command:
                 raise ValueError(f"Command '{command_name}' not found in registry.")
-            if not self.engine.is_research_initiated() and command_name != "define_problem":
-                raise ValueError("Only 'define_problem' command is allowed before a problem is defined.")
 
-            command.execute(command_context, args) # This might call focus_up/fail_and_focus_up via context
-
-            # Retrieve any focus-related signals that were set on the context
-            # by focus_up/fail_and_focus_up calls during command.execute().
-            # The CommandContext (base class) now defines these methods, and
-            # CommandContextImpl (concrete class) implements them by storing
-            # results from processor.focus_up/fail_and_focus_up.
-            # These "pop" methods retrieve the value and clear it internally.
-            cmd_should_finish_engine = command_context.pop_engine_finish_signal()
-            cmd_root_completion_message = command_context.pop_root_completion_message_signal()
+            command.execute(command_context, args)
 
         except ValueError as e:
             error = e
@@ -200,7 +173,7 @@ class CommandProcessor(Generic[CommandContextType]):
             print(f"Unexpected error executing command '{command_name}':")
             print(traceback.format_exc())
 
-        return command, error, cmd_should_finish_engine, cmd_root_completion_message
+        return command, error
 
     def _mark_as_skipped_dict(self, result: ParseResult, reason: str, line_num: int | None) -> dict:
         """Helper to create a skipped status dictionary."""
@@ -290,7 +263,7 @@ class CommandProcessor(Generic[CommandContextType]):
 
     def focus_up(
         self, message: str | None, current_state_machine_node: "TaskTreeNode"
-    ) -> tuple[bool, bool, str | None]:
+    ) -> bool:
         """
         Schedule focus up to the parent problem.
         Args:
@@ -303,17 +276,10 @@ class CommandProcessor(Generic[CommandContextType]):
         parent_node = current_research_node.get_parent()
         current_state_machine_node.finish() # Mark task tree node as finished
 
-        should_finish_engine = False
-        root_completion_message_update: str | None = None
-
         if parent_node is None: # Current node is the root node
             current_research_node.set_problem_status(ProblemStatus.FINISHED)
-            should_finish_engine = True # Engine loop should stop or wait for new instruction
-            if message:
-                root_completion_message_update = message
-            # self.engine.root_completion_message is now handled by EngineProcessingState
             print(f"Root node '{current_research_node.get_title()}' finished. Engine awaiting new instruction.")
-            return True, should_finish_engine, root_completion_message_update
+            return True
 
         current_research_node.set_problem_status(ProblemStatus.FINISHED) # Non-root node
 
@@ -335,11 +301,11 @@ class CommandProcessor(Generic[CommandContextType]):
 
         # The node will be finished at the end of this cycle
         # State machine will automatically return to parent node via next()
-        return True, should_finish_engine, root_completion_message_update
+        return True
 
     def fail_and_focus_up(
         self, message: str | None, current_state_machine_node: "TaskTreeNode"
-    ) -> tuple[bool, bool, str | None]:
+    ) -> bool:
         """
         Mark the current problem as FAILED and schedule focus up.
         Args:
@@ -352,17 +318,11 @@ class CommandProcessor(Generic[CommandContextType]):
         parent_node = current_research_node.get_parent()
         current_state_machine_node.finish() # Mark task tree node as finished
 
-        should_finish_engine = False
-        root_completion_message_update: str | None = None
 
         if parent_node is None: # Current node is the root node
             current_research_node.set_problem_status(ProblemStatus.FAILED)
-            should_finish_engine = True # Engine loop should stop or wait for new instruction
-            if message:
-                root_completion_message_update = message
-            # self.engine.root_completion_message is now handled by EngineProcessingState
             print(f"Root node '{current_research_node.get_title()}' failed. Engine awaiting new instruction.")
-            return True, should_finish_engine, root_completion_message_update
+            return True
 
         current_research_node.set_problem_status(ProblemStatus.FAILED) # Non-root node
 
@@ -384,4 +344,4 @@ class CommandProcessor(Generic[CommandContextType]):
 
         # The node will be finished at the end of this cycle
         # State machine will automatically return to parent node via next()
-        return True, should_finish_engine, root_completion_message_update
+        return True

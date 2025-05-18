@@ -1,94 +1,70 @@
-
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from hermes.chat.interface.assistant.agent.framework.commands.command_context import CommandContext
+from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
+from hermes.chat.interface.assistant.agent.framework.research.research_node_component.artifact import Artifact
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.command_processor import CommandProcessor
-    from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
+    from hermes.chat.interface.assistant.agent.framework.task_processor import TaskProcessor
     from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 
 
 class CommandContextImpl(CommandContext):
     """
-    Context object for commands to access engine functionality without direct engine dependency.
-    This improves separation of concerns and makes commands more testable.
-
-    The CommandContext serves as a facade to the engine and command processor,
-    providing commands with access to only the functionality they need while
-    hiding implementation details.
+    Concrete implementation of CommandContext for Deep Research commands.
+    Provides commands with access to necessary components via the TaskProcessor.
     """
 
-    def __init__(self, engine: 'AgentEngine', current_state_machine_node: 'TaskTreeNode', command_processor: 'CommandProcessor'):
-        """
-        Initialize the command context.
-
-        Args:
-            engine: Reference to the agent engine.
-            current_state_machine_node: The current state machine node.
-            command_processor: Reference to the command processor.
-        """
-        # Reference to engine for special cases and callbacks
-        self._engine = engine
+    def __init__(
+        self,
+        task_processor: "TaskProcessor",
+        current_task_tree_node: "TaskTreeNode",
+        command_processor: "CommandProcessor"
+    ):
+        self._task_processor = task_processor
         self._command_processor = command_processor
-        self.current_state_machine_node = current_state_machine_node
-        self.current_node = current_state_machine_node.get_research_node()
+        self._current_task_tree_node = current_task_tree_node
+        self._current_node = current_task_tree_node.get_research_node()
 
-        # Attributes to store signals from focus_up/fail_and_focus_up
-        self._last_focus_should_finish_engine_value: bool | None = None
-        self._last_focus_root_message_value: str | None = None
+    @property
+    def current_node(self) -> "ResearchNode":
+        return self._current_node
 
+    @property
+    def research_project(self) -> "Research":
+        return self._task_processor.research_project
 
-    # Command output operations
+    @property
+    def current_task_tree_node(self) -> "TaskTreeNode":
+        return self._current_task_tree_node
+
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
-        """Add command output to be included in the automatic response"""
-        self._engine.add_command_output(command_name, args, output, self.current_node.get_title(), self.current_state_machine_node)
+        """Add command output to the current node's auto-reply aggregator."""
+        self._task_processor.add_command_output_to_auto_reply(
+            command_name, args, output, self._current_task_tree_node
+        )
 
-    # Log operations
     def add_to_permanent_log(self, content: str) -> None:
-        """Add content to the permanent log"""
         if content:
-            # Update permanent logs
-            self._engine.research.get_permanent_logs().add_log(content)
+            self.research_project.get_permanent_logs().add_log(content)
 
     def focus_down(self, subproblem_title: str) -> bool:
-        return self._command_processor.focus_down(subproblem_title, self.current_state_machine_node)
+        # Delegate to CommandProcessor, which now resides within TaskProcessor
+        return self._command_processor.focus_down(subproblem_title, self._current_task_tree_node)
 
     def focus_up(self, message: str | None = None) -> bool:
-        # Store effects for CommandProcessor._execute_single_command to retrieve
-        success, should_finish, root_msg = self._command_processor.focus_up(
-            message=message, current_state_machine_node=self.current_state_machine_node
+        return self._command_processor.focus_up(
+            message=message, current_state_machine_node=self._current_task_tree_node
         )
-        self._last_focus_should_finish_engine_value = should_finish
-        self._last_focus_root_message_value = root_msg
-        return success
 
     def fail_and_focus_up(self, message: str | None = None) -> bool:
-        success, should_finish, root_msg = self._command_processor.fail_and_focus_up(
-            message=message, current_state_machine_node=self.current_state_machine_node
+        return self._command_processor.fail_and_focus_up(
+            message=message, current_state_machine_node=self._current_task_tree_node
         )
-        self._last_focus_should_finish_engine_value = should_finish
-        self._last_focus_root_message_value = root_msg
-        return success
 
-    # --- Implementation of abstract methods from base CommandContext ---
-    def pop_engine_finish_signal(self) -> bool | None:
-        """Retrieves and clears the engine finish signal."""
-        signal = self._last_focus_should_finish_engine_value
-        self._last_focus_should_finish_engine_value = None  # Clear after retrieving
-        return signal
+    def search_artifacts(self, artifact_name: str) -> list[tuple["ResearchNode", "Artifact"]]:
+        return self.research_project.search_artifacts(artifact_name)
 
-    def pop_root_completion_message_signal(self) -> str | None:
-        """Retrieves and clears the root completion message signal."""
-        message = self._last_focus_root_message_value
-        self._last_focus_root_message_value = None  # Clear after retrieving
-        return message
-
-    # --- Other context methods ---
-    def search_artifacts(self, artifact_name: str):
-        """Search for artifacts by name in the research."""
-        return self._engine.research.search_artifacts(artifact_name)
-
-    def add_knowledge_entry(self, entry) -> None:
-        """Add a knowledge entry to the shared knowledge base."""
-        self._engine.research.get_knowledge_base().add_entry(entry)
+    def add_knowledge_entry(self, entry: Any) -> None:
+        self.research_project.get_knowledge_base().add_entry(entry)

@@ -171,3 +171,25 @@ Refactor `AgentEngine` and `CommandProcessor` to use an immutable state pattern 
 
 **Rationale:**
 Adopting an immutable state pattern for command processing reduces side effects and makes the engine's state transitions more explicit and easier to reason about. This is a crucial step towards enabling more complex features like parallel task execution. Breaking down large methods in `AgentEngine` improves code readability, testability, and adherence to clean code principles ("Uncle Bob's effect").
+
+## Task 7: Creating Task Processor
+
+Currently engine is already split into engine and command processor.
+We create one command processor per "cycle" and it processes all the commands from that response.
+But the cycles are still in the engine. Because of which engine has to keep track which task is currently active.
+Our vision is to allow parallelism, which means the engine should be free from dealing with the execution of a given task.
+We already have a task tree structure, which tracks the schedule of the task nodes.
+We just need to split the engine again, extract something called a TaskProcessor, which will take a task (TaskTreeNode maybe) and run it until it changes status (either is finished/failed or is pending child tasks).
+This way the engine uses the task tree to ask for the "next" task, creates a TaskProcessor for this task, and runs it.
+So the engine still has its own cycle, which every time asks for next task and creates a TaskProcessor.
+If a task is pending for a child node, TaskProcessor will finish. Then later when the child node has finished, the next() of the task tree will again return the parent node, for which a new TaskProcessor will be created. Which means at different points, for the same task, different instances of TaskProcessor will work. Make sure this will work smoothly.
+The implementation should be ready for the future, where the engine will pick multiple tasks and run them in separate threads by creating one TaskProcessor for each in a separate thread.
+The TaskProcessor has its own cycle, which runs until the task changes status.
+Adjust the command context, command handling in general, to accomodate for this.
+
+
+- [X] Write HLD markdown file in tasks/7/. Are there any other changes that are going to be required for this?
+- [X] Write LLD (Narrative provided, detailed component changes implemented)
+- [X] Break down tasks (Implicitly done through HLD/LLD and step-by-step implementation)
+- [X] Implement (Core implementation of TaskProcessor, BudgetManager, and refactoring of Engine/CommandProcessor/Context completed)
+- [ ] Verify it follows the best practices and code guidelines (Manual review recommended)
