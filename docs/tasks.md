@@ -194,26 +194,67 @@ Adjust the command context, command handling in general, to accomodate for this.
 - [X] Implement (Core implementation of TaskProcessor, BudgetManager, and refactoring of Engine/CommandProcessor/Context completed)
 - [X] Verify it follows the best practices and code guidelines (Manual review recommended)
 
-## Task 8: Code Quality Improvement
+## Task 8: parallelism
 
-**Status:** In Progress
+So we were coming this way for a while.
+Currently the system works by running only one task at a time.
+But sometimes the parent task knows that some things can run in parallel, it creates multiple tasks and waits for them. But even in this case the system just runs them one by one.
+Instead, we should make the necessary changes to make this workflow for the assistant:
+- You can create subtasks, but that is not going to activate them automatically.
+- The assistant knows (from the help contents) that the tasks will be executed by teammates in parallel.
+- The assistant chooses which tasks are ready to be executed by the teammates and he activates them when he finds it right
+- Even after activating, the assistant can continue working, while the others work on the subtasks.
+- The assistant can choose to wait for the completion of certain tasks by using a new command wait_for_subproblems, which takes the titles of the subtasks that it wants to wait for. In this case he pauses work until the subtasks are done.
 
-**Description:**
-Improve code quality across the codebase by breaking large functions into smaller ones and removing unnecessary comments. This will make the code more maintainable, easier to test, and align it better with Clean Code principles.
+Considering that the subtasks will be running parallel, the interface will need adjustments for that.
+- It should be explained that the budget is shared, and he'll notice it going down faster if there are multiple parallel tasks
+- When showing the subtasks, we should show with signs and emoji that certain tasks are being worked on currently. We should update the status here with the dynamic sections.
+- With subtasks tree view we should add a new entry showing which subtask used how much of the budget (even if there is no budget specified for a given session, this could be useful information to show)
 
-**Acceptance Criteria:**
-- [ ] Identify large functions (>15 lines) throughout the codebase
-- [ ] Break these functions down into smaller units of 5-10 lines each
-- [ ] Ensure each function focuses on a single responsibility
-- [ ] Remove excessive or unnecessary comments while maintaining clarity
-- [ ] Maintain original logic and behavior during refactoring
-- [ ] Ensure consistent naming and patterns across refactored code
-- [ ] Document any bugs or issues found but not fixed
+How the tasks are scheduled should change as well.
+- Currently the TaskTree has the next() method which checks which task is next in the queue. The API should remain the same, but the implementation should change.
+- We should use nice and clean solution here, especially considering multithreading is not easy, so this should be even higher bar.
+- We'll likely need to use locks for the different tasks and the next() call should lock the thread until the next task is freed up and return it.
+- The engine itself then should call next(), the thread gets locked, then when it returns, it should create a new thread and move the task to it, while the engine's thread itself should again call next() and wait.
+- Basically the next() call waits until there is a ready task and returns it
+- When the task has started, based on its results, the task processor updates the task tree, which itself will unblock a waiting next() call from the engine
 
-**Rationale:**
-Following Uncle Bob's Clean Code principles, functions should be small and do one thing well. This refactoring will:
-1. Improve readability and maintainability
-2. Make the code easier to test
-3. Prepare the codebase for parallel task execution
-4. Reduce cognitive load when understanding the code
-5. Make future changes easier and less error-prone
+Claritications:
+- activate_subproblems_and_wait to be split into "activate_subproblems_parallel" and "wait_for_subproblems"
+- the current task scheduling should be replaced with the new implementation
+- For the Project Resolution Task, for now the engine itself can use it, no need for task processor call
+- No limit for the parallel threads
+- Agressive interruption: For now not needed, but we should then add a soft limit of 100 iterations, in case the budget is None (not specified), to prevent sudden high usage, at which point the task executor should ask the user if they want to continue. This should be tracked in the budget manager and refreshed with every 100 interactions if no budget limit is specified.
+- The finish command should be rejected if there are subtasks that are currently running. We should add information about this in the interface for the assistant.
+- The cancel command should interrupt the subtask if it's already running. In the task processor with each cycle we should check, has it been cancelled?
+
+### Tasks
+#### Engine
+- Call next() of TaskTree (blocking)
+- When receives a response, check the type. If it's None, then there are no more tasks left and the project is finished. So we should just generate the report and return.
+
+#### Task Tree
+The interface has been updated. Implement the changes, remove the unused methods.
+When finish() is called on a child task, it should call refresh_pending_children on the parent task (if any) to make sure its pending status is correct. Otherwise the parent should move back to NOT_STARTED.
+wait_for_children method is instroduced, so that the assistant can wait for the child tasks (some or all of them).
+
+#### TaskProcessor
+- cancel_subproblem should end up cancelling the task processor. In the cycle there it should check if it has been cancelled.
+
+#### Commands
+Command context has to be updated. Commands processor as well.
+- The concept of focus needs to be removed.
+- The interface changed
+- Finish(successful=bool, message=str)
+- Activate subproblem (title)
+- Wait for subproblems (titles[])
+
+Subproblem creation is still done through current_node.create_child_node.
+
+To remove:
+- AddCriteriaToSubproblemCommand
+
+activate_subproblems_and_wait to be split. 2 commands: activate subproblems, wait for subproblems.
+
+#### Interface
+Should explain how the tasks run parallel. and that you can wait for them to finish or run them async and do your work in parallel.
