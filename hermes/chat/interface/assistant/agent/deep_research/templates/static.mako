@@ -8,8 +8,10 @@
 
 <%include file="sections/static/commands.mako" args="commands=commands"/>
 
-<%include file="sections/static/problem_details.mako" args="target_node=target_node"/>
-
 <%include file="sections/static/planning.mako"/>
 
 <%include file="sections/static/budget.mako"/>
+
+<%include file="sections/static/admin.mako"/>
+
+<%include file="sections/static/problem_details.mako" args="target_node=target_node"/>
