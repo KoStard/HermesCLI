@@ -41,7 +41,7 @@ class CommandProcessor(Generic[CommandContextType]):
 
         parsing_report, commands = self._parse_commands(text)
 
-        commands_executed, failed_commands, needs_confirmation, status = self._execute_valid_commands(
+        failed_commands, needs_confirmation, status = self._execute_valid_commands(
             commands, current_task_tree_node, parsing_report
         )
 
@@ -52,18 +52,12 @@ class CommandProcessor(Generic[CommandContextType]):
         return self._create_updated_state(
             initial_state,
             current_task_tree_node,
-            commands_executed,
-            error_report,
             status
         )
 
     def _handle_shutdown_command(self, state: TaskProcessingState) -> TaskProcessingState:
         """Handle shutdown command and return updated state."""
-        return state.with_engine_shutdown_requested(True).with_command_results(
-            executed=True,
-            report="System shutdown requested.",
-            status={"shutdown_request": "processed"},
-        )
+        return state.with_engine_shutdown_requested(True)
 
     def _add_message_to_history(self, text: str, task_tree_node: "TaskTreeNode") -> None:
         """Add the assistant's message to history."""
@@ -80,8 +74,6 @@ class CommandProcessor(Generic[CommandContextType]):
         self,
         initial_state: TaskProcessingState,
         task_tree_node: "TaskTreeNode",
-        commands_executed: bool,
-        error_report: str,
         execution_status: dict[str, Any]
     ) -> TaskProcessingState:
         """Create updated state based on command execution results."""
@@ -90,11 +82,7 @@ class CommandProcessor(Generic[CommandContextType]):
         node_status = current_node.get_problem_status()
         is_terminal = node_status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
 
-        return initial_state.with_command_results(
-            executed=commands_executed,
-            report=error_report,
-            status=execution_status
-        ).with_current_task_finished_or_failed(
+        return initial_state.with_current_task_finished_or_failed(
             initial_state.current_task_finished_or_failed or is_terminal
         )
 
@@ -103,13 +91,12 @@ class CommandProcessor(Generic[CommandContextType]):
         commands: list[ParseResult],
         task_tree_node: "TaskTreeNode",
         parsing_error_report: str
-    ) -> tuple[bool, list[dict], bool, dict]:
+    ) -> tuple[list[dict], bool, dict]:
         """Execute valid commands and return execution results."""
         has_parsing_errors = bool(parsing_error_report)
         status_map = {}
         failed_commands = []
         finish_or_fail_skipped = False
-        commands_executed = False
         last_command_reached = False
 
         for i, cmd in enumerate(commands):
@@ -146,13 +133,12 @@ class CommandProcessor(Generic[CommandContextType]):
                     "status": "success",
                     "line": line_num
                 }
-                commands_executed = True
 
                 # Check if this command should be the last in the message
                 if result.should_be_last_in_message():
                     last_command_reached = True
 
-        return commands_executed, failed_commands, finish_or_fail_skipped, status_map
+        return failed_commands, finish_or_fail_skipped, status_map
 
     def _is_terminal_command_with_errors(
         self,

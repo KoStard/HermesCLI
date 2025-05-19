@@ -1,9 +1,16 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
 
+
+class TaskTreeNodeExecutionStatus(Enum):
+    NOT_STARTED = "NOT_STARTED"
+    RUNNING = "RUNNING"
+    PENDING_CHILDREN = "PENDING_CHILDREN"
+    FINISHED = "FINISHED"
 
 class TaskTreeNode(ABC):
     @abstractmethod
@@ -14,23 +21,27 @@ class TaskTreeNode(ABC):
         pass
 
     @abstractmethod
-    def is_finished(self) -> bool:
+    def mark_as_running(self):
         pass
 
     @abstractmethod
-    def add_and_schedule_subnode(self, research_node: 'ResearchNode'):
+    def wait_for_children(self, children: list['TaskTreeNode']):
+        pass
+
+    @abstractmethod
+    def refresh_pending_children(self):
+        pass
+
+    @abstractmethod
+    def get_status(self) -> TaskTreeNodeExecutionStatus:
+        pass
+
+    @abstractmethod
+    def add_subtask(self, research_node: 'ResearchNode'):
         pass
 
     @abstractmethod
     def get_research_node(self) -> 'ResearchNode':
-        pass
-
-    @abstractmethod
-    def has_pending_children(self) -> bool:
-        pass
-
-    @abstractmethod
-    def get_next_child(self) -> Optional['TaskTreeNode']:
         pass
 
     @abstractmethod

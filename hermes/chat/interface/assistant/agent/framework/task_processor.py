@@ -64,26 +64,38 @@ class TaskProcessor(Generic[CommandContextType]):
         self.budget_manager = budget_manager # Changed attribute name
         self.command_parser = command_parser
 
+    def run(self) -> TaskProcessorRunResult:
+        """
+        Runs the assigned task_tree_node until its status changes significantly
+        (FINISHED, FAILED, PENDING), or budget/shutdown dictates a stop.
+        """
+        research_node = self.task_tree_node_to_process.get_research_node()
+
+        while True:
+            state = self._execute_task_processing_cycle(research_node)
+            if state:
+                return state
+
     def _execute_task_processing_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Execute a single task processing cycle."""
         current_task_processing_state = TaskProcessingState()
-        
+
         # Get LLM response
         full_llm_response = self._prepare_and_execute_llm_request(research_node)
-        
+
         # Process commands from response
         current_task_processing_state = self._process_llm_response_commands(
             full_llm_response, current_task_processing_state
         )
-        
+
         # Handle budget updates
         budget_outcome = self._manage_budget_after_cycle(research_node)
         if budget_outcome:
             return budget_outcome
-            
+
         # Update history and status
         self._perform_post_cycle_updates(research_node)
-        
+
         # Check if processing is complete
         return self._determine_task_processor_outcome(
             research_node, current_task_processing_state
@@ -93,11 +105,38 @@ class TaskProcessor(Generic[CommandContextType]):
         """Prepares UI, history, generates and executes LLM request, returns LLM response."""
         self._prepare_interface_and_history_for_node(research_node)
         history_messages = self._compile_history_for_llm(research_node)
-        
+
         # Get interface content and generate request
         request = self._generate_llm_request(research_node, history_messages)
-        
+
         return self._handle_llm_request(request, research_node)
+
+    def _prepare_interface_and_history_for_node(self, research_node: "ResearchNode"):
+        """Gathers current interface state and updates history for the given node."""
+        static_interface_content, current_dynamic_data = self.agent_interface.render_problem_defined(
+            self.research_project,
+            research_node,
+            self.research_project.get_permanent_logs().get_logs(),
+            self.budget_manager.budget, # Get budget from BudgetManager
+            self.budget_manager.get_remaining_budget(), # Get remaining from BudgetManager
+        )
+        node_history = research_node.get_history()
+        if not node_history.get_initial_interface_content():
+            initial_rendered_dynamics = []
+            for data_instance in current_dynamic_data:
+                renderer = self.renderer_registry.get(type(data_instance))
+                if renderer:
+                    initial_rendered_dynamics.append(renderer.render(data_instance, 0))
+                else:
+                    initial_rendered_dynamics.append(f"<error>Missing renderer for {type(data_instance).__name__}</error>")
+            initial_interface_content = "\n\n".join([static_interface_content] + initial_rendered_dynamics)
+            node_history.set_initial_interface_content(initial_interface_content)
+
+        current_auto_reply_aggregator = node_history.get_auto_reply_aggregator()
+        current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
+        node_history.commit_and_get_auto_reply() # This clears aggregator for next cycle
+
+        return static_interface_content, current_dynamic_data
 
     def _generate_llm_request(self, research_node: "ResearchNode", history_messages: list[dict]) -> dict:
         """Generate the LLM request with all necessary data."""
@@ -108,12 +147,12 @@ class TaskProcessor(Generic[CommandContextType]):
         llm_request = self.llm_interface.generate_request(
             initial_interface_content, history_messages, research_node.get_path()
         )
-        
+
         # Log the request
         research_node.get_logger().log_llm_request(
             history_messages, llm_request, initial_interface_content
         )
-        
+
         return llm_request
 
     def _process_llm_response_commands(
@@ -161,62 +200,23 @@ class TaskProcessor(Generic[CommandContextType]):
             return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
         return None
 
-    def run(self) -> TaskProcessorRunResult:
-        """
-        Runs the assigned task_tree_node until its status changes significantly
-        (FINISHED, FAILED, PENDING), or budget/shutdown dictates a stop.
-        """
-        research_node = self.task_tree_node_to_process.get_research_node()
-
-        while True:
-            state = self._execute_task_processing_cycle(research_node)
-            if state:
-                return state
-
-    def _prepare_interface_and_history_for_node(self, research_node: "ResearchNode"):
-        """Gathers current interface state and updates history for the given node."""
-        static_interface_content, current_dynamic_data = self.agent_interface.render_problem_defined(
-            self.research_project,
-            research_node,
-            self.research_project.get_permanent_logs().get_logs(),
-            self.budget_manager.budget, # Get budget from BudgetManager
-            self.budget_manager.get_remaining_budget(), # Get remaining from BudgetManager
-        )
-        node_history = research_node.get_history()
-        if not node_history.get_initial_interface_content():
-            initial_rendered_dynamics = []
-            for data_instance in current_dynamic_data:
-                renderer = self.renderer_registry.get(type(data_instance))
-                if renderer:
-                    initial_rendered_dynamics.append(renderer.render(data_instance, 0))
-                else:
-                    initial_rendered_dynamics.append(f"<error>Missing renderer for {type(data_instance).__name__}</error>")
-            initial_interface_content = "\n\n".join([static_interface_content] + initial_rendered_dynamics)
-            node_history.set_initial_interface_content(initial_interface_content)
-
-        current_auto_reply_aggregator = node_history.get_auto_reply_aggregator()
-        current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
-        node_history.commit_and_get_auto_reply() # This clears aggregator for next cycle
-
-        return static_interface_content, current_dynamic_data
-
     def _compile_history_for_llm(self, research_node: "ResearchNode") -> list[dict]:
         """Compiles and renders historical messages for LLM input."""
         history_messages = []
         compiled_blocks = research_node.get_history().get_compiled_blocks()
-        
+
         # Process blocks in reverse order (newest to oldest)
         history_messages = self._process_history_blocks(compiled_blocks)
-        
+
         # Return in chronological order
         return history_messages[::-1]
-        
+
     def _process_history_blocks(self, compiled_blocks: list) -> list[dict]:
         """Process history blocks and convert them to message format."""
         history_messages = []
         auto_reply_counter = 0
         iterative_auto_reply_max_length = 5000
-        
+
         for i in range(len(compiled_blocks) - 1, -1, -1):
             block = compiled_blocks[i]
             if isinstance(block, ChatMessage):
@@ -228,26 +228,26 @@ class TaskProcessor(Generic[CommandContextType]):
                 history_messages.append(self._process_auto_reply(
                     block, compiled_blocks, i, auto_reply_counter, max_length
                 ))
-                
+
         return history_messages
-        
+
     def _process_chat_message(self, block: ChatMessage) -> dict:
         """Convert a ChatMessage block to message dict format."""
         return {"author": block.author, "content": block.content}
-        
+
     def _update_auto_reply_counters(self, counter: int, max_length: int) -> tuple[int, int | None]:
         """Update auto reply counters and determine max length."""
         counter += 1
         current_max_len = None
-        
+
         if counter > 3:
             current_max_len = max_length
             max_length = max(max_length // 2, 300)
-            
+
         return counter, current_max_len
-        
+
     def _process_auto_reply(
-        self, block: AutoReply, blocks: list, index: int, 
+        self, block: AutoReply, blocks: list, index: int,
         counter: int, max_length: int | None
     ) -> dict:
         """Process an AutoReply block into message dict format."""
@@ -275,16 +275,16 @@ class TaskProcessor(Generic[CommandContextType]):
             future_changes_map=future_changes_map,
             per_command_output_maximum_length=auto_reply_max_length,
         )
-        
+
     def _calculate_future_changes(self, blocks: list, current_index: int) -> dict[int, int]:
         """Calculate how many times each section changes in future blocks."""
         future_changes_map: dict[int, int] = defaultdict(int)
-        
+
         for future_block in blocks[current_index + 1:]:
             if isinstance(future_block, AutoReply):
                 for section_index, _ in future_block.dynamic_sections:
                     future_changes_map[section_index] += 1
-                    
+
         return future_changes_map
 
     def _handle_llm_request(self, request, research_node: "ResearchNode"):
@@ -302,7 +302,7 @@ class TaskProcessor(Generic[CommandContextType]):
     def _attempt_llm_request(self, request, research_node: "ResearchNode") -> str:
         """Try to get a response from the LLM."""
         response_generator = self.llm_interface.send_request(request)
-        
+
         try:
             full_llm_response = next(response_generator)
             research_node.get_logger().log_llm_response(full_llm_response)
@@ -310,10 +310,10 @@ class TaskProcessor(Generic[CommandContextType]):
         except StopIteration:
             research_node.get_logger().log_llm_response("")
             return ""
-            
+
     def _handle_llm_error(self) -> bool:
         """Handle LLM interface errors with option to retry.
-        
+
         Returns:
             bool: True if should retry, False otherwise
         """
@@ -322,7 +322,7 @@ class TaskProcessor(Generic[CommandContextType]):
         print(traceback.format_exc())
         print("===============================")
         print("\nPress Enter to retry or Ctrl+C to exit...")
-        
+
         try:
             input()
             print("Retrying LLM request...")

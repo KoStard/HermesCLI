@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -8,9 +8,7 @@ class TaskProcessingState:
 
     current_task_finished_or_failed: bool = False
     engine_shutdown_requested: bool = False
-    commands_executed_this_turn: bool = False
     report_this_turn: str = ""
-    execution_status_this_turn: dict[str, Any] = field(default_factory=dict)
 
     def with_current_task_finished_or_failed(self, finished_or_failed: bool) -> "TaskProcessingState":
         """Create new state with updated task finished status."""
@@ -19,16 +17,6 @@ class TaskProcessingState:
     def with_engine_shutdown_requested(self, shutdown_requested: bool) -> "TaskProcessingState":
         """Create new state with updated shutdown request status."""
         return self._replace(engine_shutdown_requested=shutdown_requested)
-
-    def with_command_results(
-        self, executed: bool, report: str, status: dict[str, Any]
-    ) -> "TaskProcessingState":
-        """Create new state with updated command execution results."""
-        return self._replace(
-            commands_executed_this_turn=executed,
-            report_this_turn=report,
-            execution_status_this_turn=status,
-        )
 
     def _replace(self, **changes: Any) -> "TaskProcessingState":
         """Create new state with specified changes."""
