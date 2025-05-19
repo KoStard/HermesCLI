@@ -51,12 +51,12 @@ class FileWithMetadata(ABC):
 
     @staticmethod
     @abstractmethod
-    def load_from_file(filepath: Path) -> 'FileWithMetadata':
+    def load_from_file(filepath: Path) -> "FileWithMetadata":
         pass
 
     @staticmethod
     @abstractmethod
-    def load_from_directory(directory_path: Path, user_friendly_name: str) -> 'FileWithMetadata':
+    def load_from_directory(directory_path: Path, user_friendly_name: str) -> "FileWithMetadata":
         """Load a file with metadata from a directory using its user-friendly name"""
         pass
 
@@ -121,7 +121,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         assert self._filename is not None
         path = directory_path / self._filename
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             f.write(full_content)
         return path
 
@@ -132,7 +132,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         return filename_handler.get_os_aware_path()
 
     @staticmethod
-    def load_from_directory(directory_path: Path, user_friendly_name: str) -> 'FileWithMetadata':
+    def load_from_directory(directory_path: Path, user_friendly_name: str) -> "FileWithMetadata":
         """Load a markdown file with frontmatter using its user-friendly name."""
         filename = MarkdownFileWithMetadataImpl._get_sanitizen_filename(user_friendly_name)
         filepath = directory_path / filename
@@ -140,7 +140,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         if not filepath.exists():
             raise FileNotFoundError(f"File not found: {filepath}")
 
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             file_content = f.read()
 
         frontmatter_manager = FrontmatterManager()
@@ -160,12 +160,12 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         return filepath.exists()
 
     @staticmethod
-    def load_from_file(filepath: Path) -> 'FileWithMetadata':
+    def load_from_file(filepath: Path) -> "FileWithMetadata":
         """Load a markdown file with frontmatter."""
         if not filepath.exists():
             raise FileNotFoundError(f"File not found: {filepath}")
 
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             file_content = f.read()
 
         frontmatter_manager = FrontmatterManager()

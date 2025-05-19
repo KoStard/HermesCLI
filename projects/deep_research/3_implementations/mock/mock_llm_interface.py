@@ -17,7 +17,6 @@ class MockLLMInterface(LLMInterface):
 
     def generate_request(
         self,
-        help_interface: str,
         history_messages: list[dict],
         current_node_path,
     ) -> dict:
@@ -25,7 +24,6 @@ class MockLLMInterface(LLMInterface):
         Generate a request for the LLM based on the rendered interface and history
 
         Args:
-            help_interface: The rendered interface content as a string
 
         Returns:
             Dict: The request object to send to the LLM
@@ -33,8 +31,8 @@ class MockLLMInterface(LLMInterface):
         # For the mock, we just need to pass the rendered interface and history
 
         return {
-            "interface": help_interface,
-            "history": history_messages,
+            "interface": history_messages[0],
+            "history": history_messages[1:],
         }
 
     def send_request(self, request: dict) -> Generator[str, None, None]:

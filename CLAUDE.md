@@ -1,0 +1,2 @@
+- Use uv commands instead of directly python or pip
+- Use Clean Code principles. Clean and intuitive names.

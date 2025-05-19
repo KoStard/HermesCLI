@@ -11,9 +11,6 @@ if TYPE_CHECKING:
 
 class CommandContextFactoryImpl(CommandContextFactory[CommandContextImpl]):
     def create_command_context(
-        self,
-        task_processor: "TaskProcessor",
-        current_task_tree_node: "TaskTreeNode",
-        command_processor: "CommandProcessor"
+        self, task_processor: "TaskProcessor", current_task_tree_node: "TaskTreeNode", command_processor: "CommandProcessor"
     ) -> CommandContextImpl:
         return CommandContextImpl(task_processor, current_task_tree_node, command_processor)

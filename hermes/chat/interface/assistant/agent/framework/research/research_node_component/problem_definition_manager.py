@@ -27,30 +27,25 @@ class ProblemDefinition:
 class ProblemDefinitionManager:
     """Manages the problem definition for a research node"""
 
-    def __init__(self, node: 'ResearchNode', problem_definition: ProblemDefinition, status: ProblemStatus):
+    def __init__(self, node: "ResearchNode", problem_definition: ProblemDefinition, status: ProblemStatus):
         self.node = node
         self.problem_definition: ProblemDefinition = problem_definition
         self.status: ProblemStatus = status
 
     @classmethod
-    def load_for_research_node(cls, research_node: 'ResearchNode') -> "ProblemDefinitionManager":
+    def load_for_research_node(cls, research_node: "ResearchNode") -> "ProblemDefinitionManager":
         """Load problem definition for a research node"""
         node_path = research_node.get_path()
         md_file = MarkdownFileWithMetadataImpl.load_from_directory(node_path, "Problem Definition")
 
         # Get status as proper enum
-        status_value = md_file.get_metadata().get('status', ProblemStatus.NOT_STARTED.value)
+        status_value = md_file.get_metadata().get("status", ProblemStatus.NOT_STARTED.value)
         try:
             status = ProblemStatus(status_value)
         except ValueError:
             status = ProblemStatus.NOT_STARTED
 
-        return ProblemDefinitionManager(
-            node=research_node,
-            problem_definition=ProblemDefinition(md_file.get_content()),
-            status=status
-        )
-
+        return ProblemDefinitionManager(node=research_node, problem_definition=ProblemDefinition(md_file.get_content()), status=status)
 
     def save(self) -> None:
         """Save problem definition to disk"""

@@ -34,12 +34,7 @@ class ExternalFilesManager:
                 name = metadata.get("name", user_friendly_name)
                 summary = metadata.get("summary", "")
 
-                artifact = Artifact(
-                    name=name,
-                    content=md_file.get_content(),
-                    short_summary=summary,
-                    is_external=True
-                )
+                artifact = Artifact(name=name, content=md_file.get_content(), short_summary=summary, is_external=True)
 
                 # Use filename as the key
                 self._external_files[file_path.name] = artifact
@@ -49,12 +44,7 @@ class ExternalFilesManager:
     def add_external_file(self, name: str, content: str, summary: str = "") -> None:
         """Add an external file."""
         # Create an artifact
-        artifact = Artifact(
-            name=name,
-            content=content,
-            short_summary=summary,
-            is_external=True
-        )
+        artifact = Artifact(name=name, content=content, short_summary=summary, is_external=True)
 
         # Ensure directory exists
         self._file_system.create_directory(self._external_files_dir)

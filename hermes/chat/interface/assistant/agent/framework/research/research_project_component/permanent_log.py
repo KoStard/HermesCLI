@@ -31,7 +31,7 @@ class NodePermanentLogs:
         """Load logs from file"""
         try:
             if os.path.exists(self._log_file_path):
-                with open(self._log_file_path, encoding='utf-8') as file:
+                with open(self._log_file_path, encoding="utf-8") as file:
                     self._logs = [line.strip() for line in file.readlines() if line.strip()]
         except Exception as e:
             print(f"Error loading permanent logs: {e}")
@@ -43,7 +43,7 @@ class NodePermanentLogs:
             os.makedirs(os.path.dirname(self._log_file_path), exist_ok=True)
 
             # Write all logs to file
-            with open(self._log_file_path, 'w', encoding='utf-8') as file:
+            with open(self._log_file_path, "w", encoding="utf-8") as file:
                 for log in self._logs:
                     file.write(f"{log}\n")
         except Exception as e:
@@ -56,7 +56,7 @@ class NodePermanentLogs:
             os.makedirs(os.path.dirname(self._log_file_path), exist_ok=True)
 
             # Append to file
-            with open(self._log_file_path, 'a', encoding='utf-8') as file:
+            with open(self._log_file_path, "a", encoding="utf-8") as file:
                 file.write(f"{entry}\n")
         except Exception as e:
             print(f"Error appending to permanent logs: {e}")

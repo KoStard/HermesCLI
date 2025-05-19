@@ -108,10 +108,7 @@ class AddSubproblemCommand(BaseCommand[CommandContextImpl]):
                 return
 
         # Create the child node using the encapsulated method
-        current_node.create_child_node(
-            title=title,
-            problem_content=args["content"]
-        )
+        current_node.create_child_node(title=title, problem_content=args["content"])
 
         # Add confirmation output
         context.add_command_output(self.name, args, f"Subproblem '{title}' added.")
@@ -134,7 +131,7 @@ class AddArtifactCommand(BaseCommand[CommandContextImpl]):
             name=args["name"],
             content=args["content"],
             short_summary=args["name"],  # Use name as summary by default
-            is_external=False
+            is_external=False,
         )
         current_node.add_artifact(artifact)
 

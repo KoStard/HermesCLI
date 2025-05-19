@@ -77,11 +77,11 @@ class ResearchNodeHistory:
             serialized_data = {
                 "blocks": self._serialize_blocks(self._compiled_blocks),
                 "auto_reply_aggregator": self._auto_reply_aggregator.serialize(),
-                "initial_interface_content": self._initial_interface_content
+                "initial_interface_content": self._initial_interface_content,
             }
 
             # Write to file with pretty formatting
-            with open(self._history_file_path, 'w', encoding='utf-8') as file:
+            with open(self._history_file_path, "w", encoding="utf-8") as file:
                 json.dump(serialized_data, file, indent=2)
 
         except Exception as e:
@@ -91,7 +91,7 @@ class ResearchNodeHistory:
         """Load history from file"""
         try:
             if os.path.exists(self._history_file_path):
-                with open(self._history_file_path, encoding='utf-8') as file:
+                with open(self._history_file_path, encoding="utf-8") as file:
                     data = json.load(file)
 
                     # Deserialize blocks
@@ -113,32 +113,28 @@ class ResearchNodeHistory:
 
         for block in blocks:
             if isinstance(block, ChatMessage):
-                serialized.append({
-                    "type": "ChatMessage",
-                    "author": block.author,
-                    "content": block.content
-                })
+                serialized.append({"type": "ChatMessage", "author": block.author, "content": block.content})
             elif isinstance(block, AutoReply):
                 # For AutoReply, we need proper serialization of dynamic sections
                 dynamic_sections = []
                 if block.dynamic_sections:
                     for idx, section_data in block.dynamic_sections:
                         # Use the DynamicSectionData serialization method
-                        dynamic_sections.append({
-                            "index": idx,
-                            "section_data": section_data.serialize() if section_data else None
-                        })
+                        dynamic_sections.append({"index": idx, "section_data": section_data.serialize() if section_data else None})
 
                 # Use jsonpickle for command_outputs to handle complex nested structures
                 import jsonpickle
-                serialized.append({
-                    "type": "AutoReply",
-                    "error_report": block.error_report,
-                    "command_outputs": jsonpickle.encode(block.command_outputs),
-                    "messages": block.messages,
-                    "confirmation_request": block.confirmation_request,
-                    "dynamic_sections": dynamic_sections
-                })
+
+                serialized.append(
+                    {
+                        "type": "AutoReply",
+                        "error_report": block.error_report,
+                        "command_outputs": jsonpickle.encode(block.command_outputs),
+                        "messages": block.messages,
+                        "confirmation_request": block.confirmation_request,
+                        "dynamic_sections": dynamic_sections,
+                    }
+                )
 
         return serialized
 
@@ -151,10 +147,7 @@ class ResearchNodeHistory:
             block_type = block_data.get("type")
 
             if block_type == "ChatMessage":
-                blocks.append(ChatMessage(
-                    author=block_data.get("author", ""),
-                    content=block_data.get("content", "")
-                ))
+                blocks.append(ChatMessage(author=block_data.get("author", ""), content=block_data.get("content", "")))
             elif block_type == "AutoReply":
                 # Deserialize dynamic sections
                 dynamic_sections = []
@@ -176,12 +169,14 @@ class ResearchNodeHistory:
                 except Exception as e:
                     print(f"Error decoding command outputs: {e}")
 
-                blocks.append(AutoReply(
-                    error_report=block_data.get("error_report", ""),
-                    command_outputs=command_outputs,
-                    messages=block_data.get("messages", []),
-                    confirmation_request=block_data.get("confirmation_request"),
-                    dynamic_sections=dynamic_sections
-                ))
+                blocks.append(
+                    AutoReply(
+                        error_report=block_data.get("error_report", ""),
+                        command_outputs=command_outputs,
+                        messages=block_data.get("messages", []),
+                        confirmation_request=block_data.get("confirmation_request"),
+                        dynamic_sections=dynamic_sections,
+                    )
+                )
 
         return blocks

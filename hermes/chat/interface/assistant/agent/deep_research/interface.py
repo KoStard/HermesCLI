@@ -71,7 +71,7 @@ class DeepResearchAssistantInterface(Interface):
             renderer_registry,
             research_interface,
             report_generator,
-            status_printer
+            status_printer,
         )
 
         self._instruction = None
@@ -164,7 +164,7 @@ class DeepResearchAssistantInterface(Interface):
                     if final_report_str:
                         logger.info("Yielding final report after initial research.")
                         yield MessageEvent(TextMessage(author="assistant", text=final_report_str))
-                    
+
                     # Always yield the waiting message after completion
                     yield MessageEvent(
                         TextMessage(

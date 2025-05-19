@@ -23,7 +23,8 @@ from hermes.chat.interface.assistant.agent.framework.research.research_project_c
     NodePermanentLogs,
 )
 
-N = TypeVar('N', bound='ResearchNode')
+N = TypeVar("N", bound="ResearchNode")
+
 
 class ResearchNode(ABC):
     # Should automatically handle file updates
@@ -32,11 +33,11 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
-    def add_child_node(self, child_node: 'ResearchNode'):
+    def add_child_node(self, child_node: "ResearchNode"):
         pass
 
     @abstractmethod
-    def get_parent(self) -> 'ResearchNode | None':
+    def get_parent(self) -> "ResearchNode | None":
         pass
 
     @abstractmethod
@@ -108,7 +109,7 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
-    def create_child_node(self, title: str, problem_content: str) -> 'ResearchNode':
+    def create_child_node(self, title: str, problem_content: str) -> "ResearchNode":
         """
         Create a new child node for this research node.
 
@@ -124,6 +125,7 @@ class ResearchNode(ABC):
     @abstractmethod
     def get_resolution_message(self) -> str | None:
         pass
+
 
 class Research(ABC):
     @abstractmethod

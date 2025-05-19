@@ -138,7 +138,9 @@ class DeepResearcherInterface(AgentInterface):
         )
 
         # Problem Hierarchy (Short) - Use factory method
-        all_data[ProblemHierarchyData] = ProblemHierarchyData.from_research_node(target_node=target_node, root_node=research.get_root_node())
+        all_data[ProblemHierarchyData] = ProblemHierarchyData.from_research_node(
+            target_node=target_node, root_node=research.get_root_node()
+        )
 
         # Criteria - Use factory method
         all_data[CriteriaSectionData] = CriteriaSectionData.from_node(target_node=target_node)

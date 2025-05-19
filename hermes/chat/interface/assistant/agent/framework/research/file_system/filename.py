@@ -28,6 +28,7 @@ class MarkdownFilename:
         original_filename = original_filename.strip()
         if not original_filename:
             import uuid
+
             # Generate a unique name for empty filename
             return "unnamed_" + str(uuid.uuid4())
 

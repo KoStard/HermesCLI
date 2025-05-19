@@ -16,12 +16,12 @@ class Criterion:
 class CriteriaManager:
     """Manages criteria for a research node"""
 
-    def __init__(self, node: 'ResearchNode'):
+    def __init__(self, node: "ResearchNode"):
         self.node = node
         self.criteria: list[Criterion] = []
 
     @classmethod
-    def load_for_research_node(cls, research_node: 'ResearchNode') -> list["CriteriaManager"]:
+    def load_for_research_node(cls, research_node: "ResearchNode") -> list["CriteriaManager"]:
         """Load criteria for a research node"""
         manager = cls(research_node)
 

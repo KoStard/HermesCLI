@@ -16,12 +16,7 @@ class CommandContextImpl(CommandContext):
     Provides commands with access to necessary components via the TaskProcessor.
     """
 
-    def __init__(
-        self,
-        task_processor: "TaskProcessor",
-        current_task_tree_node: "TaskTreeNode",
-        command_processor: "CommandProcessor"
-    ):
+    def __init__(self, task_processor: "TaskProcessor", current_task_tree_node: "TaskTreeNode", command_processor: "CommandProcessor"):
         self._task_processor = task_processor
         self._command_processor = command_processor
         self._current_task_tree_node = current_task_tree_node
@@ -41,9 +36,7 @@ class CommandContextImpl(CommandContext):
 
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
         """Add command output to the current node's auto-reply aggregator."""
-        self._task_processor.add_command_output_to_auto_reply(
-            command_name, args, output, self._current_task_tree_node
-        )
+        self._task_processor.add_command_output_to_auto_reply(command_name, args, output, self._current_task_tree_node)
 
     def add_to_permanent_log(self, content: str) -> None:
         if content:
@@ -54,14 +47,10 @@ class CommandContextImpl(CommandContext):
         return self._command_processor.focus_down(subproblem_title, self._current_task_tree_node)
 
     def focus_up(self, message: str | None = None) -> bool:
-        return self._command_processor.focus_up(
-            message, self._current_task_tree_node
-        )
+        return self._command_processor.focus_up(message, self._current_task_tree_node)
 
     def fail_and_focus_up(self, message: str | None = None) -> bool:
-        return self._command_processor.fail_and_focus_up(
-            message, self._current_task_tree_node
-        )
+        return self._command_processor.fail_and_focus_up(message, self._current_task_tree_node)
 
     def search_artifacts(self, artifact_name: str) -> list[tuple["ResearchNode", "Artifact"]]:
         return self.research_project.search_artifacts(artifact_name)

@@ -30,7 +30,7 @@ class Artifact:
             name=name,
             content=md_file.get_content(),
             short_summary=summary,
-            is_external=False  # File-based artifacts default to non-external
+            is_external=False,  # File-based artifacts default to non-external
         )
 
     def save_to_file(self, directory_path: Path) -> None:
@@ -54,7 +54,7 @@ class Artifact:
 class ArtifactManager:
     """Manages artifacts for a research node"""
 
-    def __init__(self, node: 'ResearchNode'):
+    def __init__(self, node: "ResearchNode"):
         self._node = node
         self._artifacts: list[Artifact] = []
 
@@ -63,7 +63,7 @@ class ArtifactManager:
         return self._artifacts
 
     @classmethod
-    def load_for_research_node(cls, research_node: 'ResearchNode') -> list["ArtifactManager"]:
+    def load_for_research_node(cls, research_node: "ResearchNode") -> list["ArtifactManager"]:
         """Load artifacts for a research node"""
         artifacts_manager = cls(research_node)
 

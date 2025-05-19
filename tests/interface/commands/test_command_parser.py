@@ -218,6 +218,7 @@ class CommandParserTest(unittest.TestCase):
 
     def test_content_after_last_marker(self):
         """Test detection of content after the last section marker."""
+
         class MultiSectionCommand(Command[str]):
             def __init__(self):
                 super().__init__("single_sec", "Command with a single section")
@@ -262,6 +263,7 @@ class CommandParserTest(unittest.TestCase):
 
     def test_single_section_command_without_marker(self):
         """Test parsing a command with one section defined but no section marker."""
+
         # Create a simple command with only one section
         class SingleSectionCommand(Command[str]):
             def __init__(self):

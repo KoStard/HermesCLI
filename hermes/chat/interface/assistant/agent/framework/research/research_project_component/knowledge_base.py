@@ -20,7 +20,7 @@ class KnowledgeEntry:
         tags: list[str] | None = None,
         source: str | None = None,
         importance: int = 1,
-        confidence: int = 1
+        confidence: int = 1,
     ):
         self.title = title
         self.content = content

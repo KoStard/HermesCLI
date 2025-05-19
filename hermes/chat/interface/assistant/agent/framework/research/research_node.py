@@ -29,7 +29,7 @@ from . import ResearchNode
 
 
 class ResearchNodeImpl(ResearchNode):
-    def __init__(self, problem: ProblemDefinition, title: str, parent: 'ResearchNode | None', path: Path) -> None:
+    def __init__(self, problem: ProblemDefinition, title: str, parent: "ResearchNode | None", path: Path) -> None:
         self.children: list[ResearchNode] = []
         self.parent: ResearchNode | None = parent
         self._path: Path = path
@@ -55,11 +55,11 @@ class ResearchNodeImpl(ResearchNode):
         return title
 
     @classmethod
-    def load_from_directory(cls, node_path: Path) -> 'ResearchNode':
+    def load_from_directory(cls, node_path: Path) -> "ResearchNode":
         return cls._load_from_directory(node_path, None)
 
     @classmethod
-    def _load_from_directory(cls, node_path: Path, parent_node: 'ResearchNode | None' = None) -> 'ResearchNode':
+    def _load_from_directory(cls, node_path: Path, parent_node: "ResearchNode | None" = None) -> "ResearchNode":
         """
         Load a node and all its children from a directory.
 
@@ -79,19 +79,14 @@ class ResearchNodeImpl(ResearchNode):
         problem_def = ProblemDefinition(content=md_file.get_content())
 
         # Get status from metadata
-        status_str = md_file.get_metadata().get('status', ProblemStatus.NOT_STARTED.value)
+        status_str = md_file.get_metadata().get("status", ProblemStatus.NOT_STARTED.value)
         try:
             status = ProblemStatus(status_str)
         except ValueError:
             status = ProblemStatus.NOT_STARTED
 
         # Create the node with the loaded problem definition
-        node = ResearchNodeImpl(
-            problem=problem_def,
-            title=node_path.name,
-            path=node_path,
-            parent=parent_node
-        )
+        node = ResearchNodeImpl(problem=problem_def, title=node_path.name, path=node_path, parent=parent_node)
 
         # Update node status (which might have been loaded incorrectly during initialization)
         node.set_problem_status(status)
@@ -102,7 +97,7 @@ class ResearchNodeImpl(ResearchNode):
         return node
 
     @classmethod
-    def _load_child_nodes_for(cls, parent_node: 'ResearchNode') -> None:
+    def _load_child_nodes_for(cls, parent_node: "ResearchNode") -> None:
         """
         Load child nodes for a parent node from the file system.
 
@@ -183,12 +178,7 @@ class ResearchNodeImpl(ResearchNode):
         child_path = subproblems_dir / title
 
         # Create the new node
-        child_node = ResearchNodeImpl(
-            problem=problem_def,
-            title=title,
-            path=child_path,
-            parent=self
-        )
+        child_node = ResearchNodeImpl(problem=problem_def, title=title, path=child_path, parent=self)
 
         # Set initial status
         child_node.set_problem_status(ProblemStatus.NOT_STARTED)

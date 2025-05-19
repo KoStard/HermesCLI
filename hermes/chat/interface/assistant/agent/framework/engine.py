@@ -40,7 +40,7 @@ class AgentEngine(Generic[CommandContextType]):
         renderer_registry: DynamicDataTypeToRendererMap,
         agent_interface: AgentInterface,
         report_generator: ReportGenerator,
-        status_printer: StatusPrinter
+        status_printer: StatusPrinter,
     ):
         self.command_context_factory = command_context_factory
         self.template_manager = template_manager
@@ -100,9 +100,7 @@ class AgentEngine(Generic[CommandContextType]):
 
     def _create_and_add_new_instruction_message(self, instruction: str, root_node: ResearchNode):
         """Formats the instruction and adds it to the root node's history."""
-        formatted_instruction = self.template_manager.render_template(
-            "context/new_user_instruction.mako", instruction=instruction
-        )
+        formatted_instruction = self.template_manager.render_template("context/new_user_instruction.mako", instruction=instruction)
         history = root_node.get_history()
         auto_reply_aggregator = history.get_auto_reply_aggregator()
         auto_reply_aggregator.add_internal_message_from(formatted_instruction, "USER MESSAGE")
@@ -123,12 +121,10 @@ class AgentEngine(Generic[CommandContextType]):
         root_node = self.research.get_root_node()
         final_root_completion_message = root_node.get_resolution_message()
 
-        return self.report_generator.generate_final_report(
-            self.research, self.interface, final_root_completion_message
-        )
+        return self.report_generator.generate_final_report(self.research, self.interface, final_root_completion_message)
 
     def _run_task(self, task_tree_node: TaskTreeNode | None):
-        if task_tree_node is None: # All tasks in the tree are done
+        if task_tree_node is None:  # All tasks in the tree are done
             self.engine_should_stop = True
             return
 
@@ -142,14 +138,14 @@ class AgentEngine(Generic[CommandContextType]):
             dynamic_section_renderer_registry=self.renderer_registry,
             agent_interface_for_ui=self.interface,
             status_printer_to_use=self.status_printer,
-            budget_manager=self.budget_manager, # Pass BudgetManager instance
-            command_parser=self.command_parser
+            budget_manager=self.budget_manager,  # Pass BudgetManager instance
+            command_parser=self.command_parser,
         )
 
         run_result = task_processor.run()
 
         if run_result == TaskProcessorRunResult.ENGINE_STOP_REQUESTED:
-            self.engine_should_stop = True # Budget exhaustion or shutdown command from task
+            self.engine_should_stop = True  # Budget exhaustion or shutdown command from task
 
     def set_budget(self, budget_value: int | None):
         """

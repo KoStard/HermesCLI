@@ -6,7 +6,7 @@ from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree, 
 
 
 class TaskTreeNodeImpl(TaskTreeNode):
-    def __init__(self, research_node: ResearchNode, parent: Optional['TaskTreeNode'] = None):
+    def __init__(self, research_node: ResearchNode, parent: Optional["TaskTreeNode"] = None):
         self._is_finished = False
         self._research_node = research_node
         self._parent = parent
@@ -21,14 +21,14 @@ class TaskTreeNodeImpl(TaskTreeNode):
     def is_finished(self) -> bool:
         return self._is_finished
 
-    def add_and_schedule_subnode(self, research_node: 'ResearchNode'):
+    def add_and_schedule_subnode(self, research_node: "ResearchNode"):
         """
         Add a child node to be processed next when this node is active
         """
         child_node = TaskTreeNodeImpl(research_node, self)
         self._children_queue.append(child_node)
 
-    def get_research_node(self) -> 'ResearchNode':
+    def get_research_node(self) -> "ResearchNode":
         """
         Get the research node associated with this state machine node
         """
@@ -40,7 +40,7 @@ class TaskTreeNodeImpl(TaskTreeNode):
         """
         return len(self._children_queue) > 0
 
-    def get_next_child(self) -> Optional['TaskTreeNode']:
+    def get_next_child(self) -> Optional["TaskTreeNode"]:
         """
         Get the next child node from the queue, if any
         """
@@ -48,7 +48,7 @@ class TaskTreeNodeImpl(TaskTreeNode):
             return None
         return self._children_queue.popleft()
 
-    def get_parent(self) -> Optional['TaskTreeNode']:
+    def get_parent(self) -> Optional["TaskTreeNode"]:
         """
         Get the parent node, if any
         """
@@ -97,12 +97,12 @@ class TaskTreeImpl(TaskTree):
         # If we got here, something's wrong. next() has been called without finishing the task
         raise Exception("State machine next() has been called without finishing the active task")
 
-    def set_root_research_node(self, root_research_node: 'ResearchNode'):
+    def set_root_research_node(self, root_research_node: "ResearchNode"):
         """
         Set the root research node and reset the state machine
         """
         self._root_node = TaskTreeNodeImpl(root_research_node)
         self._active_node = None  # Reset active node
 
-    def reactivate_root_node(self, root_research_node: 'ResearchNode'):
+    def reactivate_root_node(self, root_research_node: "ResearchNode"):
         self.set_root_research_node(root_research_node)

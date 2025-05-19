@@ -21,4 +21,5 @@ class TaskProcessingState:
     def _replace(self, **changes: Any) -> "TaskProcessingState":
         """Create new state with specified changes."""
         import dataclasses
+
         return dataclasses.replace(self, **changes)

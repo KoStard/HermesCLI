@@ -102,10 +102,7 @@ class AutoReplyAggregator:
         # Fully serialize dynamic sections using their serialization methods
         dynamic_sections = []
         for idx, section_data in self.dynamic_sections_to_report:
-            dynamic_sections.append({
-                "index": idx,
-                "section_data": section_data.serialize() if section_data else None
-            })
+            dynamic_sections.append({"index": idx, "section_data": section_data.serialize() if section_data else None})
 
         last_sections_state = []
         for data in self.last_dynamic_sections_state:
@@ -118,7 +115,7 @@ class AutoReplyAggregator:
             "internal_messages": self.internal_messages,
             "confirmation_requests": self.confirmation_requests,
             "dynamic_sections_to_report": dynamic_sections,
-            "last_dynamic_sections_state": last_sections_state
+            "last_dynamic_sections_state": last_sections_state,
         }
 
     def deserialize(self, data: dict[str, Any]) -> None:

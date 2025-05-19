@@ -60,30 +60,28 @@ class AutoReply(HistoryBlock):
             future_changes = future_changes_map.get(index, 0)
             rendered_content = ""
 
-            if renderer:
-                try:
-                    # Pass future_changes count to the renderer
-                    rendered_content = renderer.render(data_instance, future_changes)
-                except Exception:
-                    # Error handling as requested: print stack trace and generate message
-                    print(f"\n--- ERROR RENDERING DYNAMIC SECTION (Index: {index}, Type: {data_type.__name__}) ---")
-                    tb_str = traceback.format_exc()
-                    print(tb_str)
-                    print("--- END ERROR ---")
-                    # Corrected f-string for artifact name
-                    artifact_name = f"render_error_section_{index}_{data_type.__name__}"
-                    rendered_content = (
-                        f'<error context="Rendering dynamic section index {index} ({data_type.__name__})">\n'
-                        f"**SYSTEM ERROR:** Failed to render this section. "
-                        f"Please create an artifact named '{artifact_name}' "
-                        f"with the following content:\n```\n{tb_str}\n```\n"
-                        "Then, inform the administrator.\n"
-                        "</error>"
-                    )
-            else:
-                # Handle case where renderer is missing (shouldn't happen with proper registry)
-                print(f"Warning: No renderer found for dynamic section type {data_type.__name__}")
-                rendered_content = f"<error>No renderer found for section type {data_type.__name__}</error>"
+            if not renderer:
+                raise Exception(f"No renderer found for {data_type}")
+
+            try:
+                # Pass future_changes count to the renderer
+                rendered_content = renderer.render(data_instance, future_changes)
+            except Exception:
+                # Error handling as requested: print stack trace and generate message
+                print(f"\n--- ERROR RENDERING DYNAMIC SECTION (Index: {index}, Type: {data_type.__name__}) ---")
+                tb_str = traceback.format_exc()
+                print(tb_str)
+                print("--- END ERROR ---")
+                # Corrected f-string for artifact name
+                artifact_name = f"render_error_section_{index}_{data_type.__name__}"
+                rendered_content = (
+                    f'<error context="Rendering dynamic section index {index} ({data_type.__name__})">\n'
+                    f"**SYSTEM ERROR:** Failed to render this section. "
+                    f"Please create an artifact named '{artifact_name}' "
+                    f"with the following content:\n```\n{tb_str}\n```\n"
+                    "Then, inform the administrator.\n"
+                    "</error>"
+                )
 
             rendered_dynamic_sections.append((index, rendered_content))
 

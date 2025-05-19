@@ -34,10 +34,7 @@ class ProblemHierarchyData(DynamicSectionData):
         ProblemHierarchyData._build_hierarchy_tree(root_node, result, 0, target_node)
         hierarchy_str = "\n".join(result)
 
-        return ProblemHierarchyData(
-            file_system_hierarchy_str=hierarchy_str,
-            target_node_title=target_node.get_title()
-        )
+        return ProblemHierarchyData(file_system_hierarchy_str=hierarchy_str, target_node_title=target_node.get_title())
 
     @staticmethod
     def _build_hierarchy_tree(

@@ -32,11 +32,7 @@ class StatusPrinterImpl(StatusPrinter):
         """Get an emoji representation of the problem status"""
         return self.status_emojis.get(status, "❓")
 
-    def print_status(
-        self,
-        current_node: ResearchNode,
-        research: Research
-    ):
+    def print_status(self, current_node: ResearchNode, research: Research):
         """Print the current status of the research to STDOUT using a template"""
         context = {
             "current_node": current_node,

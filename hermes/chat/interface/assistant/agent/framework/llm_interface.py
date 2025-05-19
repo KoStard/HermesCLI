@@ -9,7 +9,6 @@ class LLMInterface(ABC):
     @abstractmethod
     def generate_request(
         self,
-        help_interface: str,
         history_messages: list[dict],
         node_path: Path,
     ) -> dict:
@@ -17,7 +16,6 @@ class LLMInterface(ABC):
         Generate a request for the LLM based on the rendered interface and history
 
         Args:
-            help_interface: The rendered static interface content as a string
             history_messages: List of message dictionaries with author and content
             node_path: For logging
 

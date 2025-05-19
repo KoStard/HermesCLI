@@ -46,10 +46,7 @@ class SubproblemsSectionData(DynamicSectionData):
 
     @staticmethod
     def from_node(target_node: "ResearchNode") -> "SubproblemsSectionData":
-        subproblem_data = tuple(
-            PrimitiveSubproblemData.from_node(subproblem)
-            for subproblem in target_node.list_child_nodes()
-        )
+        subproblem_data = tuple(PrimitiveSubproblemData.from_node(subproblem) for subproblem in target_node.list_child_nodes())
         return SubproblemsSectionData(subproblems=subproblem_data)
 
 

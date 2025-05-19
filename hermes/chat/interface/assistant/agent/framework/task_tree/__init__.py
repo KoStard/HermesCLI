@@ -12,6 +12,7 @@ class TaskTreeNodeExecutionStatus(Enum):
     PENDING_CHILDREN = "PENDING_CHILDREN"
     FINISHED = "FINISHED"
 
+
 class TaskTreeNode(ABC):
     @abstractmethod
     def finish(self):
@@ -25,7 +26,7 @@ class TaskTreeNode(ABC):
         pass
 
     @abstractmethod
-    def wait_for_children(self, children: list['TaskTreeNode']):
+    def wait_for_children(self, children: list["TaskTreeNode"]):
         pass
 
     @abstractmethod
@@ -37,15 +38,15 @@ class TaskTreeNode(ABC):
         pass
 
     @abstractmethod
-    def add_subtask(self, research_node: 'ResearchNode'):
+    def add_subtask(self, research_node: "ResearchNode"):
         pass
 
     @abstractmethod
-    def get_research_node(self) -> 'ResearchNode':
+    def get_research_node(self) -> "ResearchNode":
         pass
 
     @abstractmethod
-    def get_parent(self) -> Optional['TaskTreeNode']:
+    def get_parent(self) -> Optional["TaskTreeNode"]:
         pass
 
 
@@ -60,9 +61,9 @@ class TaskTree(ABC):
         pass
 
     @abstractmethod
-    def set_root_research_node(self, root_research_node: 'ResearchNode'):
+    def set_root_research_node(self, root_research_node: "ResearchNode"):
         pass
 
     @abstractmethod
-    def reactivate_root_node(self, root_research_node: 'ResearchNode'):
+    def reactivate_root_node(self, root_research_node: "ResearchNode"):
         pass

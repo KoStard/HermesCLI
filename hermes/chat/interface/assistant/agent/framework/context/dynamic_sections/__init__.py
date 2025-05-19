@@ -17,13 +17,10 @@ class DynamicSectionData:
         Serialize this instance to a dictionary for JSON storage.
         Uses jsonpickle for robust serialization of nested structures.
         """
-        return {
-            "type": self.__class__.__name__,
-            "data": jsonpickle.encode(self)
-        }
+        return {"type": self.__class__.__name__, "data": jsonpickle.encode(self)}
 
     @classmethod
-    def deserialize(cls, data: dict[str, Any]) -> Optional['DynamicSectionData']:
+    def deserialize(cls, data: dict[str, Any]) -> Optional["DynamicSectionData"]:
         """
         Deserialize from a dictionary (previously serialized with serialize()).
         Uses jsonpickle for robust deserialization of nested structures.
@@ -87,5 +84,6 @@ class DynamicSectionRenderer(ABC):
             # We might want to wrap this in XML tags appropriate for the interface
             # For now, return the raw error message for inclusion.
             return f'<error context="Rendering {self.template_name}">\n{error_message}\n</error>'
+
 
 DynamicDataTypeToRendererMap = dict[type["DynamicSectionData"], "DynamicSectionRenderer"]

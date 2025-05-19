@@ -24,7 +24,6 @@ class ChatModelLLMInterface(LLMInterface):
 
     def generate_request(
         self,
-        help_interface: str,
         history_messages: list[dict],
         node_path: Path,
     ) -> dict:
@@ -32,8 +31,7 @@ class ChatModelLLMInterface(LLMInterface):
         request_builder = self.model.get_request_builder()
 
         # Convert history messages to TextMessage objects
-        # First the static interface
-        rendered_messages = [TextMessage(author="user", text=help_interface)]
+        rendered_messages = []
 
         # Add history messages
         for message in history_messages:

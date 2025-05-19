@@ -11,9 +11,11 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
 
+
 @dataclass
 class NodeState:
     """State of a research node, including open/closed artifacts and problem status"""
+
     artifacts_status: dict[str, bool] = field(default_factory=dict)  # Using artifact names as keys for serialization
     problem_status: ProblemStatus = ProblemStatus.NOT_STARTED
     resolution_message: str | None = None
@@ -22,7 +24,7 @@ class NodeState:
 class StateManager:
     """Manages the state for a research node"""
 
-    def __init__(self, node: 'ResearchNode'):
+    def __init__(self, node: "ResearchNode"):
         self.node = node
         self._state = NodeState()
         self._state_file_path = None
@@ -31,7 +33,7 @@ class StateManager:
             self.load()
 
     @classmethod
-    def load_for_research_node(cls, research_node: 'ResearchNode') -> list["StateManager"]:
+    def load_for_research_node(cls, research_node: "ResearchNode") -> list["StateManager"]:
         """Load state manager for a research node"""
         manager = cls(research_node)
         return [manager]
@@ -84,10 +86,10 @@ class StateManager:
             state_dict = {
                 "artifacts_status": self._state.artifacts_status,
                 "problem_status": self._state.problem_status.value,
-                "resolution_message": self._state.resolution_message
+                "resolution_message": self._state.resolution_message,
             }
 
-            with open(self._state_file_path, 'w', encoding='utf-8') as f:
+            with open(self._state_file_path, "w", encoding="utf-8") as f:
                 json.dump(state_dict, f, indent=2)
         except Exception as e:
             print(f"Error saving node state: {e}")
@@ -98,7 +100,7 @@ class StateManager:
             return
 
         try:
-            with open(self._state_file_path, encoding='utf-8') as f:
+            with open(self._state_file_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Load artifact status

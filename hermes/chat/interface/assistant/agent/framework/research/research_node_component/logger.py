@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 class ResearchNodeLogger:
     """Logger for research node that saves requests and responses to files"""
 
-    def __init__(self, node: 'ResearchNode'):
+    def __init__(self, node: "ResearchNode"):
         self.node = node
         self._logs_dir = None
 
@@ -34,7 +34,7 @@ class ResearchNodeLogger:
         self._logs_dir = logs_dir
         return logs_dir
 
-    def log_llm_request(self, rendered_messages: list[dict], request_data: dict, help_content: str) -> None:
+    def log_llm_request(self, rendered_messages: list[dict], request_data: dict) -> None:
         """Log an LLM request to a file"""
         logs_dir = self._ensure_logs_directory()
 
@@ -43,10 +43,6 @@ class ResearchNodeLogger:
 
         with open(logs_dir / filename, "w", encoding="utf-8") as f:
             f.write("=== LLM REQUEST ===\n\n")
-
-            f.write("== Full Interface ==\n")
-            f.write(help_content)
-            f.write("\n\n")
 
             f.write("== Chat History ==\n")
             for msg in rendered_messages:

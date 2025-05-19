@@ -25,7 +25,7 @@ class CommandProcessor(Generic[CommandContextType]):
         task_processor: "TaskProcessor[CommandContextType]",
         command_parser: CommandParser,
         command_registry: CommandRegistry,
-        command_context_factory: CommandContextFactory[CommandContextType]
+        command_context_factory: CommandContextFactory[CommandContextType],
     ):
         self.task_processor = task_processor
         self.command_parser = command_parser
@@ -41,19 +41,13 @@ class CommandProcessor(Generic[CommandContextType]):
 
         parsing_report, commands = self._parse_commands(text)
 
-        failed_commands, needs_confirmation, status = self._execute_valid_commands(
-            commands, current_task_tree_node, parsing_report
-        )
+        failed_commands, needs_confirmation, status = self._execute_valid_commands(commands, current_task_tree_node, parsing_report)
 
         error_report = self._build_error_report(parsing_report, failed_commands)
 
         self._add_to_auto_reply(current_task_tree_node, error_report, needs_confirmation)
 
-        return self._create_updated_state(
-            initial_state,
-            current_task_tree_node,
-            status
-        )
+        return self._create_updated_state(initial_state, current_task_tree_node, status)
 
     def _handle_shutdown_command(self, state: TaskProcessingState) -> TaskProcessingState:
         """Handle shutdown command and return updated state."""
@@ -71,10 +65,7 @@ class CommandProcessor(Generic[CommandContextType]):
         return error_report, results
 
     def _create_updated_state(
-        self,
-        initial_state: TaskProcessingState,
-        task_tree_node: "TaskTreeNode",
-        execution_status: dict[str, Any]
+        self, initial_state: TaskProcessingState, task_tree_node: "TaskTreeNode", execution_status: dict[str, Any]
     ) -> TaskProcessingState:
         """Create updated state based on command execution results."""
         # Check if task is now finished/failed
@@ -82,15 +73,10 @@ class CommandProcessor(Generic[CommandContextType]):
         node_status = current_node.get_problem_status()
         is_terminal = node_status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
 
-        return initial_state.with_current_task_finished_or_failed(
-            initial_state.current_task_finished_or_failed or is_terminal
-        )
+        return initial_state.with_current_task_finished_or_failed(initial_state.current_task_finished_or_failed or is_terminal)
 
     def _execute_valid_commands(
-        self,
-        commands: list[ParseResult],
-        task_tree_node: "TaskTreeNode",
-        parsing_error_report: str
+        self, commands: list[ParseResult], task_tree_node: "TaskTreeNode", parsing_error_report: str
     ) -> tuple[list[dict], bool, dict]:
         """Execute valid commands and return execution results."""
         has_parsing_errors = bool(parsing_error_report)
@@ -110,9 +96,7 @@ class CommandProcessor(Generic[CommandContextType]):
             # Skip finish/fail commands if there are errors
             if self._is_terminal_command_with_errors(cmd, has_parsing_errors, failed_commands):
                 finish_or_fail_skipped = True
-                status_map[cmd_key] = self._create_skipped_status(
-                    cmd, "other errors detected in the message", line_num
-                )
+                status_map[cmd_key] = self._create_skipped_status(cmd, "other errors detected in the message", line_num)
                 continue
 
             # Execute the command
@@ -120,19 +104,11 @@ class CommandProcessor(Generic[CommandContextType]):
 
             # Handle execution result
             if exception:  # Error occurred
-                failed_info = {
-                    "name": cmd.command_name,
-                    "status": f"failed: {str(exception)}",
-                    "line": line_num
-                }
+                failed_info = {"name": cmd.command_name, "status": f"failed: {str(exception)}", "line": line_num}
                 status_map[cmd_key] = failed_info
                 failed_commands.append(failed_info)
             elif result:  # Command executed successfully
-                status_map[cmd_key] = {
-                    "name": cmd.command_name,
-                    "status": "success",
-                    "line": line_num
-                }
+                status_map[cmd_key] = {"name": cmd.command_name, "status": "success", "line": line_num}
 
                 # Check if this command should be the last in the message
                 if result.should_be_last_in_message():
@@ -140,12 +116,7 @@ class CommandProcessor(Generic[CommandContextType]):
 
         return failed_commands, finish_or_fail_skipped, status_map
 
-    def _is_terminal_command_with_errors(
-        self,
-        cmd: ParseResult,
-        has_parsing_errors: bool,
-        failed_commands: list[dict]
-    ) -> bool:
+    def _is_terminal_command_with_errors(self, cmd: ParseResult, has_parsing_errors: bool, failed_commands: list[dict]) -> bool:
         """Check if this is a terminal command when there are errors."""
         is_terminal = cmd.command_name in ["finish_problem", "fail_problem"]
         has_errors = has_parsing_errors or bool(failed_commands)
@@ -153,25 +124,14 @@ class CommandProcessor(Generic[CommandContextType]):
 
     def _create_skipped_status(self, cmd: ParseResult, reason: str, line: int | None) -> dict:
         """Create a status dict for skipped commands."""
-        return {
-            "name": cmd.command_name,
-            "status": f"skipped: {reason}",
-            "line": line
-        }
+        return {"name": cmd.command_name, "status": f"skipped: {reason}", "line": line}
 
-
-    def _run_command(
-        self,
-        result: ParseResult,
-        task_tree_node: "TaskTreeNode"
-    ) -> tuple[Command | None, Exception | None]:
+    def _run_command(self, result: ParseResult, task_tree_node: "TaskTreeNode") -> tuple[Command | None, Exception | None]:
         """Execute a single command and return results."""
         command_name = result.command_name
 
         # Create command context
-        context = self.command_context_factory.create_command_context(
-            self.task_processor, task_tree_node, self
-        )
+        context = self.command_context_factory.create_command_context(self.task_processor, task_tree_node, self)
 
         try:
             # Get and execute command
@@ -185,6 +145,7 @@ class CommandProcessor(Generic[CommandContextType]):
 
         except Exception as e:
             import traceback
+
             print(f"Error executing '{command_name}':")
             print(traceback.format_exc())
             return None, e
@@ -218,20 +179,12 @@ class CommandProcessor(Generic[CommandContextType]):
                 final_report += f"\n{exec_report_text}"
 
         # Ensure proper formatting
-        if final_report and not (
-            "### Errors report:" in final_report or
-            "### Execution Status Report:" in final_report
-        ):
+        if final_report and not ("### Errors report:" in final_report or "### Execution Status Report:" in final_report):
             final_report = f"### Errors report:\n{final_report}"
 
         return final_report
 
-    def _add_to_auto_reply(
-        self,
-        task_tree_node: "TaskTreeNode",
-        error_report: str,
-        needs_confirmation: bool
-    ) -> None:
+    def _add_to_auto_reply(self, task_tree_node: "TaskTreeNode", error_report: str, needs_confirmation: bool) -> None:
         """Add reports and confirmation requests to auto-reply."""
         auto_reply = task_tree_node.get_research_node().get_history().get_auto_reply_aggregator()
 
@@ -248,7 +201,6 @@ class CommandProcessor(Generic[CommandContextType]):
         # Add error report if any
         if error_report:
             auto_reply.add_error_report(error_report)
-
 
     def focus_down(self, subproblem_title: str, task_tree_node: "TaskTreeNode") -> bool:
         """Focus down to a subproblem."""
@@ -285,11 +237,7 @@ class CommandProcessor(Generic[CommandContextType]):
 
         # Add messages to parent's auto-reply
         self._add_status_message_to_parent(
-            parent_node,
-            research_node,
-            "Task marked FINISHED, focusing back up.",
-            message,
-            "[Completion Message]: "
+            parent_node, research_node, "Task marked FINISHED, focusing back up.", message, "[Completion Message]: "
         )
 
         return True
@@ -310,22 +258,13 @@ class CommandProcessor(Generic[CommandContextType]):
 
         # Add messages to parent's auto-reply
         self._add_status_message_to_parent(
-            parent_node,
-            research_node,
-            "Task marked FAILED, focusing back up.",
-            message,
-            "[Failure Message]: "
+            parent_node, research_node, "Task marked FAILED, focusing back up.", message, "[Failure Message]: "
         )
 
         return True
 
     def _add_status_message_to_parent(
-        self,
-        parent_node: "ResearchNode",
-        research_node: "ResearchNode",
-        status_msg: str,
-        custom_msg: str | None = None,
-        prefix: str = ""
+        self, parent_node: "ResearchNode", research_node: "ResearchNode", status_msg: str, custom_msg: str | None = None, prefix: str = ""
     ) -> None:
         """Add status and optional custom message to parent's auto-reply."""
         source_title = research_node.get_title()
