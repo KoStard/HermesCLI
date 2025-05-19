@@ -18,6 +18,7 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
 )
 from hermes.chat.interface.assistant.agent.framework.status_printer import StatusPrinter
 from hermes.chat.interface.assistant.agent.framework.task_processor import TaskProcessor, TaskProcessorRunResult
+from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 from hermes.chat.interface.assistant.agent.framework.task_tree.task_tree import TaskTreeImpl
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.command_parser import CommandParser
@@ -78,7 +79,7 @@ class AgentEngine(Generic[CommandContextType]):
         self.research.initiate_research(node)
         self.task_tree.set_root_research_node(self.research.get_root_node())
 
-        self._print_current_status(self.research.get_root_node())
+        self.status_printer.print_status(self.research.get_root_node(), self.research)
 
     def add_new_instruction(self, instruction: str):
         """Injects a new user instruction into the current node's context."""
@@ -114,51 +115,41 @@ class AgentEngine(Generic[CommandContextType]):
         if not self.is_research_initiated():
             raise ValueError("Root problem must be defined before execution")
 
-        engine_should_stop = False
-        while not engine_should_stop:
-            current_task_tree_node = self.task_tree.next()
-
-            if current_task_tree_node is None: # All tasks in the tree are done
-                engine_should_stop = True
-                break
-
-            task_processor = TaskProcessor(
-                task_tree_node_to_process=current_task_tree_node,
-                research_project=self.research,
-                llm_interface_to_use=self.llm_interface,
-                command_registry_to_use=self.command_registry,
-                command_context_factory_to_use=self.command_context_factory,
-                template_manager_to_use=self.template_manager,
-                dynamic_section_renderer_registry=self.renderer_registry,
-                agent_interface_for_ui=self.interface,
-                status_printer_to_use=self.status_printer,
-                budget_manager=self.budget_manager, # Pass BudgetManager instance
-                command_parser=self.command_parser
-            )
-
-            run_result = task_processor.run()
-
-            if run_result == TaskProcessorRunResult.ENGINE_STOP_REQUESTED:
-                engine_should_stop = True # Budget exhaustion or shutdown command from task
+        self.engine_should_stop = False
+        while not self.engine_should_stop:
+            self._run_task(self.task_tree.next())
 
         # After loop execution (all tasks done or engine stopped)
         root_node = self.research.get_root_node()
         final_root_completion_message = root_node.get_resolution_message()
 
-        print("Engine execution cycle complete.")
-
         return self.report_generator.generate_final_report(
             self.research, self.interface, final_root_completion_message
         )
 
-    def _print_current_status(self, current_node: 'ResearchNode'):
-        """
-        Print the current status of the research to STDOUT
+    def _run_task(self, task_tree_node: TaskTreeNode | None):
+        if task_tree_node is None: # All tasks in the tree are done
+            self.engine_should_stop = True
+            return
 
-        Args:
-            current_node: The current research node.
-        """
-        self.status_printer.print_status(current_node, self.research)
+        task_processor = TaskProcessor(
+            task_tree_node_to_process=task_tree_node,
+            research_project=self.research,
+            llm_interface_to_use=self.llm_interface,
+            command_registry_to_use=self.command_registry,
+            command_context_factory_to_use=self.command_context_factory,
+            template_manager_to_use=self.template_manager,
+            dynamic_section_renderer_registry=self.renderer_registry,
+            agent_interface_for_ui=self.interface,
+            status_printer_to_use=self.status_printer,
+            budget_manager=self.budget_manager, # Pass BudgetManager instance
+            command_parser=self.command_parser
+        )
+
+        run_result = task_processor.run()
+
+        if run_result == TaskProcessorRunResult.ENGINE_STOP_REQUESTED:
+            self.engine_should_stop = True # Budget exhaustion or shutdown command from task
 
     def set_budget(self, budget_value: int | None):
         """
