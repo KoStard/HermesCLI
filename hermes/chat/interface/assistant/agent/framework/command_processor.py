@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Generic
 
 from hermes.chat.interface.assistant.agent.framework.commands.command_context_factory import CommandContextFactory, CommandContextType
+from hermes.chat.interface.assistant.agent.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
-from hermes.chat.interface.assistant.agent.framework.task_processing_state import TaskProcessingState
 from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 from hermes.chat.interface.commands.command import (
     Command,
@@ -32,10 +32,10 @@ class CommandProcessor(Generic[CommandContextType]):
         self.command_registry = command_registry
         self.command_context_factory = command_context_factory
 
-    def process(self, text: str, current_task_tree_node: "TaskTreeNode", initial_state: TaskProcessingState) -> TaskProcessingState:
+    def process(self, text: str, current_task_tree_node: "TaskTreeNode"):
         """Process commands from text and return updated state."""
         if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
-            return self._handle_shutdown_command(initial_state)
+            return self._handle_shutdown_command()
 
         self._add_message_to_history(text, current_task_tree_node)
 
@@ -47,11 +47,9 @@ class CommandProcessor(Generic[CommandContextType]):
 
         self._add_to_auto_reply(current_task_tree_node, error_report, needs_confirmation)
 
-        return self._create_updated_state(initial_state, current_task_tree_node, status)
-
-    def _handle_shutdown_command(self, state: TaskProcessingState) -> TaskProcessingState:
+    def _handle_shutdown_command(self):
         """Handle shutdown command and return updated state."""
-        return state.with_engine_shutdown_requested(True)
+        raise EngineShutdownRequestedException()
 
     def _add_message_to_history(self, text: str, task_tree_node: "TaskTreeNode") -> None:
         """Add the assistant's message to history."""
@@ -63,17 +61,6 @@ class CommandProcessor(Generic[CommandContextType]):
         results = self.command_parser.parse_text(text)
         error_report = self.command_parser.generate_error_report(results)
         return error_report, results
-
-    def _create_updated_state(
-        self, initial_state: TaskProcessingState, task_tree_node: "TaskTreeNode", execution_status: dict[str, Any]
-    ) -> TaskProcessingState:
-        """Create updated state based on command execution results."""
-        # Check if task is now finished/failed
-        current_node = task_tree_node.get_research_node()
-        node_status = current_node.get_problem_status()
-        is_terminal = node_status in [ProblemStatus.FINISHED, ProblemStatus.FAILED]
-
-        return initial_state.with_current_task_finished_or_failed(initial_state.current_task_finished_or_failed or is_terminal)
 
     def _execute_valid_commands(
         self, commands: list[ParseResult], task_tree_node: "TaskTreeNode", parsing_error_report: str

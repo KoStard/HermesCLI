@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Generic
 
 from hermes.chat.interface.assistant.agent.framework.command_processor import CommandProcessor
 from hermes.chat.interface.assistant.agent.framework.commands.command_context_factory import CommandContextFactory, CommandContextType
+from hermes.chat.interface.assistant.agent.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
 from hermes.chat.interface.assistant.agent.framework.research.research_node_history_adapter import ResearchNodeHistoryAdapter
-from hermes.chat.interface.assistant.agent.framework.task_processing_state import TaskProcessingState
 from hermes.chat.interface.commands.command_parser import CommandParser
 
 if TYPE_CHECKING:
@@ -68,19 +68,21 @@ class TaskProcessor(Generic[CommandContextType]):
         research_node = self.task_tree_node_to_process.get_research_node()
 
         while True:
-            state = self._execute_task_processing_cycle(research_node)
-            if state:
-                return state
+            try:
+                state = self._execute_task_processing_cycle(research_node)
+                if state:
+                    return state
+            except EngineShutdownRequestedException:
+                return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
 
     def _execute_task_processing_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Execute a single task processing cycle."""
-        current_task_processing_state = TaskProcessingState()
 
         # Get LLM response
         full_llm_response = self._prepare_and_execute_llm_request(research_node)
 
         # Process commands from response
-        current_task_processing_state = self._process_llm_response_commands(full_llm_response, current_task_processing_state)
+        self._process_llm_response_commands(full_llm_response)
 
         # Handle budget updates
         budget_outcome = self._manage_budget_after_cycle(research_node)
@@ -91,7 +93,7 @@ class TaskProcessor(Generic[CommandContextType]):
         self._perform_post_cycle_updates(research_node)
 
         # Check if processing is complete
-        return self._determine_task_processor_outcome(research_node, current_task_processing_state)
+        return self._determine_task_processor_outcome(research_node)
 
     def _prepare_and_execute_llm_request(self, research_node: "ResearchNode") -> str:
         """Prepares UI, history, generates and executes LLM request, returns LLM response."""
@@ -144,8 +146,8 @@ class TaskProcessor(Generic[CommandContextType]):
         return llm_request
 
     def _process_llm_response_commands(
-        self, full_llm_response: str, current_task_processing_state: TaskProcessingState
-    ) -> TaskProcessingState:
+        self, full_llm_response: str
+    ):
         """Processes commands from the LLM response and returns the updated processing state."""
         command_processor = CommandProcessor(
             self,  # TaskProcessor instance
@@ -153,7 +155,7 @@ class TaskProcessor(Generic[CommandContextType]):
             self.command_registry,
             self.command_context_factory,
         )
-        return command_processor.process(full_llm_response, self.task_tree_node_to_process, current_task_processing_state)
+        command_processor.process(full_llm_response, self.task_tree_node_to_process)
 
     def _manage_budget_after_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Checks budget; if exhausted and stop is dictated, returns ENGINE_STOP_REQUESTED."""
@@ -171,19 +173,15 @@ class TaskProcessor(Generic[CommandContextType]):
         self.status_printer.print_status(research_node, self.research_project)
 
     def _determine_task_processor_outcome(
-        self, research_node: "ResearchNode", current_task_processing_state: TaskProcessingState
+        self, research_node: "ResearchNode"
     ) -> TaskProcessorRunResult | None:
         """Determines if the task processing should conclude for this cycle."""
         current_node_status = research_node.get_problem_status()
         is_task_terminal = current_node_status in [ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.PENDING]
 
-        if is_task_terminal or current_task_processing_state.current_task_finished_or_failed:
-            if current_task_processing_state.engine_shutdown_requested:
-                return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
+        if is_task_terminal:
             return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
 
-        if current_task_processing_state.engine_shutdown_requested:
-            return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
         return None
 
     def _handle_llm_request(self, request, research_node: "ResearchNode"):
