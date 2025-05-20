@@ -5,7 +5,6 @@ from hermes.chat.interface.assistant.agent.framework.engine_shutdown_requested_e
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
-from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 from hermes.chat.interface.commands.command import (
     Command,
     CommandRegistry,

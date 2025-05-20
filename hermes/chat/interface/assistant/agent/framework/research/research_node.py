@@ -1,4 +1,6 @@
 from pathlib import Path
+from queue import Queue
+from typing import TYPE_CHECKING
 
 from hermes.chat.interface.assistant.agent.framework.research.file_system.markdown_file_with_metadata import (
     MarkdownFileWithMetadataImpl,
@@ -25,11 +27,14 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
     StateManager,
 )
 
-from . import ResearchNode
+if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree
+
+from . import ResearchNode, ResearchNodeStatusChangeEvent
 
 
 class ResearchNodeImpl(ResearchNode):
-    def __init__(self, problem: ProblemDefinition, title: str, parent: "ResearchNode | None", path: Path) -> None:
+    def __init__(self, problem: ProblemDefinition, title: str, parent: "ResearchNode | None", path: Path, task_tree: "TaskTree") -> None:
         self.children: list[ResearchNode] = []
         self.parent: ResearchNode | None = parent
         self._path: Path = path
@@ -43,8 +48,11 @@ class ResearchNodeImpl(ResearchNode):
         self.artifact_manager: ArtifactManager = ArtifactManager(self)
         self.criteria_manager: CriteriaManager = CriteriaManager(self)
         self.logger: ResearchNodeLogger = ResearchNodeLogger(self)
-        self.problem_manager: ProblemDefinitionManager = ProblemDefinitionManager(self, problem, ProblemStatus.NOT_STARTED)
-        self.state_manager: StateManager = StateManager(self)
+        self.problem_manager: ProblemDefinitionManager = ProblemDefinitionManager(self, problem)
+        self._state_manager: StateManager = StateManager(self)
+        self._events_queue: Queue | None = None
+        self.task_tree = task_tree
+        self.task_tree.register_node(self)
 
         # Initialize file system components if path is set
         self._init_components()
@@ -54,12 +62,46 @@ class ResearchNodeImpl(ResearchNode):
             title = title[:200] + "..."
         return title
 
-    @classmethod
-    def load_from_directory(cls, node_path: Path) -> "ResearchNode":
-        return cls._load_from_directory(node_path, None)
+    def _init_components(self):
+        """Initialize node components"""
+        if not self._path.exists():
+            self._path.mkdir(parents=True, exist_ok=True)
+
+        # Create artifacts directory
+        artifacts_dir = self._path / "Artifacts"
+        artifacts_dir.mkdir(exist_ok=True)
+
+        # Create subproblems directory
+        subproblems_dir = self._path / "Subproblems"
+        subproblems_dir.mkdir(exist_ok=True)
+
+        # Create logs directory
+        logs_dir = self._path / "logs_and_debug"
+        logs_dir.mkdir(exist_ok=True)
+
+        # Save the problem definition to disk if it's a new node
+        problem_def_path = self._path / "Problem Definition.md"
+        if not problem_def_path.exists():
+            self.problem_manager.save()
+        else:
+            # If it exists, load from disk to ensure we have the latest version
+            self.problem_manager = ProblemDefinitionManager.load_for_research_node(self)
+
+        # Load all components from disk
+        self.criteria_manager = CriteriaManager.load_for_research_node(self)[0]
+        self.artifact_manager = ArtifactManager.load_for_research_node(self)[0]
+        self._state_manager = StateManager.load_for_research_node(self)[0]
+        self.logger = ResearchNodeLogger.load_for_research_node(self)[0]
+
+    def get_id(self) -> str:
+        return self._state_manager.get_id()
 
     @classmethod
-    def _load_from_directory(cls, node_path: Path, parent_node: "ResearchNode | None" = None) -> "ResearchNode":
+    def load_from_directory(cls, node_path: Path, task_tree: "TaskTree") -> "ResearchNode":
+        return cls._load_from_directory(node_path, task_tree, None)
+
+    @classmethod
+    def _load_from_directory(cls, node_path: Path, task_tree: "TaskTree", parent_node: "ResearchNode | None" = None) -> "ResearchNode":
         """
         Load a node and all its children from a directory.
 
@@ -79,14 +121,14 @@ class ResearchNodeImpl(ResearchNode):
         problem_def = ProblemDefinition(content=md_file.get_content())
 
         # Get status from metadata
-        status_str = md_file.get_metadata().get("status", ProblemStatus.NOT_STARTED.value)
+        status_str = md_file.get_metadata().get("status", ProblemStatus.READY_TO_START.value)
         try:
             status = ProblemStatus(status_str)
         except ValueError:
-            status = ProblemStatus.NOT_STARTED
+            status = ProblemStatus.READY_TO_START
 
         # Create the node with the loaded problem definition
-        node = ResearchNodeImpl(problem=problem_def, title=node_path.name, path=node_path, parent=parent_node)
+        node = ResearchNodeImpl(problem=problem_def, title=node_path.name, path=node_path, parent=parent_node, task_tree=task_tree)
 
         # Update node status (which might have been loaded incorrectly during initialization)
         node.set_problem_status(status)
@@ -119,37 +161,6 @@ class ResearchNodeImpl(ResearchNode):
                 except Exception as e:
                     print(f"Error loading child node {child_dir.name}: {e}")
 
-    def _init_components(self):
-        """Initialize node components"""
-        if not self._path.exists():
-            self._path.mkdir(parents=True, exist_ok=True)
-
-        # Create artifacts directory
-        artifacts_dir = self._path / "Artifacts"
-        artifacts_dir.mkdir(exist_ok=True)
-
-        # Create subproblems directory
-        subproblems_dir = self._path / "Subproblems"
-        subproblems_dir.mkdir(exist_ok=True)
-
-        # Create logs directory
-        logs_dir = self._path / "logs_and_debug"
-        logs_dir.mkdir(exist_ok=True)
-
-        # Save the problem definition to disk if it's a new node
-        problem_def_path = self._path / "Problem Definition.md"
-        if not problem_def_path.exists():
-            self.problem_manager.save()
-        else:
-            # If it exists, load from disk to ensure we have the latest version
-            self.problem_manager = ProblemDefinitionManager.load_for_research_node(self)
-
-        # Load all components from disk
-        self.criteria_manager = CriteriaManager.load_for_research_node(self)[0]
-        self.artifact_manager = ArtifactManager.load_for_research_node(self)[0]
-        self.state_manager = StateManager.load_for_research_node(self)[0]
-        self.logger = ResearchNodeLogger.load_for_research_node(self)[0]
-
     def list_child_nodes(self) -> list[ResearchNode]:
         return self.children
 
@@ -178,10 +189,10 @@ class ResearchNodeImpl(ResearchNode):
         child_path = subproblems_dir / title
 
         # Create the new node
-        child_node = ResearchNodeImpl(problem=problem_def, title=title, path=child_path, parent=self)
+        child_node = ResearchNodeImpl(problem=problem_def, title=title, path=child_path, parent=self, task_tree=self.task_tree)
 
         # Set initial status
-        child_node.set_problem_status(ProblemStatus.NOT_STARTED)
+        child_node.set_problem_status(ProblemStatus.READY_TO_START)
 
         # Add to children
         self.add_child_node(child_node)
@@ -231,7 +242,7 @@ class ResearchNodeImpl(ResearchNode):
         self.artifact_manager.add_artifact(artifact)
 
         # Default to open status in state manager
-        self.state_manager.set_artifact_status(artifact, True)
+        self._state_manager.set_artifact_status(artifact, True)
 
     def add_criterion(self, criterion: Criterion):
         """
@@ -244,25 +255,40 @@ class ResearchNodeImpl(ResearchNode):
         return self._title
 
     def get_node_state(self) -> NodeState:
-        return self.state_manager.get_state()
+        return self._state_manager.get_state()
 
     def set_problem_status(self, status: ProblemStatus):
-        self.problem_manager.update_status(status)
-        self.state_manager.set_problem_status(status)
+        if status == self.get_problem_status():
+            return
+        self._state_manager.set_problem_status(status)
+        assert self._events_queue
+        self._events_queue.put(ResearchNodeStatusChangeEvent())
 
     def get_problem_status(self) -> ProblemStatus:
-        return self.state_manager.get_problem_status()
+        return self._state_manager.get_problem_status()
+
+    def add_child_node_to_wait(self, child_node: "ResearchNode"):
+        self._state_manager.add_child_node_to_wait(child_node)
+        self.set_problem_status(ProblemStatus.PENDING)
+
+    def remove_child_node_to_wait(self, child_node: "ResearchNode"):
+        self._state_manager.remove_child_node_to_wait(child_node)
+        if not self._get_child_node_ids_to_wait():
+            self.set_problem_status(ProblemStatus.READY_TO_START)
+
+    def _get_child_node_ids_to_wait(self) -> set[str]:
+        return self._state_manager.get_state().pending_child_node_ids
 
     def get_resolution_message(self) -> str | None:
         """Get the resolution message for this node from the state manager."""
-        return self.state_manager.get_resolution_message()
+        return self._state_manager.get_resolution_message()
 
     def set_resolution_message(self, message: str | None) -> None:
         """Set the resolution message for this node via the state manager."""
-        self.state_manager.set_resolution_message(message)
+        self._state_manager.set_resolution_message(message)
 
     def set_artifact_status(self, artifact: Artifact, is_open: bool):
-        self.state_manager.set_artifact_status(artifact, is_open)
+        self._state_manager.set_artifact_status(artifact, is_open)
 
     def get_history(self) -> ResearchNodeHistory:
         return self._history
@@ -278,3 +304,6 @@ class ResearchNodeImpl(ResearchNode):
         if parent:
             return parent.get_depth_from_root() + 1
         return 0
+
+    def set_events_queue(self, queue: Queue):
+        self._events_queue = queue

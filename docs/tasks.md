@@ -235,7 +235,7 @@ Claritications:
 
 #### Task Tree
 The interface has been updated. Implement the changes, remove the unused methods.
-When finish() is called on a child task, it should call refresh_pending_children on the parent task (if any) to make sure its pending status is correct. Otherwise the parent should move back to NOT_STARTED.
+When finish() is called on a child task, it should call refresh_pending_children on the parent task (if any) to make sure its pending status is correct. Otherwise the parent should move back to READY_TO_START.
 wait_for_children method is instroduced, so that the assistant can wait for the child tasks (some or all of them).
 
 #### TaskProcessor

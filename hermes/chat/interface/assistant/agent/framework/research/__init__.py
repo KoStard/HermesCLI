@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TypeVar
+from queue import Queue
+from typing import TYPE_CHECKING, TypeVar
 
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.artifact import Artifact
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.criteria_manager import Criterion
@@ -23,11 +24,21 @@ from hermes.chat.interface.assistant.agent.framework.research.research_project_c
     NodePermanentLogs,
 )
 
+if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree
+
 N = TypeVar("N", bound="ResearchNode")
 
 
+class ResearchNodeStatusChangeEvent:
+    pass
+
+
 class ResearchNode(ABC):
-    # Should automatically handle file updates
+    @abstractmethod
+    def get_id(self) -> str:
+        pass
+
     @abstractmethod
     def list_child_nodes(self: N) -> list[N]:
         pass
@@ -85,6 +96,14 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
+    def add_child_node_to_wait(self, child_node: "ResearchNode"):
+        pass
+
+    @abstractmethod
+    def remove_child_node_to_wait(self, child_node: "ResearchNode"):
+        pass
+
+    @abstractmethod
     def set_resolution_message(self, message: str | None) -> None:
         pass
 
@@ -126,6 +145,10 @@ class ResearchNode(ABC):
     def get_resolution_message(self) -> str | None:
         pass
 
+    @abstractmethod
+    def set_events_queue(self, queue: Queue):
+        pass
+
 
 class Research(ABC):
     @abstractmethod
@@ -142,7 +165,7 @@ class Research(ABC):
         pass
 
     @abstractmethod
-    def load_existing_research(self):
+    def load_existing_research(self, task_tree: "TaskTree"):
         pass
 
     @abstractmethod

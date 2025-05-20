@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.llm_interface import LLMInterface
     from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
     from hermes.chat.interface.assistant.agent.framework.status_printer import StatusPrinter
-    from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
     from hermes.chat.interface.commands.command import CommandRegistry
     from hermes.chat.interface.templates.template_manager import TemplateManager
 
@@ -36,7 +35,7 @@ class TaskProcessor(Generic[CommandContextType]):
 
     def __init__(
         self,
-        task_tree_node_to_process: "TaskTreeNode",
+        research_node: "TaskTreeNode",
         research_project: "Research",
         llm_interface_to_use: "LLMInterface",
         command_registry_to_use: "CommandRegistry",
@@ -48,7 +47,7 @@ class TaskProcessor(Generic[CommandContextType]):
         budget_manager: "BudgetManager",  # Changed from agent_engine_for_budget
         command_parser: CommandParser,
     ):
-        self.task_tree_node_to_process = task_tree_node_to_process
+        self.task_tree_node_to_process = research_node
         self.research_project = research_project
         self.llm_interface = llm_interface_to_use
         self.command_registry = command_registry_to_use
@@ -145,9 +144,7 @@ class TaskProcessor(Generic[CommandContextType]):
 
         return llm_request
 
-    def _process_llm_response_commands(
-        self, full_llm_response: str
-    ):
+    def _process_llm_response_commands(self, full_llm_response: str):
         """Processes commands from the LLM response and returns the updated processing state."""
         command_processor = CommandProcessor(
             self,  # TaskProcessor instance
@@ -172,9 +169,7 @@ class TaskProcessor(Generic[CommandContextType]):
         research_node.get_history().save()
         self.status_printer.print_status(research_node, self.research_project)
 
-    def _determine_task_processor_outcome(
-        self, research_node: "ResearchNode"
-    ) -> TaskProcessorRunResult | None:
+    def _determine_task_processor_outcome(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Determines if the task processing should conclude for this cycle."""
         current_node_status = research_node.get_problem_status()
         is_task_terminal = current_node_status in [ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.PENDING]

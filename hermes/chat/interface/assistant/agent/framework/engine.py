@@ -1,3 +1,4 @@
+import threading
 from pathlib import Path
 from typing import Generic
 
@@ -18,7 +19,6 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
 )
 from hermes.chat.interface.assistant.agent.framework.status_printer import StatusPrinter
 from hermes.chat.interface.assistant.agent.framework.task_processor import TaskProcessor, TaskProcessorRunResult
-from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 from hermes.chat.interface.assistant.agent.framework.task_tree.task_tree import TaskTreeImpl
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.command_parser import CommandParser
@@ -52,7 +52,7 @@ class AgentEngine(Generic[CommandContextType]):
 
         # Initialize the research object which will handle all file system and node operations
         self.research = ResearchImpl(root_dir)
-        self.task_tree = TaskTreeImpl()
+        self.task_tree = TaskTreeImpl(self.research)
         self.command_registry = command_registry
 
         # Initialize other components
@@ -61,8 +61,7 @@ class AgentEngine(Generic[CommandContextType]):
         self.budget_manager = BudgetManager()
 
         if self.research.research_already_exists():
-            self.research.load_existing_research()
-            self.task_tree.set_root_research_node(self.research.get_root_node())
+            self.research.load_existing_research(self.task_tree)
 
     def is_research_initiated(self) -> bool:
         """Check if the research is already initiated"""
@@ -76,9 +75,11 @@ class AgentEngine(Generic[CommandContextType]):
             bool: True if a problem was successfully defined, False otherwise
         """
         problem_definition = ProblemDefinition(content=instruction)
-        node = ResearchNodeImpl(problem=problem_definition, title=instruction, path=self.research.get_root_directory(), parent=None)
+        node = ResearchNodeImpl(
+            problem=problem_definition, title=instruction, path=self.research.get_root_directory(), parent=None, task_tree=self.task_tree
+        )
         self.research.initiate_research(node)
-        self.task_tree.set_root_research_node(self.research.get_root_node())
+        node.set_problem_status(ProblemStatus.READY_TO_START)
 
         self.status_printer.print_status(self.research.get_root_node(), self.research)
 
@@ -95,7 +96,6 @@ class AgentEngine(Generic[CommandContextType]):
 
         # Mark the root problem as in progress
         root_node.set_problem_status(ProblemStatus.IN_PROGRESS)
-        self.task_tree.reactivate_root_node(root_node)
 
         print("Engine ready to execute new instruction.")
 
@@ -115,8 +115,16 @@ class AgentEngine(Generic[CommandContextType]):
             raise ValueError("Root problem must be defined before execution")
 
         self.engine_should_stop = False
+        threads = []
         while not self.engine_should_stop:
-            self._run_task(self.task_tree.next())
+            next_node = self.task_tree.next()
+            if not next_node:
+                break
+
+            threads.append(threading.Thread(target=self._run_node, args=(next_node,)))
+
+        for thread in threads:
+            thread.join()
 
         # After loop execution (all tasks done or engine stopped)
         root_node = self.research.get_root_node()
@@ -124,13 +132,13 @@ class AgentEngine(Generic[CommandContextType]):
 
         return self.report_generator.generate_final_report(self.research, self.interface, final_root_completion_message)
 
-    def _run_task(self, task_tree_node: TaskTreeNode | None):
-        if task_tree_node is None:  # All tasks in the tree are done
+    def _run_node(self, research_node: ResearchNode | None):
+        if research_node is None:  # All tasks in the tree are done
             self.engine_should_stop = True
             return
 
         task_processor = TaskProcessor(
-            task_tree_node_to_process=task_tree_node,
+            research_node=research_node,
             research_project=self.research,
             llm_interface_to_use=self.llm_interface,
             command_registry_to_use=self.command_registry,

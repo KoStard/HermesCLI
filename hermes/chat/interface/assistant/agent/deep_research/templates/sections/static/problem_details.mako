@@ -8,7 +8,7 @@ Notice that the problem assigned to you doesn't change during the whole chat.
 
 Title: "${target_node.get_title()}"
 % if target_node.get_depth_from_root() > 3:
-⚠️ **DEPTH WARNING** 
+⚠️ **DEPTH WARNING**
 You are currently at depth level ${target_node.get_depth_from_root()}, which exceeds the recommended maximum of 3 levels.
 Please avoid creating additional subproblems at this level. Instead:
 1. Try to solve the current problem directly
@@ -37,7 +37,7 @@ As a rule of thumn, unless really necessary, don't go below depth 3.
 ${'###'} Problem Status System
 
 Each problem in the hierarchy has a status that indicates its current state:
-- **NOT_STARTED**: A problem that has been created but work has not yet begun on it
+- **READY_TO_START**: A problem that has been created but work has not yet begun on it
 - **PENDING**: A problem that is temporarily paused because it awaits the results of its subproblems
 - **IN_PROGRESS**: The problem that is being currently worked on
 - **FINISHED**: A problem that has been successfully completed

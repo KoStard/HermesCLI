@@ -20,7 +20,7 @@ class StatusPrinterImpl(StatusPrinter):
         """
         self.template_manager = template_manager
         self.status_emojis = {
-            ProblemStatus.NOT_STARTED: "🆕",
+            ProblemStatus.READY_TO_START: "🆕",
             ProblemStatus.PENDING: "⏳",
             ProblemStatus.IN_PROGRESS: "🔍",
             ProblemStatus.FINISHED: "✅",

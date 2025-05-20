@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
     from hermes.chat.interface.assistant.agent.framework.research.research_node_component.artifact import Artifact
-    from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 
 
 class CommandContext(ABC):

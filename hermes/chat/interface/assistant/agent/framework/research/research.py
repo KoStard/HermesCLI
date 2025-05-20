@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from hermes.chat.interface.assistant.agent.framework.research.file_system.disk_file_system import DiskFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.research_node import ResearchNodeImpl
@@ -12,6 +13,9 @@ from hermes.chat.interface.assistant.agent.framework.research.research_project_c
 from hermes.chat.interface.assistant.agent.framework.research.research_project_component.permanent_log import (
     NodePermanentLogs,
 )
+
+if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree
 
 from . import Research, ResearchNode
 
@@ -47,14 +51,14 @@ class ResearchImpl(Research):
 
         self._research_initiated = True
 
-    def load_existing_research(self):
+    def load_existing_research(self, task_tree: "TaskTree"):
         """Load an existing research project"""
         # Load knowledge base and external files
         self._knowledge_base.load_entries()
         self._external_files_manager.load_external_files()
 
         # Load the root node from disk using the node's static loading method
-        root_node = ResearchNodeImpl.load_from_directory(self.root_directory)
+        root_node = ResearchNodeImpl.load_from_directory(self.root_directory, task_tree)
 
         self.initiate_research(root_node)
 

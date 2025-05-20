@@ -7,7 +7,6 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.command_processor import CommandProcessor
     from hermes.chat.interface.assistant.agent.framework.task_processor import TaskProcessor
-    from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 
 
 class CommandContextImpl(CommandContext):

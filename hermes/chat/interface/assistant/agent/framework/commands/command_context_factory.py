@@ -8,7 +8,6 @@ CommandContextType = TypeVar("CommandContextType", bound=CommandContext)
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.command_processor import CommandProcessor
     from hermes.chat.interface.assistant.agent.framework.task_processor import TaskProcessor
-    from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTreeNode
 
 
 class CommandContextFactory(ABC, Generic[CommandContextType]):

@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 
 
 class ProblemStatus(Enum):
-    NOT_STARTED = auto()
+    CREATED = auto()
+    READY_TO_START = auto()
     PENDING = auto()
     IN_PROGRESS = auto()
     FINISHED = auto()
