@@ -257,14 +257,16 @@ class WaitForSubproblems(BaseCommand[CommandContextImpl]):
 
         current_node = context.current_node
         child_nodes = current_node.list_child_nodes()
-        active_titles = {node.get_title() for node in child_nodes
-                       if node.get_problem_status() not in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}}
+        active_titles = {
+            node.get_title()
+            for node in child_nodes
+            if node.get_problem_status() not in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}
+        }
 
         # Validate all specified subproblems exist and are active
         for title in titles:
             if title not in active_titles:
                 raise ValueError(f"Subproblem '{title}' not found or not active")
-
 
         for title in titles:
             context.wait_for_subtask(title)
@@ -274,6 +276,7 @@ class WaitForSubproblems(BaseCommand[CommandContextImpl]):
             args,
             f"Waiting for subproblems to complete: {', '.join(titles)}.",
         )
+
 
 class FinishCommand(BaseCommand[CommandContextImpl]):
     def __init__(self):
