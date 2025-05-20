@@ -22,10 +22,19 @@ ${'###'} Problem Definition
 ${target_node.get_problem().content}
 
 
-${'###'} Subproblems
+${'###'} Subproblems (Parallel Execution)
 
-Include expectations on the depth of the results in problem definitions. On average be frugal, not making the problems scope explode.
-Only one teammate will be working on one (sub)problem. The history of the work will not be shared, except for the artifacts, problem hierarchy and shared permanent logs.
+When creating subproblems:
+1. Use `activate_subproblems` to queue them for parallel execution
+2. Use `wait_for_subproblems` to pause until specific ones complete
+3. Monitor status through dynamic sections
+4. Budget is shared across all parallel tasks
+
+Key expectations:
+- Design subproblems as independent units for maximum parallelism
+- Combine related commands in single messages to reduce roundtrips
+- Balance depth vs breadth - shallow hierarchies enable more parallelism
+- Artifacts from parallel subproblems are automatically visible
 
 ${'###'} Depth
 
@@ -37,7 +46,8 @@ As a rule of thumn, unless really necessary, don't go below depth 3.
 ${'###'} Problem Status System
 
 Each problem in the hierarchy has a status that indicates its current state:
-- **READY_TO_START**: A problem that has been created but work has not yet begun on it
+- **CREATED**: A problem that has been created but not yet activated
+- **READY_TO_START**: After being created, it has been marked as created
 - **PENDING**: A problem that is temporarily paused because it awaits the results of its subproblems
 - **IN_PROGRESS**: The problem that is being currently worked on
 - **FINISHED**: A problem that has been successfully completed

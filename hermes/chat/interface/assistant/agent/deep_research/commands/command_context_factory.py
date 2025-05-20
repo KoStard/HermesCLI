@@ -5,11 +5,12 @@ from hermes.chat.interface.assistant.agent.framework.commands.command_context_fa
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.command_processor import CommandProcessor
+    from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
     from hermes.chat.interface.assistant.agent.framework.task_processor import TaskProcessor
 
 
 class CommandContextFactoryImpl(CommandContextFactory[CommandContextImpl]):
     def create_command_context(
-        self, task_processor: "TaskProcessor", current_task_tree_node: "TaskTreeNode", command_processor: "CommandProcessor"
+        self, task_processor: "TaskProcessor", current_node: "ResearchNode", command_processor: "CommandProcessor"
     ) -> CommandContextImpl:
-        return CommandContextImpl(task_processor, current_task_tree_node, command_processor)
+        return CommandContextImpl(task_processor, command_processor, current_node)

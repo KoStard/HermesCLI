@@ -74,8 +74,12 @@ class StateManager:
     def add_child_node_to_wait(self, child_node: "ResearchNode"):
         self._state.pending_child_node_ids.add(child_node.get_id())
 
-    def remove_child_node_to_wait(self, child_node: "ResearchNode"):
-        self._state.pending_child_node_ids.remove(child_node.get_id())
+    def remove_child_node_to_wait(self, child_node: "ResearchNode") -> bool:
+        node_id = child_node.get_id()
+        if node_id in self._state.pending_child_node_ids:
+            self._state.pending_child_node_ids.remove(node_id)
+            return True
+        return False
 
     def set_resolution_message(self, message: str | None) -> None:
         """Set the resolution message and save"""

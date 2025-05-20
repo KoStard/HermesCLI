@@ -1,11 +1,15 @@
 <%namespace name="xml" file="/macros/xml.mako"/>
 ${'###'} Using the interface
 
-This interface helps you conduct thorough research by providing you with the necessary tools to collect information or to create subproblems assigned to your teammates.
+This interface helps you conduct parallel research by providing tools to create and manage subproblems that can run concurrently. You can activate multiple subproblems and either wait for their completion or continue working while they process.
 
-You use a keyboard and a screen. It's a text-only chat-like interface. You write a multiline multi-command message, send it, receive the results based on your commands, then repeat. While you are writing, nothing happens. The command outputs are included as automatic "user response".
+You use a keyboard and screen in a text-only interface. Write a message with multiple commands, send it, and receive consolidated results. Key parallel execution features:
 
-Notice that the commands execution is different from regular web-based interfaces, where you'll see immediate response for your actions.
+1. **Parallel Activation**: Use `activate_subproblems` to queue multiple subproblems for parallel execution
+2. **Async Workflow**: Continue working while subproblems process (no waiting unless using `wait_for_subproblems`)
+3. **Budget Awareness**: Shared budget is consumed by all parallel tasks
+
+Use `wait_for_subproblems` to synchronize with specific subproblems when needed.
 Here you reply with a long message, and after you send it, the commands will be extracted and executed. Then you'll receive the response for all commands at once.
 
 Everything you write is included in the message. Then you finish the message, it's processed and you receive a response.

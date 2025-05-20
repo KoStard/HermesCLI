@@ -47,11 +47,8 @@ class TaskTreeImpl(TaskTree):
         stack = [root]
         while stack:
             node = stack.pop()
-            # Only consider nodes that are ready to start and not blocked by parent
             if node.get_problem_status() == ProblemStatus.READY_TO_START:
-                parent = node.get_parent()
-                if not parent or parent.get_problem_status() != ProblemStatus.PENDING:
-                    return node
+                return node
             # Add children in reverse order to maintain creation order
             stack.extend(reversed(node.list_child_nodes()))
         return None

@@ -258,3 +258,5 @@ activate_subproblems_and_wait to be split. 2 commands: activate subproblems, wai
 
 #### Interface
 Should explain how the tasks run parallel. and that you can wait for them to finish or run them async and do your work in parallel.
+
+Think about the locks needed to make this safe

@@ -20,7 +20,7 @@ SYSTEM RESPONSE: results...
 Message 2: create artifacts based on search results
 [wait for confirmation]
 SYSTEM RESPONSE: results...
-Message 3: activate_subproblem
+Message 3: activate_subproblems
 SYSTEM RESPONSE: results...
 ```
 ⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses, then consider the next steps.
@@ -45,7 +45,7 @@ A: If you already know that you'll need multiple pieces of information, and gett
 ${'####'} Q: How to input same argument multiple times for a command?
 
 A: You need to put `///section_name` each time, example:
-<<< activate_subproblems_and_wait
+<<< activate_subproblems
 ///title
 subproblem title 1
 ///title

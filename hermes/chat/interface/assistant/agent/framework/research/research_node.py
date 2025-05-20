@@ -191,9 +191,6 @@ class ResearchNodeImpl(ResearchNode):
         # Create the new node
         child_node = ResearchNodeImpl(problem=problem_def, title=title, path=child_path, parent=self, task_tree=self.task_tree)
 
-        # Set initial status
-        child_node.set_problem_status(ProblemStatus.READY_TO_START)
-
         # Add to children
         self.add_child_node(child_node)
 
@@ -263,6 +260,8 @@ class ResearchNodeImpl(ResearchNode):
         self._state_manager.set_problem_status(status)
         assert self._events_queue
         self._events_queue.put(ResearchNodeStatusChangeEvent())
+        if self.parent and status in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}:
+            self.parent.remove_child_node_to_wait(self)
 
     def get_problem_status(self) -> ProblemStatus:
         return self._state_manager.get_problem_status()
@@ -272,7 +271,8 @@ class ResearchNodeImpl(ResearchNode):
         self.set_problem_status(ProblemStatus.PENDING)
 
     def remove_child_node_to_wait(self, child_node: "ResearchNode"):
-        self._state_manager.remove_child_node_to_wait(child_node)
+        if not self._state_manager.remove_child_node_to_wait(child_node):
+            return
         if not self._get_child_node_ids_to_wait():
             self.set_problem_status(ProblemStatus.READY_TO_START)
 

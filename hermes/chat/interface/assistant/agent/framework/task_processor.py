@@ -35,7 +35,7 @@ class TaskProcessor(Generic[CommandContextType]):
 
     def __init__(
         self,
-        research_node: "TaskTreeNode",
+        research_node: "ResearchNode",
         research_project: "Research",
         llm_interface_to_use: "LLMInterface",
         command_registry_to_use: "CommandRegistry",
@@ -47,7 +47,7 @@ class TaskProcessor(Generic[CommandContextType]):
         budget_manager: "BudgetManager",  # Changed from agent_engine_for_budget
         command_parser: CommandParser,
     ):
-        self.task_tree_node_to_process = research_node
+        self.current_node = research_node
         self.research_project = research_project
         self.llm_interface = llm_interface_to_use
         self.command_registry = command_registry_to_use
@@ -64,19 +64,17 @@ class TaskProcessor(Generic[CommandContextType]):
         Runs the assigned task_tree_node until its status changes significantly
         (FINISHED, FAILED, PENDING), or budget/shutdown dictates a stop.
         """
-        research_node = self.task_tree_node_to_process.get_research_node()
-
-        while True:
+        while self.current_node.get_problem_status() not in {ProblemStatus.CANCELLED}:
             try:
-                state = self._execute_task_processing_cycle(research_node)
+                state = self._execute_task_processing_cycle(self.current_node)
                 if state:
                     return state
             except EngineShutdownRequestedException:
                 return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
+        return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
 
     def _execute_task_processing_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Execute a single task processing cycle."""
-
         # Get LLM response
         full_llm_response = self._prepare_and_execute_llm_request(research_node)
 
@@ -152,7 +150,7 @@ class TaskProcessor(Generic[CommandContextType]):
             self.command_registry,
             self.command_context_factory,
         )
-        command_processor.process(full_llm_response, self.task_tree_node_to_process)
+        command_processor.process(full_llm_response, self.current_node)
 
     def _manage_budget_after_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Checks budget; if exhausted and stop is dictated, returns ENGINE_STOP_REQUESTED."""
@@ -223,12 +221,12 @@ class TaskProcessor(Generic[CommandContextType]):
         except KeyboardInterrupt:
             return False
 
-    def add_command_output_to_auto_reply(self, command_name: str, args: dict, output: str, current_task_tree_node: "TaskTreeNode"):
+    def add_command_output_to_auto_reply(self, command_name: str, args: dict, output: str, current_node: "ResearchNode"):
         """
         Add command output to be included in the automatic response for the current node.
         """
         if not output:  # Ensure output is not None for the dict
             output = ""
 
-        auto_reply_aggregator = current_task_tree_node.get_research_node().get_history().get_auto_reply_aggregator()
+        auto_reply_aggregator = current_node.get_history().get_auto_reply_aggregator()
         auto_reply_aggregator.add_command_output(command_name, {"args": args, "output": output})

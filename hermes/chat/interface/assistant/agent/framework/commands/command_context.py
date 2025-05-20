@@ -25,12 +25,6 @@ class CommandContext(ABC):
         """The overall Research project instance."""
         pass
 
-    @property
-    @abstractmethod
-    def current_task_tree_node(self) -> "TaskTreeNode":
-        """The current TaskTreeNode being processed."""
-        pass
-
     @abstractmethod
     def add_command_output(self, command_name: str, args: dict, output: str) -> None:
         """Add command output to be included in the automatic response for the current node."""
@@ -42,18 +36,19 @@ class CommandContext(ABC):
         pass
 
     @abstractmethod
-    def focus_down(self, subproblem_title: str) -> bool:
-        """Initiate focusing down to a subproblem."""
+    def activate_subtask(self, subproblem_title: str) -> bool:
         pass
 
     @abstractmethod
-    def focus_up(self, message: str | None = None) -> bool:
-        """Initiate focusing up to the parent problem, optionally with a message."""
+    def wait_for_subtask(self, subproblem_title: str):
         pass
 
     @abstractmethod
-    def fail_and_focus_up(self, message: str | None = None) -> bool:
-        """Mark the current problem as failed and initiate focusing up, optionally with a message."""
+    def finish_node(self, message: str | None = None) -> bool:
+        pass
+
+    @abstractmethod
+    def fail_node(self, message: str | None = None) -> bool:
         pass
 
     @abstractmethod

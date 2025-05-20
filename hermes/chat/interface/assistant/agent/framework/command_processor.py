@@ -31,28 +31,28 @@ class CommandProcessor(Generic[CommandContextType]):
         self.command_registry = command_registry
         self.command_context_factory = command_context_factory
 
-    def process(self, text: str, current_task_tree_node: "TaskTreeNode"):
+    def process(self, text: str, current_node: "ResearchNode"):
         """Process commands from text and return updated state."""
         if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
             return self._handle_shutdown_command()
 
-        self._add_message_to_history(text, current_task_tree_node)
+        self._add_message_to_history(text, current_node)
 
         parsing_report, commands = self._parse_commands(text)
 
-        failed_commands, needs_confirmation, status = self._execute_valid_commands(commands, current_task_tree_node, parsing_report)
+        failed_commands, needs_confirmation, status = self._execute_valid_commands(commands, current_node, parsing_report)
 
         error_report = self._build_error_report(parsing_report, failed_commands)
 
-        self._add_to_auto_reply(current_task_tree_node, error_report, needs_confirmation)
+        self._add_to_auto_reply(current_node, error_report, needs_confirmation)
 
     def _handle_shutdown_command(self):
         """Handle shutdown command and return updated state."""
         raise EngineShutdownRequestedException()
 
-    def _add_message_to_history(self, text: str, task_tree_node: "TaskTreeNode") -> None:
+    def _add_message_to_history(self, text: str, current_node: "ResearchNode") -> None:
         """Add the assistant's message to history."""
-        history = task_tree_node.get_research_node().get_history()
+        history = current_node.get_history()
         history.add_message("assistant", text)
 
     def _parse_commands(self, text: str) -> tuple[str, list[ParseResult]]:
@@ -62,18 +62,17 @@ class CommandProcessor(Generic[CommandContextType]):
         return error_report, results
 
     def _execute_valid_commands(
-        self, commands: list[ParseResult], task_tree_node: "TaskTreeNode", parsing_error_report: str
+        self, commands: list[ParseResult], current_node: "ResearchNode", parsing_error_report: str
     ) -> tuple[list[dict], bool, dict]:
         """Execute valid commands and return execution results."""
         has_parsing_errors = bool(parsing_error_report)
         status_map = {}
         failed_commands = []
         finish_or_fail_skipped = False
-        last_command_reached = False
 
         for i, cmd in enumerate(commands):
             # Skip commands with syntax errors
-            if cmd.errors or last_command_reached:
+            if cmd.errors:
                 continue
 
             cmd_key = f"{cmd.command_name}_{i}"
@@ -86,7 +85,7 @@ class CommandProcessor(Generic[CommandContextType]):
                 continue
 
             # Execute the command
-            result, exception = self._run_command(cmd, task_tree_node)
+            result, exception = self._run_command(cmd, current_node)
 
             # Handle execution result
             if exception:  # Error occurred
@@ -95,10 +94,6 @@ class CommandProcessor(Generic[CommandContextType]):
                 failed_commands.append(failed_info)
             elif result:  # Command executed successfully
                 status_map[cmd_key] = {"name": cmd.command_name, "status": "success", "line": line_num}
-
-                # Check if this command should be the last in the message
-                if result.should_be_last_in_message():
-                    last_command_reached = True
 
         return failed_commands, finish_or_fail_skipped, status_map
 
@@ -112,12 +107,12 @@ class CommandProcessor(Generic[CommandContextType]):
         """Create a status dict for skipped commands."""
         return {"name": cmd.command_name, "status": f"skipped: {reason}", "line": line}
 
-    def _run_command(self, result: ParseResult, task_tree_node: "TaskTreeNode") -> tuple[Command | None, Exception | None]:
+    def _run_command(self, result: ParseResult, current_node: "ResearchNode") -> tuple[Command | None, Exception | None]:
         """Execute a single command and return results."""
         command_name = result.command_name
 
         # Create command context
-        context = self.command_context_factory.create_command_context(self.task_processor, task_tree_node, self)
+        context = self.command_context_factory.create_command_context(self.task_processor, current_node, self)
 
         try:
             # Get and execute command
@@ -170,9 +165,9 @@ class CommandProcessor(Generic[CommandContextType]):
 
         return final_report
 
-    def _add_to_auto_reply(self, task_tree_node: "TaskTreeNode", error_report: str, needs_confirmation: bool) -> None:
+    def _add_to_auto_reply(self, current_node: "ResearchNode", error_report: str, needs_confirmation: bool) -> None:
         """Add reports and confirmation requests to auto-reply."""
-        auto_reply = task_tree_node.get_research_node().get_history().get_auto_reply_aggregator()
+        auto_reply = current_node.get_history().get_auto_reply_aggregator()
 
         # Add confirmation request if needed
         if needs_confirmation:
@@ -188,10 +183,8 @@ class CommandProcessor(Generic[CommandContextType]):
         if error_report:
             auto_reply.add_error_report(error_report)
 
-    def focus_down(self, subproblem_title: str, task_tree_node: "TaskTreeNode") -> bool:
+    def activate_subtask(self, subproblem_title: str, research_node: "ResearchNode") -> bool:
         """Focus down to a subproblem."""
-        research_node = task_tree_node.get_research_node()
-
         # Find target child node
         target_child = None
         for child in research_node.list_child_nodes():
@@ -202,50 +195,55 @@ class CommandProcessor(Generic[CommandContextType]):
         if not target_child:
             return False
 
-        # Update status and schedule subnode
-        research_node.set_problem_status(ProblemStatus.PENDING)
-        task_tree_node.add_and_schedule_subnode(target_child)
+        target_child.set_problem_status(ProblemStatus.READY_TO_START)
         return True
 
-    def focus_up(self, message: str | None, task_tree_node: "TaskTreeNode") -> bool:
+    def wait_for_subtask(self, subproblem_title: str, research_node: "ResearchNode"):
+        # Find target child node
+        target_child = None
+        for child in research_node.list_child_nodes():
+            if child.get_title() == subproblem_title:
+                target_child = child
+                break
+
+        if not target_child:
+            return
+
+        research_node.add_child_node_to_wait(target_child)
+
+    def finish_node(self, message: str | None, research_node: "ResearchNode") -> bool:
         """Mark task as finished and focus up to parent node."""
-        research_node = task_tree_node.get_research_node()
         parent_node = research_node.get_parent()
 
-        # Mark task as finished
-        task_tree_node.finish()
         research_node.set_problem_status(ProblemStatus.FINISHED)
 
-        # Handle root node case
         if not parent_node:
+            # Handle root node case
             research_node.set_resolution_message(message)
-            return True
-
-        # Add messages to parent's auto-reply
-        self._add_status_message_to_parent(
-            parent_node, research_node, "Task marked FINISHED, focusing back up.", message, "[Completion Message]: "
-        )
+        else:
+            # Add messages to parent's auto-reply
+            self._add_status_message_to_parent(
+                parent_node, research_node, "Task marked FINISHED, focusing back up.", message, "[Completion Message]: "
+            )
 
         return True
 
-    def fail_and_focus_up(self, message: str | None, task_tree_node: "TaskTreeNode") -> bool:
+    def fail_node(self, message: str | None, current_node: "ResearchNode") -> bool:
         """Mark task as failed and focus up to parent node."""
-        research_node = task_tree_node.get_research_node()
+        research_node = current_node
         parent_node = research_node.get_parent()
 
         # Mark task as failed
-        task_tree_node.finish()
         research_node.set_problem_status(ProblemStatus.FAILED)
 
-        # Handle root node case
         if not parent_node:
+            # Handle root node case
             research_node.set_resolution_message(message)
-            return True
-
-        # Add messages to parent's auto-reply
-        self._add_status_message_to_parent(
-            parent_node, research_node, "Task marked FAILED, focusing back up.", message, "[Failure Message]: "
-        )
+        else:
+            # Add messages to parent's auto-reply
+            self._add_status_message_to_parent(
+                parent_node, research_node, "Task marked FAILED, focusing back up.", message, "[Failure Message]: "
+            )
 
         return True
 

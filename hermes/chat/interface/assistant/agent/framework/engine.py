@@ -121,7 +121,10 @@ class AgentEngine(Generic[CommandContextType]):
             if not next_node:
                 break
 
-            threads.append(threading.Thread(target=self._run_node, args=(next_node,)))
+            next_node.set_problem_status(ProblemStatus.IN_PROGRESS)
+            thread = threading.Thread(target=self._run_node, args=(next_node,))
+            threads.append(thread)
+            thread.start()
 
         for thread in threads:
             thread.join()

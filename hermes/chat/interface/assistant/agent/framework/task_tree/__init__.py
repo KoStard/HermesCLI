@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 class TaskTree(ABC):
     @abstractmethod
-    def next(self) -> ResearchNode | None:
+    def next(self) -> "ResearchNode | None":
         """
         Should automatically identify which nodes are finished and find the next one that should be picked up.
         No explicit focus_up needed.
@@ -16,5 +16,5 @@ class TaskTree(ABC):
         pass
 
     @abstractmethod
-    def register_node(self, node: ResearchNode):
+    def register_node(self, node: "ResearchNode"):
         pass

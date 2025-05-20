@@ -200,51 +200,82 @@ class AddCriteriaToSubproblemCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, f"Criteria added to subproblem '{title}'.")
 
 
-class FocusDownCommand(BaseCommand[CommandContextImpl]):
+class ActivateSubproblems(BaseCommand[CommandContextImpl]):
     def __init__(self):
         super().__init__(
-            "activate_subproblems_and_wait",
-            "Activate subproblems and wait for them to be finished before continuing. Multiple titles are allowed, "
-            "they will be executed sequentially.",
+            "activate_subproblems",
+            "Activate subproblems to run in parallel. Multiple titles can be specified.",
         )
         self.add_section("title", True, "Title of the subproblem to activate", allow_multiple=True)
 
     def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
-        """Focus down to a subproblem"""
+        """Activate subproblems for parallel execution"""
         titles = args["title"]
         if not isinstance(titles, list):
-            titles = [titles]  # Handle single title case
+            titles = [titles]
 
         if not titles:
             raise ValueError("No subproblems specified to activate")
 
-        # Queue up all subproblems for sequential activation
         current_node = context.current_node
-        child_nodes = current_node.list_child_nodes()
-        child_node_titles = {node.get_title() for node in child_nodes}
+        child_node_titles = {node.get_title() for node in current_node.list_child_nodes()}
 
-        # Validate all subproblems exist before queueing
+        # Validate and queue subproblems for parallel activation
         for title in titles:
             if title not in child_node_titles:
                 raise ValueError(f"Subproblem '{title}' not found")
 
-        # Add all titles as nodes to the state machine
         for title in titles:
-            result = context.focus_down(title)
+            # Activate each subproblem without waiting
+            result = context.activate_subtask(title)
             if not result:
-                raise ValueError(f"Failed to activate subproblem '{titles[0]}'. Make sure the subproblem exists.")
+                raise ValueError(f"Failed to activate subproblem '{title}'")
 
         context.add_command_output(
             self.name,
             args,
-            f"Queued subproblems for sequential activation: {', '.join(titles)}.",
+            f"Activated subproblems for parallel execution: {', '.join(titles)}.",
         )
 
-    def should_be_last_in_message(self):
-        return True
+
+class WaitForSubproblems(BaseCommand[CommandContextImpl]):
+    def __init__(self):
+        super().__init__(
+            "wait_for_subproblems",
+            "Wait for specific subproblems to complete before continuing.",
+        )
+        self.add_section("title", True, "Title of the subproblem to wait for", allow_multiple=True)
+
+    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+        """Wait for specified subproblems to complete"""
+        titles = args["title"]
+        if not isinstance(titles, list):
+            titles = [titles]
+
+        if not titles:
+            raise ValueError("No subproblems specified to wait for")
+
+        current_node = context.current_node
+        child_nodes = current_node.list_child_nodes()
+        active_titles = {node.get_title() for node in child_nodes
+                       if node.get_problem_status() not in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}}
+
+        # Validate all specified subproblems exist and are active
+        for title in titles:
+            if title not in active_titles:
+                raise ValueError(f"Subproblem '{title}' not found or not active")
 
 
-class FocusUpCommand(BaseCommand[CommandContextImpl]):
+        for title in titles:
+            context.wait_for_subtask(title)
+
+        context.add_command_output(
+            self.name,
+            args,
+            f"Waiting for subproblems to complete: {', '.join(titles)}.",
+        )
+
+class FinishCommand(BaseCommand[CommandContextImpl]):
     def __init__(self):
         super().__init__(
             "finish_problem",
@@ -275,18 +306,13 @@ class FocusUpCommand(BaseCommand[CommandContextImpl]):
         completion_message = args.get("message")
 
         # Pass the message to the context method
-        result = context.focus_up(message=completion_message)
+        result = context.finish_node(message=completion_message)
 
         if not result:
             raise ValueError("Failed to focus up to parent problem.")
 
-    def should_be_last_in_message(self):
-        # This command changes focus, so it should still be last
-        # No output needed here, handled by engine/context focus change messages
-        return True
 
-
-class FailProblemAndFocusUpCommand(BaseCommand[CommandContextImpl]):
+class FailCommand(BaseCommand[CommandContextImpl]):
     def __init__(self):
         super().__init__(
             "fail_problem",
@@ -317,7 +343,7 @@ class FailProblemAndFocusUpCommand(BaseCommand[CommandContextImpl]):
         failure_message = args.get("message")
 
         # Pass the message to the context method
-        result = context.fail_and_focus_up(message=failure_message)
+        result = context.fail_node(message=failure_message)
 
         if not result:
             # Keep existing error handling, refine slightly for root node case
@@ -330,10 +356,6 @@ class FailProblemAndFocusUpCommand(BaseCommand[CommandContextImpl]):
             else:
                 # General failure case if not root or root without message
                 raise ValueError(f"Failed to mark problem as failed and focus up from node '{current_node_title}'.")
-
-    def should_be_last_in_message(self):
-        # No output needed here, handled by engine/context focus change messages
-        return True
 
 
 class CancelSubproblemCommand(BaseCommand[CommandContextImpl]):
@@ -506,9 +528,10 @@ def register_deep_research_commands(registry: CommandRegistry):
         AddArtifactCommand(),
         AppendToProblemDefinitionCommand(),
         AddCriteriaToSubproblemCommand(),
-        FocusDownCommand(),
-        FocusUpCommand(),
-        FailProblemAndFocusUpCommand(),
+        ActivateSubproblems(),
+        WaitForSubproblems(),
+        FinishCommand(),
+        FailCommand(),
         CancelSubproblemCommand(),
         AddLogEntryCommand(),
         OpenArtifactCommand(),

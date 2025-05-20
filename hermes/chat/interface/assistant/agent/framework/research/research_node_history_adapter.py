@@ -15,8 +15,6 @@ class ResearchNodeHistoryAdapter:
     def __init__(self, research_node: "ResearchNode"):
         self.research_node = research_node
 
-    def render_initial_interface()
-
     def get_history_messages(
         self, template_manager: "TemplateManager", renderer_registry: "DynamicDataTypeToRendererMap", help_interface: str | None,
     ) -> list[dict[str, str]]:

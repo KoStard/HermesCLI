@@ -110,10 +110,6 @@ class CommandTest(unittest.TestCase):
         self.assertEqual(self.command.execution_context, context)
         self.assertEqual(self.command.execution_args, args)
 
-    def test_should_be_last_in_message(self):
-        """Test that by default commands are not marked as last in message."""
-        self.assertFalse(self.command.should_be_last_in_message())
-
 
 class CommandSectionTest(unittest.TestCase):
     def test_section_initialization(self):

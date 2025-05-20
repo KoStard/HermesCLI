@@ -101,14 +101,6 @@ class Command(ABC, Generic[ContextType]):
         """
         return args
 
-    def should_be_last_in_message(self) -> bool:
-        """
-        Indicates if this command should be the last one processed in a message.
-        Useful for commands that change execution flow (e.g., focus changes).
-        Default is False.
-        """
-        return False
-
     def get_additional_information(self) -> dict[Any, Any]:
         """
         Returns a dictionary with additional information about the command.
