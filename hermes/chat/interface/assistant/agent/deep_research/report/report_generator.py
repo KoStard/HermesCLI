@@ -45,10 +45,11 @@ class ReportGeneratorImpl(ReportGenerator):
 
             if all_artifacts:
                 # Group artifact names by problem title
-                for owner_title, name, _, _ in all_artifacts:
+                for node, artifact, _ in all_artifacts:
+                    owner_title = node.get_title()
                     if owner_title not in artifacts_by_problem:
                         artifacts_by_problem[owner_title] = []
-                    artifacts_by_problem[owner_title].append(name)
+                    artifacts_by_problem[owner_title].append(artifact.name)
 
         # Prepare context for the template
         context = {

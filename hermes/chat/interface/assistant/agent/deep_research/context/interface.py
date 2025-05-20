@@ -1,6 +1,7 @@
 from hermes.chat.interface.assistant.agent.framework.context import AgentInterface
 from hermes.chat.interface.assistant.agent.framework.context.dynamic_sections import DynamicSectionData
 from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
+from hermes.chat.interface.assistant.agent.framework.research.research_node_component.artifact import Artifact
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
 from hermes.chat.interface.templates.template_manager import TemplateManager
@@ -132,9 +133,14 @@ class DeepResearcherInterface(AgentInterface):
         root_node = research.get_root_node() if research.is_research_initiated() else target_node
         if root_node:
             node_artifacts_list = self._collect_artifacts_recursively(root_node, target_node)
+
+        # Get external files from manager and convert to dict by name
+        external_files = research.get_external_file_manager().get_external_files()
+
         # Use factory method for ArtifactsSectionData
         all_data[ArtifactsSectionData] = ArtifactsSectionData.from_artifact_lists(
-            external_files_dict={}, node_artifacts_list=node_artifacts_list
+            external_files_dict=external_files,
+            node_artifacts_list=node_artifacts_list
         )
 
         # Problem Hierarchy (Short) - Use factory method
@@ -169,7 +175,7 @@ class DeepResearcherInterface(AgentInterface):
 
         return ordered_data
 
-    def _collect_artifacts_recursively(self, node: ResearchNode, current_node: ResearchNode) -> list[tuple[str, str, str, bool]]:
+    def _collect_artifacts_recursively(self, node: ResearchNode, current_node: ResearchNode) -> list[tuple[ResearchNode, Artifact, bool]]:
         """
         Recursively collect artifacts from a node and all its descendants.
 
@@ -178,7 +184,7 @@ class DeepResearcherInterface(AgentInterface):
             current_node: The node currently being viewed (for visibility checks)
 
         Returns:
-            List of tuples: (owner_title, artifact_name, artifact_content, is_visible_to_current_node)
+            List of tuples: (owner ResearchNode, Artifact, is_visible_to_current_node)
         """
         artifacts = []
         if not node:
@@ -195,9 +201,14 @@ class DeepResearcherInterface(AgentInterface):
             is_owned_by_ancestor = node in self._get_parent_chain(current_node)[:-1]  # Exclude current node itself
 
             # Determine if the artifact *should* be visible based on ownership/ancestry
-            is_fully_visible = artifact.is_external or is_owned_by_current or is_owned_by_ancestor
+            is_fully_visible = artifact.is_external
+            specified_artifact_status = node.get_node_state().artifacts_status.get(artifact.name)
+            if specified_artifact_status is None:
+                is_fully_visible |= is_owned_by_current or is_owned_by_ancestor
+            else:
+                is_fully_visible |= specified_artifact_status
 
-            artifacts.append((node.get_title(), artifact.name, artifact.content, is_fully_visible))
+            artifacts.append((node, artifact, is_fully_visible))
 
         # Recursively collect artifacts from all child nodes
         for child_node in node.list_child_nodes():

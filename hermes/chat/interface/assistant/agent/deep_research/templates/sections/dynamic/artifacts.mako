@@ -33,7 +33,7 @@ No artifacts available.
     % for artifact_data in node_artifacts_data: ## Already sorted by factory method
     ${xml.artifact(
         artifact_data.name,
-        artifact_data.content if artifact_data.is_fully_visible else truncator.truncate(artifact_data.content, 500, "Use 'open_artifact' command to view full content."),
+        artifact_data.content if artifact_data.is_fully_visible else "Summary: " + artifact_data.short_summary,
         owner=artifact_data.owner_title
     )}
     % endfor

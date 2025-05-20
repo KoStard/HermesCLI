@@ -122,6 +122,7 @@ class AddArtifactCommand(BaseCommand[CommandContextImpl]):
         )
         self.add_section("name", True, "Name of the artifact")
         self.add_section("content", True, "Content of the artifact")
+        self.add_section("short_summary", True, "Short summary of the artifact. Can be 1-2 paragraphs, should call out what's important in this artifact.")
 
     def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
         """Add an artifact to the current problem"""
@@ -130,7 +131,7 @@ class AddArtifactCommand(BaseCommand[CommandContextImpl]):
         artifact = Artifact(
             name=args["name"],
             content=args["content"],
-            short_summary=args["name"],  # Use name as summary by default
+            short_summary=args["short_summary"],
             is_external=False,
         )
         current_node.add_artifact(artifact)
@@ -419,7 +420,6 @@ class OpenArtifactCommand(BaseCommand[CommandContextImpl]):
             "Open an artifact to view its full content",
         )
         self.add_section("name", True, "Name of the artifact to open")
-        self.add_section("reason", True, "Reason why you need to see the full content")
 
     def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
         """Execute the command to open an artifact"""
@@ -440,14 +440,13 @@ class OpenArtifactCommand(BaseCommand[CommandContextImpl]):
         )
 
 
-class HalfCloseArtifactCommand(BaseCommand[CommandContextImpl]):
+class CloseArtifactCommand(BaseCommand[CommandContextImpl]):
     def __init__(self):
         super().__init__(
-            "half_close_artifact",
-            "Half-close an artifact to show only the first 10 lines",
+            "close_artifact",
+            "Close an artifact, the short summary will remain visible.",
         )
-        self.add_section("name", True, "Name of the artifact to half-close")
-        self.add_section("reason", True, "Reason why you're half-closing this artifact")
+        self.add_section("name", True, "Name of the artifact to close")
 
     def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
         """Execute the command to half-close an artifact"""
@@ -465,7 +464,7 @@ class HalfCloseArtifactCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(
             self.name,
             args,
-            f"Artifact '{artifact_name}' is now half-closed (showing first 10 lines only).",
+            f"Artifact '{artifact_name}' is now closed (showing only the summary).",
         )
 
 
@@ -538,7 +537,7 @@ def register_deep_research_commands(registry: CommandRegistry):
         CancelSubproblemCommand(),
         AddLogEntryCommand(),
         OpenArtifactCommand(),
-        HalfCloseArtifactCommand(),
+        CloseArtifactCommand(),
         ThinkCommand(),
         AddKnowledgeCommand(),
     ]

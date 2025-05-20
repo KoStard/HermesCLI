@@ -35,6 +35,7 @@ class BedrockModel(ChatModel):
             "bedrock-runtime",
             region_name=aws_region,
             config=Config(
+                max_pool_connections=100,
                 connect_timeout=5,
                 read_timeout=3600,
                 retries={"max_attempts": 5, "mode": "adaptive"},

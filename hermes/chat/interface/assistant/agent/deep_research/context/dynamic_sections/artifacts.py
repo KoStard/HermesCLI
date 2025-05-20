@@ -5,11 +5,11 @@ from hermes.chat.interface.assistant.agent.deep_research.context.content_truncat
 from hermes.chat.interface.assistant.agent.framework.context.dynamic_sections import DynamicSectionData, DynamicSectionRenderer
 
 if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
     from hermes.chat.interface.assistant.agent.framework.research.research_node_component.artifact import Artifact
     from hermes.chat.interface.templates.template_manager import (
         TemplateManager,
     )
-
 
 # --- Primitive Data Structure ---
 @dataclass(frozen=True)
@@ -18,6 +18,7 @@ class PrimitiveArtifactData:
 
     name: str
     content: str
+    short_summary: str | None
     is_external: bool
     is_fully_visible: bool  # Added to track visibility state directly
     owner_title: str | None = None  # Added to track ownership for node artifacts
@@ -32,6 +33,7 @@ class PrimitiveArtifactData:
             name=artifact.name,
             content=artifact.content,
             is_external=artifact.is_external,
+            short_summary=artifact.short_summary,
             is_fully_visible=is_fully_visible,
             owner_title=owner_title,
         )
@@ -47,7 +49,7 @@ class ArtifactsSectionData(DynamicSectionData):
     @staticmethod
     def from_artifact_lists(
         external_files_dict: dict[str, "Artifact"],
-        node_artifacts_list: list[tuple[str, str, str, bool]],  # (owner_title, name, content, is_fully_visible)
+        node_artifacts_list: list[tuple["ResearchNode", "Artifact", bool]],
     ) -> "ArtifactsSectionData":
         # Convert external files dict to primitive tuple
         external_primitives = tuple(
@@ -57,14 +59,8 @@ class ArtifactsSectionData(DynamicSectionData):
 
         # Convert node artifacts list to primitive tuple
         node_primitives = tuple(
-            PrimitiveArtifactData(
-                name=name,
-                content=content,
-                is_external=False,  # Node artifacts are not external
-                is_fully_visible=is_fully_visible,
-                owner_title=owner_title,
-            )
-            for owner_title, name, content, is_fully_visible in sorted(node_artifacts_list, key=lambda x: (x[0], x[1]))  # Sort
+            PrimitiveArtifactData.from_artifact(artifact, node.get_title(), is_fully_visible)
+            for node, artifact, is_fully_visible in sorted(node_artifacts_list, key=lambda x: (x[0].get_title(), x[1].name))
         )
 
         return ArtifactsSectionData(external_files=external_primitives, node_artifacts=node_primitives)
