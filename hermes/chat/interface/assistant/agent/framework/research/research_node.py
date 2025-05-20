@@ -1,3 +1,4 @@
+import threading
 from pathlib import Path
 from queue import Queue
 from typing import TYPE_CHECKING
@@ -53,6 +54,7 @@ class ResearchNodeImpl(ResearchNode):
         self._events_queue: Queue | None = None
         self.task_tree = task_tree
         self.task_tree.register_node(self)
+        self._status_lock = threading.RLock()
 
         # Initialize file system components if path is set
         self._init_components()
@@ -134,12 +136,12 @@ class ResearchNodeImpl(ResearchNode):
         node.set_problem_status(status)
 
         # Load child nodes
-        cls._load_child_nodes_for(node)
+        cls._load_child_nodes_for(node, task_tree)
 
         return node
 
     @classmethod
-    def _load_child_nodes_for(cls, parent_node: "ResearchNode") -> None:
+    def _load_child_nodes_for(cls, parent_node: "ResearchNode", task_tree: "TaskTree") -> None:
         """
         Load child nodes for a parent node from the file system.
 
@@ -154,7 +156,7 @@ class ResearchNodeImpl(ResearchNode):
             if child_dir.is_dir() and MarkdownFileWithMetadataImpl.file_exists(child_dir, "Problem Definition"):
                 try:
                     # Load the child node from disk
-                    child_node = cls._load_from_directory(child_dir, parent_node)
+                    child_node = cls._load_from_directory(child_dir, task_tree, parent_node)
 
                     # Add child to parent
                     parent_node.add_child_node(child_node)
@@ -252,29 +254,34 @@ class ResearchNodeImpl(ResearchNode):
         return self._title
 
     def get_node_state(self) -> NodeState:
-        return self._state_manager.get_state()
+        with self._status_lock:
+            return self._state_manager.get_state()
 
     def set_problem_status(self, status: ProblemStatus):
-        if status == self.get_problem_status():
-            return
-        self._state_manager.set_problem_status(status)
-        assert self._events_queue
-        self._events_queue.put(ResearchNodeStatusChangeEvent())
-        if self.parent and status in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}:
-            self.parent.remove_child_node_to_wait(self)
+        with self._status_lock:
+            if status == self.get_problem_status():
+                return
+            self._state_manager.set_problem_status(status)
+            assert self._events_queue
+            self._events_queue.put(ResearchNodeStatusChangeEvent())
+            if self.parent and status in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}:
+                self.parent.remove_child_node_to_wait(self)
 
     def get_problem_status(self) -> ProblemStatus:
-        return self._state_manager.get_problem_status()
+        with self._status_lock:
+            return self._state_manager.get_problem_status()
 
     def add_child_node_to_wait(self, child_node: "ResearchNode"):
-        self._state_manager.add_child_node_to_wait(child_node)
-        self.set_problem_status(ProblemStatus.PENDING)
+        with self._status_lock:
+            self._state_manager.add_child_node_to_wait(child_node)
+            self.set_problem_status(ProblemStatus.PENDING)
 
     def remove_child_node_to_wait(self, child_node: "ResearchNode"):
-        if not self._state_manager.remove_child_node_to_wait(child_node):
-            return
-        if not self._get_child_node_ids_to_wait():
-            self.set_problem_status(ProblemStatus.READY_TO_START)
+        with self._status_lock:
+            if not self._state_manager.remove_child_node_to_wait(child_node):
+                return
+            if not self._get_child_node_ids_to_wait() and self.get_problem_status() == ProblemStatus.PENDING:
+                self.set_problem_status(ProblemStatus.READY_TO_START)
 
     def _get_child_node_ids_to_wait(self) -> set[str]:
         return self._state_manager.get_state().pending_child_node_ids

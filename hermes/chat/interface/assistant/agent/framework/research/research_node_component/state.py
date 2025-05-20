@@ -1,7 +1,6 @@
 import json
 import os
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING
 
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.artifact import Artifact
@@ -47,7 +46,7 @@ class StateManager:
 
     def get_state(self) -> NodeState:
         """Get the current state"""
-        return self._state
+        return replace(self._state)
 
     def set_artifact_status(self, artifact: Artifact, is_open: bool) -> None:
         """Set the status of an artifact"""
