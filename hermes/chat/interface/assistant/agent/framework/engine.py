@@ -48,6 +48,7 @@ class AgentEngine(Generic[CommandContextType]):
         self.interface = agent_interface
         self.report_generator = report_generator
         self.status_printer = status_printer
+        self.engine_should_stop = False
 
         # Initialize the research object which will handle all file system and node operations
         self.research = ResearchImpl(root_dir)

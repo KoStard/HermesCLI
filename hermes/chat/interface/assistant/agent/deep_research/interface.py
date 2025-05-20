@@ -238,8 +238,7 @@ class DeepResearchAssistantInterface(Interface):
 
     def initialize_from_history(self, history: History):
         """Initialize the interface from history"""
-        # Nothing to do here for now
-        print("initialize_from_history in deep research assistant not supported")
+        pass
 
     def change_thinking_level(self, level: str):
         if hasattr(self.model, "set_thinking_level"):
