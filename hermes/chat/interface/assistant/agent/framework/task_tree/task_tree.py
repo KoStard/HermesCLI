@@ -1,6 +1,7 @@
 from queue import Queue
 
 from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
+from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import ProblemStatus
 from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree
 
 
@@ -21,12 +22,39 @@ class TaskTreeImpl(TaskTree):
                 return node
 
     def _is_finished(self) -> bool:
-        # All are finished or failed or cancelled
-        pass
+        """Check if all nodes are in terminal states."""
+        root = self._research.get_root_node()
+        if not root:
+            return True
+
+        # Check all nodes in the tree
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            status = node.get_problem_status()
+            if status not in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}:
+                return False
+            stack.extend(node.list_child_nodes())
+        return True
 
     def _find_next_available(self) -> ResearchNode | None:
-        # At least one that is ready to be picked up
-        pass
+        """Depth-first search for first available node that's ready to start."""
+        root = self._research.get_root_node()
+        if not root:
+            return None
+
+        # Use depth-first search to find deepest available node first
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            # Only consider nodes that are ready to start and not blocked by parent
+            if node.get_problem_status() == ProblemStatus.READY_TO_START:
+                parent = node.get_parent()
+                if not parent or parent.get_problem_status() != ProblemStatus.PENDING:
+                    return node
+            # Add children in reverse order to maintain creation order
+            stack.extend(reversed(node.list_child_nodes()))
+        return None
 
     def register_node(self, node: ResearchNode):
         node.set_events_queue(self._events_queue)
