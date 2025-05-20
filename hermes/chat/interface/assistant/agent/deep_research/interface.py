@@ -74,7 +74,7 @@ class DeepResearchAssistantInterface(Interface):
             status_printer,
         )
 
-        self._instruction = None
+        self._instruction: str | None = None
         self._history_has_been_imported = False
 
     def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
@@ -140,83 +140,97 @@ class DeepResearchAssistantInterface(Interface):
         """
         logger.debug("Processing instruction in Deep Research Assistant")
 
-        # Ensure engine is initialized (should be done by render)
+        if error_event := self._check_engine_initialized():
+            yield error_event
+            return
+
+        try:
+            if not self._engine.is_research_initiated():
+                yield from self._handle_initial_research()
+                return
+
+            yield from self._handle_continuous_interaction()
+            return
+
+        except Exception as e:
+            yield from self._handle_engine_exception(e)
+
+    def _check_engine_initialized(self) -> Event | None:
+        """Check if engine is properly initialized"""
         if not self._history_has_been_imported:
             logger.error("Engine not initialized before get_input call.")
-            yield MessageEvent(
+            return MessageEvent(
                 TextMessage(
                     author="assistant",
                     text="Error: Deep Research Engine not initialized.",
                 )
             )
+        return None
+
+    def _handle_initial_research(self) -> Generator[Event, None, None]:
+        """Handle initial research problem definition"""
+        if not self._instruction:
+            yield MessageEvent(
+                TextMessage(
+                    author="assistant",
+                    text="Please provide an initial research instruction.",
+                )
+            )
             return
 
-        try:
-            # --- Initial Problem Definition ---
-            if not self._engine.is_research_initiated():
-                if self._instruction:
-                    logger.info("Defining root problem.")
-                    self._engine.define_root_problem(self._instruction)
+        logger.info("Defining root problem.")
+        self._engine.define_root_problem(self._instruction)
 
-                    # Root problem defined, start execution immediately
-                    logger.info("Executing initial research.")
-                    final_report_str = self._engine.execute()
-                    if final_report_str:
-                        logger.info("Yielding final report after initial research.")
-                        yield MessageEvent(TextMessage(author="assistant", text=final_report_str))
+        logger.info("Executing initial research.")
+        final_report_str = self._engine.execute()
 
-                    # Always yield the waiting message after completion
-                    yield MessageEvent(
-                        TextMessage(
-                            author="assistant",
-                            text="Initial research complete. Waiting for next instruction...",
-                        )
-                    )
-                    return  # End processing for this call
-                else:
-                    # No root problem and no instruction provided
-                    yield MessageEvent(
-                        TextMessage(
-                            author="assistant",
-                            text="Please provide an initial research instruction.",
-                        )
-                    )
-                    return  # End processing for this call
+        yield from self._yield_final_report(final_report_str)
+        yield from self._yield_waiting_message("Initial research complete")
+        return
 
-            # --- Continuous Interaction Cycle ---
-            # Engine exists and root problem is defined. Check state.
-            if self._instruction:
-                logger.info("Received new instruction. Preparing engine.")
-                self._engine.add_new_instruction(self._instruction)
-                self._instruction = None  # Clear instruction after use
-                logger.info("Executing new instruction.")
-                final_report_str = self._engine.execute()
-                if final_report_str:
-                    logger.info("Yielding final report after follow-up instruction.")
-                    yield MessageEvent(TextMessage(author="assistant", text=final_report_str))
+    def _handle_continuous_interaction(self) -> Generator[Event, None, None]:
+        """Handle ongoing interaction with the research engine"""
+        if not self._instruction:
+            logger.info("Engine is awaiting instruction.")
+            yield from self._yield_waiting_message("Research complete")
+            return
 
-                # Always yield the waiting message after completion
-                yield MessageEvent(
-                    TextMessage(
-                        author="assistant",
-                        text="Processing complete. Waiting for next instruction...",
-                    )
-                )
-                return  # End processing for this call
-            else:
-                # Awaiting but no new instruction provided in this call
-                logger.info("Engine is awaiting instruction.")
-                yield MessageEvent(
-                    TextMessage(
-                        author="assistant",
-                        text="Research complete. Waiting for next instruction...",
-                    )
-                )
-                return  # End processing for this call
+        yield from self._process_new_instruction()
+        return
 
-        except Exception as e:
-            logger.error(f"Error during Deep Research engine interaction: {e}", exc_info=True)
-            yield MessageEvent(TextMessage(author="assistant", text=f"An error occurred during research: {e}"))
+    def _process_new_instruction(self) -> Generator[Event, None, None]:
+        """Process a new instruction from the user"""
+        logger.info("Processing new instruction")
+        if self._instruction:
+            self._engine.add_new_instruction(self._instruction)
+            self._instruction = None  # Clear instruction after use
+
+        logger.info("Executing new instruction.")
+        final_report_str = self._engine.execute()
+
+        yield from self._yield_final_report(final_report_str)
+        yield from self._yield_waiting_message("Processing complete")
+        return
+
+    def _yield_final_report(self, report_str: str | None) -> Generator[Event, None, None]:
+        """Yield final report event if report exists"""
+        if report_str:
+            logger.info("Yielding final report")
+            yield MessageEvent(TextMessage(author="assistant", text=report_str))
+
+    def _yield_waiting_message(self, prefix: str) -> Generator[Event, None, None]:
+        """Yield standard waiting message"""
+        yield MessageEvent(
+            TextMessage(
+                author="assistant",
+                text=f"{prefix}. Waiting for next instruction...",
+            )
+        )
+
+    def _handle_engine_exception(self, error: Exception) -> Generator[Event, None, None]:
+        """Handle exceptions during engine execution"""
+        logger.error(f"Error during Deep Research engine interaction: {error}", exc_info=True)
+        yield MessageEvent(TextMessage(author="assistant", text=f"An error occurred during research: {error}"))
 
     def clear(self):
         """Clear the interface state"""
