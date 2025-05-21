@@ -205,10 +205,10 @@ class DeepResearchAssistantInterface(Interface):
             self._engine.add_new_instruction(self._instruction)
             self._instruction = None  # Clear instruction after use
 
-        logger.info("Executing new instruction.")
-        final_report_str = self._engine.execute()
+            logger.info("Executing new instruction.")
+            final_report_str = self._engine.execute()
 
-        yield from self._yield_final_report(final_report_str)
+            yield from self._yield_final_report(final_report_str)
         yield from self._yield_waiting_message("Processing complete")
         return
 

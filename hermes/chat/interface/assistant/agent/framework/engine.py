@@ -95,7 +95,7 @@ class AgentEngine(Generic[CommandContextType]):
         self._create_and_add_new_instruction_message(instruction, root_node)
 
         # Mark the root problem as in progress
-        root_node.set_problem_status(ProblemStatus.IN_PROGRESS)
+        root_node.set_problem_status(ProblemStatus.READY_TO_START)
 
         print("Engine ready to execute new instruction.")
 

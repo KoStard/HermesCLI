@@ -15,11 +15,11 @@ class TaskTreeImpl(TaskTree):
         Should lock the thread until at least one node becomes ready to run or all of them finish, in which case it should return None.
         """
         while True:
+            if node := self._find_next_available():
+                return node
             _ = self._events_queue.get()
             if self._is_finished():
                 return None
-            if node := self._find_next_available():
-                return node
 
     def _is_finished(self) -> bool:
         """Check if all nodes are in terminal states."""
