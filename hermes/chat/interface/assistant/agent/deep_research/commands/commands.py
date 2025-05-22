@@ -152,9 +152,7 @@ class AppendToProblemDefinitionCommand(BaseCommand[CommandContextImpl]):
         """Append to the problem definition"""
         current_node = context.current_node
 
-        # Get the current problem definition and append to it
-        problem_def = current_node.get_problem()
-        problem_def.content = problem_def.content + "\n\n" + args["content"]
+        current_node.append_to_problem_definition(args["content"])
 
         # Add confirmation output
         context.add_command_output(self.name, args, "Problem definition updated.")

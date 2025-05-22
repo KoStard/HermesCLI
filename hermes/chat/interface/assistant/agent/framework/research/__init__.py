@@ -68,6 +68,10 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
+    def append_to_problem_definition(self, content: str):
+        pass
+
+    @abstractmethod
     def get_problem(self) -> ProblemDefinition:
         pass
 

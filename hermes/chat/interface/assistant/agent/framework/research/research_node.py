@@ -213,7 +213,7 @@ class ResearchNodeImpl(ResearchNode):
     def get_criteria_total_count(self) -> int:
         return self.criteria_manager.get_criteria_total_count()
 
-    def append_to_problem_definition(self, content: str) -> None:
+    def append_to_problem_definition(self, content: str):
         """
         Append additional content to the problem definition
 

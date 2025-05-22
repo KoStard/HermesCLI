@@ -4,7 +4,10 @@ from pathlib import Path
 
 
 class LLMInterface(ABC):
-    """Abstract interface for LLM interaction"""
+    """
+    Abstract interface for LLM interaction
+    Kept as abstract interface, as we also have a mock implementation for testing.
+    """
 
     @abstractmethod
     def generate_request(
