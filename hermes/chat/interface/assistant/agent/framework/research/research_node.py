@@ -122,20 +122,8 @@ class ResearchNodeImpl(ResearchNode):
         md_file = MarkdownFileWithMetadataImpl.load_from_directory(node_path, "Problem Definition")
         problem_def = ProblemDefinition(content=md_file.get_content())
 
-        # Get status from metadata
-        status_str = md_file.get_metadata().get("status", ProblemStatus.READY_TO_START.value)
-        try:
-            status = ProblemStatus(status_str)
-        except ValueError:
-            status = ProblemStatus.READY_TO_START
-
-        # Create the node with the loaded problem definition
         node = ResearchNodeImpl(problem=problem_def, title=node_path.name, path=node_path, parent=parent_node, task_tree=task_tree)
 
-        # Update node status (which might have been loaded incorrectly during initialization)
-        node.set_problem_status(status)
-
-        # Load child nodes
         cls._load_child_nodes_for(node, task_tree)
 
         return node
