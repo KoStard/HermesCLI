@@ -73,7 +73,7 @@ class BudgetManager:
             # First time hitting budget, add buffer
             self._handle_initial_budget_depletion(research_node)
             return False
-        elif self.message_cycles_used >= self.budget:
+        elif self.budget is not None and self.message_cycles_used >= self.budget:
             # Budget truly exhausted after buffer
             return self._handle_final_budget_exhaustion(research_node)
 
