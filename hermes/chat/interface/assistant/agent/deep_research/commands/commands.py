@@ -303,6 +303,8 @@ class FinishCommand(BaseCommand[CommandContextImpl]):
             Example without message:
             <<< finish_problem
             >>>
+
+            If there are running subproblems, the finish command will fail. Either cancel the subproblems or wait for them.
             """),
         )
         # Add the optional message section
@@ -313,15 +315,18 @@ class FinishCommand(BaseCommand[CommandContextImpl]):
         )
 
     def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
-        """Focus up to the parent problem, potentially passing a message."""
         # Get the optional message from args
         completion_message = args.get("message")
+
+        for child_node in context.current_node.list_child_nodes():
+            if child_node.get_problem_status() == ProblemStatus.IN_PROGRESS:
+                raise ValueError("Failed to finish the session as there are running subtasks.")
 
         # Pass the message to the context method
         result = context.finish_node(message=completion_message)
 
         if not result:
-            raise ValueError("Failed to focus up to parent problem.")
+            raise ValueError("Failed to finish the session.")
 
 
 class FailCommand(BaseCommand[CommandContextImpl]):
@@ -340,6 +345,8 @@ class FailCommand(BaseCommand[CommandContextImpl]):
             Example without message:
             <<< fail_problem
             >>>
+
+            If there are running subproblems, the fail command will be rejected. Either cancel the subproblems or wait for them.
             """),
         )
         # Add the optional message section
@@ -350,9 +357,12 @@ class FailCommand(BaseCommand[CommandContextImpl]):
         )
 
     def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
-        """Mark problem as failed and focus up, potentially passing a message."""
         # Get the optional message from args
         failure_message = args.get("message")
+
+        for child_node in context.current_node.list_child_nodes():
+            if child_node.get_problem_status() == ProblemStatus.IN_PROGRESS:
+                raise ValueError("Failed to mark the session as failed as there are running subtasks, cancel or wait for them.")
 
         # Pass the message to the context method
         result = context.fail_node(message=failure_message)
@@ -360,14 +370,14 @@ class FailCommand(BaseCommand[CommandContextImpl]):
         if not result:
             # Keep existing error handling, refine slightly for root node case
             current_node_title = context.current_node.get_title()
+
             if not context.current_node.get_parent():
                 # Specific error if it's the root node trying to fail with a message meant for a parent
                 if failure_message:
                     raise ValueError(f"Cannot pass a failure message from the root node '{current_node_title}' as there is no parent.")
-                # else: Standard fail for root is handled by context.fail_and_focus_up returning True and engine setting finished=True
             else:
                 # General failure case if not root or root without message
-                raise ValueError(f"Failed to mark problem as failed and focus up from node '{current_node_title}'.")
+                raise ValueError(f"Failed to mark problem as failed '{current_node_title}'.")
 
 
 class CancelSubproblemCommand(BaseCommand[CommandContextImpl]):
