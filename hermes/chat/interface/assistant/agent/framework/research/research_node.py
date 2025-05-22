@@ -3,6 +3,7 @@ from pathlib import Path
 from queue import Queue
 from typing import TYPE_CHECKING
 
+from hermes.chat.interface.assistant.agent.framework.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.file_system.markdown_file_with_metadata import (
     MarkdownFileWithMetadataImpl,
 )
@@ -35,7 +36,15 @@ from . import ResearchNode, ResearchNodeStatusChangeEvent
 
 
 class ResearchNodeImpl(ResearchNode):
-    def __init__(self, problem: ProblemDefinition, title: str, parent: "ResearchNode | None", path: Path, task_tree: "TaskTree") -> None:
+    def __init__(
+        self,
+        problem: ProblemDefinition,
+        title: str,
+        parent: "ResearchNode | None",
+        path: Path,
+        task_tree: "TaskTree",
+        dual_directory_fs: "DualDirectoryFileSystem",
+    ) -> None:
         self.children: list[ResearchNode] = []
         self.parent: ResearchNode | None = parent
         self._path: Path = path
@@ -45,8 +54,11 @@ class ResearchNodeImpl(ResearchNode):
         history_path = path / "history.json"
         self._history: ResearchNodeHistory = ResearchNodeHistory(history_path)
 
+        # Store dual directory file system reference
+        self._dual_directory_fs = dual_directory_fs
+
         # Component managers
-        self.artifact_manager: ArtifactManager = ArtifactManager(self)
+        self.artifact_manager: ArtifactManager = ArtifactManager(self, self._dual_directory_fs)
         self.criteria_manager: CriteriaManager = CriteriaManager(self)
         self.logger: ResearchNodeLogger = ResearchNodeLogger(self)
         self.problem_manager: ProblemDefinitionManager = ProblemDefinitionManager(self, problem)
@@ -69,10 +81,6 @@ class ResearchNodeImpl(ResearchNode):
         if not self._path.exists():
             self._path.mkdir(parents=True, exist_ok=True)
 
-        # Create artifacts directory
-        artifacts_dir = self._path / "Artifacts"
-        artifacts_dir.mkdir(exist_ok=True)
-
         # Create subproblems directory
         subproblems_dir = self._path / "Subproblems"
         subproblems_dir.mkdir(exist_ok=True)
@@ -91,7 +99,7 @@ class ResearchNodeImpl(ResearchNode):
 
         # Load all components from disk
         self.criteria_manager = CriteriaManager.load_for_research_node(self)[0]
-        self.artifact_manager = ArtifactManager.load_for_research_node(self)[0]
+        self.artifact_manager = ArtifactManager.load_for_research_node(self, self._dual_directory_fs)[0]
         self._state_manager = StateManager.load_for_research_node(self)[0]
         self.logger = ResearchNodeLogger.load_for_research_node(self)[0]
 
@@ -99,11 +107,17 @@ class ResearchNodeImpl(ResearchNode):
         return self._state_manager.get_id()
 
     @classmethod
-    def load_from_directory(cls, node_path: Path, task_tree: "TaskTree") -> "ResearchNode":
-        return cls._load_from_directory(node_path, task_tree, None)
+    def load_from_directory(cls, node_path: Path, task_tree: "TaskTree", dual_directory_fs: "DualDirectoryFileSystem") -> "ResearchNode":
+        return cls._load_from_directory(node_path, task_tree, dual_directory_fs)
 
     @classmethod
-    def _load_from_directory(cls, node_path: Path, task_tree: "TaskTree", parent_node: "ResearchNode | None" = None) -> "ResearchNode":
+    def _load_from_directory(
+        cls,
+        node_path: Path,
+        task_tree: "TaskTree",
+        dual_directory_fs: "DualDirectoryFileSystem",
+        parent_node: "ResearchNode | None" = None,
+    ) -> "ResearchNode":
         """
         Load a node and all its children from a directory.
 
@@ -122,14 +136,21 @@ class ResearchNodeImpl(ResearchNode):
         md_file = MarkdownFileWithMetadataImpl.load_from_directory(node_path, "Problem Definition")
         problem_def = ProblemDefinition(content=md_file.get_content())
 
-        node = ResearchNodeImpl(problem=problem_def, title=node_path.name, path=node_path, parent=parent_node, task_tree=task_tree)
+        node = ResearchNodeImpl(
+            problem=problem_def,
+            title=node_path.name,
+            path=node_path,
+            parent=parent_node,
+            task_tree=task_tree,
+            dual_directory_fs=dual_directory_fs,
+        )
 
-        cls._load_child_nodes_for(node, task_tree)
+        cls._load_child_nodes_for(node, task_tree, dual_directory_fs)
 
         return node
 
     @classmethod
-    def _load_child_nodes_for(cls, parent_node: "ResearchNode", task_tree: "TaskTree") -> None:
+    def _load_child_nodes_for(cls, parent_node: "ResearchNode", task_tree: "TaskTree", dual_directory_fs: "DualDirectoryFileSystem") -> None:
         """
         Load child nodes for a parent node from the file system.
 
@@ -144,7 +165,7 @@ class ResearchNodeImpl(ResearchNode):
             if child_dir.is_dir() and MarkdownFileWithMetadataImpl.file_exists(child_dir, "Problem Definition"):
                 try:
                     # Load the child node from disk
-                    child_node = cls._load_from_directory(child_dir, task_tree, parent_node)
+                    child_node = cls._load_from_directory(child_dir, task_tree, dual_directory_fs, parent_node)
 
                     # Add child to parent
                     parent_node.add_child_node(child_node)
@@ -179,7 +200,14 @@ class ResearchNodeImpl(ResearchNode):
         child_path = subproblems_dir / title
 
         # Create the new node
-        child_node = ResearchNodeImpl(problem=problem_def, title=title, path=child_path, parent=self, task_tree=self.task_tree)
+        child_node = ResearchNodeImpl(
+            problem=problem_def,
+            title=title,
+            path=child_path,
+            parent=self,
+            task_tree=self.task_tree,
+            dual_directory_fs=self._dual_directory_fs,
+        )
 
         # Add to children
         self.add_child_node(child_node)
@@ -306,3 +334,7 @@ class ResearchNodeImpl(ResearchNode):
 
     def set_events_queue(self, queue: Queue):
         self._events_queue = queue
+
+    def get_dual_directory_fs(self):
+        """Get the dual directory file system reference"""
+        return self._dual_directory_fs

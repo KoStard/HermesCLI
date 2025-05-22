@@ -11,6 +11,7 @@ from hermes.chat.interface.assistant.agent.framework.llm_interface import (
 )
 from hermes.chat.interface.assistant.agent.framework.report import ReportGenerator
 from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
+from hermes.chat.interface.assistant.agent.framework.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.research import ResearchImpl
 from hermes.chat.interface.assistant.agent.framework.research.research_node import ResearchNodeImpl
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
@@ -27,8 +28,6 @@ from hermes.chat.interface.templates.template_manager import TemplateManager
 
 class AgentEngine(Generic[CommandContextType]):
     """Core engine for Deep Research functionality, independent of UI implementation"""
-
-    research: Research
 
     def __init__(
         self,
@@ -49,9 +48,10 @@ class AgentEngine(Generic[CommandContextType]):
         self.report_generator = report_generator
         self.status_printer = status_printer
         self.engine_should_stop = False
+        self.dual_directory_file_system = DualDirectoryFileSystem(root_dir)
 
         # Initialize the research object which will handle all file system and node operations
-        self.research = ResearchImpl(root_dir)
+        self.research = ResearchImpl(self.dual_directory_file_system.get_research_path(), self.dual_directory_file_system)
         self.task_tree = TaskTreeImpl(self.research)
         self.command_registry = command_registry
 
@@ -76,7 +76,8 @@ class AgentEngine(Generic[CommandContextType]):
         """
         problem_definition = ProblemDefinition(content=instruction)
         node = ResearchNodeImpl(
-            problem=problem_definition, title=instruction, path=self.research.get_root_directory(), parent=None, task_tree=self.task_tree
+            problem=problem_definition, title=instruction, path=self.research.get_root_directory(), parent=None, task_tree=self.task_tree,
+            dual_directory_fs=self.dual_directory_file_system
         )
         self.research.initiate_research(node)
         node.set_problem_status(ProblemStatus.READY_TO_START)
