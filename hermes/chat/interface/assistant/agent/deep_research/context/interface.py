@@ -192,21 +192,8 @@ class DeepResearcherInterface(AgentInterface):
 
         # Add this node's artifacts
         for artifact in node.get_artifacts():
-            # Check visibility based on the current_node's perspective
-            # An artifact is visible if:
-            # 1. It's external OR
-            # 2. It belongs to the current_node OR
-            # 3. It belongs to an ancestor of the current_node
-            is_owned_by_current = node == current_node
-            is_owned_by_ancestor = node in self._get_parent_chain(current_node)[:-1]  # Exclude current node itself
-
-            # Determine if the artifact *should* be visible based on ownership/ancestry
             is_fully_visible = artifact.is_external
-            specified_artifact_status = node.get_node_state().artifacts_status.get(artifact.name)
-            if specified_artifact_status is None:
-                is_fully_visible |= is_owned_by_current or is_owned_by_ancestor
-            else:
-                is_fully_visible |= specified_artifact_status
+            is_fully_visible |= node.get_node_state().artifacts_status.get(artifact.name) or False
 
             artifacts.append((node, artifact, is_fully_visible))
 
