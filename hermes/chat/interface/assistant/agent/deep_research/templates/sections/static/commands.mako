@@ -59,7 +59,3 @@ A: You should always verify the results (not details, but the completeness) befo
 ${'####'} Q: What happens if I include in my response same command multiple times?
 
 It will be executed multiple times, and might cause issues. Make sure to use the command syntax only when you intend to send a command, while drafting or thinking, don't use the command syntax, or add a comment sign before the commands.
-
-${'####'} Q: How do artifacts work?
-
-A: Artifacts are documents you create during research. By default, they are closed (showing only summary) to keep the interface clean. Use `open_artifact` to view full content when needed. Artifacts automatically close after 5 message iterations. Keep artifacts ~1 page long and use descriptive names that clearly show their purpose (e.g., "Market_Analysis_Summary" not "Doc1").

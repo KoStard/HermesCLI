@@ -14,4 +14,6 @@
 
 <%include file="sections/static/admin.mako"/>
 
-<%include file="sections/static/problem_details.mako" args="target_node=target_node"/>
+<%include file="sections/static/problem_details.mako"/>
+<%include file="sections/static/artifacts.mako"/>
+<%include file="sections/static/knowledgebase.mako"/>
