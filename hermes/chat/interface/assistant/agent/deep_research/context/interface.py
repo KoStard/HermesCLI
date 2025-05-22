@@ -14,6 +14,7 @@ from .dynamic_sections.goal import GoalSectionData
 from .dynamic_sections.header import HeaderSectionData
 from .dynamic_sections.knowledge_base import KnowledgeBaseData
 from .dynamic_sections.permanent_logs import PermanentLogsData
+from .dynamic_sections.problem_definition import ProblemDefinitionData
 from .dynamic_sections.problem_hierarchy import ProblemHierarchyData
 from .dynamic_sections.problem_path_hierarchy import ProblemPathHierarchyData
 from .dynamic_sections.subproblems import SubproblemsSectionData
@@ -23,6 +24,7 @@ from .dynamic_sections.subproblems import SubproblemsSectionData
 # Define the consistent order of dynamic sections using the imported types
 DYNAMIC_SECTION_ORDER: list[type[DynamicSectionData]] = [
     HeaderSectionData,
+    ProblemDefinitionData,
     PermanentLogsData,
     BudgetSectionData,
     ArtifactsSectionData,
@@ -120,6 +122,9 @@ class DeepResearcherInterface(AgentInterface):
 
         # Header: No data needed
         all_data[HeaderSectionData] = HeaderSectionData()
+
+        # Problem Definition - Use factory method
+        all_data[ProblemDefinitionData] = ProblemDefinitionData.from_node(target_node=target_node)
 
         # Permanent Logs
         all_data[PermanentLogsData] = PermanentLogsData(permanent_logs=permanent_logs)
