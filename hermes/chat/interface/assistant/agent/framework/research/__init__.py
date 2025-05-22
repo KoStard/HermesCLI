@@ -116,6 +116,11 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
+    def increment_iteration(self) -> None:
+        """Increment the iteration counter for auto-close functionality"""
+        pass
+
+    @abstractmethod
     def get_history(self) -> ResearchNodeHistory:
         pass
 

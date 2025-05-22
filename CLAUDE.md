@@ -109,6 +109,7 @@ LLM commands in Hermes follow a specific structure:
 ## Development Guidelines
 
 1. Use UV commands instead of directly using python or pip
+   - Never use python directly in your commands, always use it through UV. like uv run python
 2. Follow Clean Code principles with clean and intuitive naming
 3. Maintain test coverage for new functionality
 4. Preserve existing architectural patterns when adding new features
