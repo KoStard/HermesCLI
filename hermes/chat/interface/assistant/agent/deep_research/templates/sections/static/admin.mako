@@ -1,6 +1,6 @@
-${'###'} Admin
+${'##'} Admin
 
-${'####'} Debug System Diagnostics
+${'###'} Debug System Diagnostics
 
 The admin might ask you to run diagnostics sometimes.
 In this cases, here is what is expected from you:

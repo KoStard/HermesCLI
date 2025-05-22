@@ -1,5 +1,4 @@
-<%namespace name="xml" file="/macros/xml.mako"/>
-${'###'} Using the interface
+${'##'} Using the interface
 
 This interface helps you conduct parallel research by providing tools to create and manage subproblems that can run concurrently. You can activate multiple subproblems and either wait for their completion or continue working while they process.
 

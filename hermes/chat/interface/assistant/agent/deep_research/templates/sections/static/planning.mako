@@ -1,5 +1,3 @@
-<%namespace name="xml" file="/macros/xml.mako"/>
-
 ${'##'} Parallel Planning Strategy
 
 When processing requests:

@@ -1,5 +1,3 @@
-<%namespace name="xml" file="/macros/xml.mako"/>
-
 ${'##'} Workflow
 
 ${'###'} Subproblems (Parallel Execution)
@@ -38,4 +36,9 @@ You can see the status of each problem in the breakdown structure.
 
 ${'###'} Log Management
 
-The `add_log_entry` command allows you to log permanent, one-sentence summaries of key actions or milestones in the Permanent Logs section. Its purpose is to maintain a clear, concise record of progress across all problems, ensuring the overall progress is always visible. This is crucial because it helps you stay aligned with the root problem's goals, avoids redundant work, and provides context for reports or navigation. Use it whenever you take actions - like creating a subtask, adding an artifact, or finishing a problem - to document outcomes that matter to the hierarchy. Add entries right after the action, keeping them specific and brief (e.g., "Artifact 1 artifact created in task with title ..." rather than "Did something"). This keeps the history actionable and relevant.
+The `add_log_entry` command allows you to log permanent, one-sentence summaries of key actions or milestones in the Permanent Logs section.
+Its purpose is to maintain a clear, concise record of progress across all problems, ensuring the overall progress is always visible.
+This is crucial because it helps you stay aligned with the root problem's goals, avoids redundant work, and provides context for reports or navigation.
+Use it whenever you take actions - like creating a subtask, adding an artifact, or finishing a problem - to document outcomes that matter to the hierarchy.
+Add entries right after the action, keeping them specific and brief (e.g., "Artifact 1 artifact created in task with title ..." rather than "Did something").
+This keeps the history actionable and relevant.

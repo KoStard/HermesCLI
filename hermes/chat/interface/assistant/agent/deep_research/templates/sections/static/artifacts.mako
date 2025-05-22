@@ -1,4 +1,4 @@
-${'###'} Artifacts
+${'##'} Artifacts
 
 Artifacts are the outputs of your research. High-quality artifacts are the main deliverable of your work.
 All of your artifacts should rely on your factual knowledge or specific resources you have access to or get through commands usage. Include source links/commands. In artifacts, factuality and reasoning is essential, and assumptions and guesses are not allowed. If you lack information, clearly call out that you don't have that knowledge, what tools are missing and how will you proceed forward. We have culture of growth, so clear call out of missing knowledge is considered sign of maturity.
