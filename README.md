@@ -1,27 +1,31 @@
 # Hermes
 
-Hermes is an extendable command-line interface (CLI) designed to interact with Large Language Models (LLMs). It aims to provide a flexible and powerful way to leverage the capabilities of LLMs directly from your terminal. Whether you're a developer, researcher, or just an AI enthusiast, Hermes offers a streamlined experience for interacting with state-of-the-art language models.
+Hermes is an extendable command-line interface (CLI) for interacting with Large Language Models (LLMs). It provides a flexible and powerful way to leverage AI capabilities directly from your terminal, with support for multiple model providers, multimedia input, and specialized research workflows.
 
 ## Features
 
-- **Easy Interaction with Multiple LLMs**: Supports various LLMs, allowing you to switch between models seamlessly.
-- **Extendable Architecture**: Built with extensibility in mind, allowing users to add custom commands and functionalities.
-- **CLI-First Design**: Optimized for the command line, providing a fast and efficient way to work with LLMs.
-- **Conversation History**: Keeps track of your conversation history, allowing you to pick up where you left off.
-- **Advanced Media Input**: Supports various media types, including images, audio, video, PDFs, URLs, and textual files.
-- **Configurable**: Easily configure API keys and settings through a simple configuration file.
-- **Speech-to-Text Input**: Optionally use speech-to-text for a more interactive experience.
+- **Multiple LLM Providers**: Supports OpenAI, Anthropic, Google Gemini, Groq, DeepSeek, SambaNova, OpenRouter, AWS Bedrock, and XAI
+- **Multimedia Input**: Handle images, audio, video, PDFs, URLs, and various document formats
+- **Deep Research Mode**: Advanced research assistant with hierarchical problem-solving and artifact management
+- **Extensible Architecture**: Add custom commands and functionality through extensions
+- **Conversation History**: Save and load chat sessions
+- **Speech-to-Text**: Voice input support via Groq API
+- **File Operations**: LLM can create, modify, and manage files with safety features
+- **Web Integration**: Fetch and analyze web content with Exa API integration
+- **Debug Mode**: Visual debugging interface to see what the LLM receives
 
 ## Getting Started
 
 ### Installation
 
-To install Hermes, you need to have Python 3.10 or later installed on your system. Then, you can install Hermes using pip:
+Hermes requires Python 3.10 or later. Install using uv (recommended) or pip:
 
 ```bash
-pip install --upgrade git+https://github.com/KoStard/HermesCLI.git
-# or with uv
+# Using uv (recommended)
 uv tool install git+https://github.com/KoStard/HermesCLI --upgrade --python 3.11
+
+# Using pip
+pip install --upgrade git+https://github.com/KoStard/HermesCLI.git
 ```
 
 ### Configuration
@@ -45,20 +49,20 @@ Then, inside that directory, create a file named `config.ini` with the following
 
 ```ini
 [BASE]
-model = OPENAI/gpt-4o ; Or whatever model you want to use. To see the list of suggested models, check hermes --help
+model = OPENAI/gpt-4o  ; Default model (use hermes chat --help to see available models)
 
 [OPENAI]
 api_key = YOUR_OPENAI_API_KEY
-; base_url = 'http://localhost:1234/v1'  ; specify URL in case you want to use a different OpenAI compatible URL, e.g. Ollama, LMStudio, others
-
-[GROQ]
-api_key = YOUR_GROQ_API_KEY
+; base_url = http://localhost:1234/v1  ; Optional: for OpenAI-compatible endpoints
 
 [ANTHROPIC]
 api_key = YOUR_ANTHROPIC_API_KEY
 
 [GEMINI]
 api_key = YOUR_GEMINI_API_KEY
+
+[GROQ]
+api_key = YOUR_GROQ_API_KEY
 
 [DEEPSEEK]
 api_key = YOUR_DEEPSEEK_API_KEY
@@ -70,39 +74,43 @@ api_key = YOUR_SAMBANOVA_API_KEY
 api_key = YOUR_OPENROUTER_API_KEY
 
 [BEDROCK]
-aws_region = YOUR_AWS_REGION  ; Specify the AWS region for Bedrock.
-aws_profile_name = YOUR_AWS_PROFILE_NAME ; Optional: Specify the AWS profile name to use. If omitted, the default profile/credentials will be used.
+aws_region = YOUR_AWS_REGION
+aws_profile_name = YOUR_AWS_PROFILE_NAME  ; Optional
 
 [XAI]
 api_key = YOUR_XAI_API_KEY
+
+[EXA]
+api_key = YOUR_EXA_API_KEY  ; Optional: for enhanced web search
 ```
 
 Replace `YOUR_API_KEY` with your actual API keys for each provider.
 
 ### Basic Usage
 
-To start a conversation with the default LLM model (from the configuration file), simply run:
+Start a conversation with your default model:
 
 ```bash
 hermes chat
 ```
 
-You can also override the model using the `--model` flag:
+**Advanced Usage:**
 
 ```bash
-hermes chat --model OPENAI/gpt-4o
-```
+# Use a specific model
+hermes chat --model ANTHROPIC/claude-3-5-sonnet-20241022
 
-For debugging purposes, you can use the `--debug` flag to spawn a separate terminal window that will act as the LLM, this way you can see what the LLM "sees":
+# Enable Deep Research mode for complex problem-solving
+hermes chat --deep-research /path/to/research/folder
 
-```bash
+# Debug mode (see what the LLM receives)
 hermes chat --debug
-```
 
-To use speech-to-text input, use the `--stt` flag (requires your Groq API keys):
-
-```bash
+# Voice input (requires Groq API)
 hermes chat --stt
+
+# Pass files and commands directly
+hermes chat file1.txt file2.py --image_url "https://example.com/image.jpg" --text "Analyze these files"
 ```
 
 ### User Commands
@@ -124,33 +132,34 @@ Hermes supports several user commands to enhance your interaction with LLMs:
 | `/text <text>`                                    | Add text to the conversation.                                                                                                               |
 | `/exit`                                           | Exit the application.                                                                                                                      |
 
-### Using CLI Arguments
+### CLI Commands
 
-You can also pass user commands directly as CLI arguments:
+Pass commands directly via CLI arguments:
 
 ```bash
-hermes chat file1 file2 file3 --image_url "https://example.com/image.jpg" --text "Describe this image"
+# Analyze multiple files with an image
+hermes chat file1.py file2.md --image_url "https://example.com/chart.png" --text "Analyze the code and chart"
+
+# Files are automatically treated as textual content
+hermes chat document.pdf report.docx  # Extracts text content
 ```
 
-The files provided are treated as `--textual_file`.
+### LLM File Operations
 
-### LLM Commands
-
-The same way as you (the user) has access to commands in Hermes, the LLM has access to commands as well. These commands allow the LLM to interact with the file system in a controlled manner. Below is a table of available LLM commands:
+The LLM can interact with files using structured commands with `<<<command>>>` blocks:
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `///create_file` | Creates a new file with specified content. If the file exists, it will ask for confirmation before overwriting. | `///create_file example.txt`<br>This is some content<br>`///end_file` |
-| `///markdown_update_section` | Updates a specific section in a markdown file. The section is identified by its header path. | `///markdown_update_section README.md Features`<br>New feature description<br>`///end_section` |
-| `///markdown_append_section` | Appends content to a specific section in a markdown file. The content is added at the end of the specified section. | `///markdown_append_section README.md Features`<br>Additional feature description<br>`///end_section` |
-| `///append_file` | Appends content to the end of an existing file. Creates the file if it doesn't exist. | `///append_file log.txt`<br>New log entry<br>`///end_file` |
-| `///prepend_file` | Adds content to the beginning of an existing file. Creates the file if it doesn't exist. | `///prepend_file notes.txt`<br>Important note<br>`///end_file` |
+| `create_file` | Create new files with confirmation prompts | `<<<create_file`<br>`///path`<br>`example.txt`<br>`///content`<br>`File content here`<br>`>>>` |
+| `markdown_update_section` | Update specific markdown sections | `<<<markdown_update_section`<br>`///path`<br>`README.md`<br>`///section_path`<br>`Features`<br>`///content`<br>`New content`<br>`>>>` |
+| `append_file` | Add content to end of files | `<<<append_file`<br>`///path`<br>`log.txt`<br>`///content`<br>`New entry`<br>`>>>` |
+| `prepend_file` | Add content to beginning of files | `<<<prepend_file`<br>`///path`<br>`notes.txt`<br>`///content`<br>`Header info`<br>`>>>` |
 
-**Important Notes:**
-1. The LLM knows the current working directory and can create files with relative and absolute paths.
-2. For safety, if a file already exists, the LLM will ask for confirmation before overwriting and will create a backup in `/tmp/hermes/backups/{filename}_{timestamp}.bak`.
-3. The LLM is asked to only use these commands when explicitly asked by the user, but it might sometimes show initiative.
-4. When creating files, if no specific location is mentioned, files will be created in Hermes' sandbox under `/tmp/hermes_sandbox/`.
+**Safety Features:**
+- Automatic backups before overwriting existing files
+- Confirmation prompts for destructive operations  
+- Sandbox directory (`/tmp/hermes_sandbox/`) for unspecified locations
+- Relative and absolute path support
 
 ## Extending Hermes
 
@@ -233,100 +242,55 @@ def get_utils_builders():
     return [setup_example_util]
 ```
 
-## Listing the available commands
+## Available Commands
 
-Hermes provides commands for both users and LLMs. You can list all available commands using the following CLI commands:
-
-### Listing User Commands
-
-To list all available user commands, run:
+View all available commands:
 
 ```bash
+# List user commands (what you can use)
 hermes info list-user-commands
-```
 
-Example output:
-
-```txt
-Command ID      | Description
-----------------+----------------------------
-audio           | Share an audio file
-clear           | Clear chat history
-example_command | Example Command       <--- Notice the example command we added in the extension
-exit            | Exit Hermes
-image           | Share an image file
-image_url       | Share an image via URL
-load_history    | Load chat history
-pdf             | Share a PDF file
-save_history    | Save chat history
-text            | Send a text message
-textual_file    | Share a text-based document
-tree            | Show directory structure
-url             | Share a URL◊
-video           | Share a video file
-```
-
-### Listing LLM Commands
-
-To list all available LLM commands, run:
-
-```bash
+# List LLM commands (what the AI can use)
 hermes info list-assistant-commands
 ```
 
-Example output:
+**Key User Commands:**
+- `/image`, `/audio`, `/video` - Share media files
+- `/pdf`, `/textual_file` - Share documents  
+- `/url` - Share web content
+- `/save_history`, `/load_history` - Manage conversations
+- `/clear` - Reset conversation
+- `/tree` - Show directory structure
 
-```txt
-Command ID              | Description
-------------------------+---------------------------------
-append_file             | Append to file end
-create_file             | Create a new file
-markdown_append_section | Add content to markdown section
-markdown_update_section | Replace markdown section content
-prepend_file            | Add to file beginning
-```
-
-These commands provide a comprehensive list of all available commands with their descriptions, helping users and LLMs understand the available functionality.
-
-### Adding Utility Commands
-
-Extensions can also provide utility commands that are accessible through the CLI. These commands are different from chat commands as they are executed directly from the command line using `hermes utils <command>`.
-
-To add utility commands in your extension, implement the `get_utils_builders()` function:
-
-```python
-def get_utils_builders():
-    """Return a list of utility builder functions"""
-    def setup_my_util(subparsers):
-        # Add a new subparser for your utility
-        parser = subparsers.add_parser(
-            "my-util",
-            help="Description of your utility"
-        )
-        # Add arguments
-        parser.add_argument("arg1", help="First argument")
-        
-        # Define the visitor function that will be called with parsed arguments
-        def visitor(cli_args, config):
-            if cli_args.utils_command != "my-util":
-                return
-            # Your utility logic here
-            print(f"Running my util with arg: {cli_args.arg1}")
-        
-        return visitor
-
-    return [setup_my_util]
-```
-
-Each utility builder function should:
-1. Take an `ArgumentParser._SubParsersAction` as input
-2. Add a new subparser with arguments
-3. Return a visitor function that will be called with the parsed arguments and config
-
-Your utilities will then be available through:
+**Utility Commands:**
 ```bash
-hermes utils my-util <args>
+# Extract specific pages from PDFs
+hermes utils extract_pdf_pages document.pdf "{1,3:5}"
+
+# Fetch web content
+hermes utils get_url https://example.com
+
+# Enhanced web search (requires Exa API)
+hermes utils exa_search "AI research papers"
 ```
+
+## Deep Research Mode
+
+For complex research tasks, use the Deep Research Assistant:
+
+```bash
+hermes chat --deep-research /path/to/research/folder
+```
+
+**Features:**
+- Hierarchical problem decomposition
+- Artifact management and tracking
+- Research project organization
+- Status reporting and progress tracking
+- Knowledge base integration
+- Structured research workflows
+
+The research folder will contain organized files, reports, and artifacts generated during the research process.
 
 ## Contributing
 
@@ -336,23 +300,16 @@ Contributions to Hermes are welcome! If you have an idea for a new feature or an
 
 Hermes is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-## Acknowledgments
+## Key Dependencies
 
-Hermes is built using several excellent open-source libraries, including:
+Hermes is built with these excellent open-source libraries:
 
-- [Anthropic](https://www.anthropic.com/)
-- [Boto3](https://aws.amazon.com/sdk-for-python/)
-- [Google Generative AI](https://ai.google.dev/)
-- [LiteLLM](https://litellm.ai/)
-- [MarkItDown](https://github.com/microsoft/markitdown/)
-- [Mistune](https://mistune.lepture.com/)
-- [NumPy](https://numpy.org/)
-- [OpenAI](https://openai.com/)
-- [prompt-toolkit](https://python-prompt-toolkit.readthedocs.io/)
-- [Pygments](https://pygments.org/)
-- [PyPDF2](https://pypdf2.readthedocs.io/)
-- [Requests](https://requests.readthedocs.io/)
-- [SoundDevice](https://python-sounddevice.readthedocs.io/)
-- [SoundFile](https://pysoundfile.readthedocs.io/)
+- **AI Providers:** Anthropic, OpenAI, Google Generative AI, Groq, AWS Boto3
+- **Document Processing:** MarkItDown, PyPDF2
+- **Interface:** prompt-toolkit, Pygments, InquirerPy  
+- **Audio:** SoundDevice, SoundFile
+- **Web:** Requests, Exa-py
+- **Templates:** Mako
+- **Utilities:** NumPy, PyYAML, Tenacity
 
-Thank you to all the contributors and maintainers of these projects!
+Thanks to all contributors and maintainers!
