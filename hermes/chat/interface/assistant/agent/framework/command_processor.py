@@ -195,6 +195,9 @@ class CommandProcessor(Generic[CommandContextType]):
         if not target_child:
             return False
 
+        if target_child.get_problem_status() == ProblemStatus.IN_PROGRESS:
+            return True
+
         target_child.set_problem_status(ProblemStatus.READY_TO_START)
         return True
 

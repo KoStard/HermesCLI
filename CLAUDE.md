@@ -113,3 +113,6 @@ LLM commands in Hermes follow a specific structure:
 2. Follow Clean Code principles with clean and intuitive naming
 3. Maintain test coverage for new functionality
 4. Preserve existing architectural patterns when adding new features
+
+## Core Philosophy
+- Don't focus on backwards compatibility. We are in active development, we shouldn't aim to support every previous decision we have made. Focus on great product and great code quality.
