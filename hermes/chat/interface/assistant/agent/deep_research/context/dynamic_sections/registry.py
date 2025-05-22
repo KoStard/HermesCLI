@@ -16,6 +16,7 @@ def get_data_type_to_renderer_instance_map(template_manager: "TemplateManager") 
     from .header import HeaderSectionData, HeaderSectionRenderer
     from .knowledge_base import KnowledgeBaseData, KnowledgeBaseRenderer
     from .permanent_logs import PermanentLogsData, PermanentLogsRenderer
+    from .problem_definition import ProblemDefinitionData, ProblemDefinitionRenderer
     from .problem_hierarchy import ProblemHierarchyData, ProblemHierarchyRenderer
     from .problem_path_hierarchy import (
         ProblemPathHierarchyData,
@@ -29,6 +30,7 @@ def get_data_type_to_renderer_instance_map(template_manager: "TemplateManager") 
         BudgetSectionData: BudgetSectionRenderer(template_manager),
         ArtifactsSectionData: ArtifactsSectionRenderer(template_manager),
         ProblemHierarchyData: ProblemHierarchyRenderer(template_manager),
+        ProblemDefinitionData: ProblemDefinitionRenderer(template_manager),
         CriteriaSectionData: CriteriaSectionRenderer(template_manager),
         SubproblemsSectionData: SubproblemsSectionRenderer(template_manager),
         ProblemPathHierarchyData: ProblemPathHierarchyRenderer(template_manager),

@@ -81,7 +81,7 @@ class AgentEngine(Generic[CommandContextType]):
         self.research.initiate_research(node)
         node.set_problem_status(ProblemStatus.READY_TO_START)
 
-        self.status_printer.print_status(self.research.get_root_node(), self.research)
+        self.status_printer.print_status(self.research)
 
     def add_new_instruction(self, instruction: str):
         """Injects a new user instruction into the current node's context."""
