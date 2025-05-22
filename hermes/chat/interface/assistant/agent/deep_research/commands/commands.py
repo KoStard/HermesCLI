@@ -118,11 +118,21 @@ class AddArtifactCommand(BaseCommand[CommandContextImpl]):
     def __init__(self):
         super().__init__(
             "add_artifact",
-            "Add an artifact to the current problem",
+            "Add an artifact to the current problem. Artifacts are closed by default and show only the summary. "
+            "Keep content ~1 page long unless specifically requested to be longer. "
+            "Use descriptive names that clearly indicate purpose.",
         )
-        self.add_section("name", True, "Name of the artifact")
-        self.add_section("content", True, "Content of the artifact")
-        self.add_section("short_summary", True, "Short summary of the artifact. Can be 1-2 paragraphs, should call out what's important in this artifact.")
+        self.add_section(
+            "name", True, "Name of the artifact (use descriptive names like 'Market_Analysis_Summary' not 'Doc1')"
+        )
+        self.add_section(
+            "content", True, "Content of the artifact (keep to ~1 page unless specifically requested to be longer)"
+        )
+        self.add_section(
+            "short_summary",
+            True,
+            "Short summary of the artifact. Can be 1-2 paragraphs, should call out what's important in this artifact.",
+        )
 
     def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
         """Add an artifact to the current problem"""
@@ -417,7 +427,7 @@ class OpenArtifactCommand(BaseCommand[CommandContextImpl]):
     def __init__(self):
         super().__init__(
             "open_artifact",
-            "Open an artifact to view its full content",
+            "Open an artifact to view its full content. Artifacts automatically close after 5 message iterations.",
         )
         self.add_section("name", True, "Name of the artifact to open")
 
@@ -444,7 +454,7 @@ class CloseArtifactCommand(BaseCommand[CommandContextImpl]):
     def __init__(self):
         super().__init__(
             "close_artifact",
-            "Close an artifact, the short summary will remain visible.",
+            "Close an artifact manually, the short summary will remain visible. Artifacts also auto-close after 5 message iterations.",
         )
         self.add_section("name", True, "Name of the artifact to close")
 

@@ -24,7 +24,7 @@ No artifacts available.
     ${xml.separator()}
 
     <node_artifacts_intro>
-    These are artifacts created during the research process within specific problems.
+    These are artifacts created during the research process within specific problems. By default, artifacts are closed and show only their summary. Use the open_artifact command to view full content. Each artifact should be approximately 1 page long unless specifically requested to be longer. Artifact names should clearly indicate their purpose. Opened artifacts will automatically close after 5 message iterations to keep the interface manageable.
     </node_artifacts_intro>
     % endif
     % endif
