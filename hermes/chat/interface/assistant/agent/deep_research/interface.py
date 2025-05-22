@@ -178,10 +178,10 @@ class DeepResearchAssistantInterface(Interface):
             )
             return
 
-        logger.info("Defining root problem.")
+        logger.debug("Defining root problem.")
         self._engine.define_root_problem(self._instruction)
 
-        logger.info("Executing initial research.")
+        logger.debug("Executing initial research.")
         final_report_str = self._engine.execute()
 
         yield from self._yield_final_report(final_report_str)
@@ -191,7 +191,7 @@ class DeepResearchAssistantInterface(Interface):
     def _handle_continuous_interaction(self) -> Generator[Event, None, None]:
         """Handle ongoing interaction with the research engine"""
         if not self._instruction:
-            logger.info("Engine is awaiting instruction.")
+            logger.debug("Engine is awaiting instruction.")
             yield from self._yield_waiting_message("Research complete")
             return
 
@@ -200,12 +200,12 @@ class DeepResearchAssistantInterface(Interface):
 
     def _process_new_instruction(self) -> Generator[Event, None, None]:
         """Process a new instruction from the user"""
-        logger.info("Processing new instruction")
+        logger.debug("Processing new instruction")
         if self._instruction:
             self._engine.add_new_instruction(self._instruction)
             self._instruction = None  # Clear instruction after use
 
-            logger.info("Executing new instruction.")
+            logger.debug("Executing new instruction.")
             final_report_str = self._engine.execute()
 
             yield from self._yield_final_report(final_report_str)
@@ -215,7 +215,7 @@ class DeepResearchAssistantInterface(Interface):
     def _yield_final_report(self, report_str: str | None) -> Generator[Event, None, None]:
         """Yield final report event if report exists"""
         if report_str:
-            logger.info("Yielding final report")
+            logger.debug("Yielding final report")
             yield MessageEvent(TextMessage(author="assistant", text=report_str))
 
     def _yield_waiting_message(self, prefix: str) -> Generator[Event, None, None]:
