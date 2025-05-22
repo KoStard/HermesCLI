@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from hermes.chat.interface.assistant.agent.framework.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.file_system.markdown_file_with_metadata import (
     MarkdownFileWithMetadataImpl,
 )
@@ -54,25 +55,26 @@ class Artifact:
 class ArtifactManager:
     """Manages artifacts for a research node"""
 
-    def __init__(self, node: "ResearchNode"):
+    def __init__(self, node: "ResearchNode", dual_directory_fs: "DualDirectoryFileSystem"):
         self._node = node
         self._artifacts: list[Artifact] = []
+        self._dual_directory_fs = dual_directory_fs
 
     @property
     def artifacts(self):
         return self._artifacts
 
     @classmethod
-    def load_for_research_node(cls, research_node: "ResearchNode") -> list["ArtifactManager"]:
+    def load_for_research_node(cls, research_node: "ResearchNode", dual_directory_fs: "DualDirectoryFileSystem") -> list["ArtifactManager"]:
         """Load artifacts for a research node"""
-        artifacts_manager = cls(research_node)
+        artifacts_manager = cls(research_node, dual_directory_fs)
 
         node_path = research_node.get_path()
         if not node_path:
             return [artifacts_manager]
 
-        # Load artifacts from the artifacts directory
-        artifacts_dir = node_path / "Artifacts"
+        artifacts_dir = dual_directory_fs.get_artifact_directory_for_node_path(node_path)
+
         if artifacts_dir.exists():
             for artifact_file in artifacts_dir.iterdir():
                 if artifact_file.is_file() and artifact_file.suffix == ".md":
@@ -96,9 +98,11 @@ class ArtifactManager:
         if not node_path:
             return
 
-        # Create artifacts directory
-        artifacts_dir = node_path / "Artifacts"
-        artifacts_dir.mkdir(exist_ok=True)
+        # Get dual directory file system reference
+        dual_fs = self._node.get_dual_directory_fs()
+        artifacts_dir = dual_fs.get_artifact_directory_for_node_path(node_path)
+
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         # Save each artifact
         for artifact in self._artifacts:
