@@ -121,11 +121,11 @@ class StateManager:
             self._state.artifacts_status = data.get("artifacts_status", {})
 
             # Load problem status
-            status_value = data.get("problem_status", ProblemStatus.READY_TO_START.value)
+            status_value = data.get("problem_status", ProblemStatus.CREATED.value)
             try:
                 self._state.problem_status = ProblemStatus(status_value)
             except ValueError:
-                self._state.problem_status = ProblemStatus.READY_TO_START
+                self._state.problem_status = ProblemStatus.CREATED
 
             self._state.resolution_message = data.get("resolution_message")
             self._state.pending_child_node_ids = set(data.get("pending_child_node_ids"))
