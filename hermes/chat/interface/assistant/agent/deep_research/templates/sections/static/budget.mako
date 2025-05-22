@@ -1,6 +1,4 @@
-<%namespace name="xml" file="/macros/xml.mako"/>
-
-${'###'} Budget
+${'##'} Budget
 
 Q: What is a budget?
 A: If budget is provided, it defined how much resources you can use during deep research. The goal is to limit the amount of resources we invest into a vague problem. If the problem in reality can be solved with smaller investment, great, finish early!

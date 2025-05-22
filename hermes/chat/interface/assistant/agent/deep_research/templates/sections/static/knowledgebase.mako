@@ -1,4 +1,4 @@
-${'###'} Knowledgebase
+${'##'} Knowledgebase
 
 You are provided with a Knowledgebase management system. Whenever you encounter important concepts, capture their essence in the Knowledgebase.
 Knowledgebase is shared with everyone in the team. It's a flexible system allowing you to build up knowledge about the target topic.

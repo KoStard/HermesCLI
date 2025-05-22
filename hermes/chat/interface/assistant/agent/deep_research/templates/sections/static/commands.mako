@@ -1,5 +1,3 @@
-<%namespace name="xml" file="/macros/xml.mako"/>
-
 ${'##'} Commands
 
 If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
