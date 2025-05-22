@@ -1,4 +1,4 @@
-from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
+from hermes.chat.interface.assistant.agent.framework.research import Research
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
@@ -33,10 +33,9 @@ class StatusPrinterImpl(StatusPrinter):
         """Get an emoji representation of the problem status"""
         return self.status_emojis.get(status, "❓")
 
-    def print_status(self, current_node: ResearchNode, research: Research):
+    def print_status(self, research: Research):
         """Print the current status of the research to STDOUT using a template"""
         context = {
-            "current_node": current_node,
             "root_node": research.get_root_node(),
             "get_status_emoji": self._get_status_emoji,
         }

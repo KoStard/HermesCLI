@@ -54,22 +54,15 @@ class ChatModelLLMInterface(LLMInterface):
         for response in llm_responses_generator:
             if isinstance(response, TextLLMResponse):
                 if is_thinking:
-                    print("Thinking finished")
                     is_thinking = False
                 if not is_working:
-                    print("Working...", end="", flush=True)
                     is_working = True
-                else:
-                    print(".", end="", flush=True)
                 llm_response.append(response.text)
                 logger.debug(response.text)
             else:
                 assert isinstance(response, ThinkingLLMResponse)
                 if not is_thinking:
                     is_thinking = True
-                    print("Thinking...", end="", flush=True)
-                else:
-                    print(".", end="", flush=True)
                 logger.debug(response.text)
         print()
 

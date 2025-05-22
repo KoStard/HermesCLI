@@ -165,7 +165,7 @@ class TaskProcessor(Generic[CommandContextType]):
     def _perform_post_cycle_updates(self, research_node: "ResearchNode"):
         """Saves node history and prints the current status."""
         research_node.get_history().save()
-        self.status_printer.print_status(research_node, self.research_project)
+        self.status_printer.print_status(self.research_project)
 
     def _determine_task_processor_outcome(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Determines if the task processing should conclude for this cycle."""
