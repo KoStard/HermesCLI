@@ -1,0 +1,84 @@
+from hermes.application_initializer import ApplicationInitializer
+from hermes.chat.conversation_orchestrator import ConversationOrchestrator
+from hermes.chat.history import History
+from hermes.chat.interface.control_panel.commands_lister import CommandsLister
+from hermes.cli_parser import CLIParser
+from hermes.config_manager import ConfigManager
+from hermes.utils_command_executor import UtilsCommandExecutor
+
+
+class ApplicationOrchestrator:
+    def __init__(self):
+        self.config_manager = ConfigManager()
+        self.app_initializer = ApplicationInitializer(
+            self.config_manager.get_config(),
+            self.config_manager.get_command_status_overrides()
+        )
+
+    def run(self):
+        components = self.app_initializer.get_core_components()
+        cli_parser = CLIParser(components.user_control_panel, components.model_factory)
+
+        cli_args_parser, utils_subparsers = cli_parser.build_parser()
+        extension_visitors = self._register_extensions(components.extension_utils_builders, utils_subparsers)
+
+        cli_args = cli_args_parser.parse_args()
+        self.app_initializer.setup_logging(cli_args)
+
+        if cli_args.execution_mode == "info":
+            self._execute_info_mode(cli_args, components)
+        elif cli_args.execution_mode == "utils":
+            self._execute_utils_mode(cli_args, extension_visitors)
+        else:
+            self._execute_chat_mode(cli_args, components)
+
+    def _register_extensions(self, extension_builders, utils_subparsers):
+        extension_visitors = []
+        for builder in extension_builders:
+            extension_visitors.append(builder(utils_subparsers))
+        return extension_visitors
+
+    def _execute_info_mode(self, cli_args, components):
+        lister = CommandsLister()
+        if cli_args.info_command == "list-assistant-commands":
+            lister.print_commands(components.llm_control_panel.get_commands())
+        elif cli_args.info_command == "list-user-commands":
+            lister.print_commands(components.user_control_panel.get_commands())
+
+    def _execute_utils_mode(self, cli_args, extension_visitors):
+        utils_executor = UtilsCommandExecutor(self.config_manager.get_config())
+        utils_executor.execute(cli_args, extension_visitors)
+
+    def _execute_chat_mode(self, cli_args, components):
+        participants = self.app_initializer.create_participants(
+            cli_args, components.user_control_panel, components.model_factory,
+            components.llm_control_panel, components.deep_research_commands
+        )
+        try:
+            model_info = self.app_initializer.get_model_info_string(cli_args)
+            self.app_initializer.print_welcome_message(model_info)
+
+            history = History()
+            conversation_orchestrator = ConversationOrchestrator(
+                participants.user,
+                participants.assistant,
+                history
+            )
+            conversation_orchestrator.start_conversation()
+
+        except KeyboardInterrupt:
+            print("\nExiting gracefully...")
+        except EOFError:
+            print("\nExiting gracefully...")
+        except ValueError as e:
+            print("Error occurred:")
+            raise e
+        finally:
+            self._cleanup_if_needed(participants.assistant)
+
+    def _cleanup_if_needed(self, assistant_participant):
+        if (assistant_participant and
+            hasattr(assistant_participant, "interface") and
+            hasattr(assistant_participant.interface, "cleanup")):
+            print("Cleaning up debug interface")
+            assistant_participant.interface.cleanup()

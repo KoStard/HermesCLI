@@ -10,7 +10,7 @@ from hermes.chat.interface.assistant.agent.framework.llm_interface import (
     LLMInterface,
 )
 from hermes.chat.interface.assistant.agent.framework.report import ReportGenerator
-from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
+from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
 from hermes.chat.interface.assistant.agent.framework.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.research import ResearchImpl
 from hermes.chat.interface.assistant.agent.framework.research.research_node import ResearchNodeImpl
