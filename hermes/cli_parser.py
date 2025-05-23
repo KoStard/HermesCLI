@@ -18,7 +18,6 @@ class CLIParser:
 
         self.user_control_panel.build_cli_arguments(chat_parser)
 
-
     def register_extensions_and_get_visitors(self, extension_utils_builders: list) -> list:
         extension_visitors = []
         for builder in extension_utils_builders:
@@ -33,8 +32,7 @@ class CLIParser:
         chat_parser.add_argument("--debug", action="store_true")
 
         suggested_models = ", ".join(
-            f"{provider.lower()}/{model_tag}"
-            for provider, model_tag in self.model_factory.get_provider_model_pairs()
+            f"{provider.lower()}/{model_tag}" for provider, model_tag in self.model_factory.get_provider_model_pairs()
         )
 
         chat_parser.add_argument(

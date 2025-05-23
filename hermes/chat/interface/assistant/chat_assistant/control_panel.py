@@ -71,7 +71,9 @@ class ChatAssistantControlPanel(ControlPanel):
 
         # Map of command ID to command status override
         # Possible status values: ON, OFF, AGENT_ONLY
-        self._command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] = command_status_overrides if command_status_overrides is not None else {}
+        self._command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] = (
+            command_status_overrides if command_status_overrides is not None else {}
+        )
 
     def _add_initial_help_content(self):
         """Add initial help content about command usage"""

@@ -77,7 +77,7 @@ class TaskProcessor(Generic[CommandContextType]):
         """Execute a single task processing cycle."""
         # Increment iteration counter for auto-close functionality
         research_node.increment_iteration()
-        
+
         # Get LLM response
         full_llm_response = self._prepare_and_execute_llm_request(research_node)
 

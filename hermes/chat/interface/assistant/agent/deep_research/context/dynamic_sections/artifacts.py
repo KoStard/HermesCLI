@@ -11,6 +11,7 @@ if TYPE_CHECKING:
         TemplateManager,
     )
 
+
 # --- Primitive Data Structure ---
 @dataclass(frozen=True)
 class PrimitiveArtifactData:

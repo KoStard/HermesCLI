@@ -122,12 +122,8 @@ class AddArtifactCommand(BaseCommand[CommandContextImpl]):
             "Keep content ~1 page long unless specifically requested to be longer. "
             "Use descriptive names that clearly indicate purpose.",
         )
-        self.add_section(
-            "name", True, "Name of the artifact (use descriptive names like 'Market_Analysis_Summary' not 'Doc1')"
-        )
-        self.add_section(
-            "content", True, "Content of the artifact (keep to ~1 page unless specifically requested to be longer)"
-        )
+        self.add_section("name", True, "Name of the artifact (use descriptive names like 'Market_Analysis_Summary' not 'Doc1')")
+        self.add_section("content", True, "Content of the artifact (keep to ~1 page unless specifically requested to be longer)")
         self.add_section(
             "short_summary",
             True,

@@ -67,9 +67,16 @@ class EventHandler:
         handler = self._event_handlers.get(event_type)
 
         if handler:
-            if event_type in [SaveHistoryEvent, LoadHistoryEvent, AgentModeEvent,
-                             LLMCommandsExecutionEvent, OnceEvent, ThinkingLevelEvent,
-                             DeepResearchBudgetEvent, FileEditEvent]:
+            if event_type in [
+                SaveHistoryEvent,
+                LoadHistoryEvent,
+                AgentModeEvent,
+                LLMCommandsExecutionEvent,
+                OnceEvent,
+                ThinkingLevelEvent,
+                DeepResearchBudgetEvent,
+                FileEditEvent,
+            ]:
                 handler(event)
             else:
                 handler()
