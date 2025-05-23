@@ -46,7 +46,7 @@ class ApplicationInitializer:
     def _load_extensions(self):
         from collections import namedtuple
 
-        Extensions = namedtuple('Extensions', ['user_commands', 'llm_commands', 'utils_builders', 'deep_research_commands'])
+        Extensions = namedtuple("Extensions", ["user_commands", "llm_commands", "utils_builders", "deep_research_commands"])
 
         user_commands, llm_commands, utils_builders, deep_research_commands = load_extensions()
         return Extensions(user_commands, llm_commands, utils_builders, deep_research_commands)
@@ -84,9 +84,7 @@ class ApplicationInitializer:
         deep_research_commands: list,
     ) -> Participants:
         user_participant = self._create_user_participant(cli_args, user_control_panel)
-        assistant_participant = self._create_assistant_participant(
-            cli_args, model_factory, llm_control_panel, deep_research_commands
-        )
+        assistant_participant = self._create_assistant_participant(cli_args, model_factory, llm_control_panel, deep_research_commands)
         return Participants(user=user_participant, assistant=assistant_participant)
 
     def _create_user_participant(self, cli_args: Namespace, user_control_panel: UserControlPanel) -> UserParticipant:
@@ -168,9 +166,7 @@ class ApplicationInitializer:
             research_path=research_path,
             extension_commands=deep_research_commands,
         )
-        self.notifications_printer.print_notification(
-            f"Using Deep Research Assistant interface with research directory: {research_path}"
-        )
+        self.notifications_printer.print_notification(f"Using Deep Research Assistant interface with research directory: {research_path}")
         return LLMParticipant(deep_research_interface)
 
     def _create_chat_participant(self, model, llm_control_panel) -> LLMParticipant:

@@ -10,10 +10,7 @@ from hermes.utils_command_executor import UtilsCommandExecutor
 class ApplicationOrchestrator:
     def __init__(self):
         self.config_manager = ConfigManager()
-        self.app_initializer = ApplicationInitializer(
-            self.config_manager.get_config(),
-            self.config_manager.get_command_status_overrides()
-        )
+        self.app_initializer = ApplicationInitializer(self.config_manager.get_config(), self.config_manager.get_command_status_overrides())
 
     def run(self):
         components = self.app_initializer.get_core_components()
@@ -49,19 +46,18 @@ class ApplicationOrchestrator:
 
     def _execute_chat_mode(self, cli_args, components):
         participants = self.app_initializer.create_participants(
-            cli_args, components.user_control_panel, components.model_factory,
-            components.llm_control_panel, components.deep_research_commands
+            cli_args,
+            components.user_control_panel,
+            components.model_factory,
+            components.llm_control_panel,
+            components.deep_research_commands,
         )
         try:
             model_info = self.app_initializer.get_model_info_string(cli_args)
             self.app_initializer.print_welcome_message(model_info)
 
             history = History()
-            conversation_orchestrator = ConversationOrchestrator(
-                participants.user,
-                participants.assistant,
-                history
-            )
+            conversation_orchestrator = ConversationOrchestrator(participants.user, participants.assistant, history)
             conversation_orchestrator.start_conversation()
 
         except KeyboardInterrupt:
@@ -75,8 +71,6 @@ class ApplicationOrchestrator:
             self._cleanup_if_needed(participants.assistant)
 
     def _cleanup_if_needed(self, assistant_participant):
-        if (assistant_participant and
-            hasattr(assistant_participant, "interface") and
-            hasattr(assistant_participant.interface, "cleanup")):
+        if assistant_participant and hasattr(assistant_participant, "interface") and hasattr(assistant_participant.interface, "cleanup"):
             print("Cleaning up debug interface")
             assistant_participant.interface.cleanup()

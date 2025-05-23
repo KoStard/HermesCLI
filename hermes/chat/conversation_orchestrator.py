@@ -26,7 +26,7 @@ class ConversationOrchestrator:
         self.participants = [self.user_participant, self.assistant_participant]
         self.history = history
         self.notifications_printer = CLINotificationsPrinter()
-        
+
         self.file_operations_handler = FileOperationsHandler(self.notifications_printer)
         self.event_handler = EventHandler(
             self.notifications_printer,
@@ -70,14 +70,12 @@ class ConversationOrchestrator:
             except Exception as e:
                 self.notifications_printer.print_notification(f"Assistant request failed with {e}", CLIColors.RED)
                 import traceback
+
                 print(traceback.format_exc())
 
     def _process_user_turn(self, assistant_events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         history_snapshot = self.history.get_history_for(self.user_participant.get_name())
-        consumption_events = self.user_participant.consume_events(
-            history_snapshot, 
-            self._track_events_in_history(assistant_events)
-        )
+        consumption_events = self.user_participant.consume_events(history_snapshot, self._track_events_in_history(assistant_events))
 
         self.history.commit()
 
@@ -106,10 +104,7 @@ class ConversationOrchestrator:
 
             history_snapshot = self.history.get_history_for(self.assistant_participant.get_name())
 
-            consumption_events = self.assistant_participant.consume_events(
-                history_snapshot, 
-                self._track_events_in_history(user_events)
-            )
+            consumption_events = self.assistant_participant.consume_events(history_snapshot, self._track_events_in_history(user_events))
             action_events_stream = self.assistant_participant.act()
             events_stream = chain(consumption_events, action_events_stream)
 

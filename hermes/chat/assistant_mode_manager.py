@@ -16,7 +16,7 @@ class AssistantModeManager:
     def get_continuation_message_if_needed(self, is_first_cycle: bool) -> Generator[Event, None, None]:
         if self._is_agent_mode_enabled() and not is_first_cycle:
             from hermes.chat.event import MessageEvent
-            
+
             continuation_msg = TextMessage(
                 author="user",
                 text="AUTOMATIC RESPONSE: No ///done command found in your repsonse. "

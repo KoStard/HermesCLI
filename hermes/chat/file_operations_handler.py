@@ -43,7 +43,7 @@ class FileOperationsHandler:
         backup_path = self._generate_backup_path(file_path)
         shutil.copy2(file_path, backup_path)
         self.notifications_printer.print_notification(f"Created backup at {backup_path}")
-    
+
     def _generate_backup_path(self, file_path: str) -> str:
         backup_dir = os.path.join("/tmp", "hermes", "backups")
         os.makedirs(backup_dir, exist_ok=True)
@@ -76,7 +76,7 @@ class FileOperationsHandler:
             self._write_file_content(file_path, content + existing_content)
         else:
             self._write_file_content(file_path, content)
-    
+
     def _read_file_content(self, file_path: str) -> str:
         with open(file_path, encoding="utf-8") as file:
             return file.read()
@@ -92,7 +92,7 @@ class FileOperationsHandler:
         except ValueError as e:
             self.notifications_printer.print_notification(str(e))
             raise
-    
+
     def _notify_markdown_update_result(self, was_updated: bool, section_path: list[str], file_path: str, submode: str) -> None:
         if was_updated:
             action = "Updated" if submode == "update_markdown_section" else "Appended to"
