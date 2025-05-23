@@ -12,7 +12,7 @@ class CoreComponents:
     user_control_panel: UserControlPanel
     llm_control_panel: ChatAssistantControlPanel
     extension_utils_builders: list
-    deep_research_commands: list
+    extension_deep_research_commands: list
 
 
 @dataclass

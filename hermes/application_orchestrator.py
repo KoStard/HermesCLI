@@ -1,8 +1,11 @@
+from argparse import Namespace
 from hermes.application_initializer import ApplicationInitializer
 from hermes.chat.conversation_orchestrator import ConversationOrchestrator
 from hermes.chat.history import History
 from hermes.chat.interface.control_panel.commands_lister import CommandsLister
+from hermes.chat.participants import Participant
 from hermes.cli_parser import CLIParser
+from hermes.components_container import CoreComponents
 from hermes.config_manager import ConfigManager
 from hermes.utils_command_executor import UtilsCommandExecutor
 
@@ -44,22 +47,28 @@ class ApplicationOrchestrator:
         utils_executor = UtilsCommandExecutor(self.config_manager.get_config())
         utils_executor.execute(cli_args, extension_visitors)
 
-    def _execute_chat_mode(self, cli_args, components):
+    def _execute_chat_mode(self, cli_args: Namespace, components: CoreComponents):
+        model_info_string = self._get_model_info_string(cli_args.model)
         participants = self.app_initializer.create_participants(
             cli_args,
             components.user_control_panel,
             components.model_factory,
             components.llm_control_panel,
-            components.deep_research_commands,
+            components.extension_deep_research_commands,
+            model_info_string
         )
+        self.app_initializer.print_welcome_message(model_info_string)
+
+        history = History()
+        conversation_orchestrator = ConversationOrchestrator(participants.user, participants.assistant, history)
+        self._run_conversation(conversation_orchestrator, participants.assistant)
+
+    def _get_model_info_string(self, cli_model: str | None) -> str | None:
+        return cli_model or self.config_manager.get_default_model_info_string()
+
+    def _run_conversation(self, conversation_orchestrator: ConversationOrchestrator, assistant: Participant):
         try:
-            model_info = self.app_initializer.get_model_info_string(cli_args)
-            self.app_initializer.print_welcome_message(model_info)
-
-            history = History()
-            conversation_orchestrator = ConversationOrchestrator(participants.user, participants.assistant, history)
             conversation_orchestrator.start_conversation()
-
         except KeyboardInterrupt:
             print("\nExiting gracefully...")
         except EOFError:
@@ -68,7 +77,7 @@ class ApplicationOrchestrator:
             print("Error occurred:")
             raise e
         finally:
-            self._cleanup_if_needed(participants.assistant)
+            self._cleanup_if_needed(assistant)
 
     def _cleanup_if_needed(self, assistant_participant):
         if assistant_participant and hasattr(assistant_participant, "interface") and hasattr(assistant_participant.interface, "cleanup"):
