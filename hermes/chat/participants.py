@@ -18,6 +18,10 @@ class Participant(ABC):
         pass
 
     @abstractmethod
+    def get_interface(self) -> Interface:
+        pass
+
+    @abstractmethod
     def act(self) -> Generator[Event, None, None]:
         pass
 
@@ -47,6 +51,9 @@ class DebugParticipant(Participant):
     def consume_events(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         return self.interface.render(history_snapshot, events)
 
+    def get_interface(self) -> Interface:
+        return self.interface
+
     def act(self) -> Generator[Event, None, None]:
         return self.interface.get_input()
 
@@ -71,6 +78,9 @@ class LLMParticipant(Participant):
         logger.debug("Asked to consume events on LLM", self.interface)
         return self.interface.render(history_snapshot, events)
 
+    def get_interface(self) -> Interface:
+        return self.interface
+
     def act(self) -> Generator[Event, None, None]:
         logger.debug("Asked to act on LLM", self.interface)
         return self.interface.get_input()
@@ -94,6 +104,9 @@ class UserParticipant(Participant):
 
     def consume_events(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
         return self.interface.render(history_snapshot, events)
+
+    def get_interface(self) -> Interface:
+        return self.interface
 
     def act(self) -> Generator[Event, None, None]:
         return self.interface.get_input()
