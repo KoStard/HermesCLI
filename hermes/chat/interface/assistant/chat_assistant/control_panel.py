@@ -39,9 +39,9 @@ class ChatAssistantControlPanel(ControlPanel):
     def __init__(
         self,
         notifications_printer: CLINotificationsPrinter,
-        extra_commands: list | None = None,
-        exa_client: ExaClient | None = None,
-        command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] | None = None,
+        extra_commands: list | None,
+        exa_client: ExaClient,
+        command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] | None,
     ):
         super().__init__()
         self.notifications_printer = notifications_printer

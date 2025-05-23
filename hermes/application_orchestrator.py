@@ -55,7 +55,7 @@ class ApplicationOrchestrator:
             components.model_factory,
             components.llm_control_panel,
             components.extension_deep_research_commands,
-            model_info_string
+            model_info_string,
         )
         self.app_initializer.print_welcome_message(model_info_string)
 

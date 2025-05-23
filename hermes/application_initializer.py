@@ -18,7 +18,7 @@ from hermes.chat.interface.user.interface.stt_input_handler import STTInputHandl
 from hermes.chat.interface.user.interface.user_interface import UserInterface
 from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant
 from hermes.components_container import CoreComponents, Participants
-from hermes.extensions_loader import load_extensions
+from hermes.extensions_loader import Extensions, ExtensionsLoader
 
 
 class ApplicationInitializer:
@@ -28,7 +28,7 @@ class ApplicationInitializer:
         self.notifications_printer = CLINotificationsPrinter()
 
     def get_core_components(self) -> CoreComponents:
-        extensions = load_extensions()
+        extensions = self._load_extensions()
         model_factory = self._create_model_factory()
         exa_client = self._create_exa_client()
 
@@ -43,13 +43,17 @@ class ApplicationInitializer:
             extension_deep_research_commands=extensions.deep_research_commands,
         )
 
+    def _load_extensions(self) -> Extensions:
+        return ExtensionsLoader().load_extensions()
+
     def _create_model_factory(self) -> ModelFactory:
         return ModelFactory(self.notifications_printer)
 
-    def _create_exa_client(self) -> ExaClient | None:
+    def _create_exa_client(self) -> ExaClient:
+        api_key = None
         if "EXA" in self.config and "api_key" in self.config["EXA"]:
-            return ExaClient(self.config["EXA"]["api_key"])
-        return None
+            api_key = self.config["EXA"]["api_key"]
+        return ExaClient(api_key)
 
     def _create_llm_control_panel(self, llm_commands, exa_client) -> ChatAssistantControlPanel:
         return ChatAssistantControlPanel(
@@ -77,7 +81,9 @@ class ApplicationInitializer:
         model_info_string: str | None,
     ) -> Participants:
         user_participant = self._create_user_participant(cli_args, user_control_panel)
-        assistant_participant = self._create_assistant_participant(cli_args, model_factory, llm_control_panel, extension_deep_research_commands, model_info_string)
+        assistant_participant = self._create_assistant_participant(
+            cli_args, model_factory, llm_control_panel, extension_deep_research_commands, model_info_string
+        )
         return Participants(user=user_participant, assistant=assistant_participant)
 
     def _create_user_participant(self, cli_args: Namespace, user_control_panel: UserControlPanel) -> UserParticipant:
@@ -130,7 +136,7 @@ class ApplicationInitializer:
         model_factory: ModelFactory,
         llm_control_panel: ChatAssistantControlPanel,
         extension_deep_research_commands: list,
-        model_info_string: str | None
+        model_info_string: str | None,
     ):
         model_info_string = self._validate_model_info_string(model_info_string)
 
@@ -151,8 +157,8 @@ class ApplicationInitializer:
         return DebugParticipant(debug_interface)
 
     def _create_deep_research_participant(self, cli_args, model, extension_deep_research_commands) -> LLMParticipant:
-        research_path = Path(cli_args.deep_research).absolute().resolve()
         from hermes.chat.interface.assistant.agent.deep_research.interface import DeepResearchAssistantInterface
+        research_path = Path(cli_args.deep_research).absolute()
 
         deep_research_interface = DeepResearchAssistantInterface(
             model=model,
