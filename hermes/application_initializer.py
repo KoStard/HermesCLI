@@ -28,7 +28,7 @@ class ApplicationInitializer:
         self.notifications_printer = CLINotificationsPrinter()
 
     def get_core_components(self) -> CoreComponents:
-        extensions = self._load_extensions()
+        extensions = load_extensions()
         model_factory = self._create_model_factory()
         exa_client = self._create_exa_client()
 
@@ -40,16 +40,8 @@ class ApplicationInitializer:
             user_control_panel=user_control_panel,
             llm_control_panel=llm_control_panel,
             extension_utils_builders=extensions.utils_builders,
-            deep_research_commands=extensions.deep_research_commands,
+            extension_deep_research_commands=extensions.deep_research_commands,
         )
-
-    def _load_extensions(self):
-        from collections import namedtuple
-
-        Extensions = namedtuple("Extensions", ["user_commands", "llm_commands", "utils_builders", "deep_research_commands"])
-
-        user_commands, llm_commands, utils_builders, deep_research_commands = load_extensions()
-        return Extensions(user_commands, llm_commands, utils_builders, deep_research_commands)
 
     def _create_model_factory(self) -> ModelFactory:
         return ModelFactory(self.notifications_printer)
@@ -81,10 +73,11 @@ class ApplicationInitializer:
         user_control_panel: UserControlPanel,
         model_factory: ModelFactory,
         llm_control_panel: ChatAssistantControlPanel,
-        deep_research_commands: list,
+        extension_deep_research_commands: list,
+        model_info_string: str | None,
     ) -> Participants:
         user_participant = self._create_user_participant(cli_args, user_control_panel)
-        assistant_participant = self._create_assistant_participant(cli_args, model_factory, llm_control_panel, deep_research_commands)
+        assistant_participant = self._create_assistant_participant(cli_args, model_factory, llm_control_panel, extension_deep_research_commands, model_info_string)
         return Participants(user=user_participant, assistant=assistant_participant)
 
     def _create_user_participant(self, cli_args: Namespace, user_control_panel: UserControlPanel) -> UserParticipant:
@@ -111,7 +104,7 @@ class ApplicationInitializer:
         else:
             logging.basicConfig(level=logging.INFO)
 
-    def print_welcome_message(self, model_info_string: str):
+    def print_welcome_message(self, model_info_string: str | None):
         self.notifications_printer.print_notification(
             textwrap.dedent(
                 f"""
@@ -136,10 +129,10 @@ class ApplicationInitializer:
         cli_args: Namespace,
         model_factory: ModelFactory,
         llm_control_panel: ChatAssistantControlPanel,
-        deep_research_commands: list,
+        extension_deep_research_commands: list,
+        model_info_string: str | None
     ):
-        model_info_string = self.get_model_info_string(cli_args)
-        self._validate_model_info_string(model_info_string)
+        model_info_string = self._validate_model_info_string(model_info_string)
 
         provider, model_tag = model_info_string.split("/", 1)
         provider = provider.upper()
@@ -149,7 +142,7 @@ class ApplicationInitializer:
         if cli_args.debug:
             return self._create_debug_participant(model, llm_control_panel)
         elif cli_args.deep_research:
-            return self._create_deep_research_participant(cli_args, model, deep_research_commands)
+            return self._create_deep_research_participant(cli_args, model, extension_deep_research_commands)
         else:
             return self._create_chat_participant(model, llm_control_panel)
 
@@ -157,14 +150,14 @@ class ApplicationInitializer:
         debug_interface = DebugInterface(control_panel=llm_control_panel, model=model)
         return DebugParticipant(debug_interface)
 
-    def _create_deep_research_participant(self, cli_args, model, deep_research_commands) -> LLMParticipant:
+    def _create_deep_research_participant(self, cli_args, model, extension_deep_research_commands) -> LLMParticipant:
         research_path = Path(cli_args.deep_research).absolute().resolve()
         from hermes.chat.interface.assistant.agent.deep_research.interface import DeepResearchAssistantInterface
 
         deep_research_interface = DeepResearchAssistantInterface(
             model=model,
             research_path=research_path,
-            extension_commands=deep_research_commands,
+            extension_commands=extension_deep_research_commands,
         )
         self.notifications_printer.print_notification(f"Using Deep Research Assistant interface with research directory: {research_path}")
         return LLMParticipant(deep_research_interface)
@@ -173,16 +166,7 @@ class ApplicationInitializer:
         llm_interface = ChatAssistantInterface(model, control_panel=llm_control_panel)
         return LLMParticipant(llm_interface)
 
-    def get_model_info_string(self, cli_args: Namespace) -> str:
-        from hermes.config_manager import ConfigManager
-
-        config_manager = ConfigManager()
-        model_info_string = cli_args.model
-        if not model_info_string:
-            model_info_string = config_manager.get_default_model_info_string()
-        return model_info_string
-
-    def _validate_model_info_string(self, model_info_string: str):
+    def _validate_model_info_string(self, model_info_string: str | None) -> str:
         if not model_info_string:
             raise ValueError(
                 "No model specified. Please specify a model using the --model argument or add a default model in the config "
@@ -190,3 +174,4 @@ class ApplicationInitializer:
             )
         if "/" not in model_info_string:
             raise ValueError("Model info string should be in the format provider/model_tag")
+        return model_info_string

@@ -5,6 +5,7 @@
 # In case of failures, just print an error notification and continue
 # Use module import logic to import the extension
 
+from collections import namedtuple
 import importlib.util
 import logging
 import sys
@@ -49,12 +50,10 @@ def get_extension_commands(module: ModuleType, function_name: str) -> list[Contr
     return []
 
 
-def load_extensions() -> tuple[
-    list[ControlPanelCommand],
-    list[ControlPanelCommand],
-    list[Callable],
-    list[type[Command]],
-]:
+Extensions = namedtuple("Extensions", ["user_commands", "llm_commands", "utils_builders", "deep_research_commands"])
+
+
+def load_extensions() -> Extensions:
     """
     Load all extensions and return their commands and utils
     Returns: (user_commands, llm_commands, utils_builders, deep_research_commands)
@@ -67,7 +66,7 @@ def load_extensions() -> tuple[
     extensions_dir = get_extensions_dir_path()
     if not extensions_dir.exists():
         logging.info(f"Extensions directory not found at {extensions_dir}, skipping extension loading.")
-        return [], [], [], []
+        return Extensions([], [], [], [])
 
     # Scan for extension.py files in subdirectories
     for extension_dir in extensions_dir.iterdir():
@@ -105,4 +104,4 @@ def load_extensions() -> tuple[
             except Exception as e:
                 logging.warning(f"Failed to get utils builders: {str(e)}")
 
-    return user_commands, llm_commands, utils_builders, deep_research_commands
+    return Extensions(user_commands, llm_commands, utils_builders, deep_research_commands)
