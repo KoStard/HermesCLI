@@ -4,6 +4,7 @@ import textwrap
 from argparse import Namespace
 from pathlib import Path
 
+from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.chat.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
 from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.chat.interface.assistant.models.model_factory import ModelFactory
@@ -21,7 +22,7 @@ from hermes.extensions_loader import load_extensions
 
 
 class ApplicationInitializer:
-    def __init__(self, config: configparser.ConfigParser, command_status_overrides: dict[str, str]):
+    def __init__(self, config: configparser.ConfigParser, command_status_overrides: dict[str, ChatAssistantCommandStatusOverride]):
         self.config = config
         self.command_status_overrides = command_status_overrides
         self.notifications_printer = CLINotificationsPrinter()
