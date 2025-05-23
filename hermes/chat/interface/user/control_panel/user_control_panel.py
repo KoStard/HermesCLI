@@ -45,8 +45,8 @@ class UserControlPanel(ControlPanel):
         *,
         notifications_printer: CLINotificationsPrinter,
         extra_commands: list[ControlPanelCommand],
-        exa_client: ExaClient | None = None,
-        llm_control_panel=None,
+        exa_client: ExaClient,
+        llm_control_panel,
         is_deep_research_mode=False,
     ):
         super().__init__()
