@@ -9,24 +9,31 @@ class CLIParser:
         self.user_control_panel = user_control_panel
         self.model_factory = model_factory
 
-    def build_parser(self):
-        parser = ArgumentParser()
-        subparsers = parser.add_subparsers(dest="execution_mode", required=True)
-        
+        self._parser = ArgumentParser()
+        subparsers = self._parser.add_subparsers(dest="execution_mode", required=True)
+
         chat_parser = self._build_chat_parser(subparsers)
-        utils_subparsers = self._build_utils_parser(subparsers)
+        self._utils_subparsers = self._build_utils_parser(subparsers)
         self._build_info_parser(subparsers)
-        
+
         self.user_control_panel.build_cli_arguments(chat_parser)
-        
-        return parser, utils_subparsers
+
+
+    def register_extensions_and_get_visitors(self, extension_utils_builders: list) -> list:
+        extension_visitors = []
+        for builder in extension_utils_builders:
+            extension_visitors.append(builder(self._utils_subparsers))
+        return extension_visitors
+
+    def parse_args(self):
+        return self._parser.parse_args()
 
     def _build_chat_parser(self, subparsers):
         chat_parser = subparsers.add_parser("chat", help="Get command information")
         chat_parser.add_argument("--debug", action="store_true")
 
         suggested_models = ", ".join(
-            f"{provider.lower()}/{model_tag}" 
+            f"{provider.lower()}/{model_tag}"
             for provider, model_tag in self.model_factory.get_provider_model_pairs()
         )
 
@@ -52,7 +59,7 @@ class CLIParser:
             action="store_true",
             help="Enable verbose logging (DEBUG level)",
         )
-        
+
         return chat_parser
 
     def _build_utils_parser(self, subparsers):
@@ -92,7 +99,7 @@ class CLIParser:
             help="Number of results to return (default: 5)",
             default=5,
         )
-        
+
         return utils_subparsers
 
     def _build_info_parser(self, subparsers):
@@ -101,5 +108,5 @@ class CLIParser:
 
         info_subparsers.add_parser("list-assistant-commands", help="List all assistant commands")
         info_subparsers.add_parser("list-user-commands", help="List all user commands")
-        
+
         return info_subparsers
