@@ -106,8 +106,8 @@ class ApplicationInitializer:
         )
         return UserParticipant(user_interface)
 
-    def setup_logging(self, cli_args: Namespace):
-        if hasattr(cli_args, "verbose") and cli_args.verbose:
+    def setup_logging(self, verbose: bool):
+        if verbose:
             logging.basicConfig(level=logging.DEBUG)
             logging.debug("Debug logging enabled")
         else:

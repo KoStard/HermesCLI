@@ -19,16 +19,14 @@ class ApplicationOrchestrator:
         components = self.app_initializer.get_core_components()
         cli_parser = CLIParser(components.user_control_panel, components.model_factory)
 
-        cli_args_parser, utils_subparsers = cli_parser.build_parser()
-        extension_visitors = self._register_extensions(components.extension_utils_builders, utils_subparsers)
-
-        cli_args = cli_args_parser.parse_args()
-        self.app_initializer.setup_logging(cli_args)
+        extension_utils_visitors = cli_parser.register_extensions_and_get_visitors(components.extension_utils_builders)
+        cli_args = cli_parser.parse_args()
+        self.app_initializer.setup_logging(cli_args.verbose)
 
         if cli_args.execution_mode == "info":
             self._execute_info_mode(cli_args, components)
         elif cli_args.execution_mode == "utils":
-            self._execute_utils_mode(cli_args, extension_visitors)
+            self._execute_utils_mode(cli_args, extension_utils_visitors)
         else:
             self._execute_chat_mode(cli_args, components)
 
