@@ -27,7 +27,7 @@ class ExaSearchResult:
 class ExaClient:
     def __init__(self, api_key: str | None):
         self._api_key = api_key
-        self._clien: "Exa" = None
+        self._clien: Exa = None
 
     def get_contents(self, url: str, text: bool = True) -> list[ExaContentResult]:
         """Get contents of a URL with error handling and validation"""
