@@ -1,13 +1,13 @@
 from collections.abc import Generator, Iterable
 
-from hermes.chat.event import Event, MessageEvent, NotificationEvent
+from hermes.chat.events import Event, MessageEvent, NotificationEvent
 from hermes.chat.interface.helpers.cli_notifications import (
     CLIColors,
     CLINotificationsPrinter,
 )
 from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
 from hermes.chat.interface.markdown.markdown_highlighter import MarkdownHighlighter
-from hermes.chat.message import Message, TextGeneratorMessage, TextMessage
+from hermes.chat.messages import Message, TextGeneratorMessage, TextMessage
 
 
 class EventRenderer:

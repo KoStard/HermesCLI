@@ -4,7 +4,7 @@ from argparse import ArgumentParser, Namespace
 from collections.abc import Generator
 from datetime import datetime, timezone
 
-from hermes.chat.event import (
+from hermes.chat.events import (
     AgentModeEvent,
     ClearHistoryEvent,
     DeepResearchBudgetEvent,
@@ -21,7 +21,7 @@ from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrin
 from hermes.chat.interface.helpers.terminal_coloring import CLIColors
 from hermes.chat.interface.user.control_panel.exa_client import ExaClient
 from hermes.chat.interface.user.control_panel.fuzzy_selector import FuzzyFilesSelector
-from hermes.chat.message import (
+from hermes.chat.messages import (
     AudioFileMessage,
     EmbeddedPDFMessage,
     ImageMessage,

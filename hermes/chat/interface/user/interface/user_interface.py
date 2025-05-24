@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from hermes.chat.event import Event
+from hermes.chat.events import Event
 from hermes.chat.history import History
 from hermes.chat.interface import Interface
 from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotificationsPrinter
@@ -11,7 +11,7 @@ from hermes.chat.interface.user.interface.command_completer.command_completer im
 from hermes.chat.interface.user.interface.event_renderer import EventRenderer
 from hermes.chat.interface.user.interface.input_handler import InputHandler
 from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
-from hermes.chat.message import Message
+from hermes.chat.messages import Message
 
 
 class UserInterface(Interface):

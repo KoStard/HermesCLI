@@ -2,7 +2,7 @@ import logging
 from collections.abc import Generator
 from typing import Any
 
-from hermes.chat.event import (
+from hermes.chat.events import (
     Event,
     MessageEvent,
     RawContentForHistoryEvent,
@@ -16,7 +16,7 @@ from hermes.chat.interface.assistant.chat_assistant.response_types import (
     TextLLMResponse,
 )
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
-from hermes.chat.message import (
+from hermes.chat.messages import (
     Message,
     TextMessage,
     ThinkingAndResponseGeneratorMessage,

@@ -7,14 +7,14 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 
-from hermes.chat.event import Event, MessageEvent, RawContentForHistoryEvent
+from hermes.chat.events import Event, MessageEvent, RawContentForHistoryEvent
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
 from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
 from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
 from hermes.chat.interface.user.interface.message_source import MessageSource
 from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
-from hermes.chat.message import TextMessage
+from hermes.chat.messages import TextMessage
 
 
 class InputHandler:

@@ -4,7 +4,7 @@ from collections.abc import Generator, Sequence
 from pathlib import Path
 
 # Import other necessary types
-from hermes.chat.event import Event, MessageEvent
+from hermes.chat.events import Event, MessageEvent
 from hermes.chat.history import History
 from hermes.chat.interface import Interface
 from hermes.chat.interface.assistant.agent.deep_research.commands.command_context_factory import CommandContextFactoryImpl
@@ -26,7 +26,7 @@ from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
 from hermes.chat.interface.templates.template_manager import TemplateManager
-from hermes.chat.message import Message, TextMessage, TextualFileMessage
+from hermes.chat.messages import Message, TextMessage, TextualFileMessage
 from hermes.utils.file_reader import FileReader
 
 logger = logging.getLogger(__name__)
