@@ -41,7 +41,8 @@ class Repo:
             The created Research instance
         """
         if name in self._research_instances:
-            raise ValueError(f"Research instance '{name}' already exists")
+            print(f"Research instance '{name}' already exists")
+            return self._research_instances[name]
 
         # Create a subdirectory for this research
         research_path = self.dual_directory_file_system.get_path_in_research_from_root(Path(name))
