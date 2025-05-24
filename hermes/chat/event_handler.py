@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import Iterable
 
 from hermes.chat.event import (
     AgentModeEvent,
@@ -36,11 +37,15 @@ class EventHandler:
         self.participants = participants
         self.assistant_participant = assistant_participant
         self._received_assistant_done_event = False
-        self._once_mode = False
+        self._should_exit_after_one_cycle = False
 
         self._event_handlers = self._build_event_handler_map()
 
-    def handle_engine_commands_from_stream(self, stream: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def reset(self):
+        self._received_assistant_done_event = False
+        self._should_exit_after_one_cycle = False
+
+    def swallow_engine_commands_from_stream(self, stream: Iterable[Event]) -> Generator[Event, None, None]:
         for event in stream:
             if isinstance(event, EngineCommandEvent):
                 self._handle_engine_command(event)
@@ -120,7 +125,7 @@ class EventHandler:
         self.notifications_printer.print_notification(f"LLM command execution {status}")
 
     def _handle_once_mode(self, event: OnceEvent) -> None:
-        self._once_mode = event.enabled
+        self._should_exit_after_one_cycle = event.enabled
         status = "enabled" if event.enabled else "disabled"
         self.notifications_printer.print_notification(f"Once mode {status}")
 
@@ -157,14 +162,6 @@ class EventHandler:
     def received_assistant_done_event(self) -> bool:
         return self._received_assistant_done_event
 
-    @received_assistant_done_event.setter
-    def received_assistant_done_event(self, value: bool) -> None:
-        self._received_assistant_done_event = value
-
     @property
-    def once_mode(self) -> bool:
-        return self._once_mode
-
-    @once_mode.setter
-    def once_mode(self, value: bool) -> None:
-        self._once_mode = value
+    def should_exit_after_one_cycle(self) -> bool:
+        return self._should_exit_after_one_cycle

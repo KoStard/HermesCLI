@@ -50,11 +50,7 @@ class UserInterface(Interface):
         self.notifications_printer = notifications_printer
         self.user_input_from_cli = user_input_from_cli
 
-    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
-        if not self.control_panel_has_rendered:
-            print_colored_text(self.control_panel.render(), CLIColors.GREEN)
-            self.control_panel_has_rendered = True
-
+    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
         last_author = None
         for event in events:
             if not isinstance(event, MessageEvent):
@@ -87,12 +83,14 @@ class UserInterface(Interface):
                     for chunk in message.get_content_for_user():
                         print(chunk, end="", flush=True)
         print()
-        yield from []
 
     def print_author(self, author: str):
         print_colored_text(f"\n{author}: ", CLIColors.YELLOW, end="", flush=True)
 
     def get_input(self) -> Generator[Event, None, None]:
+        if not self.control_panel_has_rendered:
+            print_colored_text(self.control_panel.render(), CLIColors.GREEN)
+            self.control_panel_has_rendered = True
         message_source = "terminal"
         if self.user_input_from_cli:
             user_input = self.user_input_from_cli

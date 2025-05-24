@@ -71,8 +71,6 @@ class ApplicationOrchestrator:
     def _run_conversation(self, conversation_orchestrator: ConversationOrchestrator, assistant: Participant):
         try:
             conversation_orchestrator.start_conversation()
-        except KeyboardInterrupt:
-            print("\nExiting gracefully...")
         except EOFError:
             print("\nExiting gracefully...")
         except ValueError as e:
