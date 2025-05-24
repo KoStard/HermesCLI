@@ -12,9 +12,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Generator
 
 if typing.TYPE_CHECKING:
-    from hermes.chat.event import Event
+    from hermes.chat.events import Event
     from hermes.chat.history import History
-    from hermes.chat.message import Message
+    from hermes.chat.messages import Message
 
 
 class Interface(ABC):

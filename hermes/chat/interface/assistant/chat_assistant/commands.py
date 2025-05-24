@@ -3,14 +3,14 @@ import os
 from collections.abc import Generator
 from typing import Any
 
-from hermes.chat.event import (
+from hermes.chat.events import (
     AssistantDoneEvent,
     Event,
     MessageEvent,
 )
 from hermes.chat.interface.commands.command import Command
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
-from hermes.chat.message import (
+from hermes.chat.messages import (
     AssistantNotificationMessage,
     LLMRunCommandOutput,
     TextMessage,

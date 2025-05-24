@@ -6,13 +6,13 @@ import subprocess
 import sys
 from collections.abc import Generator
 
-from hermes.chat.event import Event
+from hermes.chat.events import Event
 from hermes.chat.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
 )
 from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssistantInterface
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
-from hermes.chat.message import TextMessage
+from hermes.chat.messages import TextMessage
 
 
 class DebugInterface(ChatAssistantInterface):

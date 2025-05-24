@@ -5,8 +5,8 @@ History keeps track of the messages in the conversation.
 import json
 from dataclasses import dataclass
 
-from hermes.chat.event import Event, MessageEvent, RawContentForHistoryEvent
-from hermes.chat.message import (
+from hermes.chat.events import Event, MessageEvent, RawContentForHistoryEvent
+from hermes.chat.messages import (
     DESERIALIZATION_KEYMAP,
     Message,
 )

@@ -11,7 +11,7 @@ from hermes.chat.interface.assistant.chat_assistant.response_types import (
     ThinkingLLMResponse,
 )
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
-from hermes.chat.message import TextMessage
+from hermes.chat.messages import TextMessage
 
 logger = logging.getLogger(__name__)
 

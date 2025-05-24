@@ -6,7 +6,7 @@ from typing import Any
 
 from hermes.chat.interface.assistant.models.prompt_builder.base import PromptBuilderFactory
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.chat.message import (
+from hermes.chat.messages import (
     AudioFileMessage,
     EmbeddedPDFMessage,
     ImageMessage,

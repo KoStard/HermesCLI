@@ -3,7 +3,7 @@ import os
 import textwrap
 from collections.abc import Generator
 
-from hermes.chat.event import Event, MessageEvent
+from hermes.chat.events import Event, MessageEvent
 from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.chat.interface.commands.command import Command, CommandRegistry
 from hermes.chat.interface.commands.command_parser import CommandParser
@@ -11,7 +11,7 @@ from hermes.chat.interface.control_panel import ControlPanel
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.chat.interface.helpers.terminal_coloring import CLIColors
 from hermes.chat.interface.user.control_panel.exa_client import ExaClient
-from hermes.chat.message import (
+from hermes.chat.messages import (
     Message,
     TextGeneratorMessage,
     TextMessage,
