@@ -76,8 +76,12 @@ class AgentEngine(Generic[CommandContextType]):
         """
         problem_definition = ProblemDefinition(content=instruction)
         node = ResearchNodeImpl(
-            problem=problem_definition, title=instruction, path=self.research.get_root_directory(), parent=None, task_tree=self.task_tree,
-            dual_directory_fs=self.dual_directory_file_system
+            problem=problem_definition,
+            title=instruction,
+            path=self.research.get_root_directory(),
+            parent=None,
+            task_tree=self.task_tree,
+            dual_directory_fs=self.dual_directory_file_system,
         )
         self.research.initiate_research(node)
         node.set_problem_status(ProblemStatus.READY_TO_START)

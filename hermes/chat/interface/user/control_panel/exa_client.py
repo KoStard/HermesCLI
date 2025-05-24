@@ -1,4 +1,8 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from exa_py import Exa
 
 
 @dataclass
@@ -21,14 +25,13 @@ class ExaSearchResult:
 
 
 class ExaClient:
-    def __init__(self, api_key: str):
-        from exa_py import Exa
-
-        self.client = Exa(api_key=api_key)
+    def __init__(self, api_key: str | None):
+        self._api_key = api_key
+        self._clien: Exa = None
 
     def get_contents(self, url: str, text: bool = True) -> list[ExaContentResult]:
         """Get contents of a URL with error handling and validation"""
-        response = self.client.get_contents([url], text=text)
+        response = self._get_client().get_contents([url], text=text)
         return [
             ExaContentResult(
                 url=result.url,
@@ -42,9 +45,9 @@ class ExaClient:
             for result in response.results
         ]
 
-    def search(self, query: str, num_results: int = 10) -> list[ExaContentResult]:
+    def search(self, query: str, num_results: int = 10) -> list[ExaSearchResult]:
         """Search for a query and return the results"""
-        response = self.client.search(query, num_results=num_results)
+        response = self._get_client().search(query, num_results=num_results)
         return [
             ExaSearchResult(
                 url=result.url,
@@ -54,3 +57,12 @@ class ExaClient:
             )
             for result in response.results
         ]
+
+    def _get_client(self) -> "Exa":
+        if self._client:
+            return self._client
+
+        from exa_py import Exa
+
+        self._client = Exa(api_key=self.api_key)
+        return self._client

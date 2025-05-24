@@ -144,8 +144,7 @@ class DeepResearcherInterface(AgentInterface):
 
         # Use factory method for ArtifactsSectionData
         all_data[ArtifactsSectionData] = ArtifactsSectionData.from_artifact_lists(
-            external_files_dict=external_files,
-            node_artifacts_list=node_artifacts_list
+            external_files_dict=external_files, node_artifacts_list=node_artifacts_list
         )
 
         # Problem Hierarchy (Short) - Use factory method

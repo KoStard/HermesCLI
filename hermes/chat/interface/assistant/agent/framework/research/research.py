@@ -31,17 +31,21 @@ class ResearchImpl(Research):
         self._research_initiated = False
 
         # Create instances for knowledge base and external files
-        self._knowledge_base = KnowledgeBase(self.file_system, self.dual_directory_file_system.get_research_path(Path("_knowledge_base.md")))
+        self._knowledge_base = KnowledgeBase(
+            self.file_system, self.dual_directory_file_system.get_research_path(Path("_knowledge_base.md"))
+        )
         self._external_files_manager = ExternalFilesManager(
-            self.file_system,
-            self.dual_directory_file_system.get_research_path(Path("_ExternalFiles"))
+            self.file_system, self.dual_directory_file_system.get_research_path(Path("_ExternalFiles"))
         )
 
     def research_already_exists(self) -> bool:
         """Check if research data already exists in the root directory"""
         # Look for the research metadata file
-        return (self.root_directory.exists() and self.dual_directory_file_system.get_research_path().exists()
-            and not self.file_system.is_empty(self.dual_directory_file_system.get_research_path()))
+        return (
+            self.root_directory.exists()
+            and self.dual_directory_file_system.get_research_path().exists()
+            and not self.file_system.is_empty(self.dual_directory_file_system.get_research_path())
+        )
 
     def is_research_initiated(self) -> bool:
         """Return whether research has been initiated"""

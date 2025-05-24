@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 
 from hermes.chat.event import (
     AgentModeEvent,
@@ -21,7 +21,7 @@ from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotifi
 from hermes.chat.participants import Participant
 
 
-class EventHandler:
+class EngineEventHandler:
     def __init__(
         self,
         notifications_printer: CLINotificationsPrinter,
@@ -36,16 +36,9 @@ class EventHandler:
         self.participants = participants
         self.assistant_participant = assistant_participant
         self._received_assistant_done_event = False
-        self._once_mode = False
+        self._should_exit_after_one_cycle = False
 
         self._event_handlers = self._build_event_handler_map()
-
-    def handle_engine_commands_from_stream(self, stream: Generator[Event, None, None]) -> Generator[Event, None, None]:
-        for event in stream:
-            if isinstance(event, EngineCommandEvent):
-                self._handle_engine_command(event)
-                continue
-            yield event
 
     def _build_event_handler_map(self):
         return {
@@ -62,21 +55,27 @@ class EventHandler:
             FileEditEvent: self._handle_file_edit,
         }
 
+    def reset(self):
+        self._received_assistant_done_event = False
+        self._should_exit_after_one_cycle = False
+
+    def swallow_engine_commands_from_stream(self, stream: Iterable[Event]) -> Generator[Event, None, None]:
+        for event in stream:
+            if isinstance(event, EngineCommandEvent):
+                self._handle_engine_command(event)
+                continue
+            yield event
+
     def _handle_engine_command(self, event: EngineCommandEvent) -> None:
         event_type = type(event)
         handler = self._event_handlers.get(event_type)
 
         if handler:
-            if event_type in [SaveHistoryEvent, LoadHistoryEvent, AgentModeEvent,
-                             LLMCommandsExecutionEvent, OnceEvent, ThinkingLevelEvent,
-                             DeepResearchBudgetEvent, FileEditEvent]:
-                handler(event)
-            else:
-                handler()
+            handler(event)
         else:
             print(f"Unknown engine command, skipping: {event}")
 
-    def _handle_clear_history(self) -> None:
+    def _handle_clear_history(self, _: ClearHistoryEvent) -> None:
         self.notifications_printer.print_notification("Clearing history")
         self.history.clear()
         for participant in self.participants:
@@ -92,7 +91,7 @@ class EventHandler:
         for participant in self.participants:
             participant.initialize_from_history(self.history)
 
-    def _handle_exit(self) -> None:
+    def _handle_exit(self, _: ExitEvent) -> None:
         raise EOFError
 
     def _handle_agent_mode(self, event: AgentModeEvent) -> None:
@@ -103,7 +102,7 @@ class EventHandler:
             self.assistant_participant.get_interface().control_panel.disable_agent_mode()
             self.notifications_printer.print_notification("Agent mode disabled")
 
-    def _handle_assistant_done(self) -> None:
+    def _handle_assistant_done(self, _: AssistantDoneEvent) -> None:
         self.notifications_printer.print_notification("Assistant marked task as done")
         self._received_assistant_done_event = True
 
@@ -113,7 +112,7 @@ class EventHandler:
         self.notifications_printer.print_notification(f"LLM command execution {status}")
 
     def _handle_once_mode(self, event: OnceEvent) -> None:
-        self._once_mode = event.enabled
+        self._should_exit_after_one_cycle = event.enabled
         status = "enabled" if event.enabled else "disabled"
         self.notifications_printer.print_notification(f"Once mode {status}")
 
@@ -150,14 +149,6 @@ class EventHandler:
     def received_assistant_done_event(self) -> bool:
         return self._received_assistant_done_event
 
-    @received_assistant_done_event.setter
-    def received_assistant_done_event(self, value: bool) -> None:
-        self._received_assistant_done_event = value
-
     @property
-    def once_mode(self) -> bool:
-        return self._once_mode
-
-    @once_mode.setter
-    def once_mode(self, value: bool) -> None:
-        self._once_mode = value
+    def should_exit_after_one_cycle(self) -> bool:
+        return self._should_exit_after_one_cycle

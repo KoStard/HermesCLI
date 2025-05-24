@@ -4,6 +4,7 @@ import textwrap
 from collections.abc import Generator
 
 from hermes.chat.event import Event, MessageEvent
+from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.chat.interface.commands.command import Command, CommandRegistry
 from hermes.chat.interface.commands.command_parser import CommandParser
 from hermes.chat.interface.control_panel import ControlPanel
@@ -38,9 +39,9 @@ class ChatAssistantControlPanel(ControlPanel):
     def __init__(
         self,
         notifications_printer: CLINotificationsPrinter,
-        extra_commands: list | None = None,
-        exa_client: ExaClient | None = None,
-        command_status_overrides: dict | None = None,
+        extra_commands: list | None,
+        exa_client: ExaClient,
+        command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] | None,
     ):
         super().__init__()
         self.notifications_printer = notifications_printer
@@ -70,7 +71,9 @@ class ChatAssistantControlPanel(ControlPanel):
 
         # Map of command ID to command status override
         # Possible status values: ON, OFF, AGENT_ONLY
-        self._command_status_overrides = command_status_overrides if command_status_overrides is not None else {}
+        self._command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] = (
+            command_status_overrides if command_status_overrides is not None else {}
+        )
 
     def _add_initial_help_content(self):
         """Add initial help content about command usage"""
@@ -261,31 +264,25 @@ class ChatAssistantControlPanel(ControlPanel):
 
         commands = self.command_registry.get_all_commands()
         for name, command in sorted(commands.items()):
-            command_status_override = self._command_status_overrides.get(name)
-
-            # Determine if command should be displayed based on:
-            # 1. Status override if present
-            # 2. Agent mode requirements (for agent commands)
-            is_enabled = False
-
-            additional_information = command.get_additional_information()
-
-            is_agent_command = additional_information.get("is_agent_only")
-
-            if command_status_override == "OFF":
-                is_enabled = False
-            elif command_status_override == "ON":
-                is_enabled = True
-            elif command_status_override == "AGENT_ONLY":
-                is_enabled = self._agent_mode
-            else:
-                if not is_agent_command or self._agent_mode:
-                    is_enabled = True
-
-            if is_enabled:
+            if self._is_command_enabled(name, command):
                 content.append(self._render_command_help(name, command))
 
         return "\n".join(content)
+
+    def _is_command_enabled(self, name: str, command: Command) -> bool:
+        additional_information = command.get_additional_information()
+        is_agent_command = additional_information.get("is_agent_only")
+
+        command_status_override = self._command_status_overrides.get(name)
+        if command_status_override == ChatAssistantCommandStatusOverride.OFF:
+            return False
+        elif command_status_override == ChatAssistantCommandStatusOverride.ON:
+            return True
+        elif command_status_override == ChatAssistantCommandStatusOverride.AGENT_ONLY:
+            return self._agent_mode
+        elif not is_agent_command or is_agent_command and self._agent_mode:
+            return True
+        return False
 
     def break_down_and_execute_message(self, message: Message) -> Generator[Event, None, None]:
         if not self._commands_parsing_status:

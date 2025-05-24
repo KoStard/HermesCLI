@@ -93,7 +93,7 @@ class BudgetManager:
             # budget_warning_shown remains true as user opted to extend
             print(f"Added {additional_cycles} more cycles. New budget ceiling: {self.budget}")
             research_node.get_history().get_auto_reply_aggregator().add_internal_message_from(
-                f"The budget has been extended with {additional_cycles} additional cycles. " f"New total: {self.budget} cycles.",
+                f"The budget has been extended with {additional_cycles} additional cycles. New total: {self.budget} cycles.",
                 "SYSTEM",
             )
             return False  # Continue with extended budget
