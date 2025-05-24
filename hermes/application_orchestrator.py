@@ -17,9 +17,11 @@ class ApplicationOrchestrator:
 
     def run(self):
         components = self.app_initializer.get_core_components()
-        cli_parser = CLIParser(components.user_control_panel, components.model_factory)
+        provider_model_pairs = components.model_factory.get_provider_model_pairs()
+        cli_parser = CLIParser(provider_model_pairs)
+        cli_parser.add_user_control_panel_arguments(components.user_control_panel)
 
-        extension_utils_visitors = cli_parser.register_extensions_and_get_visitors(components.extension_utils_builders)
+        extension_utils_visitors = cli_parser.register_utility_extensions_and_get_executor_visitors(components.extension_utils_builders)
         cli_args = cli_parser.parse_args()
         self.app_initializer.setup_logging(cli_args.verbose)
 
