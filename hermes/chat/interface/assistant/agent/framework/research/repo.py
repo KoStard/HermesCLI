@@ -4,9 +4,7 @@ from hermes.chat.interface.assistant.agent.framework.research import Research, R
 from hermes.chat.interface.assistant.agent.framework.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.research import ResearchImpl
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.artifact import Artifact
-from hermes.chat.interface.assistant.agent.framework.research.research_project_component.external_file import ExternalFilesManager
 from hermes.chat.interface.assistant.agent.framework.research.research_project_component.knowledge_base import KnowledgeBase
-from hermes.chat.interface.assistant.agent.framework.research.research_project_component.permanent_log import NodePermanentLogs
 from hermes.chat.interface.assistant.agent.framework.task_tree.task_tree import TaskTreeImpl
 
 
@@ -25,8 +23,9 @@ class Repo:
         # Shared knowledge base for all research instances
         self._shared_knowledge_base = KnowledgeBase(
             dual_directory_file_system._disk_fs,
-            dual_directory_file_system.get_research_path(Path("_shared_knowledge_base.md"))
+            dual_directory_file_system.get_path_in_research_from_root(Path("_shared_knowledge_base.md"))
         )
+        self._shared_knowledge_base.load_entries()
 
         # Load existing research instances from disk
         self._load_existing_research_instances()
@@ -45,15 +44,14 @@ class Repo:
             raise ValueError(f"Research instance '{name}' already exists")
 
         # Create a subdirectory for this research
-        research_path = self.dual_directory_file_system.get_research_path(Path(name))
-        research_dual_fs = DualDirectoryFileSystem(research_path)
+        research_path = self.dual_directory_file_system.get_path_in_research_from_root(Path(name))
 
         # Create the research instance with shared knowledge base
-        research = RepoResearchImpl(
+        research = ResearchImpl(
             root_directory=research_path,
-            dual_directory_file_system=research_dual_fs,
+            dual_directory_file_system=self.dual_directory_file_system,
             shared_knowledge_base=self._shared_knowledge_base,
-            parent_repo=self
+            repo=self
         )
 
         # Create and store task tree for this research
@@ -75,30 +73,29 @@ class Repo:
         Scan the research directory and load existing research instances.
         This allows the repo to discover research instances that were created in previous sessions.
         """
-        research_base_path = self.dual_directory_file_system.get_research_path()
+        repo_path = self.dual_directory_file_system.get_repo_path()
 
         # If the research directory doesn't exist, there are no existing instances
-        if not self.dual_directory_file_system.directory_exists(research_base_path):
+        if not self.dual_directory_file_system.directory_exists(repo_path):
             return
 
         # Scan for subdirectories that contain research data
-        for item in research_base_path.iterdir():
-            if not item.is_dir():
+        for research_path in repo_path.iterdir():
+            if not research_path.is_dir():
                 continue
 
             # Skip system files/directories
-            if item.name.startswith('_'):
+            if research_path.name.startswith('_'):
                 continue
 
-            research_name = item.name
+            research_name = research_path.name
 
             # Create and fully load the research instance
-            research_dual_fs = DualDirectoryFileSystem(item)
-            research = RepoResearchImpl(
-                root_directory=item,
-                dual_directory_file_system=research_dual_fs,
+            research = ResearchImpl(
+                root_directory=research_path,
+                dual_directory_file_system=self.dual_directory_file_system,
                 shared_knowledge_base=self._shared_knowledge_base,
-                parent_repo=self
+                repo=self
             )
 
             # Create task tree for this research
@@ -154,52 +151,3 @@ class Repo:
     def get_task_tree(self, research_name: str) -> TaskTreeImpl | None:
         """Get the task tree for a specific research instance."""
         return self._task_trees.get(research_name)
-
-
-class RepoResearchImpl(ResearchImpl):
-    """
-    Extended Research implementation that's aware of its parent Repo.
-    Uses a shared knowledge base and can access artifacts from sibling research instances.
-    """
-
-    def __init__(
-        self,
-        root_directory: Path,
-        dual_directory_file_system: DualDirectoryFileSystem,
-        shared_knowledge_base: KnowledgeBase,
-        parent_repo: Repo
-    ):
-        # Initialize without creating a new knowledge base
-        self.root_directory = root_directory
-        self.file_system = dual_directory_file_system._disk_fs
-        self.dual_directory_file_system = dual_directory_file_system
-        self.root_node = None
-        self._permanent_logs = NodePermanentLogs(
-            self.dual_directory_file_system.get_research_path(Path("_permanent_logs.txt"))
-        )
-        self._has_root_problem_defined = False
-
-        # Use the shared knowledge base
-        self._knowledge_base = shared_knowledge_base
-
-        # Reference to parent repo
-        self.parent_repo = parent_repo
-
-        # Still maintain own external files
-        self._external_files_manager = ExternalFilesManager(
-            self.file_system,
-            self.dual_directory_file_system.get_research_path(Path("_ExternalFiles"))
-        )
-
-    def get_knowledge_base(self) -> KnowledgeBase:
-        """Return the shared knowledge base."""
-        return self._knowledge_base
-
-    def search_artifacts_including_siblings(self, name: str) -> list[tuple[str, ResearchNode, Artifact]]:
-        """
-        Search for artifacts in this research and all sibling research instances.
-
-        Returns:
-            List of (research_name, node, artifact) tuples
-        """
-        return self.parent_repo.search_artifacts_across_all(name)

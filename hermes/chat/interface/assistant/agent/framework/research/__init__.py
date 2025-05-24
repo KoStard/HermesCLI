@@ -23,6 +23,7 @@ from hermes.chat.interface.assistant.agent.framework.research.research_project_c
 from hermes.chat.interface.assistant.agent.framework.research.research_project_component.permanent_log import NodePermanentLogs
 
 if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.agent.framework.research.repo import Repo
     from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree
 
 N = TypeVar("N", bound="ResearchNode")
@@ -197,4 +198,8 @@ class Research(ABC):
 
     @abstractmethod
     def search_artifacts(self, name: str) -> list[tuple[ResearchNode, Artifact]]:
+        pass
+
+    @abstractmethod
+    def get_repo(self) -> "Repo | None":
         pass
