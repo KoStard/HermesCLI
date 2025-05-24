@@ -7,10 +7,10 @@ from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotifi
 from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
 from hermes.chat.interface.markdown.markdown_highlighter import MarkdownHighlighter
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
-from hermes.chat.interface.user.interface.command_completer import CommandCompleter
+from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
 from hermes.chat.interface.user.interface.event_renderer import EventRenderer
 from hermes.chat.interface.user.interface.input_handler import InputHandler
-from hermes.chat.interface.user.interface.stt_input_handler import STTInputHandler
+from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 from hermes.chat.message import Message
 
 

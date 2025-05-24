@@ -11,9 +11,9 @@ from hermes.chat.event import Event, MessageEvent, RawContentForHistoryEvent
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
 from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
-from hermes.chat.interface.user.interface.command_completer import CommandCompleter
+from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
 from hermes.chat.interface.user.interface.message_source import MessageSource
-from hermes.chat.interface.user.interface.stt_input_handler import STTInputHandler
+from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 from hermes.chat.message import TextMessage
 
 
@@ -34,7 +34,7 @@ class InputHandler:
 
     def get_input(self) -> Generator[Event, None, None]:
         message_source = MessageSource.TERMINAL
-        
+
         if self.user_input_from_cli:
             user_input = self._get_cli_input()
             message_source = MessageSource.CLI
@@ -55,6 +55,7 @@ class InputHandler:
         return user_input
 
     def _get_speech_input(self) -> Generator[Event, None, None]:
+        assert self.stt_input_handler
         text = self.stt_input_handler.get_input()
         yield MessageEvent(TextMessage(author="user", text=text))
 
@@ -68,7 +69,7 @@ class InputHandler:
         if self.prompt_toolkit_history is None:
             history_dir = "/tmp/hermes/"
             history_file_path = os.path.join(history_dir, "hermes_chat_history.txt")
-            
+
             if not os.path.exists(history_dir):
                 os.makedirs(history_dir)
             self.prompt_toolkit_history = FileHistory(history_file_path)
@@ -125,7 +126,7 @@ class InputHandler:
             yield from self.get_input()
 
     def _is_sendable_event(self, event: Event, message_source: MessageSource) -> bool:
-        return (isinstance(event, MessageEvent) and 
-                (message_source != MessageSource.CLI or 
-                 (isinstance(event.get_message(), TextMessage) and 
-                  event.get_message().is_directly_entered)))
+        return isinstance(event, MessageEvent) and (
+            message_source != MessageSource.CLI
+            or (isinstance(event.get_message(), TextMessage) and event.get_message().is_directly_entered)
+        )
