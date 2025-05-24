@@ -129,6 +129,7 @@ LLM commands in Hermes follow a specific structure:
 - We are still in development, don't aim to keep everything backwards compatible
 - For internal-only changes, don't worry about backwards compatibility between modules, go ahead and change everything that needs to be changed to use the new interfaces
 - Programming is closest to painting. So remember to think about your work also from aesthetic point of view, it should be clean and beautiful.
+- Write beautiful and clean code. If you see something that's not clean, improve it, but don't change behaviour. Remember, it's not only about moving a line of code to another place, but it's about designing nicely the codepaths and flow itself. The code should be flowing well, and if it isn't, we should fix it.
 
 ### Project Management
 - Employ iterative development: Plan phases, deliver incrementally, and adapt based on feedback or changing requirements.
