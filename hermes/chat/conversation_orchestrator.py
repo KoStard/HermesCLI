@@ -72,14 +72,14 @@ class ConversationOrchestrator:
         self._received_assistant_done_event = False
         self._should_exit_after_one_cycle = False
 
-    def _get_user_input_and_run_commands(self) -> list[Event]:
-        return list(self.user_participant.get_input_and_run_commands())
+    def _get_user_input_and_run_commands(self) -> Generator[Event, None, None]:
+        return self.user_participant.get_input_and_run_commands()
 
-    def _consume_events_from_user_and_render_assistant(self, events: list[Event]):
-        events = list(self._swallow_engine_commands_from_stream(events))
-        events = list(self._track_events_in_history(events))
+    def _consume_events_from_user_and_render_assistant(self, events: Generator[Event, None, None]):
+        all_events = list(self._swallow_engine_commands_from_stream(events))
+        all_events = self._track_events_in_history(all_events)
         history_snapshot = self.history.get_history_for(self.assistant_participant.get_name())
-        self.assistant_participant.consume_events_and_render(history_snapshot, (event for event in events))
+        self.assistant_participant.consume_events_and_render(history_snapshot, (event for event in all_events))
 
     def _get_assistant_input_and_run_commands(self) -> Generator[Event, None, None]:
         if self.assistant_participant.is_agent_mode_enabled():
