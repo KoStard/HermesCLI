@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 
 class Interface(ABC):
     @abstractmethod
-    def render(self, history_snapshot: list["Message"], events: Generator["Event", None, None]) -> Generator["Event", None, None]:
+    def render(self, history_snapshot: list["Message"], events: Generator["Event", None, None]):
         """
         Render events to the participant.
         It might yield events for the other participant.

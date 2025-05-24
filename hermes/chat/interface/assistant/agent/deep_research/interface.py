@@ -77,7 +77,7 @@ class DeepResearchAssistantInterface(Interface):
         self._instruction: str | None = None
         self._history_has_been_imported = False
 
-    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
         """Render the interface with the given history and events"""
         logger.debug("Rendering Deep Research Assistant interface")
 
@@ -97,9 +97,6 @@ class DeepResearchAssistantInterface(Interface):
 
         for filename, file_content in textual_files:
             self._engine.research.get_external_file_manager().add_external_file(filename, file_content)
-
-        # No need to yield anything here as we'll process in get_input
-        yield from []
 
     def _add_data_from_messages(self, messages: Sequence[Message], textual_files: list, instruction_pieces: list):
         for message in messages:

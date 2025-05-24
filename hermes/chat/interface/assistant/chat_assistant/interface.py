@@ -34,7 +34,7 @@ class ChatAssistantInterface(Interface):
         self.model.initialize()
         self.control_panel = control_panel
 
-    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]) -> Generator[Event, None, None]:
+    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
         logger.debug("Asked to render on LLM", self.control_panel)
         request_builder = self.model.get_request_builder()
 
@@ -59,7 +59,6 @@ class ChatAssistantInterface(Interface):
 
         self.request = request_builder.build_request(rendered_messages)
         logger.debug("Request built", self.request)
-        yield from []
 
     def get_input(self) -> Generator[Event, None, None]:
         logger.debug("Sending request to LLM")

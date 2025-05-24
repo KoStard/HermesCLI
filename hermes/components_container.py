@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from hermes.chat.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
 from hermes.chat.interface.assistant.models.model_factory import ModelFactory
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
-from hermes.chat.participants import Participant
+from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant
 
 
 @dataclass
@@ -17,5 +17,5 @@ class CoreComponents:
 
 @dataclass
 class Participants:
-    user: Participant
-    assistant: Participant
+    user: UserParticipant
+    assistant: LLMParticipant | DebugParticipant
