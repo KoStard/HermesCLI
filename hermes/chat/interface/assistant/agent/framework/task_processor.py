@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.budget_manager import BudgetManager
     from hermes.chat.interface.assistant.agent.framework.context import AgentInterface
     from hermes.chat.interface.assistant.agent.framework.context.dynamic_sections import DynamicDataTypeToRendererMap
+    from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
     from hermes.chat.interface.assistant.agent.framework.llm_interface import LLMInterface
     from hermes.chat.interface.assistant.agent.framework.research import Research, ResearchNode
     from hermes.chat.interface.assistant.agent.framework.status_printer import StatusPrinter
@@ -44,8 +45,9 @@ class TaskProcessor(Generic[CommandContextType]):
         dynamic_section_renderer_registry: "DynamicDataTypeToRendererMap",
         agent_interface_for_ui: "AgentInterface",
         status_printer_to_use: "StatusPrinter",
-        budget_manager: "BudgetManager",  # Changed from agent_engine_for_budget
+        budget_manager: "BudgetManager",
         command_parser: CommandParser,
+        engine: "AgentEngine"
     ):
         self.current_node = research_node
         self.research_project = research_project
@@ -56,15 +58,16 @@ class TaskProcessor(Generic[CommandContextType]):
         self.renderer_registry = dynamic_section_renderer_registry
         self.agent_interface = agent_interface_for_ui
         self.status_printer = status_printer_to_use
-        self.budget_manager = budget_manager  # Changed attribute name
+        self.budget_manager = budget_manager
         self.command_parser = command_parser
+        self._engine = engine
 
     def run(self) -> TaskProcessorRunResult:
         """
         Runs the assigned task_tree_node until its status changes significantly
         (FINISHED, FAILED, PENDING), or budget/shutdown dictates a stop.
         """
-        while self.current_node.get_problem_status() not in {ProblemStatus.CANCELLED}:
+        while self.current_node.get_problem_status() not in {ProblemStatus.CANCELLED} and not self._engine.engine_interrupted:
             try:
                 state = self._execute_task_processing_cycle(self.current_node)
                 if state:

@@ -50,11 +50,12 @@ class AgentEngine(Generic[CommandContextType]):
         self.report_generator = report_generator
         self.status_printer = status_printer
         self.engine_should_stop = False
+        self.engine_interrupted = False
         self.dual_directory_file_system = DualDirectoryFileSystem(root_dir)
 
         # Initialize repo and load all existing research instances
         self.repo = Repo(root_dir, self.dual_directory_file_system)
-        
+
         # Set current research
         self.current_research_name = repo_name
         self.research = self._get_or_create_research(repo_name)
@@ -75,7 +76,7 @@ class AgentEngine(Generic[CommandContextType]):
         Handle the initial problem definition phase.
         """
         current_task_tree = self._get_task_tree_for_current_research()
-        
+
         problem_definition = ProblemDefinition(content=instruction)
         node = ResearchNodeImpl(
             problem=problem_definition,
@@ -122,22 +123,26 @@ class AgentEngine(Generic[CommandContextType]):
             raise ValueError("Root problem must be defined before execution")
 
         self.engine_should_stop = False
+        self.engine_interrupted = False
         threads = []
-        
+
         current_task_tree = self._get_task_tree_for_current_research()
-        
-        while not self.engine_should_stop:
-            next_node = current_task_tree.next()
-            if not next_node:
-                break
 
-            next_node.set_problem_status(ProblemStatus.IN_PROGRESS)
-            thread = threading.Thread(target=self._run_node, args=(next_node,))
-            threads.append(thread)
-            thread.start()
+        try:
+            while not self.engine_should_stop and not self.engine_interrupted:
+                next_node = current_task_tree.next()
+                if not next_node:
+                    break
 
-        for thread in threads:
-            thread.join()
+                next_node.set_problem_status(ProblemStatus.IN_PROGRESS)
+                thread = threading.Thread(target=self._run_node, args=(next_node,))
+                threads.append(thread)
+                thread.start()
+
+            for thread in threads:
+                thread.join()
+        except KeyboardInterrupt:
+            self.engine_interrupted = True
 
         return self._generate_final_report()
 
@@ -178,6 +183,7 @@ class AgentEngine(Generic[CommandContextType]):
             status_printer_to_use=self.status_printer,
             budget_manager=self.budget_manager,  # Pass BudgetManager instance
             command_parser=self.command_parser,
+            engine=self
         )
 
         run_result = task_processor.run()
