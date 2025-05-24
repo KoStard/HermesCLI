@@ -163,8 +163,8 @@ class Research(ABC):
         pass
 
     @abstractmethod
-    def is_research_initiated(self) -> bool:
-        # Return true if research has been loaded or created already
+    def has_root_problem_defined(self) -> bool:
+        # Return true if the root problem has been defined (either created or loaded)
         pass
 
     @abstractmethod

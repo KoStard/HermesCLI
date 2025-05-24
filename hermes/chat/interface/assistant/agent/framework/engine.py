@@ -52,10 +52,12 @@ class AgentEngine(Generic[CommandContextType]):
         self.engine_should_stop = False
         self.dual_directory_file_system = DualDirectoryFileSystem(root_dir)
 
-        # Initialize with repo structure
+        # Initialize repo and load all existing research instances
         self.repo = Repo(root_dir, self.dual_directory_file_system)
-        self.research = self.repo.create_research(repo_name)
-        self.task_tree = TaskTreeImpl(self.research)
+        
+        # Set current research
+        self.current_research_name = repo_name
+        self.research = self._get_or_create_research(repo_name)
 
         self.command_registry = command_registry
 
@@ -64,27 +66,23 @@ class AgentEngine(Generic[CommandContextType]):
         self.llm_interface = llm_interface
         self.budget_manager = BudgetManager()
 
-        if self.research.research_already_exists():
-            self.research.load_existing_research(self.task_tree)
-
-    def is_research_initiated(self) -> bool:
-        """Check if the research is already initiated"""
-        return self.research.is_research_initiated()
+    def has_root_problem_defined(self) -> bool:
+        """Check if the research has a root problem defined"""
+        return self.research.has_root_problem_defined()
 
     def define_root_problem(self, instruction: str):
         """
         Handle the initial problem definition phase.
-
-        Returns:
-            bool: True if a problem was successfully defined, False otherwise
         """
+        current_task_tree = self._get_task_tree_for_current_research()
+        
         problem_definition = ProblemDefinition(content=instruction)
         node = ResearchNodeImpl(
             problem=problem_definition,
             title=instruction,
             path=self.research.get_root_directory(),
             parent=None,
-            task_tree=self.task_tree,
+            task_tree=current_task_tree,
             dual_directory_fs=self.dual_directory_file_system,
         )
         self.research.initiate_research(node)
@@ -94,7 +92,7 @@ class AgentEngine(Generic[CommandContextType]):
 
     def add_new_instruction(self, instruction: str):
         """Injects a new user instruction into the current node's context."""
-        if not self.research.is_research_initiated():
+        if not self.research.has_root_problem_defined():
             print("Error: Cannot prepare for new instruction without an active node.")
             return
 
@@ -120,13 +118,16 @@ class AgentEngine(Generic[CommandContextType]):
         Execute the deep research process. Runs until the current task is completed
         (node finished/failed and focus returns to root, or budget exhausted, or shutdown).
         """
-        if not self.is_research_initiated():
+        if not self.has_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
 
         self.engine_should_stop = False
         threads = []
+        
+        current_task_tree = self._get_task_tree_for_current_research()
+        
         while not self.engine_should_stop:
-            next_node = self.task_tree.next()
+            next_node = current_task_tree.next()
             if not next_node:
                 break
 
@@ -138,10 +139,26 @@ class AgentEngine(Generic[CommandContextType]):
         for thread in threads:
             thread.join()
 
-        # After loop execution (all tasks done or engine stopped)
+        return self._generate_final_report()
+
+    def _get_or_create_research(self, name: str) -> Research:
+        """Get existing research or create new one."""
+        research = self.repo.get_research(name)
+        if not research:
+            research = self.repo.create_research(name)
+        return research
+
+    def _get_task_tree_for_current_research(self) -> TaskTreeImpl:
+        """Get task tree for current research."""
+        task_tree = self.repo.get_task_tree(self.current_research_name)
+        if not task_tree:
+            raise ValueError(f"Task tree not found for research '{self.current_research_name}'")
+        return task_tree
+
+    def _generate_final_report(self) -> str | None:
+        """Generate final report for current research."""
         root_node = self.research.get_root_node()
         final_root_completion_message = root_node.get_resolution_message()
-
         return self.report_generator.generate_final_report(self.research, self.interface, final_root_completion_message)
 
     def _run_node(self, research_node: ResearchNode | None):
@@ -190,15 +207,8 @@ class AgentEngine(Generic[CommandContextType]):
         Raises:
             ValueError: If research doesn't exist
         """
-        research = self.repo.get_research(name)
-        if not research:
-            raise ValueError(f"Research instance '{name}' not found")
-
-        self.research = research
-        self.task_tree = TaskTreeImpl(research)
-
-        if self.research.research_already_exists():
-            self.research.load_existing_research(self.task_tree)
+        self.current_research_name = name
+        self.research = self._get_or_create_research(name)
 
     def list_research_instances(self) -> list[str]:
         """
