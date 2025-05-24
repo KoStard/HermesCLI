@@ -2,13 +2,13 @@ from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime
 
-from hermes.chat.messages.base import Message
 from hermes.chat.interface.assistant.chat_assistant.response_types import (
     BaseLLMResponse,
     ThinkingLLMResponse,
 )
 from hermes.chat.interface.helpers.chunks_to_lines import chunks_to_lines
 from hermes.chat.interface.helpers.peekable_generator import PeekableGenerator, iterate_while
+from hermes.chat.messages.base import Message
 
 
 @dataclass(init=False)

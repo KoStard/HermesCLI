@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from hermes.chat.history import History
     from hermes.chat.interface import Interface
     from hermes.chat.interface.debug.debug_interface import DebugInterface
-    from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssistantInterface
     from hermes.chat.messages import Message
 
 logger = logging.getLogger(__name__)

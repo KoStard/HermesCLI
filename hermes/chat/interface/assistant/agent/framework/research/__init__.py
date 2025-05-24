@@ -20,9 +20,7 @@ from hermes.chat.interface.assistant.agent.framework.research.research_project_c
     ExternalFilesManager,
 )
 from hermes.chat.interface.assistant.agent.framework.research.research_project_component.knowledge_base import KnowledgeBase
-from hermes.chat.interface.assistant.agent.framework.research.research_project_component.permanent_log import (
-    NodePermanentLogs,
-)
+from hermes.chat.interface.assistant.agent.framework.research.research_project_component.permanent_log import NodePermanentLogs
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree

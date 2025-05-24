@@ -535,6 +535,48 @@ class AddKnowledgeCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, f"Knowledge {entry_identifier} added successfully.")
 
 
+class ViewCrossResearchArtifactsCommand(BaseCommand[CommandContextImpl]):
+    def __init__(self):
+        super().__init__(
+            "view_cross_research_artifacts",
+            "View artifacts from other research instances (only available in repo structure)",
+        )
+        self.add_section("search_term", False, "Optional search term to filter artifacts")
+
+    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+        """View artifacts from all research instances"""
+        search_term = args.get("search_term", "")
+        
+        # Get all artifacts across research instances
+        all_artifacts = context.search_all_research_artifacts(search_term)
+        
+        if not all_artifacts:
+            context.add_command_output(
+                self.name,
+                args,
+                "No artifacts found across research instances."
+            )
+            return
+            
+        # Group artifacts by research instance
+        artifacts_by_research = {}
+        for research_name, node, artifact in all_artifacts:
+            if research_name not in artifacts_by_research:
+                artifacts_by_research[research_name] = []
+            artifacts_by_research[research_name].append((node, artifact))
+            
+        # Format output
+        output_lines = ["Artifacts across all research instances:"]
+        for research_name, artifacts in sorted(artifacts_by_research.items()):
+            output_lines.append(f"\n## Research: {research_name}")
+            for node, artifact in artifacts:
+                output_lines.append(f"- {artifact.name} (from: {node.get_title()})")
+                if artifact.short_summary:
+                    output_lines.append(f"  Summary: {artifact.short_summary}")
+                    
+        context.add_command_output(self.name, args, "\n".join(output_lines))
+
+
 def register_deep_research_commands(registry: CommandRegistry):
     """Registers all built-in Deep Research commands to the given registry."""
     commands_to_register = [
@@ -554,6 +596,7 @@ def register_deep_research_commands(registry: CommandRegistry):
         CloseArtifactCommand(),
         ThinkCommand(),
         AddKnowledgeCommand(),
+        ViewCrossResearchArtifactsCommand(),
     ]
     for cmd in commands_to_register:
         registry.register(cmd)

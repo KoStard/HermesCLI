@@ -6,14 +6,14 @@ With difference that you can send multiple messages at once.
 """
 
 from hermes.chat.messages.base import Message
-from hermes.chat.messages.text import TextMessage, InvisibleMessage, AssistantNotificationMessage
+from hermes.chat.messages.command import LLMRunCommandOutput
+from hermes.chat.messages.deserialization import DESERIALIZATION_KEYMAP
+from hermes.chat.messages.file import EmbeddedPDFMessage, TextualFileMessage
+from hermes.chat.messages.media import AudioFileMessage, ImageMessage, ImageUrlMessage, VideoMessage
+from hermes.chat.messages.text import AssistantNotificationMessage, InvisibleMessage, TextMessage
 from hermes.chat.messages.text_generator import TextGeneratorMessage
 from hermes.chat.messages.thinking_and_response import ThinkingAndResponseGeneratorMessage
-from hermes.chat.messages.media import ImageUrlMessage, ImageMessage, AudioFileMessage, VideoMessage
-from hermes.chat.messages.file import TextualFileMessage, EmbeddedPDFMessage
-from hermes.chat.messages.command import LLMRunCommandOutput
 from hermes.chat.messages.url import UrlMessage
-from hermes.chat.messages.deserialization import DESERIALIZATION_KEYMAP
 
 __all__ = [
     "Message",

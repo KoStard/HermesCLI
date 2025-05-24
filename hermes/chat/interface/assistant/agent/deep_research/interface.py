@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class DeepResearchAssistantInterface(Interface):
     """Interface for the Deep Research Assistant"""
 
-    def __init__(self, model: ChatModel, research_path: Path, extension_commands=None):
+    def __init__(self, model: ChatModel, research_path: Path, extension_commands=None, use_repo_structure: bool = False):
         self.model = model
         self.model.initialize()
 
@@ -61,7 +61,7 @@ class DeepResearchAssistantInterface(Interface):
         report_generator = ReportGeneratorImpl(template_manager)
         status_printer = StatusPrinterImpl(template_manager)
 
-        # Create the engine, passing the command registry
+        # Create the engine, passing the command registry - always use repo structure
         self._engine: AgentEngine = AgentEngine(
             research_path,
             llm_interface,
@@ -72,10 +72,12 @@ class DeepResearchAssistantInterface(Interface):
             research_interface,
             report_generator,
             status_printer,
+            use_repo_structure=True
         )
 
         self._instruction: str | None = None
         self._history_has_been_imported = False
+        self.use_repo_structure = True
 
     def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
         """Render the interface with the given history and events"""
@@ -244,3 +246,44 @@ class DeepResearchAssistantInterface(Interface):
     def set_budget(self, budget: int | None):
         """Set the budget for the Deep Research Assistant"""
         self._engine.set_budget(budget)
+        
+    def create_new_research(self, name: str):
+        """
+        Create a new research instance under the repo and switch to it.
+        
+        Args:
+            name: Name for the new research instance
+        """
+        self._engine.create_new_research(name)
+        self._engine.switch_research(name)
+        
+    def switch_research(self, name: str):
+        """
+        Switch to a different research instance.
+        
+        Args:
+            name: Name of the research instance to switch to
+        """
+        self._engine.switch_research(name)
+        
+    def list_research_instances(self) -> list[str]:
+        """
+        List all available research instances.
+        
+        Returns:
+            List of research instance names
+        """
+        return self._engine.list_research_instances()
+        
+    def get_current_research_name(self) -> str | None:
+        """
+        Get the name of the current research instance.
+        
+        Returns:
+            Name of current research instance
+        """
+        # Find which research instance we're currently using
+        for name in self._engine.list_research_instances():
+            if self._engine.repo.get_research(name) == self._engine.research:
+                return name
+        return None

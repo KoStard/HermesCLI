@@ -1,9 +1,7 @@
 import logging
 from collections.abc import Generator, Iterable
 
-from collections.abc import Iterable
-
-from hermes.chat.events import Event, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent, EngineCommandEvent
+from hermes.chat.events import EngineCommandEvent, Event, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
 from hermes.chat.file_operations_handler import FileOperationsHandler
 from hermes.chat.history import History
 from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotificationsPrinter

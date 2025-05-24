@@ -12,7 +12,7 @@ from hermes.chat.interface.assistant.agent.framework.llm_interface import (
 from hermes.chat.interface.assistant.agent.framework.report import ReportGenerator
 from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
 from hermes.chat.interface.assistant.agent.framework.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
-from hermes.chat.interface.assistant.agent.framework.research.research import ResearchImpl
+from hermes.chat.interface.assistant.agent.framework.research.research import Research, ResearchImpl
 from hermes.chat.interface.assistant.agent.framework.research.research_node import ResearchNodeImpl
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
     ProblemDefinition,
@@ -40,6 +40,8 @@ class AgentEngine(Generic[CommandContextType]):
         agent_interface: AgentInterface,
         report_generator: ReportGenerator,
         status_printer: StatusPrinter,
+        use_repo_structure: bool = False,
+        repo_name: str = "default_research"
     ):
         self.command_context_factory = command_context_factory
         self.template_manager = template_manager
@@ -49,10 +51,21 @@ class AgentEngine(Generic[CommandContextType]):
         self.status_printer = status_printer
         self.engine_should_stop = False
         self.dual_directory_file_system = DualDirectoryFileSystem(root_dir)
+        self.use_repo_structure = use_repo_structure
+        self.repo = None
 
-        # Initialize the research object which will handle all file system and node operations
-        self.research = ResearchImpl(self.dual_directory_file_system.get_research_path(), self.dual_directory_file_system)
-        self.task_tree = TaskTreeImpl(self.research)
+        # Initialize based on whether we're using repo structure
+        if use_repo_structure:
+            from hermes.chat.interface.assistant.agent.framework.research.repo import Repo
+            self.repo = Repo(root_dir, self.dual_directory_file_system)
+            self.task_tree = TaskTreeImpl(None)  # Will be set when research is created
+            self.research = self.repo.create_research(repo_name, self.task_tree)
+            self.task_tree._research = self.research
+        else:
+            # Original behavior
+            self.research = ResearchImpl(self.dual_directory_file_system.get_research_path(), self.dual_directory_file_system)
+            self.task_tree = TaskTreeImpl(self.research)
+
         self.command_registry = command_registry
 
         # Initialize other components
@@ -169,3 +182,67 @@ class AgentEngine(Generic[CommandContextType]):
         Set the budget for the Deep Research Assistant. Delegates to BudgetManager.
         """
         self.budget_manager.set_budget(budget_value)
+
+    def create_new_research(self, name: str) -> Research:
+        """
+        Create a new research instance under the repo.
+        Only available when using repo structure.
+        
+        Args:
+            name: Name for the new research instance
+            
+        Returns:
+            The created Research instance
+            
+        Raises:
+            ValueError: If not using repo structure or name already exists
+        """
+        if not self.use_repo_structure or not self.repo:
+            raise ValueError("Creating new research instances requires repo structure to be enabled")
+            
+        # Create new task tree for the new research
+        new_task_tree = TaskTreeImpl(None)
+        new_research = self.repo.create_research(name, new_task_tree)
+        new_task_tree._research = new_research
+        
+        return new_research
+        
+    def switch_research(self, name: str):
+        """
+        Switch to a different research instance.
+        Only available when using repo structure.
+        
+        Args:
+            name: Name of the research instance to switch to
+            
+        Raises:
+            ValueError: If not using repo structure or research doesn't exist
+        """
+        if not self.use_repo_structure or not self.repo:
+            raise ValueError("Switching research instances requires repo structure to be enabled")
+            
+        research = self.repo.get_research(name)
+        if not research:
+            raise ValueError(f"Research instance '{name}' not found")
+            
+        self.research = research
+        self.task_tree = TaskTreeImpl(research)
+        
+        if self.research.research_already_exists():
+            self.research.load_existing_research(self.task_tree)
+            
+    def list_research_instances(self) -> list[str]:
+        """
+        List all available research instances.
+        Only available when using repo structure.
+        
+        Returns:
+            List of research instance names
+            
+        Raises:
+            ValueError: If not using repo structure
+        """
+        if not self.use_repo_structure or not self.repo:
+            raise ValueError("Listing research instances requires repo structure to be enabled")
+            
+        return self.repo.list_research_instances()
