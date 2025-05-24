@@ -99,8 +99,7 @@ class ArtifactManager:
             return
 
         # Get dual directory file system reference
-        dual_fs = self._node.get_dual_directory_fs()
-        artifacts_dir = dual_fs.get_artifact_directory_for_node_path(node_path)
+        artifacts_dir = self._dual_directory_fs.get_artifact_directory_for_node_path(node_path)
 
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 

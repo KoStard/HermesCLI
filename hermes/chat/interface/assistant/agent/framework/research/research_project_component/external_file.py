@@ -20,7 +20,6 @@ class ExternalFilesManager:
         self._external_files = {}  # Clear existing cache
 
         if not self._file_system.directory_exists(self._external_files_dir):
-            self._file_system.create_directory(self._external_files_dir)
             return
 
         for file_path in self._file_system.list_files(self._external_files_dir):

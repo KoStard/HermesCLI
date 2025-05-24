@@ -135,23 +135,22 @@ class DeepResearcherInterface(AgentInterface):
         # Artifacts
         node_artifacts_list = []
         # Use target_node directly if root is not yet defined (e.g., during initial define_problem)
-        root_node = research.get_root_node() if research.is_research_initiated() else target_node
+        root_node = research.get_root_node() if research.has_root_problem_defined() else target_node
         if root_node:
             node_artifacts_list = self._collect_artifacts_recursively(root_node, target_node)
-            
-        # If using repo structure, also collect artifacts from sibling research instances
-        if hasattr(research, 'parent_repo') and research.parent_repo:
+
+        parent_repo = research.get_repo()
+        if parent_repo:
             # Get artifacts from all research instances
-            all_research_artifacts = research.parent_repo.get_all_artifacts()
-            
+            all_research_artifacts = parent_repo.get_all_artifacts()
+
             # Add artifacts from other research instances (marked as external)
             for research_name, artifacts in all_research_artifacts.items():
                 # Skip current research instance
-                if research.parent_repo.get_research(research_name) == research:
+                if parent_repo.get_research(research_name) == research:
                     continue
-                    
+
                 for node, artifact in artifacts:
-                    # Mark these as external since they're from other research instances
                     node_artifacts_list.append((node, artifact, False))
 
         # Get external files from manager and convert to dict by name

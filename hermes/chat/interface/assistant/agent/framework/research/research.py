@@ -16,36 +16,45 @@ from hermes.chat.interface.assistant.agent.framework.research.research_project_c
 )
 
 if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.agent.framework.research.repo import Repo
     from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree
 
 from . import Research, ResearchNode
 
 
 class ResearchImpl(Research):
-    def __init__(self, root_directory: Path, dual_directory_file_system: DualDirectoryFileSystem) -> None:
+    def __init__(
+        self,
+        root_directory: Path,
+        dual_directory_file_system: DualDirectoryFileSystem,
+        shared_knowledge_base: KnowledgeBase,
+        repo: "Repo"
+    ):
+        # Initialize without creating a new knowledge base
         self.root_directory = root_directory
-        self.file_system = DiskFileSystem()
+        self.file_system = dual_directory_file_system._disk_fs
         self.dual_directory_file_system = dual_directory_file_system
         self.root_node = None
-        self._permanent_logs = NodePermanentLogs(self.dual_directory_file_system.get_research_path(Path("_permanent_logs.txt")))
+        self._permanent_logs = NodePermanentLogs(
+            root_directory / "_permanent_logs.txt"
+        )
         self._has_root_problem_defined = False
 
-        # Create instances for knowledge base and external files
-        self._knowledge_base = KnowledgeBase(
-            self.file_system, self.dual_directory_file_system.get_research_path(Path("_knowledge_base.md"))
-        )
+        # Use the shared knowledge base
+        self._shared_knowledge_base = shared_knowledge_base
+
+        # Reference to parent repo
+        self._repo = repo
+
+        # Still maintain own external files
         self._external_files_manager = ExternalFilesManager(
-            self.file_system, self.dual_directory_file_system.get_research_path(Path("_ExternalFiles"))
+            self.file_system,
+            root_directory / "_ExternalFiles"
         )
 
     def research_already_exists(self) -> bool:
         """Check if research data already exists in the root directory"""
-        # Look for the research metadata file
-        return (
-            self.root_directory.exists()
-            and self.dual_directory_file_system.get_research_path().exists()
-            and not self.file_system.is_empty(self.dual_directory_file_system.get_research_path())
-        )
+        return self.root_directory.exists() and not self.file_system.is_empty(self.root_directory)
 
     def has_root_problem_defined(self) -> bool:
         """Return whether the root problem has been defined"""
@@ -63,12 +72,9 @@ class ResearchImpl(Research):
     def load_existing_research(self, task_tree: "TaskTree"):
         """Load an existing research project"""
         # Load knowledge base and external files
-        self._knowledge_base.load_entries()
         self._external_files_manager.load_external_files()
 
-        # Load the root node from the Research directory using the node's static loading method
-        research_root_dir = self.dual_directory_file_system.get_research_path()
-        root_node = ResearchNodeImpl.load_from_directory(research_root_dir, task_tree, self.dual_directory_file_system)
+        root_node = ResearchNodeImpl.load_from_directory(self.root_directory, task_tree, self.dual_directory_file_system)
 
         self.initiate_research(root_node)
 
@@ -87,14 +93,10 @@ class ResearchImpl(Research):
         return self._permanent_logs
 
     def get_knowledge_base(self) -> KnowledgeBase:
-        return self._knowledge_base
+        return self._shared_knowledge_base
 
     def get_external_file_manager(self):
         return self._external_files_manager
-
-    def get_dual_directory_file_system(self) -> DualDirectoryFileSystem:
-        """Get the dual directory file system for this research"""
-        return self.dual_directory_file_system
 
     def search_artifacts(self, name: str) -> list[tuple[ResearchNode, Artifact]]:
         """
@@ -139,6 +141,14 @@ class ResearchImpl(Research):
         if not self.file_system.directory_exists(self.root_directory):
             self.file_system.create_directory(self.root_directory)
 
-        # Create Results and Research directories
-        self.dual_directory_file_system.create_directory(self.dual_directory_file_system.results_directory)
-        self.dual_directory_file_system.create_directory(self.dual_directory_file_system.research_directory)
+    def get_repo(self) -> "Repo | None":
+        return self._repo
+
+    def search_artifacts_including_siblings(self, name: str) -> list[tuple[str, ResearchNode, Artifact]]:
+        """
+        Search for artifacts in this research and all sibling research instances.
+
+        Returns:
+            List of (research_name, node, artifact) tuples
+        """
+        return self._repo.search_artifacts_across_all(name)

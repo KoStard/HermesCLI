@@ -12,23 +12,26 @@ class DualDirectoryFileSystem(FileSystem):
     - Research/: Contains all internal research data (problem definitions, logs, etc.)
     """
 
-    def __init__(self, root_directory: Path):
-        self.root_directory = root_directory
-        self.results_directory = root_directory / "Results"
-        self.research_directory = root_directory / "Research"
+    def __init__(self, repo_directory: Path):
+        self.root_directory = repo_directory
+        self._results_directory = repo_directory / "Results"
+        self._repo_directory = repo_directory / "Researches"
         self._disk_fs = DiskFileSystem()
 
         # Ensure both directories exist
-        self.create_directory(self.results_directory)
-        self.create_directory(self.research_directory)
+        self.create_directory(self._results_directory)
+        self.create_directory(self._repo_directory)
 
-    def get_results_path(self, relative_path: Path = Path()) -> Path:
+    def get_repo_path(self) -> Path:
+        return self._repo_directory
+
+    def get_path_in_results_in_root(self, relative_path: Path = Path()) -> Path:
         """Get the absolute path in the Results directory"""
-        return self.results_directory / relative_path
+        return self._results_directory / relative_path
 
-    def get_research_path(self, relative_path: Path = Path()) -> Path:
+    def get_path_in_research_from_root(self, relative_path: Path ) -> Path:
         """Get the absolute path in the Research directory"""
-        return self.research_directory / relative_path
+        return self._repo_directory / relative_path
 
     def get_artifact_directory_for_node_path(self, node_path: Path) -> Path:
         """
@@ -41,8 +44,8 @@ class DualDirectoryFileSystem(FileSystem):
             Corresponding path in Results/ directory where artifacts should be stored
         """
         # Convert research path to relative path from research directory
-        relative_path = node_path.relative_to(self.research_directory)
-        return self.results_directory / relative_path
+        relative_path = node_path.relative_to(self._repo_directory)
+        return self._results_directory / relative_path
 
     def get_node_path_from_artifact_directory(self, artifact_path: Path) -> Path:
         """
@@ -54,8 +57,8 @@ class DualDirectoryFileSystem(FileSystem):
         Returns:
             Corresponding path in Research/ directory
         """
-        relative_path = artifact_path.relative_to(self.results_directory)
-        return self.research_directory / relative_path
+        relative_path = artifact_path.relative_to(self._results_directory)
+        return self._repo_directory / relative_path
 
     # Delegate core file system operations to disk file system
     def read_file(self, path: Path) -> str:
@@ -92,7 +95,7 @@ class DualDirectoryFileSystem(FileSystem):
         Returns:
             List of paths to all .md files in the Results directory tree
         """
-        results_path = self.get_results_path(node_relative_path)
+        results_path = self.get_path_in_results_in_root(node_relative_path)
         if not self.directory_exists(results_path):
             return []
 
