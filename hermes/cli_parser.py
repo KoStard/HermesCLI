@@ -1,24 +1,23 @@
 from argparse import ArgumentParser
 
-from hermes.chat.interface.assistant.models.model_factory import ModelFactory
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
 
 
 class CLIParser:
-    def __init__(self, user_control_panel: UserControlPanel, model_factory: ModelFactory):
-        self.user_control_panel = user_control_panel
-        self.model_factory = model_factory
+    def __init__(self, provider_model_pairs: list[tuple]):
+        self._provider_model_pairs = provider_model_pairs
 
         self._parser = ArgumentParser()
         subparsers = self._parser.add_subparsers(dest="execution_mode", required=True)
 
-        chat_parser = self._build_chat_parser(subparsers)
+        self._chat_parser = self._build_chat_parser(subparsers)
         self._utils_subparsers = self._build_utils_parser(subparsers)
         self._build_info_parser(subparsers)
 
-        self.user_control_panel.build_cli_arguments(chat_parser)
+    def add_user_control_panel_arguments(self, user_control_panel: UserControlPanel):
+        user_control_panel.build_cli_arguments(self._chat_parser)
 
-    def register_extensions_and_get_visitors(self, extension_utils_builders: list) -> list:
+    def register_utility_extensions_and_get_executor_visitors(self, extension_utils_builders: list) -> list:
         extension_visitors = []
         for builder in extension_utils_builders:
             extension_visitors.append(builder(self._utils_subparsers))
@@ -32,7 +31,7 @@ class CLIParser:
         chat_parser.add_argument("--debug", action="store_true")
 
         suggested_models = ", ".join(
-            f"{provider.lower()}/{model_tag}" for provider, model_tag in self.model_factory.get_provider_model_pairs()
+            f"{provider.lower()}/{model_tag}" for provider, model_tag in self._provider_model_pairs
         )
 
         chat_parser.add_argument(
