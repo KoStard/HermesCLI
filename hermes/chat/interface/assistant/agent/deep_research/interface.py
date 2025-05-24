@@ -142,7 +142,7 @@ class DeepResearchAssistantInterface(Interface):
             return
 
         try:
-            if not self._engine.is_research_initiated():
+            if not self._engine.has_root_problem_defined():
                 yield from self._handle_initial_research()
                 return
 
@@ -280,8 +280,4 @@ class DeepResearchAssistantInterface(Interface):
         Returns:
             Name of current research instance
         """
-        # Find which research instance we're currently using
-        for name in self._engine.list_research_instances():
-            if self._engine.repo.get_research(name) == self._engine.research:
-                return name
-        return None
+        return self._engine.current_research_name

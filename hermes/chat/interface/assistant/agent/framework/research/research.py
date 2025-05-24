@@ -28,7 +28,7 @@ class ResearchImpl(Research):
         self.dual_directory_file_system = dual_directory_file_system
         self.root_node = None
         self._permanent_logs = NodePermanentLogs(self.dual_directory_file_system.get_research_path(Path("_permanent_logs.txt")))
-        self._research_initiated = False
+        self._has_root_problem_defined = False
 
         # Create instances for knowledge base and external files
         self._knowledge_base = KnowledgeBase(
@@ -47,9 +47,9 @@ class ResearchImpl(Research):
             and not self.file_system.is_empty(self.dual_directory_file_system.get_research_path())
         )
 
-    def is_research_initiated(self) -> bool:
-        """Return whether research has been initiated"""
-        return self._research_initiated and self.root_node is not None
+    def has_root_problem_defined(self) -> bool:
+        """Return whether the root problem has been defined"""
+        return self._has_root_problem_defined and self.root_node is not None
 
     def initiate_research(self, root_node: ResearchNode):
         """Initialize a new research project"""
@@ -58,7 +58,7 @@ class ResearchImpl(Research):
         # Create the necessary directories
         self._create_directory_structure()
 
-        self._research_initiated = True
+        self._has_root_problem_defined = True
 
     def load_existing_research(self, task_tree: "TaskTree"):
         """Load an existing research project"""
@@ -74,8 +74,8 @@ class ResearchImpl(Research):
 
     def get_root_node(self) -> ResearchNode:
         """Get the root node of the research"""
-        if not self.is_research_initiated():
-            raise ValueError("Research not initiated")
+        if not self.has_root_problem_defined():
+            raise ValueError("Root problem not defined")
         assert self.root_node is not None
         return self.root_node
 
@@ -107,7 +107,7 @@ class ResearchImpl(Research):
         Returns:
             List of (node, artifact) tuples for all matching artifacts
         """
-        if not self.is_research_initiated():
+        if not self.has_root_problem_defined():
             return []
 
         result = []
