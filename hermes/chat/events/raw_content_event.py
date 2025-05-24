@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from hermes.chat.events.base import Event
 
 if TYPE_CHECKING:
-    from hermes.chat.messages import TextMessage, TextGeneratorMessage, ThinkingAndResponseGeneratorMessage
+    from hermes.chat.messages import TextGeneratorMessage, TextMessage, ThinkingAndResponseGeneratorMessage
 
 
 @dataclass
@@ -16,7 +16,7 @@ class RawContentForHistoryEvent(Event):
 
     @staticmethod
     def from_json(json_data: dict) -> "RawContentForHistoryEvent":
-        from hermes.chat.messages import TextMessage, TextGeneratorMessage, ThinkingAndResponseGeneratorMessage
+        from hermes.chat.messages import TextGeneratorMessage, TextMessage, ThinkingAndResponseGeneratorMessage
 
         content_type = json_data["content"]["type"]
         if content_type == "text":

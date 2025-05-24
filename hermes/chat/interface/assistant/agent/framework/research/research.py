@@ -54,9 +54,6 @@ class ResearchImpl(Research):
     def initiate_research(self, root_node: ResearchNode):
         """Initialize a new research project"""
         self.root_node = root_node
-        # For dual directory structure, root node should be in Research directory
-        expected_path = self.dual_directory_file_system.get_research_path()
-        assert root_node.get_path() == expected_path
 
         # Create the necessary directories
         self._create_directory_structure()

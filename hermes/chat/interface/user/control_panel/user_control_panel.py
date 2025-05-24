@@ -7,14 +7,17 @@ from datetime import datetime, timezone
 from hermes.chat.events import (
     AgentModeEvent,
     ClearHistoryEvent,
+    CreateResearchEvent,
     DeepResearchBudgetEvent,
     Event,
     ExitEvent,
+    ListResearchEvent,
     LLMCommandsExecutionEvent,
     LoadHistoryEvent,
     MessageEvent,
     OnceEvent,
     SaveHistoryEvent,
+    SwitchResearchEvent,
     ThinkingLevelEvent,
 )
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -321,6 +324,40 @@ class UserControlPanel(ControlPanel):
             )
         )
 
+        self._register_command(
+            ControlPanelCommand(
+                command_id="create_research",
+                command_label="/create_research",
+                description="Create a new research instance and switch to it (Deep Research mode only)",
+                short_description="Create new research instance",
+                parser=self._parse_create_research_command,
+                is_deep_research=True,
+            )
+        )
+
+        self._register_command(
+            ControlPanelCommand(
+                command_id="switch_research",
+                command_label="/switch_research",
+                description="Switch to a different research instance (Deep Research mode only)",
+                short_description="Switch research instance",
+                parser=self._parse_switch_research_command,
+                is_deep_research=True,
+            )
+        )
+
+        self._register_command(
+            ControlPanelCommand(
+                command_id="list_research",
+                command_label="/list_research",
+                description="List all research instances (Deep Research mode only)",
+                short_description="List research instances",
+                parser=self._parse_list_research_command,
+                with_argument=False,
+                is_deep_research=True,
+            )
+        )
+
     def _parse_set_assistant_command_status(self, content: str) -> None:
         """Set the status of an assistant command"""
         if not self.llm_control_panel:
@@ -525,6 +562,28 @@ class UserControlPanel(ControlPanel):
                     for v in value:
                         lines.append(v)
         return "\n".join(lines)
+
+    def _parse_create_research_command(self, content: str) -> Event | None:
+        """Parse the /create_research command"""
+        name = content.strip()
+        if not name:
+            self.notifications_printer.print_notification("Please provide a name for the new research instance", CLIColors.RED)
+            return None
+        
+        return CreateResearchEvent(name=name)
+
+    def _parse_switch_research_command(self, content: str) -> Event | None:
+        """Parse the /switch_research command"""
+        name = content.strip()
+        if not name:
+            self.notifications_printer.print_notification("Please provide the name of the research instance to switch to", CLIColors.RED)
+            return None
+        
+        return SwitchResearchEvent(name=name)
+
+    def _parse_list_research_command(self, _: str) -> Event | None:
+        """Parse the /list_research command"""
+        return ListResearchEvent()
 
     def _parse_exa_url_command(self, content: str) -> MessageEvent:
         """Parse and execute the /exa_url command"""

@@ -2,7 +2,6 @@ import os
 import select
 import sys
 import uuid
-from typing import Generator
 
 import numpy as np
 import sounddevice as sd
