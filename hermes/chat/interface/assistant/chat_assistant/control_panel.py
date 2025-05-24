@@ -280,9 +280,7 @@ class ChatAssistantControlPanel(ControlPanel):
             return True
         elif command_status_override == ChatAssistantCommandStatusOverride.AGENT_ONLY:
             return self._agent_mode
-        elif not is_agent_command:
-            return True
-        elif is_agent_command and self._agent_mode:
+        elif not is_agent_command or is_agent_command and self._agent_mode:
             return True
         return False
 

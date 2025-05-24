@@ -1,5 +1,4 @@
-from collections.abc import Generator
-from typing import Iterable
+from collections.abc import Generator, Iterable
 
 from hermes.chat.event import (
     AgentModeEvent,

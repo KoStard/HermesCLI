@@ -1,4 +1,5 @@
 from argparse import Namespace
+
 from hermes.application_initializer import ApplicationInitializer
 from hermes.chat.conversation_orchestrator import ConversationOrchestrator
 from hermes.chat.history import History

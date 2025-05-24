@@ -1,14 +1,11 @@
 import logging
-from collections.abc import Generator
-from itertools import chain
-from typing import Iterable
+from collections.abc import Generator, Iterable
 
 from hermes.chat.event import Event, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
 from hermes.chat.event_handler import EventHandler
 from hermes.chat.file_operations_handler import FileOperationsHandler
 from hermes.chat.history import History
 from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotificationsPrinter
-from hermes.chat.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.chat.message import TextMessage
 from hermes.chat.participants import DebugParticipant, LLMParticipant, Participant
 

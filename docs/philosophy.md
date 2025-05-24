@@ -68,3 +68,17 @@ This document captures the development philosophy you should follow throughout a
 - You find the simplest solutions for even difficult and complex problems. This might include updating existing pieces, removing some, or adding new ones.
 - Whenever adding TODOs, always include a reference to a task where the TODO will be cleaned up/resolved.
 - Write lean code, don't create backup solutions/codepaths if not necessary. Find the right way and see if that can be the only way, support complexity only if needed.
+
+## Workflows
+### Refactor Workflow
+This is what is expected during refactor workflows:
+- Now the cleanness of the code is higher priority than maintaining the current code flows
+- Methods: ~5 lines long, hard limit at 15
+- Classes: ~100 lines long, hard limit at 200
+- Single purpose classes, break down until clean and clear
+- Working with Clean Code principles
+- Minimal nesting inside single method, if you have if/else blocks, or something else, create new methods for the branches if they are not 1 line long
+- Rename things to have high readability
+- Maintaing the functionality
+- Maintain the public API definitions
+- Replace magical strings with enums where possible

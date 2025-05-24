@@ -5,18 +5,15 @@
 # In case of failures, just print an error notification and continue
 # Use module import logic to import the extension
 
-from collections import namedtuple
 import importlib.util
 import logging
 import sys
-from collections.abc import Callable
+from collections import namedtuple
 from pathlib import Path
 from types import ModuleType
 
-from hermes.chat.interface.commands.command import Command
 from hermes.chat.interface.control_panel import ControlPanelCommand
 from hermes.utils.config_utils import get_extensions_dir_path
-
 
 Extensions = namedtuple("Extensions", ["user_commands", "llm_commands", "utils_builders", "deep_research_commands"])
 
