@@ -7,7 +7,6 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
 from hermes.chat.interface.assistant.agent.framework.research.research_project_component.external_file import ExternalFilesManager
 from hermes.chat.interface.assistant.agent.framework.research.research_project_component.knowledge_base import KnowledgeBase
 from hermes.chat.interface.assistant.agent.framework.research.research_project_component.permanent_log import NodePermanentLogs
-from hermes.chat.interface.assistant.agent.framework.task_tree import TaskTree
 
 
 class Repo:
@@ -27,13 +26,12 @@ class Repo:
             dual_directory_file_system.get_research_path(Path("_shared_knowledge_base.md"))
         )
 
-    def create_research(self, name: str, task_tree: TaskTree) -> Research:
+    def create_research(self, name: str) -> Research:
         """
         Create a new Research instance under this Repo.
 
         Args:
             name: Name of the research instance
-            task_tree: Task tree for the research
 
         Returns:
             The created Research instance

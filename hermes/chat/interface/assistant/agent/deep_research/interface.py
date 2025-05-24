@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class DeepResearchAssistantInterface(Interface):
     """Interface for the Deep Research Assistant"""
 
-    def __init__(self, model: ChatModel, research_path: Path, extension_commands=None, use_repo_structure: bool = False):
+    def __init__(self, model: ChatModel, research_path: Path, extension_commands=None):
         self.model = model
         self.model.initialize()
 
@@ -61,7 +61,7 @@ class DeepResearchAssistantInterface(Interface):
         report_generator = ReportGeneratorImpl(template_manager)
         status_printer = StatusPrinterImpl(template_manager)
 
-        # Create the engine, passing the command registry - always use repo structure
+        # Create the engine, passing the command registry
         self._engine: AgentEngine = AgentEngine(
             research_path,
             llm_interface,
@@ -71,13 +71,11 @@ class DeepResearchAssistantInterface(Interface):
             renderer_registry,
             research_interface,
             report_generator,
-            status_printer,
-            use_repo_structure=True
+            status_printer
         )
 
         self._instruction: str | None = None
         self._history_has_been_imported = False
-        self.use_repo_structure = True
 
     def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
         """Render the interface with the given history and events"""
