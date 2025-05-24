@@ -104,31 +104,43 @@ class DeepResearchAssistantInterface(Interface):
                 if isinstance(message, TextualFileMessage):
                     file_details = self._process_textual_file_message(message)
                     if file_details:
-                        textual_files.append(file_details)
+                        textual_files.extend(file_details)
                 else:
                     instruction_pieces.append(message.get_content_for_assistant())
 
-    def _process_textual_file_message(self, message: TextualFileMessage):
+    def _process_textual_file_message(self, message: TextualFileMessage) -> list[tuple]:
         """Process a TextualFileMessage, saving it as an external file"""
         file_content = message.textual_content
-
-        # If the message has a filepath but no content, try to read it
-        if not file_content and message.text_filepath:
-            file_content, success = FileReader.read_file(message.text_filepath)
-            if not success:
-                logger.error(f"Failed to read file {message.text_filepath}")
-                return
+        filename = message.name
 
         if file_content:
-            # Use the filename from message or derive from text_filepath
-            filename = message.name
-            if not filename and message.text_filepath:
-                filename = os.path.basename(message.text_filepath)
-            if not filename:
-                filename = f"external_file_{str(hash(str(file_content)))[:8]}.md"  # Add extension for clarity
+            return self._ingest_file_with_provided_content(filename, message.text_filepath, file_content)
 
-            return filename, file_content
-        return None  # Return None if no content
+        if message.text_filepath:
+            filepath = Path(message.text_filepath)
+            if filepath.is_dir():
+                return self._ingest_directory_external_files(filepath)
+            else:
+                return self._ingest_external_file(filepath)
+
+        return []
+
+    def _ingest_file_with_provided_content(self, filename: str | None, filepath: str | None, content: str) -> list[tuple]:
+        if not filename and filepath:
+            filename = os.path.basename(filepath)
+        if not filename:
+            filename = f"external_file_{str(hash(str(content)))[:8]}.md"  # Add extension for clarity
+        return [(filename, content)]
+
+    def _ingest_directory_external_files(self, filepath: Path) -> list[tuple]:
+        raw_results = FileReader.read_directory(str(filepath))
+        results = []
+        for relative_path, content in raw_results.items():
+            results.append((Path(relative_path).name, content))
+        return results
+
+    def _ingest_external_file(self, filepath: Path) -> list[tuple]:
+        return [(filepath.name, FileReader.read_file(str(filepath)))]
 
     def get_input(self) -> Generator[Event, None, None]:
         """
@@ -244,39 +256,39 @@ class DeepResearchAssistantInterface(Interface):
     def set_budget(self, budget: int | None):
         """Set the budget for the Deep Research Assistant"""
         self._engine.set_budget(budget)
-        
+
     def create_new_research(self, name: str):
         """
         Create a new research instance under the repo and switch to it.
-        
+
         Args:
             name: Name for the new research instance
         """
         self._engine.create_new_research(name)
         self._engine.switch_research(name)
-        
+
     def switch_research(self, name: str):
         """
         Switch to a different research instance.
-        
+
         Args:
             name: Name of the research instance to switch to
         """
         self._engine.switch_research(name)
-        
+
     def list_research_instances(self) -> list[str]:
         """
         List all available research instances.
-        
+
         Returns:
             List of research instance names
         """
         return self._engine.list_research_instances()
-        
+
     def get_current_research_name(self) -> str | None:
         """
         Get the name of the current research instance.
-        
+
         Returns:
             Name of current research instance
         """
