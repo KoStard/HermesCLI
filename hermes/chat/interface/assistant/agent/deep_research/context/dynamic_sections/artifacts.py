@@ -28,7 +28,7 @@ class PrimitiveArtifactData:
     def from_artifact(
         artifact: "Artifact",
         owner_title: str | None = None,
-        is_fully_visible: bool = True,
+        is_fully_visible: bool = False,
     ) -> "PrimitiveArtifactData":
         return PrimitiveArtifactData(
             name=artifact.name,
@@ -73,6 +73,10 @@ class ArtifactsSectionRenderer(DynamicSectionRenderer):
         super().__init__(template_manager, "sections/dynamic/artifacts.mako")
 
     def render(self, data: ArtifactsSectionData, future_changes: int) -> str:
+        if future_changes:
+            return """<artifacts>
+New artifacts have been added in the future, redacted the old from history to keep it clean.
+</artifacts>"""
         # Pass the primitive tuples directly
         context = {
             "external_files_data": data.external_files,  # Tuple[PrimitiveArtifactData]

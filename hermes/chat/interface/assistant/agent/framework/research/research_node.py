@@ -315,6 +315,9 @@ class ResearchNodeImpl(ResearchNode):
     def set_artifact_status(self, artifact: Artifact, is_open: bool):
         self._state_manager.set_artifact_status(artifact, is_open)
 
+    def get_artifact_status(self, artifact: Artifact) -> bool:
+        return self._state_manager.get_artifact_status(artifact)
+
     def increment_iteration(self) -> None:
         """Increment the iteration counter for auto-close functionality"""
         self._state_manager.increment_iteration()

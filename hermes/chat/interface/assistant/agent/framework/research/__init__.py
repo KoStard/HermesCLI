@@ -115,6 +115,10 @@ class ResearchNode(ABC):
         pass
 
     @abstractmethod
+    def get_artifact_status(self, artifact: Artifact) -> bool:
+        pass
+
+    @abstractmethod
     def increment_iteration(self) -> None:
         """Increment the iteration counter for auto-close functionality"""
         pass
