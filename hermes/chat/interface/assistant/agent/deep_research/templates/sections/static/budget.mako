@@ -1,7 +1,7 @@
 ${'##'} Budget
 
 Q: What is a budget?
-A: If budget is provided, it defined how much resources you can use during deep research. The goal is to limit the amount of resources we invest into a vague problem. If the problem in reality can be solved with smaller investment, great, finish early!
+A: If budget is provided, it defined how much resources you can use during deep research. The goal is to limit the amount of resources we invest into a vague problem. If the problem in reality can be solved with smaller investment, great, finish early! Budget is the number of **messages** your team can send for a given research. It's shared with your whole team, the number you see is for everyone together!
 
 Q: What if there is no budget set?
 A: That means you have freedom to choose how much resources you should use, but still keep it mind frugality and prioritise the most important actions to solve the problem.
