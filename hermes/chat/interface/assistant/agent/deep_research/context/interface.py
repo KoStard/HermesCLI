@@ -211,7 +211,7 @@ class DeepResearcherInterface(AgentInterface):
         # Add this node's artifacts
         for artifact in node.get_artifacts():
             is_fully_visible = artifact.is_external
-            is_fully_visible |= node.get_node_state().artifacts_status.get(artifact.name) or False
+            is_fully_visible |= current_node.get_node_state().artifacts_status.get(artifact.name) or False
 
             artifacts.append((node, artifact, is_fully_visible))
 
