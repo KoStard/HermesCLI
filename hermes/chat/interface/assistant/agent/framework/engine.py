@@ -135,6 +135,7 @@ class AgentEngine(Generic[CommandContextType]):
                     break
 
                 next_node.set_problem_status(ProblemStatus.IN_PROGRESS)
+                self.status_printer.print_status(self.research)
                 thread = threading.Thread(target=self._run_node, args=(next_node,))
                 threads.append(thread)
                 thread.start()
