@@ -95,6 +95,8 @@ class KnowledgeBase:
     def save_entries(self) -> None:
         """Save knowledge base entries to file."""
         frontmatter_manager = FrontmatterManager()
+        if len(self._entries) > 10_000:
+            raise Exception("Something's wrong, too many knowledgebase entries.")
         try:
             entry_strings = []
             # Sort by timestamp before saving
