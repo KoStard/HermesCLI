@@ -13,8 +13,11 @@ from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
 from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
 from hermes.chat.interface.user.interface.message_source import MessageSource
-from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 from hermes.chat.messages import TextMessage
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 
 
 class InputHandler:
@@ -22,7 +25,7 @@ class InputHandler:
         self,
         control_panel: UserControlPanel,
         command_completer: CommandCompleter,
-        stt_input_handler: STTInputHandler | None,
+        stt_input_handler: "STTInputHandler | None",
         user_input_from_cli: str,
     ):
         self.control_panel = control_panel

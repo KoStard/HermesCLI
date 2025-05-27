@@ -14,11 +14,14 @@ from hermes.chat.interface.markdown.markdown_highlighter import MarkdownHighligh
 from hermes.chat.interface.user.control_panel.exa_client import ExaClient
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
 from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
-from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 from hermes.chat.interface.user.interface.user_interface import UserInterface
 from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant
 from hermes.components_container import CoreComponents, Participants
 from hermes.extensions_loader import Extensions, ExtensionsLoader
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 
 
 class ApplicationInitializer:
@@ -121,9 +124,11 @@ class ApplicationInitializer:
             )
         )
 
-    def _create_stt_input_handler(self, cli_args: Namespace) -> STTInputHandler | None:
+    def _create_stt_input_handler(self, cli_args: Namespace) -> "STTInputHandler | None":
         if not cli_args.stt:
             return None
+        
+        from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 
         if "GROQ" not in self.config or "api_key" not in self.config["GROQ"]:
             raise ValueError("Please set the GROQ api key in ~/.config/hermes/config.ini")

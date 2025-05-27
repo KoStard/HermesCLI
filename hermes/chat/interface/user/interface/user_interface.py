@@ -10,8 +10,11 @@ from hermes.chat.interface.user.control_panel.user_control_panel import UserCont
 from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
 from hermes.chat.interface.user.interface.event_renderer import EventRenderer
 from hermes.chat.interface.user.interface.input_handler import InputHandler
-from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 from hermes.chat.messages import Message
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 
 
 class UserInterface(Interface):
@@ -21,7 +24,7 @@ class UserInterface(Interface):
         control_panel: UserControlPanel,
         command_completer: CommandCompleter,
         markdown_highlighter: MarkdownHighlighter | None,
-        stt_input_handler: STTInputHandler | None,
+        stt_input_handler: "STTInputHandler | None",
         notifications_printer: CLINotificationsPrinter,
         user_input_from_cli: str,
     ):
