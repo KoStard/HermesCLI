@@ -84,8 +84,8 @@ class KnowledgeBase:
                 if not block:
                     continue
                 try:
-                    metadata, content = frontmatter_manager.extract_frontmatter(content)
-                    entry = KnowledgeEntry.from_dict(metadata, content)
+                    metadata, block_content = frontmatter_manager.extract_frontmatter(block)
+                    entry = KnowledgeEntry.from_dict(metadata, block_content)
                     self._entries.append(entry)
                 except Exception as e:
                     print(f"Warning: Error parsing knowledge entry: {e}")
