@@ -63,6 +63,12 @@ class CLIParser:
         utils_parser = subparsers.add_parser("utils", help="Utility commands")
         utils_subparsers = utils_parser.add_subparsers(dest="utils_command", required=True)
 
+        utils_parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Enable verbose logging (DEBUG level)",
+        )
+
         extract_pdf_parser = utils_subparsers.add_parser(
             "extract_pdf_pages",
             help="Extract pages from a PDF file. Will be saved as original_path/original_name_extracted.pdf",
@@ -101,6 +107,12 @@ class CLIParser:
 
     def _build_info_parser(self, subparsers):
         info_parser = subparsers.add_parser("info", help="Get command information")
+        info_parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Enable verbose logging (DEBUG level)",
+        )
+        
         info_subparsers = info_parser.add_subparsers(dest="info_command", required=True)
 
         info_subparsers.add_parser("list-assistant-commands", help="List all assistant commands")
