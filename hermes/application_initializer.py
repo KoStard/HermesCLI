@@ -3,6 +3,7 @@ import logging
 import textwrap
 from argparse import Namespace
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.chat.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
@@ -18,7 +19,6 @@ from hermes.chat.interface.user.interface.user_interface import UserInterface
 from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant
 from hermes.components_container import CoreComponents, Participants
 from hermes.extensions_loader import Extensions, ExtensionsLoader
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler

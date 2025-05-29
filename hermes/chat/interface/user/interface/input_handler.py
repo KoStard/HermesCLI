@@ -1,5 +1,6 @@
 import os
 from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -14,7 +15,6 @@ from hermes.chat.interface.user.control_panel.user_control_panel import UserCont
 from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
 from hermes.chat.interface.user.interface.message_source import MessageSource
 from hermes.chat.messages import TextMessage
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler

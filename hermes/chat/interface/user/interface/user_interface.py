@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 from hermes.chat.events import Event
 from hermes.chat.history import History
@@ -11,7 +12,6 @@ from hermes.chat.interface.user.interface.command_completer.command_completer im
 from hermes.chat.interface.user.interface.event_renderer import EventRenderer
 from hermes.chat.interface.user.interface.input_handler import InputHandler
 from hermes.chat.messages import Message
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
