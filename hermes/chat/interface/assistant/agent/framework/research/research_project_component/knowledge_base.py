@@ -138,7 +138,7 @@ class KnowledgeBase:
         self._save_entry(entry)
         return True
 
-    def update_entry(self, title: str, new_content: str, new_title: str | None = None) -> bool:
+    def update_entry(self, title: str, new_content: str, new_title: str | None = None, new_tags: list[str] | None = None) -> bool:
         """Update an existing knowledge entry."""
         if title not in self._entries:
             return False
@@ -150,6 +150,8 @@ class KnowledgeBase:
         entry.content = new_content
         if new_title:
             entry.title = new_title
+        if new_tags is not None:
+            entry.tags = new_tags
         # Update timestamp
         entry.timestamp = datetime.now()
         self.add_entry(entry)
