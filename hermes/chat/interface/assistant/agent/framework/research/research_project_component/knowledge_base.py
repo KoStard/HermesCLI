@@ -34,7 +34,7 @@ class KnowledgeEntry:
     def get_metadata_dict(self) -> dict[str, Any]:
         """Convert entry to a dictionary for serialization."""
         return {
-            "title": self.title,
+            "name": self.title,
             "timestamp": self.timestamp.isoformat(),
             "author_node_title": self.author_node_title,
             "tags": self.tags,
@@ -47,7 +47,7 @@ class KnowledgeEntry:
     def from_dict(data: dict[str, Any], content: str) -> "KnowledgeEntry":
         """Create a KnowledgeEntry from a dictionary and content."""
         return KnowledgeEntry(
-            title=data.get("title", "Untitled Entry"),
+            title=data.get("name", "Untitled Entry"),
             content=content,
             author_node_title=data.get("author_node_title", "unknown author"),
             timestamp=datetime.fromisoformat(data.get("timestamp", datetime.now().isoformat())),
