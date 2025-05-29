@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.agent.framework.research.file_system.disk_file_system import DiskFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.research_node import ResearchNodeImpl
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.artifact import Artifact
@@ -24,20 +23,14 @@ from . import Research, ResearchNode
 
 class ResearchImpl(Research):
     def __init__(
-        self,
-        root_directory: Path,
-        dual_directory_file_system: DualDirectoryFileSystem,
-        shared_knowledge_base: KnowledgeBase,
-        repo: "Repo"
+        self, root_directory: Path, dual_directory_file_system: DualDirectoryFileSystem, shared_knowledge_base: KnowledgeBase, repo: "Repo"
     ):
         # Initialize without creating a new knowledge base
         self.root_directory = root_directory
         self.file_system = dual_directory_file_system._disk_fs
         self.dual_directory_file_system = dual_directory_file_system
         self.root_node = None
-        self._permanent_logs = NodePermanentLogs(
-            root_directory / "_permanent_logs.txt"
-        )
+        self._permanent_logs = NodePermanentLogs(root_directory / "_permanent_logs.txt")
         self._has_root_problem_defined = False
 
         # Use the shared knowledge base
@@ -47,10 +40,7 @@ class ResearchImpl(Research):
         self._repo = repo
 
         # Still maintain own external files
-        self._external_files_manager = ExternalFilesManager(
-            self.file_system,
-            root_directory / "_ExternalFiles"
-        )
+        self._external_files_manager = ExternalFilesManager(self.file_system, root_directory / "_ExternalFiles")
 
     def research_already_exists(self) -> bool:
         """Check if research data already exists in the root directory"""

@@ -71,7 +71,7 @@ class DeepResearchAssistantInterface(Interface):
             renderer_registry,
             research_interface,
             report_generator,
-            status_printer
+            status_printer,
         )
 
         self._instruction: str | None = None

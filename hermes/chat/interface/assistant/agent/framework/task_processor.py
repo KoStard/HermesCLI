@@ -47,7 +47,7 @@ class TaskProcessor(Generic[CommandContextType]):
         status_printer_to_use: "StatusPrinter",
         budget_manager: "BudgetManager",
         command_parser: CommandParser,
-        engine: "AgentEngine"
+        engine: "AgentEngine",
     ):
         self.current_node = research_node
         self.research_project = research_project

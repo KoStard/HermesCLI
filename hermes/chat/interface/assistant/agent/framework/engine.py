@@ -13,7 +13,7 @@ from hermes.chat.interface.assistant.agent.framework.report import ReportGenerat
 from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
 from hermes.chat.interface.assistant.agent.framework.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
 from hermes.chat.interface.assistant.agent.framework.research.repo import Repo
-from hermes.chat.interface.assistant.agent.framework.research.research import Research, ResearchImpl
+from hermes.chat.interface.assistant.agent.framework.research.research import Research
 from hermes.chat.interface.assistant.agent.framework.research.research_node import ResearchNodeImpl
 from hermes.chat.interface.assistant.agent.framework.research.research_node_component.problem_definition_manager import (
     ProblemDefinition,
@@ -41,7 +41,7 @@ class AgentEngine(Generic[CommandContextType]):
         agent_interface: AgentInterface,
         report_generator: ReportGenerator,
         status_printer: StatusPrinter,
-        repo_name: str = "default_research"
+        repo_name: str = "default_research",
     ):
         self.command_context_factory = command_context_factory
         self.template_manager = template_manager
@@ -184,7 +184,7 @@ class AgentEngine(Generic[CommandContextType]):
             status_printer_to_use=self.status_printer,
             budget_manager=self.budget_manager,  # Pass BudgetManager instance
             command_parser=self.command_parser,
-            engine=self
+            engine=self,
         )
 
         run_result = task_processor.run()

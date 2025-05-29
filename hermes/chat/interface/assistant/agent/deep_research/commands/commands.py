@@ -504,7 +504,7 @@ class AddKnowledgeCommand(BaseCommand[CommandContextImpl]):
             "Add an entry to the shared knowledge base for all assistants.",
         )
         self.add_section("content", True, "The main content of the knowledge entry.")
-        self.add_section("title", True, "Optional short title/summary for the entry.")
+        self.add_section("title", True, "Title for the entry (must be unique across all knowledge entries).")
         self.add_section(
             "tag",
             False,
@@ -521,61 +521,96 @@ class AddKnowledgeCommand(BaseCommand[CommandContextImpl]):
         if isinstance(tags, str):
             tags = [tags]
 
-        entry = KnowledgeEntry(
-            content=args["content"],
-            author_node_title=current_node.get_title(),
-            title=args["title"],
-            tags=tags,
-        )
+        try:
+            entry = KnowledgeEntry(
+                content=args["content"],
+                author_node_title=current_node.get_title(),
+                title=args["title"],
+                tags=tags,
+            )
 
-        # Add the knowledge entry via the context
-        context.add_knowledge_entry(entry)
-        # Provide confirmation output using context
-        entry_identifier = f"'{entry.title}'" if entry.title else "entry"
-        context.add_command_output(self.name, args, f"Knowledge {entry_identifier} added successfully.")
+            # Add the knowledge entry via the context
+            context.add_knowledge_entry(entry)
+            # Provide confirmation output using context
+            context.add_command_output(self.name, args, f"Knowledge entry '{entry.title}' added successfully.")
+        except ValueError as e:
+            context.add_command_output(self.name, args, f"Error: {str(e)}")
 
 
-class ViewCrossResearchArtifactsCommand(BaseCommand[CommandContextImpl]):
+class AppendKnowledgeCommand(BaseCommand[CommandContextImpl]):
     def __init__(self):
         super().__init__(
-            "view_cross_research_artifacts",
-            "View artifacts from other research instances (only available in repo structure)",
+            "append_knowledge",
+            "Append content to an existing knowledge entry.",
         )
-        self.add_section("search_term", False, "Optional search term to filter artifacts")
+        self.add_section("title", True, "Title of the knowledge entry to append to.")
+        self.add_section("content", True, "Content to append to the existing entry.")
 
     def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
-        """View artifacts from all research instances"""
-        search_term = args.get("search_term", "")
-        
-        # Get all artifacts across research instances
-        all_artifacts = context.search_all_research_artifacts(search_term)
-        
-        if not all_artifacts:
-            context.add_command_output(
-                self.name,
-                args,
-                "No artifacts found across research instances."
-            )
-            return
-            
-        # Group artifacts by research instance
-        artifacts_by_research = {}
-        for research_name, node, artifact in all_artifacts:
-            if research_name not in artifacts_by_research:
-                artifacts_by_research[research_name] = []
-            artifacts_by_research[research_name].append((node, artifact))
-            
-        # Format output
-        output_lines = ["Artifacts across all research instances:"]
-        for research_name, artifacts in sorted(artifacts_by_research.items()):
-            output_lines.append(f"\n## Research: {research_name}")
-            for node, artifact in artifacts:
-                output_lines.append(f"- {artifact.name} (from: {node.get_title()})")
-                if artifact.short_summary:
-                    output_lines.append(f"  Summary: {artifact.short_summary}")
-                    
-        context.add_command_output(self.name, args, "\n".join(output_lines))
+        """Append content to an existing knowledge entry."""
+        title = args["title"]
+        content = args["content"]
 
+        knowledge_base = context.research_project.get_knowledge_base()
+
+        try:
+            success = knowledge_base.append_content(title, append_content=content)
+            if success:
+                context.add_command_output(self.name, args, f"Content appended to knowledge entry '{title}' successfully.")
+            else:
+                context.add_command_output(self.name, args, f"Error: Knowledge entry with title '{title}' not found.")
+        except Exception as e:
+            context.add_command_output(self.name, args, f"Error: {str(e)}")
+
+
+class RewriteKnowledgeCommand(BaseCommand[CommandContextImpl]):
+    def __init__(self):
+        super().__init__(
+            "rewrite_knowledge",
+            "Rewrite the content of an existing knowledge entry.",
+        )
+        self.add_section("title", True, "Title of the knowledge entry to rewrite.")
+        self.add_section("content", True, "New content to replace the existing content.")
+        self.add_section("new_title", False, "Optional new title for the entry.")
+
+    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+        """Rewrite the content of an existing knowledge entry."""
+        title = args["title"]
+        content = args["content"]
+        new_title = args.get("new_title")
+
+        knowledge_base = context.research_project.get_knowledge_base()
+
+        try:
+            success = knowledge_base.update_entry(title, new_content=content, new_title=new_title)
+            if success:
+                title_msg = f" and title updated to '{new_title}'" if new_title else ""
+                context.add_command_output(self.name, args, f"Knowledge entry '{title}' content rewritten{title_msg} successfully.")
+            else:
+                context.add_command_output(self.name, args, f"Error: Knowledge entry with title '{title}' not found.")
+        except Exception as e:
+            context.add_command_output(self.name, args, f"Error: {str(e)}")
+
+
+class DeleteKnowledgeCommand(BaseCommand[CommandContextImpl]):
+    def __init__(self):
+        super().__init__(
+            "delete_knowledge",
+            "Delete an existing knowledge entry.",
+        )
+        self.add_section("title", True, "Title of the knowledge entry to delete.")
+
+    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+        """Delete an existing knowledge entry."""
+        title = args["title"]
+
+        knowledge_base = context.research_project.get_knowledge_base()
+
+        success = knowledge_base.delete_entry(title)
+        if success:
+            context.add_command_output(self.name, args, f"Knowledge entry '{title}' deleted successfully.")
+        else:
+            context.add_command_output(self.name, args, f"Error: Knowledge entry with title '{title}' not found.")
 
 def register_deep_research_commands(registry: CommandRegistry):
     """Registers all built-in Deep Research commands to the given registry."""
@@ -596,7 +631,9 @@ def register_deep_research_commands(registry: CommandRegistry):
         CloseArtifactCommand(),
         ThinkCommand(),
         AddKnowledgeCommand(),
-        ViewCrossResearchArtifactsCommand(),
+        AppendKnowledgeCommand(),
+        RewriteKnowledgeCommand(),
+        DeleteKnowledgeCommand(),
     ]
     for cmd in commands_to_register:
         registry.register(cmd)

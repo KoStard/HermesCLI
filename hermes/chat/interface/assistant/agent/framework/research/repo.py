@@ -21,10 +21,7 @@ class Repo:
         self._task_trees: dict[str, TaskTreeImpl] = {}
 
         # Shared knowledge base for all research instances
-        self._shared_knowledge_base = KnowledgeBase(
-            dual_directory_file_system._disk_fs,
-            dual_directory_file_system.get_path_in_research_from_root(Path("_shared_knowledge_base.md"))
-        )
+        self._shared_knowledge_base = KnowledgeBase(dual_directory_file_system._disk_fs, dual_directory_file_system.root_directory)
         self._shared_knowledge_base.load_entries()
 
         # Load existing research instances from disk
@@ -52,7 +49,7 @@ class Repo:
             root_directory=research_path,
             dual_directory_file_system=self.dual_directory_file_system,
             shared_knowledge_base=self._shared_knowledge_base,
-            repo=self
+            repo=self,
         )
 
         # Create and store task tree for this research
@@ -86,7 +83,7 @@ class Repo:
                 continue
 
             # Skip system files/directories
-            if research_path.name.startswith('_'):
+            if research_path.name.startswith("_"):
                 continue
 
             research_name = research_path.name
@@ -96,7 +93,7 @@ class Repo:
                 root_directory=research_path,
                 dual_directory_file_system=self.dual_directory_file_system,
                 shared_knowledge_base=self._shared_knowledge_base,
-                repo=self
+                repo=self,
             )
 
             # Create task tree for this research

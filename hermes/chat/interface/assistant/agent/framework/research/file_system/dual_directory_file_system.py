@@ -29,7 +29,7 @@ class DualDirectoryFileSystem(FileSystem):
         """Get the absolute path in the Results directory"""
         return self._results_directory / relative_path
 
-    def get_path_in_research_from_root(self, relative_path: Path ) -> Path:
+    def get_path_in_research_from_root(self, relative_path: Path) -> Path:
         """Get the absolute path in the Research directory"""
         return self._repo_directory / relative_path
 

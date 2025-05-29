@@ -5,3 +5,5 @@ Knowledgebase is shared with everyone in the team. It's a flexible system allowi
 But also as it's permanent, you should be frugal with the content. Input densely packed pieces of information there.
 Command output are temporary, so capture the important things in Knowledgebase.
 The artifacts are another permanent solution, but they can be closed, so at least put the summaries in knowledgebase to remember where to look at in case you need the details.
+
+**Important**: Each knowledge entry must have a unique title. Make it descriptive and unique across all knowledge entries in the repository.
