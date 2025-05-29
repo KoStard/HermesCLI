@@ -120,24 +120,13 @@ class TaskProcessor(Generic[CommandContextType]):
             self.budget_manager.get_remaining_budget(),  # Get remaining from BudgetManager
         )
         node_history = research_node.get_history()
-        if not node_history.get_initial_interface_content():
-            node_history.set_initial_interface_content(self._render_initial_interface(static_interface_content, current_dynamic_data))
+        if not node_history._has_initial_interface():
+            node_history.set_initial_interface_content(static_interface_content, current_dynamic_data)
 
         current_auto_reply_aggregator = node_history.get_auto_reply_aggregator()
         current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
         node_history.commit_and_get_auto_reply()  # This clears aggregator for next cycle
 
-        return static_interface_content, current_dynamic_data
-
-    def _render_initial_interface(self, static_interface_content, current_dynamic_data):
-        interface_pieces = [static_interface_content]
-        for data_instance in current_dynamic_data:
-            renderer = self.renderer_registry.get(type(data_instance))
-            if renderer:
-                interface_pieces.append(renderer.render(data_instance, 0))
-            else:
-                raise Exception(f"Missing renderer for {type(data_instance).__name__}")
-        return "\n\n".join(interface_pieces)
 
     def _generate_llm_request(self, research_node: "ResearchNode", history_messages: list[dict]) -> dict:
         """Generate the LLM request with all necessary data."""

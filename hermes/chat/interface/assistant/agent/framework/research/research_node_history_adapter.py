@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.agent.framework.research.research_node_component.history.history_blocks import AutoReply, ChatMessage
+from hermes.chat.interface.assistant.agent.framework.research.research_node_component.history.history_blocks import AutoReply, ChatMessage, InitialInterface
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.context.dynamic_sections import DynamicDataTypeToRendererMap
@@ -27,9 +27,6 @@ class ResearchNodeHistoryAdapter:
         # Process blocks in reverse order (newest to oldest)
         history_messages = self._process_history_blocks(compiled_blocks, template_manager, renderer_registry)
 
-        if help_interface:
-            history_messages.append({"author": "user", "content": help_interface})
-
         # Return in chronological order
         return history_messages[::-1]
 
@@ -45,6 +42,10 @@ class ResearchNodeHistoryAdapter:
             block = compiled_blocks[i]
             if isinstance(block, ChatMessage):
                 history_messages.append(self._process_chat_message(block))
+            elif isinstance(block, InitialInterface):
+                history_messages.append(
+                    self._process_initial_interface(block, compiled_blocks, i, template_manager, renderer_registry)
+                )
             elif isinstance(block, AutoReply):
                 auto_reply_counter, max_length = self._update_auto_reply_counters(auto_reply_counter, iterative_auto_reply_max_length)
                 history_messages.append(
@@ -67,6 +68,19 @@ class ResearchNodeHistoryAdapter:
             max_length = max(max_length // 2, 300)
 
         return counter, current_max_len
+
+    def _process_initial_interface(
+        self,
+        block,  # InitialInterface
+        blocks: list,
+        index: int,
+        template_manager: "TemplateManager",
+        renderer_registry: "DynamicDataTypeToRendererMap",
+    ) -> dict[str, str]:
+        """Process an InitialInterface block into message dict format."""
+        future_changes_map = self._calculate_future_changes(blocks, index)
+        content = block.generate_interface_content(template_manager, renderer_registry, future_changes_map)
+        return {"author": "user", "content": content}
 
     def _process_auto_reply(
         self,
@@ -108,6 +122,10 @@ class ResearchNodeHistoryAdapter:
 
         for future_block in blocks[current_index + 1 :]:
             if isinstance(future_block, AutoReply):
+                for section_index, _ in future_block.dynamic_sections:
+                    future_changes_map[section_index] += 1
+            elif isinstance(future_block, InitialInterface):
+                # InitialInterface blocks also count as changes for sections
                 for section_index, _ in future_block.dynamic_sections:
                     future_changes_map[section_index] += 1
 

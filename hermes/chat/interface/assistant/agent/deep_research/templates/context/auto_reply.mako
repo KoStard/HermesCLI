@@ -27,7 +27,7 @@ ${'###'} Command Outputs
 
 ${'####'} <<< ${cmd_name}
 %     if output_data.get("args", {}):
-Arguments: ${", ".join(f"{k}: {v}" for k, v in output_data.get("args", {}).items())}
+Arguments: ${", ".join(f"{k}: {str(v)[:100]}" for k, v in output_data.get("args", {}).items())}
 
 %     endif
 ```

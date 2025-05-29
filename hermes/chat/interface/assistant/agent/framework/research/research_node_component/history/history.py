@@ -11,6 +11,7 @@ from hermes.chat.interface.assistant.agent.framework.research.research_node_comp
     AutoReply,
     ChatMessage,
     HistoryBlock,
+    InitialInterface,
 )
 
 
@@ -21,7 +22,6 @@ class ResearchNodeHistory:
         self._compiled_blocks: list[HistoryBlock] = []
         self._auto_reply_aggregator = AutoReplyAggregator()
         self._history_file_path = history_file_path
-        self._initial_interface_content: str | None = None
 
         # Load history if file exists
         if os.path.exists(history_file_path):
@@ -40,14 +40,27 @@ class ResearchNodeHistory:
         """Get the auto-reply aggregator for this history"""
         return self._auto_reply_aggregator
 
-    def set_initial_interface_content(self, content: str) -> None:
-        """Set the initial interface content shown to the LLM"""
-        self._initial_interface_content = content
-        self.save()
+    def set_initial_interface_content(self, static_content: str, dynamic_data: list[DynamicSectionData]) -> None:
+        """Set the initial interface content as an InitialInterface block"""
+        # Create dynamic sections list with indices
+        dynamic_sections = [(i, data) for i, data in enumerate(dynamic_data)]
+
+        # Create InitialInterface block
+        initial_block = InitialInterface(static_content, dynamic_sections)
+
+        # Insert at the beginning if no initial interface exists yet
+        if not self._has_initial_interface():
+            self._compiled_blocks.insert(0, initial_block)
+            self.save()
 
     def get_initial_interface_content(self) -> str | None:
-        """Get the initial interface content shown to the LLM"""
-        return self._initial_interface_content
+        """Get the initial interface content - for backward compatibility, returns None if using new system"""
+        # Return None to indicate we're using the new InitialInterface block system
+        return None
+
+    def _has_initial_interface(self) -> bool:
+        """Check if an InitialInterface block already exists"""
+        return len(self._compiled_blocks) > 0 and isinstance(self._compiled_blocks[0], InitialInterface)
 
     def commit_and_get_auto_reply(self) -> AutoReply | None:
         """Commit the current auto-reply and return it"""
@@ -77,7 +90,6 @@ class ResearchNodeHistory:
             serialized_data = {
                 "blocks": self._serialize_blocks(self._compiled_blocks),
                 "auto_reply_aggregator": self._auto_reply_aggregator.serialize(),
-                "initial_interface_content": self._initial_interface_content,
             }
 
             # Write to file with pretty formatting
@@ -101,9 +113,6 @@ class ResearchNodeHistory:
                     aggregator_data = data.get("auto_reply_aggregator")
                     if aggregator_data:
                         self._auto_reply_aggregator.deserialize(aggregator_data)
-
-                    # Load initial interface content
-                    self._initial_interface_content = data.get("initial_interface_content")
         except Exception as e:
             print(f"Error loading history: {e}")
 
@@ -114,6 +123,18 @@ class ResearchNodeHistory:
         for block in blocks:
             if isinstance(block, ChatMessage):
                 serialized.append({"type": "ChatMessage", "author": block.author, "content": block.content})
+            elif isinstance(block, InitialInterface):
+                # Serialize InitialInterface block
+                dynamic_sections = []
+                if block.dynamic_sections:
+                    for idx, section_data in block.dynamic_sections:
+                        dynamic_sections.append({"index": idx, "section_data": section_data.serialize() if section_data else None})
+
+                serialized.append({
+                    "type": "InitialInterface",
+                    "static_content": block.static_content,
+                    "dynamic_sections": dynamic_sections,
+                })
             elif isinstance(block, AutoReply):
                 # For AutoReply, we need proper serialization of dynamic sections
                 dynamic_sections = []
@@ -148,6 +169,22 @@ class ResearchNodeHistory:
 
             if block_type == "ChatMessage":
                 blocks.append(ChatMessage(author=block_data.get("author", ""), content=block_data.get("content", "")))
+            elif block_type == "InitialInterface":
+                # Deserialize InitialInterface block
+                dynamic_sections = []
+                for section_data in block_data.get("dynamic_sections", []):
+                    idx = section_data.get("index")
+                    serialized_section = section_data.get("section_data")
+
+                    if idx is not None and serialized_section:
+                        deserialized_section = DynamicSectionData.deserialize(serialized_section)
+                        if deserialized_section:
+                            dynamic_sections.append((idx, deserialized_section))
+
+                blocks.append(InitialInterface(
+                    static_content=block_data.get("static_content", ""),
+                    dynamic_sections=dynamic_sections,
+                ))
             elif block_type == "AutoReply":
                 # Deserialize dynamic sections
                 dynamic_sections = []

@@ -17,6 +17,68 @@ class ChatMessage(HistoryBlock):
         self.content = content
 
 
+class InitialInterface(HistoryBlock):
+    """Represents the initial interface content with dynamic sections only"""
+
+    def __init__(self, static_content: str, dynamic_sections: list[tuple[int, DynamicSectionData]]):
+        self.static_content = static_content
+        self.dynamic_sections = dynamic_sections
+
+    def generate_interface_content(
+        self,
+        template_manager: TemplateManager,
+        renderer_registry: DynamicDataTypeToRendererMap,
+        future_changes_map: dict[int, int],
+    ) -> str:
+        """
+        Generate the initial interface content with dynamic sections rendered using future changes logic.
+
+        Args:
+            template_manager: The template manager instance
+            renderer_registry: Maps data types to renderer instances
+            future_changes_map: Maps section index to its future change count
+
+        Returns:
+            Complete initial interface content as string
+        """
+        # Start with static content
+        interface_pieces = [self.static_content]
+
+        # Render each dynamic section with future changes optimization
+        for index, data_instance in self.dynamic_sections:
+            data_type = type(data_instance)
+            renderer = renderer_registry.get(data_type)
+            future_changes = future_changes_map.get(index, 0)
+
+            if not renderer:
+                error_msg = f"**SYSTEM ERROR:** No renderer found for {data_type.__name__}"
+                interface_pieces.append(f'<error context="Missing renderer">\n{error_msg}\n</error>')
+                continue
+
+            try:
+                rendered_content = renderer.render(data_instance, future_changes)
+                interface_pieces.append(rendered_content)
+            except Exception:
+                import traceback
+                print(f"\n--- ERROR RENDERING INITIAL INTERFACE SECTION (Index: {index}, Type: {data_type.__name__}) ---")
+                tb_str = traceback.format_exc()
+                print(tb_str)
+                print("--- END ERROR ---")
+
+                artifact_name = f"render_error_initial_section_{index}_{data_type.__name__}"
+                error_content = (
+                    f'<error context="Rendering initial interface section index {index} ({data_type.__name__})">\n'
+                    f"**SYSTEM ERROR:** Failed to render this section. "
+                    f"Please create an artifact named '{artifact_name}' "
+                    f"with the following content:\n```\n{tb_str}\n```\n"
+                    "Then, inform the administrator.\n"
+                    "</error>"
+                )
+                interface_pieces.append(error_content)
+
+        return "\n\n".join(interface_pieces)
+
+
 class AutoReply(HistoryBlock):
     def __init__(
         self,
