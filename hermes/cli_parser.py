@@ -30,9 +30,7 @@ class CLIParser:
         chat_parser = subparsers.add_parser("chat", help="Get command information")
         chat_parser.add_argument("--debug", action="store_true")
 
-        suggested_models = ", ".join(
-            f"{provider.lower()}/{model_tag}" for provider, model_tag in self._provider_model_pairs
-        )
+        suggested_models = ", ".join(f"{provider.lower()}/{model_tag}" for provider, model_tag in self._provider_model_pairs)
 
         chat_parser.add_argument(
             "--model",
@@ -112,7 +110,7 @@ class CLIParser:
             action="store_true",
             help="Enable verbose logging (DEBUG level)",
         )
-        
+
         info_subparsers = info_parser.add_subparsers(dest="info_command", required=True)
 
         info_subparsers.add_parser("list-assistant-commands", help="List all assistant commands")

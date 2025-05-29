@@ -19,7 +19,7 @@ from hermes.chat.events.engine_commands.thinking_level import ThinkingLevelEvent
 __all__ = [
     "EngineCommandEvent",
     "ClearHistoryEvent",
-    "SaveHistoryEvent", 
+    "SaveHistoryEvent",
     "LoadHistoryEvent",
     "ExitEvent",
     "AgentModeEvent",

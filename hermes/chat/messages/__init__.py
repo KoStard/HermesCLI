@@ -20,7 +20,7 @@ __all__ = [
     "TextMessage",
     "InvisibleMessage",
     "AssistantNotificationMessage",
-    "TextGeneratorMessage", 
+    "TextGeneratorMessage",
     "ThinkingAndResponseGeneratorMessage",
     "ImageUrlMessage",
     "ImageMessage",

@@ -612,6 +612,7 @@ class DeleteKnowledgeCommand(BaseCommand[CommandContextImpl]):
         else:
             context.add_command_output(self.name, args, f"Error: Knowledge entry with title '{title}' not found.")
 
+
 def register_deep_research_commands(registry: CommandRegistry):
     """Registers all built-in Deep Research commands to the given registry."""
     commands_to_register = [

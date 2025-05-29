@@ -14,17 +14,15 @@ class ListResearchEvent(EngineCommandEvent):
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         """List all research instances"""
-        if hasattr(orchestrator.assistant_participant.interface, 'list_research_instances'):
+        if hasattr(orchestrator.assistant_participant.interface, "list_research_instances"):
             try:
                 instances = orchestrator.assistant_participant.interface.list_research_instances()
                 current = None
-                if hasattr(orchestrator.assistant_participant.interface, 'get_current_research_name'):
+                if hasattr(orchestrator.assistant_participant.interface, "get_current_research_name"):
                     current = orchestrator.assistant_participant.interface.get_current_research_name()
-                
+
                 if not instances:
-                    orchestrator.notifications_printer.print_notification(
-                        "No research instances found"
-                    )
+                    orchestrator.notifications_printer.print_notification("No research instances found")
                 else:
                     output = ["Research instances:"]
                     for name in instances:
@@ -32,11 +30,6 @@ class ListResearchEvent(EngineCommandEvent):
                         output.append(f"  - {name}{marker}")
                     orchestrator.notifications_printer.print_notification("\n".join(output))
             except ValueError as e:
-                orchestrator.notifications_printer.print_notification(
-                    str(e), CLIColors.RED
-                )
+                orchestrator.notifications_printer.print_notification(str(e), CLIColors.RED)
         else:
-            orchestrator.notifications_printer.print_notification(
-                "Research management is not available in this mode",
-                CLIColors.RED
-            )
+            orchestrator.notifications_printer.print_notification("Research management is not available in this mode", CLIColors.RED)

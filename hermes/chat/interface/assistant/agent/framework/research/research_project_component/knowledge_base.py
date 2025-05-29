@@ -138,9 +138,7 @@ class KnowledgeBase:
         self._save_entry(entry)
         return True
 
-    def update_entry(
-        self, title: str, new_content: str, new_title: str | None = None
-    ) -> bool:
+    def update_entry(self, title: str, new_content: str, new_title: str | None = None) -> bool:
         """Update an existing knowledge entry."""
         if title not in self._entries:
             return False

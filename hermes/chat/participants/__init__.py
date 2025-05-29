@@ -5,7 +5,7 @@ from hermes.chat.participants.user_participant import UserParticipant
 
 __all__ = [
     "Participant",
-    "DebugParticipant", 
+    "DebugParticipant",
     "LLMParticipant",
     "UserParticipant",
 ]

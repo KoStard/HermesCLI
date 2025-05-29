@@ -42,6 +42,6 @@ class LLMParticipant(Participant):
 
     def is_agent_mode_enabled(self) -> bool:
         from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssistantInterface
-        
+
         is_chat_interface = isinstance(self.interface, ChatAssistantInterface)
         return is_chat_interface and self.interface.control_panel._agent_mode

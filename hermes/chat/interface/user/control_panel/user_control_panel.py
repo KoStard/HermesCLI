@@ -569,7 +569,7 @@ class UserControlPanel(ControlPanel):
         if not name:
             self.notifications_printer.print_notification("Please provide a name for the new research instance", CLIColors.RED)
             return None
-        
+
         return CreateResearchEvent(name=name)
 
     def _parse_switch_research_command(self, content: str) -> Event | None:
@@ -578,7 +578,7 @@ class UserControlPanel(ControlPanel):
         if not name:
             self.notifications_printer.print_notification("Please provide the name of the research instance to switch to", CLIColors.RED)
             return None
-        
+
         return SwitchResearchEvent(name=name)
 
     def _parse_list_research_command(self, _: str) -> Event | None:

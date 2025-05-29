@@ -31,9 +31,7 @@ class UserInterface(Interface):
         self.control_panel = control_panel
         self.control_panel_has_rendered = False
         self.event_renderer = EventRenderer(markdown_highlighter, notifications_printer)
-        self.input_handler = InputHandler(
-            control_panel, command_completer, stt_input_handler, user_input_from_cli
-        )
+        self.input_handler = InputHandler(control_panel, command_completer, stt_input_handler, user_input_from_cli)
 
     def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
         self.event_renderer.render_events(events)

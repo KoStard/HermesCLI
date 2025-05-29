@@ -11,22 +11,16 @@ if TYPE_CHECKING:
 @dataclass
 class SwitchResearchEvent(EngineCommandEvent):
     """Event to switch to a different research instance"""
+
     name: str
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         """Switch to a different research instance"""
-        if hasattr(orchestrator.assistant_participant.interface, 'switch_research'):
+        if hasattr(orchestrator.assistant_participant.interface, "switch_research"):
             try:
                 orchestrator.assistant_participant.interface.switch_research(self.name)
-                orchestrator.notifications_printer.print_notification(
-                    f"Switched to research instance: {self.name}"
-                )
+                orchestrator.notifications_printer.print_notification(f"Switched to research instance: {self.name}")
             except ValueError as e:
-                orchestrator.notifications_printer.print_notification(
-                    str(e), CLIColors.RED
-                )
+                orchestrator.notifications_printer.print_notification(str(e), CLIColors.RED)
         else:
-            orchestrator.notifications_printer.print_notification(
-                "Research management is not available in this mode",
-                CLIColors.RED
-            )
+            orchestrator.notifications_printer.print_notification("Research management is not available in this mode", CLIColors.RED)

@@ -53,6 +53,7 @@ class ConversationOrchestrator:
             raise e
         except Exception as e:
             import traceback
+
             self.notifications_printer.print_notification(f"Conversation cycle failed with {e}", CLIColors.RED)
             print(traceback.format_exc())
             self._handle_interruption()

@@ -127,7 +127,7 @@ class ApplicationInitializer:
     def _create_stt_input_handler(self, cli_args: Namespace) -> "STTInputHandler | None":
         if not cli_args.stt:
             return None
-        
+
         from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 
         if "GROQ" not in self.config or "api_key" not in self.config["GROQ"]:
@@ -163,6 +163,7 @@ class ApplicationInitializer:
 
     def _create_deep_research_participant(self, cli_args, model, extension_deep_research_commands) -> LLMParticipant:
         from hermes.chat.interface.assistant.agent.deep_research.interface import DeepResearchAssistantInterface
+
         research_path = Path(cli_args.deep_research).absolute()
 
         deep_research_interface = DeepResearchAssistantInterface(

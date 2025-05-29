@@ -17,5 +17,7 @@ class AudioTranscriber:
         return transcript.text
 
     def _get_transcription_prompt(self) -> str:
-        return ("This is a recording of a human message in a chat, please transcribe it as accurately as possible, capture "
-                "if the user has a question")
+        return (
+            "This is a recording of a human message in a chat, please transcribe it as accurately as possible, capture "
+            "if the user has a question"
+        )

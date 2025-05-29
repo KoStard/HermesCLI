@@ -26,7 +26,7 @@ class AudioRecorder:
 
         self._flush_input_buffer()
         overriding_printer = self._create_printer()
-        
+
         overriding_printer.print_next()
         input()
 
@@ -45,16 +45,18 @@ class AudioRecorder:
             sys.stdin.readline()
 
     def _create_printer(self) -> OverridingPrinter:
-        return OverridingPrinter([
-            "Press Enter to start recording! Ctrl+C to fall back to the keyboard.",
-            "🔴 Recording... Press Enter to stop.",
-            "✅ Recording finished.",
-        ])
+        return OverridingPrinter(
+            [
+                "Press Enter to start recording! Ctrl+C to fall back to the keyboard.",
+                "🔴 Recording... Press Enter to stop.",
+                "✅ Recording finished.",
+            ]
+        )
 
     def _save_audio(self, audio_data: list) -> str:
         audio_array = np.concatenate(audio_data, axis=0)
         temp_folder = "/tmp/hermes/audio/"
-        
+
         if not os.path.exists(temp_folder):
             os.makedirs(temp_folder)
 
