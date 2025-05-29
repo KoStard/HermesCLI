@@ -51,6 +51,6 @@ class OpenAIModel(ChatModel):
     def get_request_builder(self) -> RequestBuilder:
         return self.request_builder
 
-    def set_thinking_level(self, level: str):
+    def set_thinking_level(self, level: int):
         if hasattr(self.request_builder, "set_reasoning_effort"):
             self.request_builder.set_reasoning_effort(level)

@@ -296,11 +296,11 @@ class UserControlPanel(ControlPanel):
 
         self._register_command(
             ControlPanelCommand(
-                command_id="thinking_level",
-                command_label="/thinking_level",
-                description="Set the thinking level (high/medium/low)",
-                short_description="Set thinking level",
-                parser=lambda line: ThinkingLevelEvent(level=line.strip().lower()),
+                command_id="thinking_tokens",
+                command_label="/thinking_tokens",
+                description="Set the thinking tokens (number)",
+                short_description="Set thinking tokens",
+                parser=lambda line: ThinkingLevelEvent(count=int(line.strip().lower())),
             )
         )
 

@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class ThinkingLevelEvent(EngineCommandEvent):
-    level: str
+    count: int
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
-        orchestrator.assistant_participant.get_interface().change_thinking_level(self.level)
-        orchestrator.notifications_printer.print_notification(f"Thinking level set to {self.level}")
+        orchestrator.assistant_participant.get_interface().change_thinking_level(self.count)
+        orchestrator.notifications_printer.print_notification(f"Thinking level set to {self.count}")

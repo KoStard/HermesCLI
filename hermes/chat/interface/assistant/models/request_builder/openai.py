@@ -20,7 +20,7 @@ class OpenAIRequestBuilder(RequestBuilder):
         self.text_messages_aggregator = TextMessagesAggregator(self.prompt_builder_factory)
         self.all_messages_aggregator = AllMessagesAggregator()
 
-    def set_reasoning_effort(self, level: str):
+    def set_reasoning_effort(self, level: int):
         self.reasoning_effort = level
 
     def _add_content(self, content: dict, author: str):

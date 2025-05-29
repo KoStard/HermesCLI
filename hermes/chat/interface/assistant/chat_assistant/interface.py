@@ -81,7 +81,7 @@ class ChatAssistantInterface(Interface):
     def clear(self):
         pass
 
-    def change_thinking_level(self, level: str):
+    def change_thinking_level(self, level: int):
         if hasattr(self.model, "set_thinking_level"):
             self.model.set_thinking_level(level)
 

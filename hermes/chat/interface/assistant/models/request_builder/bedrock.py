@@ -8,6 +8,12 @@ from hermes.chat.interface.assistant.models.request_builder.text_messages_aggreg
     TextMessagesAggregator,
 )
 
+MODEL_TAG_TO_MAX_TOKENS = {
+    'claude-opus-4-20250514-v1': 32768,
+    'claude-sonnet-4-20250514-v1': 64000,
+    'claude-3-7': 124_000
+}
+
 
 class BedrockRequestBuilder(RequestBuilder):
     def __init__(self, model_tag, notifications_printer, prompt_builder_factory):
@@ -38,12 +44,18 @@ class BedrockRequestBuilder(RequestBuilder):
             "messages": final_messages,
         }
 
+        max_tokens = None
+        for tag in MODEL_TAG_TO_MAX_TOKENS:
+            if tag in self.model_tag:
+                max_tokens = MODEL_TAG_TO_MAX_TOKENS[tag]
+                break
+
         if self.reasoning_effort:
             response["additionalModelRequestFields"] = {"thinking": {"type": "enabled", "budget_tokens": self.reasoning_effort}}
-            response["inferenceConfig"]["maxTokens"] = 124_000
-
-        if "maxTokens" not in response["inferenceConfig"] and "claude-3-7" in self.model_tag:
-            response["inferenceConfig"]["maxTokens"] = 124_000
+            if max_tokens:
+                response["inferenceConfig"]["maxTokens"] = max_tokens
+            else:
+                response["inferenceConfig"]["maxTokens"] = self.reasoning_effort + 5000
 
         # Using Converse API
         return response

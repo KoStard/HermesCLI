@@ -41,9 +41,6 @@ class BedrockModel(ChatModel):
                 retries={"max_attempts": 5, "mode": "adaptive"},
             ),
         )
-        self._low_reasoning_tokens: int = self.config.get("low_reasoning_tokens", 1024)
-        self._medium_reasoning_tokens: int = self.config.get("low_reasoning_tokens", 1024 * 5)
-        self._high_reasoning_tokens: int = self.config.get("low_reasoning_tokens", 1024 * 10)
 
     def send_request(self, request: Any) -> Generator[str, None, None]:
         response = self._call_and_retry_if_needed(request)
@@ -101,17 +98,5 @@ class BedrockModel(ChatModel):
             "anthropic.claude-3-5-haiku-20241022-v1:0",
         ]
 
-    def set_thinking_level(self, level: str):
-        if hasattr(self.request_builder, "set_reasoning_effort"):
-            numeric_level: int | None = None
-            if level == "low":
-                numeric_level = self._low_reasoning_tokens
-            elif level == "medium":
-                numeric_level = self._medium_reasoning_tokens
-            elif level == "high":
-                numeric_level = self._high_reasoning_tokens
-            elif level == "off":
-                numeric_level = None
-            else:
-                raise ValueError(f"Invalid thinking level: {level}")
-            self.request_builder.set_reasoning_effort(numeric_level)
+    def set_thinking_level(self, level: int):
+        self.request_builder.set_reasoning_effort(level)
