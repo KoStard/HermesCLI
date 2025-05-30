@@ -140,7 +140,7 @@ class DeepResearchAssistantInterface(Interface):
         return results
 
     def _ingest_external_file(self, filepath: Path) -> list[tuple]:
-        return [(filepath.name, FileReader.read_file(str(filepath)))]
+        return [(filepath.name, FileReader.read_file(str(filepath))[0])]
 
     def get_input(self) -> Generator[Event, None, None]:
         """
