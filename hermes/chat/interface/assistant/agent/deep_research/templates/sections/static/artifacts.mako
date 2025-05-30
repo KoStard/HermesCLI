@@ -20,4 +20,6 @@ Example:
 > [Child artifact](./Subproblem Title/Sub-subproblem Title/Child Artifact Name.md)
 > [Another Artifact](./Another Artifact.md)
 
-In the root node always create an "Entry" artifact, that guides the user where to start, which artifacts to read for which purposes, with which sequence, etc.
+In the root node always create an "Entry {some details}" artifact, that guides the user where to start, which artifacts to read for which purposes, with which sequence, etc.
+
+Know that the user can directly modify the artifact files, so in case you have questions, you can request them to answer it there.
