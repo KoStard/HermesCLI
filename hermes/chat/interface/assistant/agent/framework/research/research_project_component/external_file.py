@@ -53,7 +53,7 @@ class ExternalFilesManager:
         md_file.add_property("summary", summary)
 
         # Save the file
-        file_path = md_file.save_file(self._external_files_dir)
+        file_path = md_file.save_file_in_directory(self._external_files_dir)
 
         # Update the cache
         self._external_files[file_path.name] = artifact

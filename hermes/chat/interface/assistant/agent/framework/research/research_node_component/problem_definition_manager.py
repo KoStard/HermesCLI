@@ -47,7 +47,7 @@ class ProblemDefinitionManager:
             return
 
         md_file = MarkdownFileWithMetadataImpl("Problem Definition", self.problem_definition.content)
-        md_file.save_file(node_path)
+        md_file.save_file_in_directory(node_path)
 
     def append_to_definition(self, content: str) -> None:
         """Append additional content to the problem definition"""

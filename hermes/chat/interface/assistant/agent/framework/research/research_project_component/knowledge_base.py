@@ -113,7 +113,7 @@ class KnowledgeBase:
             file_with_metadata.set_metadata_key(key, value)
 
         # Save the file
-        file_with_metadata.save_file(self._knowledge_base_dir)
+        file_with_metadata.save_file_in_directory(self._knowledge_base_dir)
 
     def add_entry(self, entry: KnowledgeEntry) -> None:
         """Add a new entry to the knowledge base and save."""

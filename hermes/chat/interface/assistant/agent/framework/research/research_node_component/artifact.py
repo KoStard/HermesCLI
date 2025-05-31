@@ -11,12 +11,36 @@ if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.research import ResearchNode
 
 
-@dataclass
 class Artifact:
-    name: str
-    content: str
-    short_summary: str
-    is_external: bool = False
+
+    def __init__(
+        self,
+        name: str,
+        content: str,
+        short_summary: str,
+        is_external: bool = False,
+        path: Path | None = None
+    ) -> None:
+        self.name = name
+        self._content = content
+        self.short_summary = short_summary
+        self.is_external = is_external
+        self._path: Path | None = path
+
+    @property
+    def content(self):
+        if not self._path or not self._path.exists():
+            return self._content
+        else:
+            return self._get_content()
+
+    def _get_content(self) -> str:
+        assert self._path
+        md_file = MarkdownFileWithMetadataImpl.load_from_file(self._path)
+        return md_file.get_content()
+
+    def set_directory(self, directory_path: Path):
+        self._path = MarkdownFileWithMetadataImpl(self.name).get_path(directory_path)
 
     @staticmethod
     def load_from_file(file_path: Path) -> "Artifact":
@@ -31,21 +55,21 @@ class Artifact:
             name=name,
             content=md_file.get_content(),
             short_summary=summary,
-            is_external=False,  # File-based artifacts default to non-external
+            is_external=False,
+            path=file_path
         )
 
-    def save_to_file(self, directory_path: Path) -> None:
+    def save(self) -> None:
         """Save an artifact to a file with metadata"""
-        md_file = MarkdownFileWithMetadataImpl(self.name, self.content)
-        md_file.add_property("name", self.name)
+        md_file = MarkdownFileWithMetadataImpl(self.name, self._content)
         md_file.add_property("summary", self.short_summary)
 
         # Add is_external to metadata if true
         if self.is_external:
             md_file.add_property("is_external", True)
 
-        # MarkdownFileWithMetadataImpl.save_file handles directory creation
-        md_file.save_file(directory_path)
+        assert self._path
+        md_file.save_file_in_path(self._path)
 
     def __str__(self) -> str:
         """String representation of the artifact"""
@@ -86,23 +110,18 @@ class ArtifactManager:
 
         return [artifacts_manager]
 
-    def add_artifact(self, artifact):
+    def add_artifact(self, artifact: Artifact):
         if artifact.name in (a.name for a in self._artifacts):
             raise ValueError("One node can't have multiple artifacts with same name, please check the commands.")
         self._artifacts.append(artifact)
-        self.save()
+        directory = self._get_directory()
+        assert directory
+        artifact.set_directory(directory)
+        artifact.save()
 
-    def save(self):
-        """Save artifacts to disk"""
+    def _get_directory(self) -> Path | None:
         node_path = self._node.get_path()
         if not node_path:
             return
 
-        # Get dual directory file system reference
-        artifacts_dir = self._dual_directory_fs.get_artifact_directory_for_node_path(node_path)
-
-        artifacts_dir.mkdir(parents=True, exist_ok=True)
-
-        # Save each artifact
-        for artifact in self._artifacts:
-            artifact.save_to_file(artifacts_dir)
+        return self._dual_directory_fs.get_artifact_directory_for_node_path(node_path)

@@ -70,7 +70,7 @@ def save_entry_to_new_format(entry: dict[str, Any], knowledgebase_dir: Path) -> 
             file_with_metadata.set_metadata_key(key, entry[key])
 
     # Save the file
-    file_with_metadata.save_file(knowledgebase_dir)
+    file_with_metadata.save_file_in_directory(knowledgebase_dir)
 
 
 def migrate_knowledge_base(shared_file_path: Path) -> None:
