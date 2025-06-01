@@ -1,17 +1,21 @@
 import logging
 import os
-from typing import TYPE_CHECKING, Generator
+from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 from hermes.chat.events import MessageEvent
 from hermes.chat.events.base import Event
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
+from hermes.chat.interface.markdown.document_updater import (
+    MarkdownDocumentUpdater,
+)
 from hermes.chat.messages import AssistantNotificationMessage
 
 if TYPE_CHECKING:
-    from hermes.chat.interface.user.control_panel.exa_client import ExaClient
     from hermes.chat.interface.helpers.cli_notifications import (
         CLINotificationsPrinter,
     )
+    from hermes.chat.interface.user.control_panel.exa_client import ExaClient
     # from hermes.chat.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
 
 
@@ -137,9 +141,6 @@ class ChatAssistantCommandContext:
     def update_markdown_section(self, file_path: str, section_path: list[str], new_content: str, submode: str) -> bool:
         """Update a specific section in a markdown file."""
         try:
-            from hermes.chat.interface.markdown.document_updater import (
-                MarkdownDocumentUpdater,
-            )
             self.ensure_directory_exists(file_path)
             updater = MarkdownDocumentUpdater(file_path)
             was_updated = updater.update_section(section_path, new_content, submode)

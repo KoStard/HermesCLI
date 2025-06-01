@@ -6,7 +6,7 @@ from hermes.chat.interface.helpers.cli_notifications import (
     CLINotificationsPrinter,
 )
 from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
-from hermes.chat.interface.markdown.markdown_highlighter import MarkdownHighlighter
+from hermes.chat.interface.user.interface.markdown_highlighter import MarkdownHighlighter
 from hermes.chat.messages import Message, TextGeneratorMessage, TextMessage
 
 

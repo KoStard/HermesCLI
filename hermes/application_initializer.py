@@ -11,10 +11,10 @@ from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssista
 from hermes.chat.interface.assistant.models.model_factory import ModelFactory
 from hermes.chat.interface.debug.debug_interface import DebugInterface
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
-from hermes.chat.interface.markdown.markdown_highlighter import MarkdownHighlighter
 from hermes.chat.interface.user.control_panel.exa_client import ExaClient
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
 from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
+from hermes.chat.interface.user.interface.markdown_highlighter import MarkdownHighlighter
 from hermes.chat.interface.user.interface.user_interface import UserInterface
 from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant
 from hermes.components_container import CoreComponents, Participants
