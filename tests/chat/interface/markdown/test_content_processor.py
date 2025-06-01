@@ -128,6 +128,60 @@ class TestContentProcessor(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.processor.process_content(lines, section_path, new_content, "invalid_mode")
+            
+    def test_non_h1_start_document(self):
+        """Test updating a document that starts with H2."""
+        lines = [
+            "## Section 1\n",
+            "Content 1\n",
+            "### Subsection 1.1\n",
+            "Content 1.1\n",
+            "## Section 2\n",
+            "Content 2\n",
+        ]
+        section_path = ["Section 2"]
+        new_content = "New content\n"
+        
+        updated_lines, found = self.processor.process_content(
+            lines, section_path, new_content, "update_markdown_section"
+        )
+        
+        self.assertTrue(found)
+        self.assertEqual(updated_lines, [
+            "## Section 1\n",
+            "Content 1\n",
+            "### Subsection 1.1\n",
+            "Content 1.1\n",
+            "## Section 2\n",
+            "New content\n",
+        ])
+        
+    def test_h3_start_document(self):
+        """Test updating a document that starts with H3."""
+        lines = [
+            "### Deep Section\n",
+            "Content 1\n",
+            "#### Deeper\n",
+            "Content 2\n",
+            "### Another Section\n",
+            "Content 3\n",
+        ]
+        section_path = ["Another Section"]
+        new_content = "Updated content\n"
+        
+        updated_lines, found = self.processor.process_content(
+            lines, section_path, new_content, "update_markdown_section"
+        )
+        
+        self.assertTrue(found)
+        self.assertEqual(updated_lines, [
+            "### Deep Section\n",
+            "Content 1\n",
+            "#### Deeper\n",
+            "Content 2\n",
+            "### Another Section\n",
+            "Updated content\n",
+        ])
 
 
 if __name__ == "__main__":

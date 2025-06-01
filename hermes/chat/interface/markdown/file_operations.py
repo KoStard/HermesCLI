@@ -37,8 +37,10 @@ class FileOperations:
     def _generate_file_content(self, section_path: list[str], content: str) -> list[str]:
         """Generate content for a new file with headers."""
         lines = []
-        for i, header in enumerate(section_path, 1):
-            lines.append(f"{'#' * i} {header}\n")
+        # Start with the first header level found in the section path
+        start_level = 1
+        for i, header in enumerate(section_path):
+            lines.append(f"{'#' * (start_level + i)} {header}\n")
         lines.append(content)
         return lines
 

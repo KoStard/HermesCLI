@@ -29,6 +29,7 @@ class MarkdownDocumentUpdater:
 
     def _create_new_file(self, section_path: list[str], content: str) -> bool:
         """Create a new file with the given content."""
+        # Default to starting with H1 for new files unless specified otherwise
         self.file_ops.create_new_file(self.file_path, section_path, content)
         return True
 
