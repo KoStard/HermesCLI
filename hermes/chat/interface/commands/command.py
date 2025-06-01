@@ -3,6 +3,7 @@ from typing import Any, Generic, TypeVar
 
 # Define a TypeVar representing any context type the specific interface might use
 ContextType = TypeVar("ContextType")
+ExecuteResponseType = TypeVar("ExecuteResponseType")
 
 
 class CommandSection:
@@ -22,7 +23,7 @@ class CommandSection:
 
 
 # Make the Command class Generic, parameterized by the ContextType
-class Command(ABC, Generic[ContextType]):
+class Command(ABC, Generic[ContextType, ExecuteResponseType]):
     """
     Base class for all commands, generic over the execution context.
 
@@ -65,7 +66,7 @@ class Command(ABC, Generic[ContextType]):
         return ""
 
     @abstractmethod
-    def execute(self, context: ContextType, args: dict[str, Any]):
+    def execute(self, context: ContextType, args: dict[str, Any]) -> ExecuteResponseType:
         """
         Execute the command with the given arguments and a context object
         provided by the calling interface.
@@ -113,20 +114,20 @@ class CommandRegistry:
     """Registry for all available commands."""
 
     def __init__(self):
-        self._commands: dict[str, Command[Any]] = {}
+        self._commands: dict[str, Command[Any, Any]] = {}
 
-    def register(self, command: Command[Any]) -> None:
+    def register(self, command: Command[Any, Any]) -> None:
         """Register a command instance."""
         if command.name in self._commands:
             # Handle potential duplicate registration (e.g., log warning)
             print(f"Warning: Command '{command.name}' is being re-registered.")
         self._commands[command.name] = command
 
-    def get_command(self, name: str) -> Command[Any] | None:
+    def get_command(self, name: str) -> Command[Any, Any] | None:
         """Get a command instance by name."""
         return self._commands.get(name)
 
-    def get_all_commands(self) -> dict[str, Command[Any]]:
+    def get_all_commands(self) -> dict[str, Command[Any, Any]]:
         """Get all registered command instances."""
         # Return a copy to prevent external modification
         return self._commands.copy()

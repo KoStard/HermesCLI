@@ -16,7 +16,7 @@ from hermes.chat.interface.commands.command import CommandRegistry
 from .command_context import CommandContextImpl
 
 
-class AddCriteriaCommand(BaseCommand[CommandContextImpl]):
+class AddCriteriaCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_criteria",
@@ -42,7 +42,7 @@ class AddCriteriaCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, f"Criteria '{criteria_text}' added.")
 
 
-class MarkCriteriaAsDoneCommand(BaseCommand[CommandContextImpl]):
+class MarkCriteriaAsDoneCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "mark_criteria_as_done",
@@ -88,7 +88,7 @@ class MarkCriteriaAsDoneCommand(BaseCommand[CommandContextImpl]):
         return errors
 
 
-class AddSubproblemCommand(BaseCommand[CommandContextImpl]):
+class AddSubproblemCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_subproblem",
@@ -114,7 +114,7 @@ class AddSubproblemCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, f"Subproblem '{title}' added.")
 
 
-class AddArtifactCommand(BaseCommand[CommandContextImpl]):
+class AddArtifactCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_artifact",
@@ -146,7 +146,7 @@ class AddArtifactCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, f"Artifact '{args['name']}' added.")
 
 
-class AppendToProblemDefinitionCommand(BaseCommand[CommandContextImpl]):
+class AppendToProblemDefinitionCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "append_to_problem_definition",
@@ -164,7 +164,7 @@ class AppendToProblemDefinitionCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, "Problem definition updated.")
 
 
-class AddCriteriaToSubproblemCommand(BaseCommand[CommandContextImpl]):
+class AddCriteriaToSubproblemCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_criteria_to_subproblem",
@@ -205,7 +205,7 @@ class AddCriteriaToSubproblemCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, f"Criteria added to subproblem '{title}'.")
 
 
-class ActivateSubproblems(BaseCommand[CommandContextImpl]):
+class ActivateSubproblems(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "activate_subproblems",
@@ -243,7 +243,7 @@ class ActivateSubproblems(BaseCommand[CommandContextImpl]):
         )
 
 
-class WaitForSubproblems(BaseCommand[CommandContextImpl]):
+class WaitForSubproblems(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "wait_for_subproblems",
@@ -283,7 +283,7 @@ class WaitForSubproblems(BaseCommand[CommandContextImpl]):
         )
 
 
-class FinishCommand(BaseCommand[CommandContextImpl]):
+class FinishCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "finish_problem",
@@ -325,7 +325,7 @@ class FinishCommand(BaseCommand[CommandContextImpl]):
             raise ValueError("Failed to finish the session.")
 
 
-class FailCommand(BaseCommand[CommandContextImpl]):
+class FailCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "fail_problem",
@@ -376,7 +376,7 @@ class FailCommand(BaseCommand[CommandContextImpl]):
                 raise ValueError(f"Failed to mark problem as failed '{current_node_title}'.")
 
 
-class CancelSubproblemCommand(BaseCommand[CommandContextImpl]):
+class CancelSubproblemCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "cancel_subproblem",
@@ -410,7 +410,7 @@ class CancelSubproblemCommand(BaseCommand[CommandContextImpl]):
         context.add_command_output(self.name, args, f"Subproblem '{title}' cancelled.")
 
 
-class AddLogEntryCommand(BaseCommand[CommandContextImpl]):
+class AddLogEntryCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_log_entry",
@@ -427,7 +427,7 @@ class AddLogEntryCommand(BaseCommand[CommandContextImpl]):
             context.add_command_output(self.name, args, "Log entry added.")
 
 
-class OpenArtifactCommand(BaseCommand[CommandContextImpl]):
+class OpenArtifactCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "open_artifact",
@@ -454,7 +454,7 @@ class OpenArtifactCommand(BaseCommand[CommandContextImpl]):
         )
 
 
-class CloseArtifactCommand(BaseCommand[CommandContextImpl]):
+class CloseArtifactCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "close_artifact",
@@ -482,7 +482,7 @@ class CloseArtifactCommand(BaseCommand[CommandContextImpl]):
         )
 
 
-class ThinkCommand(BaseCommand[CommandContextImpl]):
+class ThinkCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "think",
@@ -497,7 +497,7 @@ class ThinkCommand(BaseCommand[CommandContextImpl]):
         pass
 
 
-class AddKnowledgeCommand(BaseCommand[CommandContextImpl]):
+class AddKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_knowledge",
@@ -537,7 +537,7 @@ class AddKnowledgeCommand(BaseCommand[CommandContextImpl]):
             context.add_command_output(self.name, args, f"Error: {str(e)}")
 
 
-class AppendKnowledgeCommand(BaseCommand[CommandContextImpl]):
+class AppendKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "append_knowledge",
@@ -563,7 +563,7 @@ class AppendKnowledgeCommand(BaseCommand[CommandContextImpl]):
             context.add_command_output(self.name, args, f"Error: {str(e)}")
 
 
-class RewriteKnowledgeCommand(BaseCommand[CommandContextImpl]):
+class RewriteKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "rewrite_knowledge",
@@ -604,7 +604,7 @@ class RewriteKnowledgeCommand(BaseCommand[CommandContextImpl]):
             context.add_command_output(self.name, args, f"Error: {str(e)}")
 
 
-class DeleteKnowledgeCommand(BaseCommand[CommandContextImpl]):
+class DeleteKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "delete_knowledge",

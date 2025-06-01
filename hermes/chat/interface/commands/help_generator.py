@@ -19,7 +19,7 @@ class CommandHelpGenerator:
         default_templates_dir = Path(__file__).parent / "templates"
         self.template_manager = TemplateManager(default_templates_dir)
 
-    def generate_help(self, commands: dict[str, Command[Any]]) -> str:
+    def generate_help(self, commands: dict[str, Command[Any, Any]]) -> str:
         """
         Generate help text for given commands.
 
