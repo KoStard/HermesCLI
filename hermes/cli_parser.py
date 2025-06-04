@@ -38,9 +38,9 @@ class CLIParser:
             help=f"Model for the LLM (suggested models: {suggested_models})",
         )
         chat_parser.add_argument(
-            "--deep-research",
+            "--research",
             metavar="PATH",
-            help="Use the Deep Research Assistant interface with path to research folder",
+            help="Use the Research Assistant interface with path to research folder",
             type=str,
         )
         chat_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")

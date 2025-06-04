@@ -6,7 +6,7 @@ Hermes is an extendable command-line interface (CLI) for interacting with Large 
 
 - **Multiple LLM Providers**: Supports OpenAI, Anthropic, Google Gemini, Groq, DeepSeek, SambaNova, OpenRouter, AWS Bedrock, and XAI
 - **Multimedia Input**: Handle images, audio, video, PDFs, URLs, and various document formats
-- **Deep Research Mode**: Advanced research assistant with hierarchical problem-solving and artifact management
+- **Research Mode**: Advanced research assistant with hierarchical problem-solving and artifact management
 - **Extensible Architecture**: Add custom commands and functionality through extensions
 - **Conversation History**: Save and load chat sessions
 - **Speech-to-Text**: Voice input support via Groq API
@@ -100,8 +100,8 @@ hermes chat
 # Use a specific model
 hermes chat --model ANTHROPIC/claude-3-5-sonnet-20241022
 
-# Enable Deep Research mode for complex problem-solving
-hermes chat --deep-research /path/to/research/folder
+# Enable Research mode for complex problem-solving
+hermes chat --research /path/to/research/folder
 
 # Debug mode (see what the LLM receives)
 hermes chat --debug
@@ -157,7 +157,7 @@ The LLM can interact with files using structured commands with `<<<command>>>` b
 
 **Safety Features:**
 - Automatic backups before overwriting existing files
-- Confirmation prompts for destructive operations  
+- Confirmation prompts for destructive operations
 - Sandbox directory (`/tmp/hermes_sandbox/`) for unspecified locations
 - Relative and absolute path support
 
@@ -231,12 +231,12 @@ def get_utils_builders():
             help="An example utility command"
         )
         parser.add_argument("arg1", help="First argument")
-        
+
         def visitor(cli_args, config):
             if cli_args.utils_command != "example-util":
                 return
             print(f"Running example util with arg: {cli_args.arg1}")
-        
+
         return visitor
 
     return [setup_example_util]
@@ -256,7 +256,7 @@ hermes info list-assistant-commands
 
 **Key User Commands:**
 - `/image`, `/audio`, `/video` - Share media files
-- `/pdf`, `/textual_file` - Share documents  
+- `/pdf`, `/textual_file` - Share documents
 - `/url` - Share web content
 - `/save_history`, `/load_history` - Manage conversations
 - `/clear` - Reset conversation
@@ -274,12 +274,12 @@ hermes utils get_url https://example.com
 hermes utils exa_search "AI research papers"
 ```
 
-## Deep Research Mode
+## Research Mode
 
-For complex research tasks, use the Deep Research Assistant:
+For complex research tasks, use the Research Assistant:
 
 ```bash
-hermes chat --deep-research /path/to/research/folder
+hermes chat --research /path/to/research/folder
 ```
 
 **Features:**
@@ -306,7 +306,7 @@ Hermes is built with these excellent open-source libraries:
 
 - **AI Providers:** Anthropic, OpenAI, Google Generative AI, Groq, AWS Boto3
 - **Document Processing:** MarkItDown, PyPDF2
-- **Interface:** prompt-toolkit, Pygments, InquirerPy  
+- **Interface:** prompt-toolkit, Pygments, InquirerPy
 - **Audio:** SoundDevice, SoundFile
 - **Web:** Requests, Exa-py
 - **Templates:** Mako
