@@ -38,7 +38,7 @@ class CLIParser:
             help=f"Model for the LLM (suggested models: {suggested_models})",
         )
         chat_parser.add_argument(
-            "--research",
+            "--research-repo",
             metavar="PATH",
             help="Use the Research Assistant interface with path to research folder",
             type=str,

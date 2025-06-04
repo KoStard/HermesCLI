@@ -101,7 +101,7 @@ hermes chat
 hermes chat --model ANTHROPIC/claude-3-5-sonnet-20241022
 
 # Enable Research mode for complex problem-solving
-hermes chat --research /path/to/research/folder
+hermes chat --research-repo /path/to/research/folder
 
 # Debug mode (see what the LLM receives)
 hermes chat --debug
@@ -279,7 +279,7 @@ hermes utils exa_search "AI research papers"
 For complex research tasks, use the Research Assistant:
 
 ```bash
-hermes chat --research /path/to/research/folder
+hermes chat --research-repo /path/to/research/folder
 ```
 
 **Features:**
