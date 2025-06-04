@@ -31,10 +31,13 @@ class ChatAssistantInterface(Interface):
 
     def __init__(self, model: ChatModel, control_panel: ChatAssistantControlPanel):
         self.model = model
-        self.model.initialize()
+        self._initialized = False
         self.control_panel = control_panel
 
     def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
+        if not self._initialized:
+            self._initialized = True
+            self.model.initialize()
         logger.debug("Asked to render on LLM", self.control_panel)
         request_builder = self.model.get_request_builder()
 

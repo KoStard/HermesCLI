@@ -37,7 +37,6 @@ class DeepResearchAssistantInterface(Interface):
 
     def __init__(self, model: ChatModel, research_path: Path, extension_commands=None):
         self.model = model
-        self.model.initialize()
 
         llm_interface = ChatModelLLMInterface(self.model, research_path)
         self.command_registry = CommandRegistry()
@@ -74,6 +73,7 @@ class DeepResearchAssistantInterface(Interface):
             status_printer,
         )
 
+        self._initialized = False
         self._instruction: str | None = None
         self._history_has_been_imported = False
 
@@ -148,6 +148,9 @@ class DeepResearchAssistantInterface(Interface):
         Yields status messages based on the engine's state.
         """
         logger.debug("Processing instruction in Deep Research Assistant")
+        if not self._initialized:
+            self._initialized = True
+            self.model.initialize()
 
         if error_event := self._check_engine_initialized():
             yield error_event
