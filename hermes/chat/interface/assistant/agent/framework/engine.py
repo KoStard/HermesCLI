@@ -41,7 +41,7 @@ class AgentEngine(Generic[CommandContextType]):
         agent_interface: AgentInterface,
         report_generator: ReportGenerator,
         status_printer: StatusPrinter,
-        repo_name: str = "default_research",
+        research_name: str | None,
     ):
         self.command_context_factory = command_context_factory
         self.template_manager = template_manager
@@ -57,8 +57,9 @@ class AgentEngine(Generic[CommandContextType]):
         self.repo = Repo(root_dir, self.dual_directory_file_system)
 
         # Set current research
-        self.current_research_name = repo_name
-        self.research = self._get_or_create_research(repo_name)
+        research_name = research_name or "default_research"
+        self.current_research_name = research_name
+        self.research = self._get_or_create_research(research_name)
 
         self.command_registry = command_registry
 

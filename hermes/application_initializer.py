@@ -94,7 +94,7 @@ class ApplicationInitializer:
         stt_input_handler = self._create_stt_input_handler(cli_args)
         markdown_highlighter = None if cli_args.no_markdown else MarkdownHighlighter()
 
-        user_control_panel.is_deep_research_mode = bool(cli_args.deep_research)
+        user_control_panel.is_deep_research_mode = bool(cli_args.research_repo)
 
         user_interface = UserInterface(
             control_panel=user_control_panel,
@@ -152,7 +152,7 @@ class ApplicationInitializer:
 
         if cli_args.debug:
             return self._create_debug_participant(model, llm_control_panel)
-        elif cli_args.deep_research:
+        elif cli_args.research_repo:
             return self._create_deep_research_participant(cli_args, model, extension_deep_research_commands)
         else:
             return self._create_chat_participant(model, llm_control_panel)
@@ -164,14 +164,18 @@ class ApplicationInitializer:
     def _create_deep_research_participant(self, cli_args, model, extension_deep_research_commands) -> LLMParticipant:
         from hermes.chat.interface.assistant.agent.deep_research.interface import DeepResearchAssistantInterface
 
-        research_path = Path(cli_args.deep_research).absolute()
+        provided_research_repo_argument = cli_args.research_repo
+        research_repo_path, research_name = provided_research_repo_argument.split(':', 1)
+
+        research_repo_path = Path(research_repo_path).absolute()
 
         deep_research_interface = DeepResearchAssistantInterface(
             model=model,
-            research_path=research_path,
+            research_path=research_repo_path,
             extension_commands=extension_deep_research_commands,
+            research_name=research_name,
         )
-        self.notifications_printer.print_notification(f"Using Deep Research Assistant interface with research directory: {research_path}")
+        self.notifications_printer.print_notification(f"Using Deep Research Assistant interface with research directory: {research_repo_path}")
         return LLMParticipant(deep_research_interface)
 
     def _create_chat_participant(self, model, llm_control_panel) -> LLMParticipant:

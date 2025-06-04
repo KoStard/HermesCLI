@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class DeepResearchAssistantInterface(Interface):
     """Interface for the Deep Research Assistant"""
 
-    def __init__(self, model: ChatModel, research_path: Path, extension_commands=None):
+    def __init__(self, model: ChatModel, research_path: Path, extension_commands=None, research_name: str | None = None):
         self.model = model
 
         llm_interface = ChatModelLLMInterface(self.model, research_path)
@@ -71,6 +71,7 @@ class DeepResearchAssistantInterface(Interface):
             research_interface,
             report_generator,
             status_printer,
+            research_name=research_name
         )
 
         self._initialized = False
