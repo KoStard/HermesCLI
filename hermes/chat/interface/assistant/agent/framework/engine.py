@@ -81,7 +81,7 @@ class AgentEngine(Generic[CommandContextType]):
         problem_definition = ProblemDefinition(content=instruction)
         node = ResearchNodeImpl(
             problem=problem_definition,
-            title=instruction,
+            title=self.current_research_name,
             path=self.research.get_root_directory(),
             parent=None,
             task_tree=current_task_tree,
