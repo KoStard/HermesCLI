@@ -68,9 +68,6 @@ class ResearchNodeHistory:
         to the history, but does NOT save or clear the aggregator.
         This is part of a transactional process.
         """
-        if self._auto_reply_aggregator.is_empty():
-            return
-
         # Create the auto-reply block without clearing the aggregator
         auto_reply = self._auto_reply_aggregator.compile()
 

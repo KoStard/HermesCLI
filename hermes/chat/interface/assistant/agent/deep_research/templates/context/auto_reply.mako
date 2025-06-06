@@ -40,7 +40,13 @@ ${ContentTruncator.truncate(
 %   endfor
 % else:
 
-No command outputs
+**Warning: No actionable commands were executed.**
+
+Remember, progress is made by executing commands that perform actions. If your intention was to...
+
+- **...think or take notes:** That's fine. Just remember to issue an action command in your next step.
+- **...wait for subtasks:** Use the `wait_for_subproblems` command.
+- **...complete your work on this problem:** Use the `finish_problem` command to submit your results for review.
 % endif
 % if messages:
 
