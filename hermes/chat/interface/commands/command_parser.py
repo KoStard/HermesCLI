@@ -207,7 +207,9 @@ class CommandParser:
         return result
 
     @staticmethod
-    def _parse_command_sections(content: str, content_start_line: int, command: Command[Any, Any]) -> tuple[dict[str, Any], list[CommandError]]:
+    def _parse_command_sections(
+        content: str, content_start_line: int, command: Command[Any, Any]
+    ) -> tuple[dict[str, Any], list[CommandError]]:
         """
         Helper to parse ///section delimiters within command content.
 

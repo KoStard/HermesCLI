@@ -18,17 +18,18 @@ class TestContentProcessor(unittest.TestCase):
         section_path = ["Section 2"]
         new_content = "New content\n"
 
-        updated_lines, found = self.processor.process_content(
-            lines, section_path, new_content, "update_markdown_section"
-        )
+        updated_lines, found = self.processor.process_content(lines, section_path, new_content, "update_markdown_section")
 
         self.assertTrue(found)
-        self.assertEqual(updated_lines, [
-            "# Section 1\n",
-            "Content 1\n",
-            "# Section 2\n",
-            "New content\n",
-        ])
+        self.assertEqual(
+            updated_lines,
+            [
+                "# Section 1\n",
+                "Content 1\n",
+                "# Section 2\n",
+                "New content\n",
+            ],
+        )
 
     def test_append_section_simple(self):
         """Test appending to a simple section."""
@@ -41,18 +42,19 @@ class TestContentProcessor(unittest.TestCase):
         section_path = ["Section 2"]
         new_content = "Appended content\n"
 
-        updated_lines, found = self.processor.process_content(
-            lines, section_path, new_content, "append_markdown_section"
-        )
+        updated_lines, found = self.processor.process_content(lines, section_path, new_content, "append_markdown_section")
 
         self.assertTrue(found)
-        self.assertEqual(updated_lines, [
-            "# Section 1\n",
-            "Content 1\n",
-            "# Section 2\n",
-            "Content 2\n",
-            "Appended content\n",
-        ])
+        self.assertEqual(
+            updated_lines,
+            [
+                "# Section 1\n",
+                "Content 1\n",
+                "# Section 2\n",
+                "Content 2\n",
+                "Appended content\n",
+            ],
+        )
 
     def test_nested_section_update(self):
         """Test updating a nested section."""
@@ -67,19 +69,20 @@ class TestContentProcessor(unittest.TestCase):
         section_path = ["Section 1", "Subsection 1.1"]
         new_content = "New subsection content\n"
 
-        updated_lines, found = self.processor.process_content(
-            lines, section_path, new_content, "update_markdown_section"
-        )
+        updated_lines, found = self.processor.process_content(lines, section_path, new_content, "update_markdown_section")
 
         self.assertTrue(found)
-        self.assertEqual(updated_lines, [
-            "# Section 1\n",
-            "Content 1\n",
-            "## Subsection 1.1\n",
-            "New subsection content\n",
-            "# Section 2\n",
-            "Content 2\n",
-        ])
+        self.assertEqual(
+            updated_lines,
+            [
+                "# Section 1\n",
+                "Content 1\n",
+                "## Subsection 1.1\n",
+                "New subsection content\n",
+                "# Section 2\n",
+                "Content 2\n",
+            ],
+        )
 
     def test_preface_update(self):
         """Test updating a section's preface."""
@@ -92,17 +95,18 @@ class TestContentProcessor(unittest.TestCase):
         section_path = ["Section 1", "__preface"]
         new_content = "New preface\n"
 
-        updated_lines, found = self.processor.process_content(
-            lines, section_path, new_content, "update_markdown_section", True
-        )
+        updated_lines, found = self.processor.process_content(lines, section_path, new_content, "update_markdown_section", True)
 
         self.assertTrue(found)
-        self.assertEqual(updated_lines, [
-            "# Section 1\n",
-            "New preface\n",
-            "## Subsection 1.1\n",
-            "Content 1.1\n",
-        ])
+        self.assertEqual(
+            updated_lines,
+            [
+                "# Section 1\n",
+                "New preface\n",
+                "## Subsection 1.1\n",
+                "Content 1.1\n",
+            ],
+        )
 
     def test_section_not_found(self):
         """Test when section is not found."""
@@ -113,9 +117,7 @@ class TestContentProcessor(unittest.TestCase):
         section_path = ["Section 2"]
         new_content = "New content\n"
 
-        updated_lines, found = self.processor.process_content(
-            lines, section_path, new_content, "update_markdown_section"
-        )
+        updated_lines, found = self.processor.process_content(lines, section_path, new_content, "update_markdown_section")
 
         self.assertFalse(found)
         self.assertEqual(updated_lines, lines)
@@ -128,7 +130,7 @@ class TestContentProcessor(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.processor.process_content(lines, section_path, new_content, "invalid_mode")
-            
+
     def test_non_h1_start_document(self):
         """Test updating a document that starts with H2."""
         lines = [
@@ -141,21 +143,22 @@ class TestContentProcessor(unittest.TestCase):
         ]
         section_path = ["Section 2"]
         new_content = "New content\n"
-        
-        updated_lines, found = self.processor.process_content(
-            lines, section_path, new_content, "update_markdown_section"
-        )
-        
+
+        updated_lines, found = self.processor.process_content(lines, section_path, new_content, "update_markdown_section")
+
         self.assertTrue(found)
-        self.assertEqual(updated_lines, [
-            "## Section 1\n",
-            "Content 1\n",
-            "### Subsection 1.1\n",
-            "Content 1.1\n",
-            "## Section 2\n",
-            "New content\n",
-        ])
-        
+        self.assertEqual(
+            updated_lines,
+            [
+                "## Section 1\n",
+                "Content 1\n",
+                "### Subsection 1.1\n",
+                "Content 1.1\n",
+                "## Section 2\n",
+                "New content\n",
+            ],
+        )
+
     def test_h3_start_document(self):
         """Test updating a document that starts with H3."""
         lines = [
@@ -168,20 +171,21 @@ class TestContentProcessor(unittest.TestCase):
         ]
         section_path = ["Another Section"]
         new_content = "Updated content\n"
-        
-        updated_lines, found = self.processor.process_content(
-            lines, section_path, new_content, "update_markdown_section"
-        )
-        
+
+        updated_lines, found = self.processor.process_content(lines, section_path, new_content, "update_markdown_section")
+
         self.assertTrue(found)
-        self.assertEqual(updated_lines, [
-            "### Deep Section\n",
-            "Content 1\n",
-            "#### Deeper\n",
-            "Content 2\n",
-            "### Another Section\n",
-            "Updated content\n",
-        ])
+        self.assertEqual(
+            updated_lines,
+            [
+                "### Deep Section\n",
+                "Content 1\n",
+                "#### Deeper\n",
+                "Content 2\n",
+                "### Another Section\n",
+                "Updated content\n",
+            ],
+        )
 
 
 if __name__ == "__main__":

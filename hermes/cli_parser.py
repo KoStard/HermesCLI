@@ -40,8 +40,10 @@ class CLIParser:
         chat_parser.add_argument(
             "--research-repo",
             metavar="PATH",
-            help=("Use the Research Assistant interface with path to research folder. "
-                "You can specify the initial research name with :research-name"),
+            help=(
+                "Use the Research Assistant interface with path to research folder. "
+                "You can specify the initial research name with :research-name"
+            ),
             type=str,
         )
         chat_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")

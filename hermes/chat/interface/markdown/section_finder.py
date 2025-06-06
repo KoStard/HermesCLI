@@ -44,9 +44,7 @@ class SectionFinder:
 
         return -1, -1, False
 
-    def _update_path_and_check_match(
-        self, path_tracker: SectionPath, line: str, section_path: list[str]
-    ) -> bool:
+    def _update_path_and_check_match(self, path_tracker: SectionPath, line: str, section_path: list[str]) -> bool:
         """Update path tracker with line and check if it matches section_path."""
         header = Header.parse(line)
         if not header:
@@ -55,9 +53,7 @@ class SectionFinder:
         path_tracker.update(header)
         return path_tracker.matches(section_path)
 
-    def _get_section_bounds(
-        self, start_idx: int, lines: list[str], level: int
-    ) -> tuple[int, int, bool]:
+    def _get_section_bounds(self, start_idx: int, lines: list[str], level: int) -> tuple[int, int, bool]:
         """Get section bounds given start index and header level."""
-        end_idx = start_idx + 1 + self.find_section_end(lines[start_idx + 1:], level)
+        end_idx = start_idx + 1 + self.find_section_end(lines[start_idx + 1 :], level)
         return start_idx, end_idx, True

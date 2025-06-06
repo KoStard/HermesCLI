@@ -8,7 +8,7 @@ from hermes.chat.interface.assistant.chat_assistant.commands.context import (
     ChatAssistantExecuteResponseType,
 )
 from hermes.chat.interface.commands.command import Command
-from hermes.chat.interface.helpers.cli_notifications import CLIColors # Specifically used in context.confirm_file_overwrite_with_user
+from hermes.chat.interface.helpers.cli_notifications import CLIColors  # Specifically used in context.confirm_file_overwrite_with_user
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.filepath import prepare_filepath
 

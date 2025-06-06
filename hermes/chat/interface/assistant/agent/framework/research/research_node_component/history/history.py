@@ -130,11 +130,13 @@ class ResearchNodeHistory:
                     for idx, section_data in block.dynamic_sections:
                         dynamic_sections.append({"index": idx, "section_data": section_data.serialize() if section_data else None})
 
-                serialized.append({
-                    "type": "InitialInterface",
-                    "static_content": block.static_content,
-                    "dynamic_sections": dynamic_sections,
-                })
+                serialized.append(
+                    {
+                        "type": "InitialInterface",
+                        "static_content": block.static_content,
+                        "dynamic_sections": dynamic_sections,
+                    }
+                )
             elif isinstance(block, AutoReply):
                 # For AutoReply, we need proper serialization of dynamic sections
                 dynamic_sections = []
@@ -181,10 +183,12 @@ class ResearchNodeHistory:
                         if deserialized_section:
                             dynamic_sections.append((idx, deserialized_section))
 
-                blocks.append(InitialInterface(
-                    static_content=block_data.get("static_content", ""),
-                    dynamic_sections=dynamic_sections,
-                ))
+                blocks.append(
+                    InitialInterface(
+                        static_content=block_data.get("static_content", ""),
+                        dynamic_sections=dynamic_sections,
+                    )
+                )
             elif block_type == "AutoReply":
                 # Deserialize dynamic sections
                 dynamic_sections = []

@@ -12,15 +12,7 @@ if TYPE_CHECKING:
 
 
 class Artifact:
-
-    def __init__(
-        self,
-        name: str,
-        content: str,
-        short_summary: str,
-        is_external: bool = False,
-        path: Path | None = None
-    ) -> None:
+    def __init__(self, name: str, content: str, short_summary: str, is_external: bool = False, path: Path | None = None) -> None:
         self.name = name
         self._content = content
         self.short_summary = short_summary
@@ -51,13 +43,7 @@ class Artifact:
         name = md_file.get_metadata().get("name", file_path.stem)
         summary = md_file.get_metadata().get("summary", "")
 
-        return Artifact(
-            name=name,
-            content=md_file.get_content(),
-            short_summary=summary,
-            is_external=False,
-            path=file_path
-        )
+        return Artifact(name=name, content=md_file.get_content(), short_summary=summary, is_external=False, path=file_path)
 
     def save(self) -> None:
         """Save an artifact to a file with metadata"""

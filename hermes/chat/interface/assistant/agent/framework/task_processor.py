@@ -127,7 +127,6 @@ class TaskProcessor(Generic[CommandContextType]):
         current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
         node_history.commit_and_get_auto_reply()  # This clears aggregator for next cycle
 
-
     def _generate_llm_request(self, research_node: "ResearchNode", history_messages: list[dict]) -> dict:
         """Generate the LLM request with all necessary data."""
         llm_request = self.llm_interface.generate_request(history_messages, research_node.get_path())

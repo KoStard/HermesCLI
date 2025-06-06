@@ -60,6 +60,7 @@ class InitialInterface(HistoryBlock):
                 interface_pieces.append(rendered_content)
             except Exception:
                 import traceback
+
                 print(f"\n--- ERROR RENDERING INITIAL INTERFACE SECTION (Index: {index}, Type: {data_type.__name__}) ---")
                 tb_str = traceback.format_exc()
                 print(tb_str)

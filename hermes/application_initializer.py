@@ -165,7 +165,7 @@ class ApplicationInitializer:
         from hermes.chat.interface.assistant.agent.deep_research.interface import DeepResearchAssistantInterface
 
         provided_research_repo_argument = cli_args.research_repo
-        research_repo_path, research_name = provided_research_repo_argument.split(':', 1)
+        research_repo_path, research_name = provided_research_repo_argument.split(":", 1)
 
         research_repo_path = Path(research_repo_path).absolute()
 
@@ -175,7 +175,9 @@ class ApplicationInitializer:
             extension_commands=extension_deep_research_commands,
             research_name=research_name,
         )
-        self.notifications_printer.print_notification(f"Using Deep Research Assistant interface with research directory: {research_repo_path}")
+        self.notifications_printer.print_notification(
+            f"Using Deep Research Assistant interface with research directory: {research_repo_path}"
+        )
         return LLMParticipant(deep_research_interface)
 
     def _create_chat_participant(self, model, llm_control_panel) -> LLMParticipant:

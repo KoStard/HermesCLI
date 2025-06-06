@@ -8,11 +8,7 @@ from hermes.chat.interface.assistant.models.request_builder.text_messages_aggreg
     TextMessagesAggregator,
 )
 
-MODEL_TAG_TO_MAX_TOKENS = {
-    'claude-opus-4-20250514-v1': 32768,
-    'claude-sonnet-4-20250514-v1': 64000,
-    'claude-3-7': 124_000
-}
+MODEL_TAG_TO_MAX_TOKENS = {"claude-opus-4-20250514-v1": 32768, "claude-sonnet-4-20250514-v1": 64000, "claude-3-7": 124_000}
 
 
 class BedrockRequestBuilder(RequestBuilder):

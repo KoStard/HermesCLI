@@ -71,7 +71,7 @@ class DeepResearchAssistantInterface(Interface):
             research_interface,
             report_generator,
             status_printer,
-            research_name=research_name
+            research_name=research_name,
         )
 
         self._initialized = False

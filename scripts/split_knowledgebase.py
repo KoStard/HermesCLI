@@ -28,7 +28,7 @@ def parse_old_knowledge_base(content: str) -> list[dict[str, Any]]:
     frontmatter_manager = FrontmatterManager()
 
     # Split content by the separator
-    sections = content.split('<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->')
+    sections = content.split("<!-- HERMES_KNOWLEDGE_ENTRY_SEPARATOR -->")
 
     for section in sections:
         section = section.strip()
@@ -38,19 +38,19 @@ def parse_old_knowledge_base(content: str) -> list[dict[str, Any]]:
         # Extract frontmatter and content
         metadata, entry_content = frontmatter_manager.extract_frontmatter(section)
 
-        if not metadata or 'title' not in metadata:
+        if not metadata or "title" not in metadata:
             continue
 
         # Create entry from the extracted metadata and content
         entry = {
-            'title': metadata.get('title', 'Untitled Entry'),
-            'content': entry_content,
-            'timestamp': metadata.get('timestamp', datetime.now().isoformat()),
-            'author_node_title': metadata.get('author_node_title', 'migration_script'),
-            'tags': metadata.get('tags', []),
-            'source': metadata.get('source'),
-            'importance': metadata.get('importance', 1),
-            'confidence': metadata.get('confidence', 1),
+            "title": metadata.get("title", "Untitled Entry"),
+            "content": entry_content,
+            "timestamp": metadata.get("timestamp", datetime.now().isoformat()),
+            "author_node_title": metadata.get("author_node_title", "migration_script"),
+            "tags": metadata.get("tags", []),
+            "source": metadata.get("source"),
+            "importance": metadata.get("importance", 1),
+            "confidence": metadata.get("confidence", 1),
         }
 
         entries.append(entry)
@@ -61,10 +61,10 @@ def parse_old_knowledge_base(content: str) -> list[dict[str, Any]]:
 def save_entry_to_new_format(entry: dict[str, Any], knowledgebase_dir: Path) -> None:
     """Save a single entry to the new format."""
     # Create markdown file with metadata
-    file_with_metadata = MarkdownFileWithMetadataImpl(entry['title'], entry['content'])
+    file_with_metadata = MarkdownFileWithMetadataImpl(entry["title"], entry["content"])
 
     # Set all metadata except title and content
-    metadata_keys = ['timestamp', 'author_node_title', 'tags', 'source', 'importance', 'confidence']
+    metadata_keys = ["timestamp", "author_node_title", "tags", "source", "importance", "confidence"]
     for key in metadata_keys:
         if key in entry:
             file_with_metadata.set_metadata_key(key, entry[key])
@@ -85,7 +85,7 @@ def migrate_knowledge_base(shared_file_path: Path) -> None:
 
     # Read the old knowledge base file
     try:
-        content = shared_file_path.read_text(encoding='utf-8')
+        content = shared_file_path.read_text(encoding="utf-8")
     except Exception as e:
         print(f"Error reading file {shared_file_path}: {e}")
         sys.exit(1)

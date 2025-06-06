@@ -1,7 +1,11 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.agent.framework.research.research_node_component.history.history_blocks import AutoReply, ChatMessage, InitialInterface
+from hermes.chat.interface.assistant.agent.framework.research.research_node_component.history.history_blocks import (
+    AutoReply,
+    ChatMessage,
+    InitialInterface,
+)
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.agent.framework.context.dynamic_sections import DynamicDataTypeToRendererMap
@@ -43,9 +47,7 @@ class ResearchNodeHistoryAdapter:
             if isinstance(block, ChatMessage):
                 history_messages.append(self._process_chat_message(block))
             elif isinstance(block, InitialInterface):
-                history_messages.append(
-                    self._process_initial_interface(block, compiled_blocks, i, template_manager, renderer_registry)
-                )
+                history_messages.append(self._process_initial_interface(block, compiled_blocks, i, template_manager, renderer_registry))
             elif isinstance(block, AutoReply):
                 auto_reply_counter, max_length = self._update_auto_reply_counters(auto_reply_counter, iterative_auto_reply_max_length)
                 history_messages.append(

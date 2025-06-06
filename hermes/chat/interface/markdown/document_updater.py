@@ -33,9 +33,7 @@ class MarkdownDocumentUpdater:
         self.file_ops.create_new_file(self.file_path, section_path, content)
         return True
 
-    def _update_existing_file(
-        self, section_path: list[str], content: str, mode: str
-    ) -> bool:
+    def _update_existing_file(self, section_path: list[str], content: str, mode: str) -> bool:
         """Update an existing file."""
         self.file_ops.backup_file(self.file_path)
         lines = self.file_ops.read_file(self.file_path)
@@ -57,13 +55,9 @@ class MarkdownDocumentUpdater:
 
         return path, is_preface
 
-    def _process_content(
-        self, lines: list[str], path: list[str], content: str, mode: str, is_preface: bool
-    ) -> tuple[list[str], bool]:
+    def _process_content(self, lines: list[str], path: list[str], content: str, mode: str, is_preface: bool) -> tuple[list[str], bool]:
         """Process content using the content processor."""
-        return self.content_processor.process_content(
-            lines, path, content, mode, is_preface
-        )
+        return self.content_processor.process_content(lines, path, content, mode, is_preface)
 
 
 if __name__ == "__main__":
