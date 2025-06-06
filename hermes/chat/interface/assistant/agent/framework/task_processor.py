@@ -27,6 +27,10 @@ class TaskProcessorRunResult(Enum):
     ENGINE_STOP_REQUESTED = auto()  # The task processing led to a budget exhaustion or shutdown command
 
 
+class TaskProcessorCancelledException(Exception):
+    pass
+
+
 class TaskProcessor(Generic[CommandContextType]):
     """
     Manages the execution lifecycle of a single TaskTreeNode.
@@ -67,14 +71,20 @@ class TaskProcessor(Generic[CommandContextType]):
         Runs the assigned task_tree_node until its status changes significantly
         (FINISHED, FAILED, PENDING), or budget/shutdown dictates a stop.
         """
-        while self.current_node.get_problem_status() not in {ProblemStatus.CANCELLED} and not self._engine.engine_interrupted:
+        while not self._is_interrupted:
             try:
                 state = self._execute_task_processing_cycle(self.current_node)
                 if state:
                     return state
             except EngineShutdownRequestedException:
                 return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
+            except TaskProcessorCancelledException:
+                return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
         return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
+
+    @property
+    def _is_interrupted(self) -> bool:
+        return self.current_node.get_problem_status() in {ProblemStatus.CANCELLED} or self._engine.engine_interrupted
 
     def _execute_task_processing_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Execute a single task processing cycle."""
@@ -182,9 +192,9 @@ class TaskProcessor(Generic[CommandContextType]):
                 research_node.get_history().rollback_last_auto_reply()
                 print("\nLLM request interrupted by user during retry prompt. Re-raising.")
                 raise
-            except Exception:
+            except Exception as e:
                 research_node.get_history().rollback_last_auto_reply()
-                if not self._handle_llm_error():
+                if not self._handle_llm_error(e):
                     raise
                 # If retrying, we must re-prepare the auto-reply block for the next attempt
                 research_node.get_history().prepare_and_add_auto_reply_block()
@@ -194,19 +204,27 @@ class TaskProcessor(Generic[CommandContextType]):
         response_generator = self.llm_interface.send_request(request)
 
         try:
-            full_llm_response = next(response_generator)
+            full_llm_response_pieces = []
+            for piece in response_generator:
+                full_llm_response_pieces.append(piece)
+                if self._is_interrupted:
+                    raise TaskProcessorCancelledException()
+            full_llm_response = "".join(full_llm_response_pieces)
             research_node.get_logger().log_llm_response(full_llm_response)
             return full_llm_response
         except StopIteration:
             research_node.get_logger().log_llm_response("")
             return ""
 
-    def _handle_llm_error(self) -> bool:
+    def _handle_llm_error(self, exception: Exception) -> bool:
         """Handle LLM interface errors with option to retry.
 
         Returns:
             bool: True if should retry, False otherwise
         """
+        if isinstance(exception, TaskProcessorCancelledException):
+            return False
+
         import traceback
 
         print("\n\n===== LLM INTERFACE ERROR =====")

@@ -48,7 +48,6 @@ class ChatModelLLMInterface(LLMInterface):
         llm_responses_generator = self._handle_string_output(self.model.send_request(request))
 
         # Collect the response
-        llm_response = []
         is_thinking = False
         is_working = False
         for response in llm_responses_generator:
@@ -57,18 +56,13 @@ class ChatModelLLMInterface(LLMInterface):
                     is_thinking = False
                 if not is_working:
                     is_working = True
-                llm_response.append(response.text)
+                yield response.text
                 logger.debug(response.text)
             else:
                 assert isinstance(response, ThinkingLLMResponse)
                 if not is_thinking:
                     is_thinking = True
                 logger.debug(response.text)
-        print()
-
-        # Join the response parts and yield the final result
-        full_llm_response = "".join(llm_response)
-        yield full_llm_response
 
     def _handle_string_output(self, llm_response_generator: Generator[str, None, None]) -> Generator[BaseLLMResponse, None, None]:
         """
