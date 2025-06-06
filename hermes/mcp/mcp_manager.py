@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import threading
+from collections.abc import Generator
 from typing import TYPE_CHECKING, Any
 
 from hermes.chat.interface.commands.command import Command
@@ -105,81 +106,104 @@ class McpManager:
         return commands
 
     def _create_command_from_schema(self, client: McpClient, tool_schema: dict, mode: str) -> Command:
+        from hermes.chat.events import Event
+        from hermes.mcp.mcp_client import McpError
+
         name = tool_schema.get("name", "unknown_mcp_tool")
         description = tool_schema.get("description", "An MCP-based tool.")
         help_text = f"MCP Tool: {name}\n\n{description}"
         loop = self.loop
 
-        # Define a concrete command class dynamically for each MCP tool.
-        # This class will hold the logic to call the tool.
-        class McpToolCommand(Command[Any, None]):
-            def execute(self, context: Any, args: dict[str, Any]) -> None:
-                """Execute the MCP tool call."""
-                tool_args = {}
-                if "data_json" in args:
-                    try:
-                        json_args = json.loads(args["data_json"])
-                        tool_args.update(json_args)
-                    except json.JSONDecodeError as e:
-                        raise ValueError(f"Invalid JSON in data_json: {e}") from e
-
-                for arg_name, arg_value in args.items():
-                    if arg_name != "data_json":
-                        tool_args[arg_name] = arg_value
-
-                # The `client`, `name`, and `loop` are captured from the outer scope.
-                future = asyncio.run_coroutine_threadsafe(client.call_tool(name, tool_args), loop)
+        def _parse_tool_args(args: dict[str, Any]) -> dict[str, Any]:
+            tool_args = {}
+            if "data_json" in args:
                 try:
-                    result = future.result(timeout=60)
-                except asyncio.TimeoutError:
-                    raise TimeoutError(f"MCP tool '{name}' timed out after 60 seconds.") from None
+                    json_args = json.loads(args["data_json"])
+                    tool_args.update(json_args)
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON in data_json: {e}") from e
 
-                output = ""
-                if result.get("isError"):
-                    output += f"MCP Tool Error from '{name}':\n"
+            for arg_name, arg_value in args.items():
+                if arg_name != "data_json":
+                    tool_args[arg_name] = arg_value
+            return tool_args
+
+        def _call_tool_and_get_output(tool_args: dict[str, Any]) -> str:
+            try:
+                future = asyncio.run_coroutine_threadsafe(client.call_tool(name, tool_args), loop)
+                result = future.result(timeout=60)
 
                 content_parts = []
-                for content_item in result.get("content", []):
-                    if content_item.get("type") == "text":
-                        content_parts.append(content_item.get("text"))
-                output += "\n".join(content_parts)
+                if isinstance(result, dict) and "content" in result:
+                    for content_item in result.get("content", []):
+                        if content_item.get("type") == "text":
+                            content_parts.append(content_item.get("text", ""))
+                elif isinstance(result, str):
+                    content_parts.append(result)
+                elif result is not None:
+                    content_parts.append(json.dumps(result, indent=2))
 
-                # Route the output based on the mode (Chat vs. Deep Research)
-                if mode == "chat" and hasattr(context, "print_notification"):
-                    context.print_notification(f"MCP Tool '{name}' output:\n{output}")
-                elif mode == "deep_research" and hasattr(context, "add_command_output"):
-                    context.add_command_output(name, args, output)
-                elif hasattr(context, "print_notification"):
-                    # Fallback for other contexts that might have print_notification
-                    context.print_notification(f"MCP Tool '{name}' output:\n{output}")
-                else:
-                    logger.warning(
-                        f"MCP Tool '{name}' executed in mode '{mode}' but context has no known output method. Output: {output}"
-                    )
+                output = "\n".join(content_parts)
+                if not output and result is None:
+                    return f"Tool '{name}' executed successfully with no output."
+                return output
 
-        # Instantiate the concrete command class
-        command = McpToolCommand(name, help_text)
+            except McpError as e:
+                return f"MCP Tool Error from '{name}':\n{e.message}"
+            except asyncio.TimeoutError:
+                return f"Error: MCP tool '{name}' timed out after 60 seconds."
+            except Exception as e:
+                logger.error(f"Unexpected error calling MCP tool '{name}': {e}", exc_info=True)
+                return f"Error: An unexpected error occurred while running command '{name}'."
+
+        if mode == "chat":
+
+            class McpChatToolCommand(Command[Any, Generator[Event, None, None]]):
+                def execute(self, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
+                    tool_args = _parse_tool_args(args)
+                    output = _call_tool_and_get_output(tool_args)
+
+                    if hasattr(context, "create_assistant_notification"):
+                        yield context.create_assistant_notification(f"MCP Tool '{name}' output:\n{output}")
+                    else:
+                        logger.warning(f"MCP chat command context for '{name}' is missing create_assistant_notification.")
+                        # Fallback for contexts like DebugInterface that might not have the notification method
+                        if hasattr(context, "print_notification"):
+                            context.print_notification(f"MCP Tool '{name}' output:\n{output}")
+
+            command = McpChatToolCommand(name, help_text)
+        else:  # deep_research
+
+            class McpDeepResearchToolCommand(Command[Any, None]):
+                def execute(self, context: Any, args: dict[str, Any]) -> None:
+                    tool_args = _parse_tool_args(args)
+                    output = _call_tool_and_get_output(tool_args)
+                    if hasattr(context, "add_command_output"):
+                        context.add_command_output(name, args, output)
+                    else:
+                        logger.warning(f"MCP deep_research command context for '{name}' is missing add_command_output.")
+
+            command = McpDeepResearchToolCommand(name, help_text)
 
         # Configure the command sections based on the tool's input schema
         input_schema = tool_schema.get("inputSchema", {})
         properties = input_schema.get("properties", {})
         required = input_schema.get("required", [])
-        has_json_blob_arg = False
 
-        for prop_details in properties.values():
-            prop_type = prop_details.get("type", "string")
-            # If the tool expects a complex object or array, we'll use a single JSON section
-            if prop_type in ["object", "array"]:
-                has_json_blob_arg = True
-                continue
+        # Check if we should use a single json blob for arguments
+        has_complex_arg = any(prop.get("type") in ["object", "array"] for prop in properties.values())
 
-        if not has_json_blob_arg:
+        if has_complex_arg:
+            # For simplicity, if any argument is complex, we ask for all arguments in a single JSON blob.
+            is_data_json_required = any(prop_name in required for prop_name in properties.keys())
+            command.add_section(
+                "data_json", is_data_json_required, "All tool arguments as a single JSON object."
+            )
+        else:
+            # All arguments are simple types (string, number, etc.)
             for prop_name, prop_details in properties.items():
                 is_required = prop_name in required
                 prop_description = prop_details.get("description", "")
                 command.add_section(prop_name, is_required, prop_description)
-
-        if has_json_blob_arg:
-            command.add_section("data_json", False, "JSON-structured arguments for this tool.")
 
         return command

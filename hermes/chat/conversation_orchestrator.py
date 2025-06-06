@@ -37,14 +37,15 @@ class ConversationOrchestrator:
 
     def start_conversation(self):
         try:
-            self._start_conversation()
+            self._start_conversation_loop()
         except EOFError as e:
             raise e
         except Exception as e:
             self._handle_save_history(SaveHistoryEvent())
             raise e
 
-    def _start_conversation(self):
+    def _start_conversation_loop(self):
+        self._handle_mcp_status()
         while self._should_continue_conversation():
             self._run_conversation_cycle_and_handle_exceptions()
 
@@ -67,7 +68,6 @@ class ConversationOrchestrator:
 
     def _run_conversation_cycle(self):
         self._prepare_for_conversation_cycle()
-        self._handle_mcp_status()
 
         events_from_user = self._get_user_input_and_run_commands()
         self._consume_events_from_user_and_render_assistant(events_from_user)

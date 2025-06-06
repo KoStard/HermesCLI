@@ -8,6 +8,14 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+class McpError(Exception):
+    def __init__(self, error_obj):
+        self.code = error_obj.get("code")
+        self.message = error_obj.get("message")
+        self.data = error_obj.get("data")
+        super().__init__(f"MCP Error {self.code}: {self.message}")
+
+
 class McpClient:
     def __init__(self, name: str, command: str, loop: asyncio.AbstractEventLoop):
         self.name = name
@@ -54,7 +62,11 @@ class McpClient:
             try:
                 message = json.loads(line)
                 if "id" in message and message["id"] in self.futures:
-                    self.futures.pop(message["id"]).set_result(message.get("result"))
+                    future = self.futures.pop(message["id"])
+                    if "error" in message:
+                        future.set_exception(McpError(message["error"]))
+                    else:
+                        future.set_result(message.get("result"))
                 else:
                     logger.debug(f"Received unhandled message from {self.name}: {message}")
             except json.JSONDecodeError:
@@ -64,13 +76,14 @@ class McpClient:
         if not self.process or not self.process.stderr:
             return
         while not self.process.stderr.at_eof():
-            line = await self.process.stderr.readline()
-            if not line:
+            line_bytes = await self.process.stderr.readline()
+            if not line_bytes:
                 break
-            logger.warning(f"MCP server '{self.name}' stderr: {line.decode().strip()}")
-            if self.status != "error":  # Capture first error
+            line = line_bytes.decode().strip()
+            logger.debug(f"MCP server '{self.name}' stderr: {line}")
+            if "[error]" in line.lower() and self.status != "error":  # Capture first error
                 self.status = "error"
-                self.error_message = f"Error from server '{self.name}': {line.decode().strip()}"
+                self.error_message = f"Error from server '{self.name}': {line}"
 
     async def _send_request(self, method: str, params: dict | None = None) -> Any:
         if not self.writer:
