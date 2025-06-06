@@ -165,7 +165,11 @@ class ApplicationInitializer:
         from hermes.chat.interface.assistant.agent.deep_research.interface import DeepResearchAssistantInterface
 
         provided_research_repo_argument = cli_args.research_repo
-        research_repo_path, research_name = provided_research_repo_argument.split(":", 1)
+        if ":" in provided_research_repo_argument:
+            research_repo_path, research_name = provided_research_repo_argument.split(":", 1)
+        else:
+            research_repo_path = provided_research_repo_argument
+            research_name = None
 
         research_repo_path = Path(research_repo_path).absolute()
 
