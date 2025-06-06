@@ -125,7 +125,7 @@ class TaskProcessor(Generic[CommandContextType]):
 
         current_auto_reply_aggregator = node_history.get_auto_reply_aggregator()
         current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
-        node_history.commit_and_get_auto_reply()  # This clears aggregator for next cycle
+        node_history.prepare_and_add_auto_reply_block()
 
     def _generate_llm_request(self, research_node: "ResearchNode", history_messages: list[dict]) -> dict:
         """Generate the LLM request with all necessary data."""
@@ -158,7 +158,6 @@ class TaskProcessor(Generic[CommandContextType]):
 
     def _perform_post_cycle_updates(self, research_node: "ResearchNode"):
         """Saves node history and prints the current status."""
-        research_node.get_history().save()
         self.status_printer.print_status(self.research_project)
 
     def _determine_task_processor_outcome(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
@@ -175,16 +174,23 @@ class TaskProcessor(Generic[CommandContextType]):
         """Handle the LLM request with retry capability."""
         while True:
             try:
-                return self._attempt_llm_request(request, research_node)
+                full_llm_response = self._attempt_llm_request(request, research_node)
+                # On success, commit the turn and return
+                research_node.get_history().commit_llm_turn(full_llm_response)
+                return full_llm_response
             except KeyboardInterrupt:
+                research_node.get_history().rollback_last_auto_reply()
                 print("\nLLM request interrupted by user during retry prompt. Re-raising.")
                 raise
             except Exception:
+                research_node.get_history().rollback_last_auto_reply()
                 if not self._handle_llm_error():
                     raise
+                # If retrying, we must re-prepare the auto-reply block for the next attempt
+                research_node.get_history().prepare_and_add_auto_reply_block()
 
     def _attempt_llm_request(self, request, research_node: "ResearchNode") -> str:
-        """Try to get a response from the LLM."""
+        """Try to get a response from the LLM, but do not commit it yet."""
         response_generator = self.llm_interface.send_request(request)
 
         try:

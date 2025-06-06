@@ -62,23 +62,38 @@ class ResearchNodeHistory:
         """Check if an InitialInterface block already exists"""
         return len(self._compiled_blocks) > 0 and isinstance(self._compiled_blocks[0], InitialInterface)
 
-    def commit_and_get_auto_reply(self) -> AutoReply | None:
-        """Commit the current auto-reply and return it"""
-        # Skip if nothing to commit
+    def prepare_and_add_auto_reply_block(self) -> None:
+        """
+        Compiles the current aggregator data into an AutoReply block, adds it
+        to the history, but does NOT save or clear the aggregator.
+        This is part of a transactional process.
+        """
         if self._auto_reply_aggregator.is_empty():
-            return None
+            return
 
-        # Create the auto-reply block
-        auto_reply = self._auto_reply_aggregator.compile_and_clear()
+        # Create the auto-reply block without clearing the aggregator
+        auto_reply = self._auto_reply_aggregator.compile()
 
-        # Add to history
+        # Add to history blocks to be included in the next LLM prompt
         self._compiled_blocks.append(auto_reply)
 
-        # Ensure history is saved immediately after adding auto_reply
-        # This is a critical moment for recovery
-        self.save()
+    def rollback_last_auto_reply(self) -> None:
+        """
+        Removes the last block from history if it's an AutoReply.
+        Used to roll back a transaction if the LLM call fails.
+        """
+        if self._compiled_blocks and isinstance(self._compiled_blocks[-1], AutoReply):
+            self._compiled_blocks.pop()
 
-        return auto_reply
+    def commit_llm_turn(self, llm_response_content: str) -> None:
+        """
+        Finalizes the transaction by clearing the aggregator and saving the
+        history, optionally adding the LLM response message first.
+        """
+        self._auto_reply_aggregator.clear()
+
+        # add_message saves, so this covers saving the whole transaction.
+        self.add_message("assistant", llm_response_content)
 
     def save(self) -> None:
         """Save history to file"""

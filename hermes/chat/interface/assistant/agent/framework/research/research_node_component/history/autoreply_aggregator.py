@@ -82,7 +82,8 @@ class AutoReplyAggregator:
             and not self.dynamic_sections_to_report  # Check the changed sections list
         )
 
-    def compile_and_clear(self) -> AutoReply:
+    def compile(self) -> AutoReply:
+        """Compiles aggregated data into an AutoReply object without clearing."""
         error_report = "\n".join(self.error_reports)
         confirmation_request = "\n".join(self.confirmation_requests) if self.confirmation_requests else None
         auto_reply = AutoReply(
@@ -92,7 +93,6 @@ class AutoReplyAggregator:
             confirmation_request,
             self.dynamic_sections_to_report,  # Pass the changed sections data
         )
-        self.clear()  # Clears reports, outputs, messages, requests, and changed sections list
         return auto_reply
 
     def serialize(self) -> dict[str, Any]:
