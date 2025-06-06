@@ -260,3 +260,22 @@ activate_subproblems_and_wait to be split. 2 commands: activate subproblems, wai
 Should explain how the tasks run parallel. and that you can wait for them to finish or run them async and do your work in parallel.
 
 Think about the locks needed to make this safe
+
+## Task 9: Implement MCP Client
+
+**Status:** In Progress
+
+**Description:**
+Implement a Model Context Protocol (MCP) client to allow Hermes to connect to and use external tools via MCP servers. This will enable both the standard Chat Assistant and the Deep Research Assistant to leverage a wider range of capabilities.
+
+**Acceptance Criteria:**
+- [ ] 1. A new `hermes.mcp` subpackage is created to house the MCP client logic.
+- [ ] 2. The client can connect to MCP servers specified in the `config.ini` file.
+- [ ] 3. Separate MCP server configurations are supported for Chat Assistant (`[MCP_CHAT_ASSISTANT]`) and Deep Research (`[MCP_DEEP_RESEARCH]`).
+- [ ] 4. MCP servers are loaded asynchronously in the background upon application startup to avoid delaying user interaction.
+- [ ] 5. Connection status and errors for MCP servers are reported to the user after their input turn.
+- [ ] 6. If connection errors occur, the user is prompted to confirm whether to continue the session.
+- [ ] 7. Tools exposed by MCP servers are dynamically converted into `<<<command>>>` format commands available to the respective assistant.
+- [ ] 8. JSON schema for tool arguments is supported, with complex arguments handled via a `///data_json` section.
+- [ ] 9. Help text for commands indicates that they are MCP-based tools.
+- [ ] 10. Documentation is updated to explain how to configure and use MCP servers.

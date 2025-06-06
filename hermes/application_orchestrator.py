@@ -14,7 +14,7 @@ from hermes.utils_command_executor import UtilsCommandExecutor
 class ApplicationOrchestrator:
     def __init__(self):
         self.config_manager = ConfigManager()
-        self.app_initializer = ApplicationInitializer(self.config_manager.get_config(), self.config_manager.get_command_status_overrides())
+        self.app_initializer = ApplicationInitializer(self.config_manager, self.config_manager.get_command_status_overrides())
 
     def run(self):
         components = self.app_initializer.get_core_components()
@@ -53,17 +53,35 @@ class ApplicationOrchestrator:
     def _execute_chat_mode(self, cli_args: Namespace, components: CoreComponents):
         model_info_string = self._get_model_info_string(cli_args.model)
         participants = self.app_initializer.create_participants(
-            cli_args,
-            components.user_control_panel,
-            components.model_factory,
-            components.llm_control_panel,
-            components.extension_deep_research_commands,
-            model_info_string,
+            cli_args=cli_args,
+            user_control_panel=components.user_control_panel,
+            model_factory=components.model_factory,
+            llm_control_panel=components.llm_control_panel,
+            extension_deep_research_commands=components.extension_deep_research_commands,
+            mcp_manager=components.mcp_manager,
+            model_info_string=model_info_string,
         )
         self.app_initializer.print_welcome_message(model_info_string)
 
+        # Wait for MCP clients to load, then update the available commands.
+        components.mcp_manager.wait_for_initial_load()
+        assistant_interface = participants.assistant.interface
+        if hasattr(assistant_interface, "update_mcp_commands"):
+            # This branch is for DeepResearchAssistantInterface
+            assistant_interface.update_mcp_commands()
+        elif hasattr(assistant_interface, "control_panel") and hasattr(
+            assistant_interface.control_panel, "update_mcp_commands"
+        ):
+            # This branch is for ChatAssistantInterface and DebugInterface
+            assistant_interface.control_panel.update_mcp_commands()
+
         history = History()
-        conversation_orchestrator = ConversationOrchestrator(participants.user, participants.assistant, history)
+        conversation_orchestrator = ConversationOrchestrator(
+            user_participant=participants.user,
+            assistant_participant=participants.assistant,
+            history=history,
+            mcp_manager=components.mcp_manager,
+        )
         self._run_conversation(conversation_orchestrator, participants.assistant)
 
     def _get_model_info_string(self, cli_model: str | None) -> str | None:

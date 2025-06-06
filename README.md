@@ -161,6 +161,25 @@ The LLM can interact with files using structured commands with `<<<command>>>` b
 - Sandbox directory (`/tmp/hermes_sandbox/`) for unspecified locations
 - Relative and absolute path support
 
+### MCP (Model Context Protocol) Integration
+
+Hermes can be extended with tools from [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers. This allows seamless integration with a growing ecosystem of external tools and data sources.
+
+You can configure MCP servers separately for the regular chat assistant and the Deep Research mode in your `config.ini` file.
+
+```ini
+[MCP_CHAT_ASSISTANT]
+# Add servers for the regular chat mode
+# name = command_to_run_server
+my_weather_tool = /path/to/weather_server.py
+
+[MCP_DEEP_RESEARCH]
+# Add servers for the deep research mode
+my_database_tool = /path/to/db_server.sh
+```
+
+Hermes will start these servers in the background. Tools provided by connected MCP servers will be available as `<<<command>>>` blocks for the assistant to use.
+
 ## Extending Hermes
 
 Hermes can be extended by adding custom commands. Extensions are loaded from the `extensions` subdirectory within the configuration root directory specified in the Configuration section above for your OS. Each extension should be in its own subdirectory and contain an `extension.py` file.

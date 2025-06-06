@@ -2,6 +2,8 @@ ${'##'} Commands
 
 If there are any errors with your commands, they will be reported in the "Errors report" section of the automatic reply. Command execution failures will be shown in the "Execution Status Report" section. Please check these sections if your commands don't seem to be working as expected.
 
+Some commands may be provided by external MCP (Model Context Protocol) servers. These tools extend your capabilities but rely on external processes. If an MCP tool fails, it will be reported in the execution status.
+
 Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break. The commands should start from an empty line, from first symbol in the line. Don't put anything else in the lines of the commands.
 
 You write down the commands you want to send in this interface. If you activate another problem, you won't see the outputs of other commands you send. You should hence send multiple small messages instead.

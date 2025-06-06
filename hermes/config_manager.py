@@ -31,6 +31,19 @@ class ConfigManager:
         base_section = self.config["BASE"]
         return base_section.get("model")
 
+    def get_mcp_chat_assistant_servers(self) -> dict[str, str]:
+        return self._get_mcp_servers("MCP_CHAT_ASSISTANT")
+
+    def get_mcp_deep_research_servers(self) -> dict[str, str]:
+        return self._get_mcp_servers("MCP_DEEP_RESEARCH")
+
+    def _get_mcp_servers(self, section_name: str) -> dict[str, str]:
+        servers = {}
+        if section_name in self.config:
+            for name, command in self.config[section_name].items():
+                servers[name] = command
+        return servers
+
     def _load_config(self) -> configparser.ConfigParser:
         config_path = get_config_path()
 

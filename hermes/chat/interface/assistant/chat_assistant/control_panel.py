@@ -2,6 +2,7 @@ import logging
 import os
 import textwrap
 from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 from hermes.chat.events import Event, MessageEvent
 from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
@@ -32,6 +33,9 @@ from .commands import (
     WebSearchCommand,
 )
 
+if TYPE_CHECKING:
+    from hermes.mcp.mcp_manager import McpManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,10 +46,12 @@ class ChatAssistantControlPanel(ControlPanel):
         extra_commands: list | None,
         exa_client: ExaClient,
         command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] | None,
+        mcp_manager: "McpManager",
     ):
         super().__init__()
         self.notifications_printer = notifications_printer
         self.exa_client = exa_client
+        self.mcp_manager = mcp_manager
         self._agent_mode = False
         self._commands_parsing_status = True
 
@@ -74,6 +80,12 @@ class ChatAssistantControlPanel(ControlPanel):
         self._command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] = (
             command_status_overrides if command_status_overrides is not None else {}
         )
+
+    def update_mcp_commands(self):
+        """Registers/updates commands from MCP clients."""
+        mcp_commands = self.mcp_manager.create_commands_for_mode("chat")
+        for command in mcp_commands:
+            self.command_registry.register(command)
 
     def _add_initial_help_content(self):
         """Add initial help content about command usage"""

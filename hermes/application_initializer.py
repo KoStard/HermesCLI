@@ -1,4 +1,3 @@
-import configparser
 import logging
 import textwrap
 from argparse import Namespace
@@ -19,14 +18,17 @@ from hermes.chat.interface.user.interface.user_interface import UserInterface
 from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant
 from hermes.components_container import CoreComponents, Participants
 from hermes.extensions_loader import Extensions, ExtensionsLoader
+from hermes.mcp.mcp_manager import McpManager
 
 if TYPE_CHECKING:
     from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
+    from hermes.config_manager import ConfigManager
 
 
 class ApplicationInitializer:
-    def __init__(self, config: configparser.ConfigParser, command_status_overrides: dict[str, ChatAssistantCommandStatusOverride]):
-        self.config = config
+    def __init__(self, config_manager: "ConfigManager", command_status_overrides: dict[str, ChatAssistantCommandStatusOverride]):
+        self.config_manager = config_manager
+        self.config = config_manager.get_config()
         self.command_status_overrides = command_status_overrides
         self.notifications_printer = CLINotificationsPrinter()
 
@@ -35,7 +37,12 @@ class ApplicationInitializer:
         model_factory = self._create_model_factory()
         exa_client = self._create_exa_client()
 
-        llm_control_panel = self._create_llm_control_panel(extensions.llm_commands, exa_client)
+        chat_mcp_servers = self.config_manager.get_mcp_chat_assistant_servers()
+        deep_research_mcp_servers = self.config_manager.get_mcp_deep_research_servers()
+        mcp_manager = McpManager(chat_mcp_servers, deep_research_mcp_servers, self.notifications_printer)
+        mcp_manager.start_loading()
+
+        llm_control_panel = self._create_llm_control_panel(extensions.llm_commands, exa_client, mcp_manager)
         user_control_panel = self._create_user_control_panel(extensions.user_commands, exa_client, llm_control_panel)
 
         return CoreComponents(
@@ -44,6 +51,7 @@ class ApplicationInitializer:
             llm_control_panel=llm_control_panel,
             extension_utils_builders=extensions.utils_builders,
             extension_deep_research_commands=extensions.deep_research_commands,
+            mcp_manager=mcp_manager,
         )
 
     def _load_extensions(self) -> Extensions:
@@ -58,12 +66,13 @@ class ApplicationInitializer:
             api_key = self.config["EXA"]["api_key"]
         return ExaClient(api_key)
 
-    def _create_llm_control_panel(self, llm_commands, exa_client) -> ChatAssistantControlPanel:
+    def _create_llm_control_panel(self, llm_commands, exa_client, mcp_manager: "McpManager") -> ChatAssistantControlPanel:
         return ChatAssistantControlPanel(
             notifications_printer=self.notifications_printer,
             extra_commands=llm_commands,
             exa_client=exa_client,
             command_status_overrides=self.command_status_overrides,
+            mcp_manager=mcp_manager,
         )
 
     def _create_user_control_panel(self, user_commands, exa_client, llm_control_panel) -> UserControlPanel:
@@ -81,11 +90,17 @@ class ApplicationInitializer:
         model_factory: ModelFactory,
         llm_control_panel: ChatAssistantControlPanel,
         extension_deep_research_commands: list,
+        mcp_manager: "McpManager",
         model_info_string: str | None,
     ) -> Participants:
         user_participant = self._create_user_participant(cli_args, user_control_panel)
         assistant_participant = self._create_assistant_participant(
-            cli_args, model_factory, llm_control_panel, extension_deep_research_commands, model_info_string
+            cli_args,
+            model_factory,
+            llm_control_panel,
+            extension_deep_research_commands,
+            mcp_manager,
+            model_info_string,
         )
         return Participants(user=user_participant, assistant=assistant_participant)
 
@@ -141,6 +156,7 @@ class ApplicationInitializer:
         model_factory: ModelFactory,
         llm_control_panel: ChatAssistantControlPanel,
         extension_deep_research_commands: list,
+        mcp_manager: "McpManager",
         model_info_string: str | None,
     ):
         model_info_string = self._validate_model_info_string(model_info_string)
@@ -153,7 +169,7 @@ class ApplicationInitializer:
         if cli_args.debug:
             return self._create_debug_participant(model, llm_control_panel)
         elif cli_args.research_repo:
-            return self._create_deep_research_participant(cli_args, model, extension_deep_research_commands)
+            return self._create_deep_research_participant(cli_args, model, extension_deep_research_commands, mcp_manager)
         else:
             return self._create_chat_participant(model, llm_control_panel)
 
@@ -161,7 +177,9 @@ class ApplicationInitializer:
         debug_interface = DebugInterface(control_panel=llm_control_panel, model=model)
         return DebugParticipant(debug_interface)
 
-    def _create_deep_research_participant(self, cli_args, model, extension_deep_research_commands) -> LLMParticipant:
+    def _create_deep_research_participant(
+        self, cli_args, model, extension_deep_research_commands, mcp_manager: "McpManager"
+    ) -> LLMParticipant:
         from hermes.chat.interface.assistant.agent.deep_research.interface import DeepResearchAssistantInterface
 
         provided_research_repo_argument = cli_args.research_repo
@@ -177,6 +195,7 @@ class ApplicationInitializer:
             model=model,
             research_path=research_repo_path,
             extension_commands=extension_deep_research_commands,
+            mcp_manager=mcp_manager,
             research_name=research_name,
         )
         self.notifications_printer.print_notification(

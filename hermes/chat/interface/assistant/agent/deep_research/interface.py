@@ -21,6 +21,7 @@ from hermes.chat.interface.assistant.agent.framework.llm_interface_impl import (
     ChatModelLLMInterface,
 )
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
+from hermes.mcp.mcp_manager import McpManager
 
 # Import core command components
 from hermes.chat.interface.commands.command import CommandRegistry
@@ -35,8 +36,16 @@ logger = logging.getLogger(__name__)
 class DeepResearchAssistantInterface(Interface):
     """Interface for the Deep Research Assistant"""
 
-    def __init__(self, model: ChatModel, research_path: Path, extension_commands=None, research_name: str | None = None):
+    def __init__(
+        self,
+        model: ChatModel,
+        research_path: Path,
+        extension_commands: list | None,
+        mcp_manager: McpManager,
+        research_name: str | None = None,
+    ):
         self.model = model
+        self.mcp_manager = mcp_manager
 
         llm_interface = ChatModelLLMInterface(self.model, research_path)
         self.command_registry = CommandRegistry()
@@ -142,6 +151,12 @@ class DeepResearchAssistantInterface(Interface):
 
     def _ingest_external_file(self, filepath: Path) -> list[tuple]:
         return [(filepath.name, FileReader.read_file(str(filepath))[0])]
+
+    def update_mcp_commands(self):
+        """Registers/updates commands from MCP clients."""
+        mcp_commands = self.mcp_manager.create_commands_for_mode("deep_research")
+        for command in mcp_commands:
+            self.command_registry.register(command)
 
     def get_input(self) -> Generator[Event, None, None]:
         """

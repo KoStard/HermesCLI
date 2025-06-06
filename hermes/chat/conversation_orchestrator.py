@@ -1,5 +1,7 @@
 import logging
+import sys
 from collections.abc import Generator, Iterable
+from typing import TYPE_CHECKING
 
 from hermes.chat.events import EngineCommandEvent, Event, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
 from hermes.chat.file_operations_handler import FileOperationsHandler
@@ -7,6 +9,9 @@ from hermes.chat.history import History
 from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotificationsPrinter
 from hermes.chat.messages import TextMessage
 from hermes.chat.participants import DebugParticipant, LLMParticipant, Participant
+
+if TYPE_CHECKING:
+    from hermes.mcp.mcp_manager import McpManager
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +22,14 @@ class ConversationOrchestrator:
         user_participant: Participant,
         assistant_participant: LLMParticipant | DebugParticipant,
         history: History,
+        mcp_manager: "McpManager",
     ):
         self.user_participant = user_participant
         self.assistant_participant = assistant_participant
         self.participants = [self.user_participant, self.assistant_participant]
         self.history = history
         self.notifications_printer = CLINotificationsPrinter()
+        self.mcp_manager = mcp_manager
 
         self.file_operations_handler = FileOperationsHandler(self.notifications_printer)
         self._received_assistant_done_event = False
@@ -60,6 +67,7 @@ class ConversationOrchestrator:
 
     def _run_conversation_cycle(self):
         self._prepare_for_conversation_cycle()
+        self._handle_mcp_status()
 
         events_from_user = self._get_user_input_and_run_commands()
         self._consume_events_from_user_and_render_assistant(events_from_user)
@@ -122,6 +130,29 @@ class ConversationOrchestrator:
             elif isinstance(event, RawContentForHistoryEvent):
                 self.history.add_raw_content(event)
             yield event
+
+    def _handle_mcp_status(self):
+        """Checks and reports the status of MCP clients."""
+        report = self.mcp_manager.get_status_report()
+        if report:
+            self.notifications_printer.print_notification(report, CLIColors.YELLOW)
+
+        # After initial load, check for persistent errors
+        if self.mcp_manager.initial_load_complete and self.mcp_manager.has_errors() and not self.mcp_manager._errors_acknowledged:
+            error_report = self.mcp_manager.get_error_report()
+            self.notifications_printer.print_notification(error_report, CLIColors.RED)
+            try:
+                # This is a simple way to pause and ask for confirmation.
+                # It slightly breaks the UI abstraction but is acceptable for this critical path.
+                response = input("Errors occurred with MCP servers. Do you want to continue? (y/n): ").lower()
+                if response not in ["y", "yes"]:
+                    self.notifications_printer.print_notification("Exiting due to MCP errors.", CLIColors.RED)
+                    sys.exit(1)
+                else:
+                    self.mcp_manager.acknowledge_errors()
+            except (EOFError, KeyboardInterrupt):
+                self.notifications_printer.print_notification("\nExiting.", CLIColors.YELLOW)
+                sys.exit(1)
 
     def _handle_interruption(self):
         if self.history.reset_uncommitted():

@@ -118,9 +118,6 @@ class CommandRegistry:
 
     def register(self, command: Command[Any, Any]) -> None:
         """Register a command instance."""
-        if command.name in self._commands:
-            # Handle potential duplicate registration (e.g., log warning)
-            print(f"Warning: Command '{command.name}' is being re-registered.")
         self._commands[command.name] = command
 
     def get_command(self, name: str) -> Command[Any, Any] | None:
