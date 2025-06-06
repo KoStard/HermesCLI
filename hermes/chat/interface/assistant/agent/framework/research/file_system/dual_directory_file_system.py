@@ -45,20 +45,7 @@ class DualDirectoryFileSystem(FileSystem):
         """
         # Convert research path to relative path from research directory
         relative_path = node_path.relative_to(self._repo_directory)
-        return self._results_directory / relative_path
-
-    def get_node_path_from_artifact_directory(self, artifact_path: Path) -> Path:
-        """
-        Get the Research directory path for a node from its artifact directory path.
-
-        Args:
-            artifact_path: Path in the Results/ directory
-
-        Returns:
-            Corresponding path in Research/ directory
-        """
-        relative_path = artifact_path.relative_to(self._results_directory)
-        return self._repo_directory / relative_path
+        return self._results_directory / Path(*[part for part in relative_path.parts if part != "Subproblems"])
 
     # Delegate core file system operations to disk file system
     def read_file(self, path: Path) -> str:
