@@ -1,12 +1,10 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from hermes.chat.interface.assistant.framework import CommandContext
-from hermes.chat.interface.assistant.framework.research import Research, ResearchNode
-from hermes.chat.interface.assistant.framework.research.research_node_component.artifact import Artifact
-
-if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.framework import CommandProcessor
-    from hermes.chat.interface.assistant.framework import TaskProcessor
+from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
+from hermes.chat.interface.assistant.deep_research.commands import CommandContext
+from hermes.chat.interface.assistant.deep_research.research import Research, ResearchNode
+from hermes.chat.interface.assistant.deep_research.research.research_node_component.artifact import Artifact
+from hermes.chat.interface.assistant.deep_research.task_processor import TaskProcessor
 
 
 class CommandContextImpl(CommandContext):

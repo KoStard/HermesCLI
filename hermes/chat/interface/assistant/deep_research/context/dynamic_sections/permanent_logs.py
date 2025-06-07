@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.framework.context.dynamic_sections import DynamicSectionData, DynamicSectionRenderer
+from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicSectionData, \
+    DynamicSectionRenderer
 
 if TYPE_CHECKING:
     from hermes.chat.interface.templates.template_manager import (

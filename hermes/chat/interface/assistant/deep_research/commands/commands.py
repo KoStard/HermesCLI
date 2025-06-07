@@ -1,12 +1,12 @@
 import textwrap
 from typing import Any
 
-from hermes.chat.interface.assistant.framework.research.research_node_component.artifact import Artifact
-from hermes.chat.interface.assistant.framework.research.research_node_component.criteria_manager import Criterion
-from hermes.chat.interface.assistant.framework.research import (
+from hermes.chat.interface.assistant.deep_research.research.research_node_component.artifact import Artifact
+from hermes.chat.interface.assistant.deep_research.research.research_node_component.criteria_manager import Criterion
+from hermes.chat.interface.assistant.deep_research.research import (
     ProblemStatus,
 )
-from hermes.chat.interface.assistant.framework.research.research_project_component.knowledge_base import KnowledgeEntry
+from hermes.chat.interface.assistant.deep_research.research.research_project_component.knowledge_base import KnowledgeEntry
 
 # Import the new generic base command and registry
 from hermes.chat.interface.commands.command import Command as BaseCommand

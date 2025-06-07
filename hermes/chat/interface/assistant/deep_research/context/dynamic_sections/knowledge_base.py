@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.framework.context.dynamic_sections import DynamicSectionData, DynamicSectionRenderer
+from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicSectionData, \
+    DynamicSectionRenderer
 
 if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.framework.research.research_project_component.knowledge_base import (
+    from hermes.chat.interface.assistant.deep_research.research.research_project_component.knowledge_base import (
         KnowledgeBase,
         KnowledgeEntry,
     )

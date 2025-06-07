@@ -1,6 +1,6 @@
-from hermes.chat.interface.assistant.framework import AgentInterface
-from hermes.chat.interface.assistant.framework import ReportGenerator
-from hermes.chat.interface.assistant.framework.research import Research
+from hermes.chat.interface.assistant.deep_research.report import ReportGenerator
+from hermes.chat.interface.assistant.deep_research.research import Research
+from hermes.chat.interface.assistant.deep_research.context import AssistantInterface
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
@@ -19,7 +19,7 @@ class ReportGeneratorImpl(ReportGenerator):
         """
         self.template_manager = template_manager
 
-    def generate_final_report(self, research: Research, interface: AgentInterface, root_completion_message: str | None = None) -> str:
+    def generate_final_report(self, research: Research, interface: AssistantInterface, root_completion_message: str | None = None) -> str:
         """
         Generate a summary of all artifacts created during the research using a template.
 

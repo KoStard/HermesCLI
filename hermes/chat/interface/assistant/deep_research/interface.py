@@ -15,8 +15,8 @@ from hermes.chat.interface.assistant.deep_research.context.dynamic_sections.regi
 from hermes.chat.interface.assistant.deep_research.context.interface import DeepResearcherInterface
 from hermes.chat.interface.assistant.deep_research.report.report_generator import ReportGeneratorImpl
 from hermes.chat.interface.assistant.deep_research.report.status_printer import StatusPrinterImpl
-from hermes.chat.interface.assistant.framework.context.dynamic_sections import DynamicDataTypeToRendererMap
-from hermes.chat.interface.assistant.framework import AgentEngine
+from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicDataTypeToRendererMap
+from hermes.chat.interface.assistant.deep_research.engine import ResearchEngine
 from hermes.chat.interface.assistant.framework.llm_interface_impl import (
     ChatModelLLMInterface,
 )
@@ -70,7 +70,7 @@ class DeepResearchAssistantInterface(Interface):
         status_printer = StatusPrinterImpl(template_manager)
 
         # Create the engine, passing the command registry
-        self._engine: AgentEngine = AgentEngine(
+        self._engine: ResearchEngine = ResearchEngine(
             research_path,
             llm_interface,
             self.command_registry,
