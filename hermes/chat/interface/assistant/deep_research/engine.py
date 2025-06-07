@@ -2,14 +2,11 @@ import threading
 from pathlib import Path
 from typing import Generic
 
-from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextType, ResearchCommandContextFactory
-from hermes.chat.interface.assistant.deep_research.report import ReportGenerator
 from hermes.chat.interface.assistant.deep_research.budget_manager import BudgetManager
+from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextFactory, ResearchCommandContextType
 from hermes.chat.interface.assistant.deep_research.context import AssistantInterface
 from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicDataTypeToRendererMap
-from hermes.chat.interface.assistant.framework.llm_interface import (
-    LLMInterface,
-)
+from hermes.chat.interface.assistant.deep_research.report import ReportGenerator
 from hermes.chat.interface.assistant.deep_research.research import ResearchNode
 from hermes.chat.interface.assistant.deep_research.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
 from hermes.chat.interface.assistant.deep_research.research.repo import Repo
@@ -22,6 +19,9 @@ from hermes.chat.interface.assistant.deep_research.research.research_node_compon
 from hermes.chat.interface.assistant.deep_research.status_printer import StatusPrinter
 from hermes.chat.interface.assistant.deep_research.task_processor import TaskProcessor, TaskProcessorRunResult
 from hermes.chat.interface.assistant.deep_research.task_tree.task_tree import TaskTreeImpl
+from hermes.chat.interface.assistant.framework.llm_interface import (
+    LLMInterface,
+)
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.command_parser import CommandParser
 from hermes.chat.interface.templates.template_manager import TemplateManager

@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Generic
 
-from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextType, ResearchCommandContextFactory
-from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
+from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextFactory, ResearchCommandContextType
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
+from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
 from hermes.chat.interface.commands.command import (
     Command,
     CommandRegistry,

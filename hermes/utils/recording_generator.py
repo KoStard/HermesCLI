@@ -1,4 +1,5 @@
-from typing import TypeVar, Generic, Generator
+from collections.abc import Generator
+from typing import Generic, TypeVar
 
 GeneratorItemType = TypeVar("GeneratorItemType")
 

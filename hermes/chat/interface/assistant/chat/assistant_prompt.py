@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import Any
 
 from hermes.chat.interface.commands.command import Command
-from hermes.chat.interface.templates.template_manager import TemplateManager
 from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
+from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
 class AssistantPromptFactory:

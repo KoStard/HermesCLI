@@ -3,11 +3,10 @@ from typing import TYPE_CHECKING
 from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextFactory
 from hermes.chat.interface.assistant.deep_research.commands.command_context import ResearchCommandContextImpl
 
-
 if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
     from hermes.chat.interface.assistant.deep_research.research import ResearchNode
     from hermes.chat.interface.assistant.deep_research.task_processor import TaskProcessor
-    from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
 
 
 class ResearchCommandContextFactoryImpl(ResearchCommandContextFactory[ResearchCommandContextImpl]):

@@ -1,13 +1,13 @@
 import logging
 from collections.abc import Generator
 
-from hermes.chat.interface.assistant.framework.llm_interface import (
-    LLMInterface,
-)
 from hermes.chat.interface.assistant.chat.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
     ThinkingLLMResponse,
+)
+from hermes.chat.interface.assistant.framework.llm_interface import (
+    LLMInterface,
 )
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 from hermes.chat.messages import TextMessage

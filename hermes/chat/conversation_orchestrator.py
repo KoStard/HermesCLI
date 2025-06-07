@@ -1,8 +1,7 @@
 import logging
-from itertools import chain
-
 import sys
 from collections.abc import Generator, Iterable
+from itertools import chain
 from typing import TYPE_CHECKING
 
 from hermes.chat.events import EngineCommandEvent, Event, MessageEvent, SaveHistoryEvent

@@ -4,9 +4,9 @@ from argparse import Namespace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from hermes.chat.interface.assistant.chat.assistant_orchestrator import ChatAssistantOrchestrator
 from hermes.chat.interface.assistant.chat.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.chat.interface.assistant.chat.control_panel import ChatAssistantControlPanel
-from hermes.chat.interface.assistant.chat.assistant_orchestrator import ChatAssistantOrchestrator
 from hermes.chat.interface.assistant.models.model_factory import ModelFactory
 from hermes.chat.interface.debug.debug_interface import DebugInterface
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter

@@ -1,6 +1,6 @@
+from hermes.chat.interface.assistant.deep_research.context import AssistantInterface
 from hermes.chat.interface.assistant.deep_research.report import ReportGenerator
 from hermes.chat.interface.assistant.deep_research.research import Research
-from hermes.chat.interface.assistant.deep_research.context import AssistantInterface
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
 

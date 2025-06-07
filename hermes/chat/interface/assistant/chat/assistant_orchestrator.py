@@ -1,6 +1,6 @@
 import logging
-from collections.abc import Generator
-from typing import Any, Iterable
+from collections.abc import Generator, Iterable
+from typing import Any
 
 from hermes.chat.events import (
     Event,
@@ -18,9 +18,9 @@ from hermes.chat.interface.assistant.chat.response_types import (
 )
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 from hermes.chat.messages import (
+    TextGeneratorMessage,
     TextMessage,
     ThinkingAndResponseGeneratorMessage,
-    TextGeneratorMessage,
 )
 from hermes.utils.recording_generator import RecordingGenerator
 

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator
-from pathlib import Path
 
 
 class LLMInterface(ABC):

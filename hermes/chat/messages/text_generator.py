@@ -1,7 +1,6 @@
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable
 
 from hermes.chat.messages.base import Message
 

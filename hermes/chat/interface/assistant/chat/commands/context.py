@@ -31,8 +31,8 @@ class ChatAssistantCommandContext(CommandContext):
 
     def __init__(self, control_panel):  # control_panel type is ChatAssistantControlPanel
         self.control_panel = control_panel
-        self.notifications_printer: "CLINotificationsPrinter" = control_panel.notifications_printer
-        self.exa_client: "ExaClient | None" = control_panel.exa_client
+        self.notifications_printer: CLINotificationsPrinter = control_panel.notifications_printer
+        self.exa_client: ExaClient | None = control_panel.exa_client
         self._cwd = os.getcwd()
         self._command_outputs = []
 

@@ -5,30 +5,29 @@ from pathlib import Path
 
 # Import other necessary types
 from hermes.chat.events import Event, MessageEvent
-from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
 from hermes.chat.history import History
 from hermes.chat.interface import Orchestrator
 from hermes.chat.interface.assistant.deep_research.commands.command_context_factory import ResearchCommandContextFactoryImpl
 from hermes.chat.interface.assistant.deep_research.commands.commands import register_deep_research_commands
+from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicDataTypeToRendererMap
 from hermes.chat.interface.assistant.deep_research.context.dynamic_sections.registry import (
     get_data_type_to_renderer_instance_map,
 )
 from hermes.chat.interface.assistant.deep_research.context.interface import DeepResearcherInterface
+from hermes.chat.interface.assistant.deep_research.engine import ResearchEngine
 from hermes.chat.interface.assistant.deep_research.report.report_generator import ReportGeneratorImpl
 from hermes.chat.interface.assistant.deep_research.report.status_printer import StatusPrinterImpl
-from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicDataTypeToRendererMap
-from hermes.chat.interface.assistant.deep_research.engine import ResearchEngine
 from hermes.chat.interface.assistant.framework.llm_interface_impl import (
     ChatModelLLMInterface,
 )
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
-from hermes.mcp.mcp_manager import McpManager
 
 # Import core command components
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
 from hermes.chat.interface.templates.template_manager import TemplateManager
 from hermes.chat.messages import Message, TextMessage, TextualFileMessage
+from hermes.mcp.mcp_manager import McpManager
 from hermes.utils.file_reader import FileReader
 
 logger = logging.getLogger(__name__)

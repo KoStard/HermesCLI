@@ -4,6 +4,8 @@ from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
+from . import AssistantInterface
+
 # Import base data class and specific section data classes/factories from their new locations
 from .dynamic_sections import DynamicSectionData
 from .dynamic_sections.artifacts import ArtifactsSectionData
@@ -17,7 +19,6 @@ from .dynamic_sections.problem_definition import ProblemDefinitionData
 from .dynamic_sections.problem_hierarchy import ProblemHierarchyData
 from .dynamic_sections.problem_path_hierarchy import ProblemPathHierarchyData
 from .dynamic_sections.subproblems import SubproblemsSectionData
-from . import AssistantInterface
 
 # Import types needed for factory methods (still required here for _gather_dynamic_section_data)
 

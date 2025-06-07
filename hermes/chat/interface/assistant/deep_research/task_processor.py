@@ -1,13 +1,13 @@
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Generic
 
-from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextType, ResearchCommandContextFactory
 from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
-from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
+from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextFactory, ResearchCommandContextType
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
 from hermes.chat.interface.assistant.deep_research.research.research_node_history_adapter import ResearchNodeHistoryAdapter
+from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
 from hermes.chat.interface.commands.command_parser import CommandParser
 
 if TYPE_CHECKING:
@@ -15,9 +15,9 @@ if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research.context import AssistantInterface
     from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicDataTypeToRendererMap
     from hermes.chat.interface.assistant.deep_research.engine import ResearchEngine
-    from hermes.chat.interface.assistant.framework.llm_interface import LLMInterface
     from hermes.chat.interface.assistant.deep_research.research import Research, ResearchNode
     from hermes.chat.interface.assistant.deep_research.status_printer import StatusPrinter
+    from hermes.chat.interface.assistant.framework.llm_interface import LLMInterface
     from hermes.chat.interface.commands.command import CommandRegistry
     from hermes.chat.interface.templates.template_manager import TemplateManager
 

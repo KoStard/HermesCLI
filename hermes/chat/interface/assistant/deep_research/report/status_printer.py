@@ -1,6 +1,6 @@
-from hermes.chat.interface.assistant.deep_research.research import Research
 from hermes.chat.interface.assistant.deep_research.research import (
     ProblemStatus,
+    Research,
 )
 from hermes.chat.interface.assistant.deep_research.status_printer import StatusPrinter
 from hermes.chat.interface.templates.template_manager import TemplateManager
