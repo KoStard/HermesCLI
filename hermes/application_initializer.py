@@ -66,7 +66,7 @@ class ApplicationInitializer:
             api_key = self.config["EXA"]["api_key"]
         return ExaClient(api_key)
 
-    def _create_llm_control_panel(self, llm_commands, exa_client, mcp_manager: "McpManager") -> ChatAssistantControlPanel:
+    def _create_llm_control_panel(self, llm_commands, exa_client, mcp_manager: McpManager) -> ChatAssistantControlPanel:
         return ChatAssistantControlPanel(
             notifications_printer=self.notifications_printer,
             extra_commands=llm_commands,

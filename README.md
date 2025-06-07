@@ -167,16 +167,31 @@ Hermes can be extended with tools from [Model Context Protocol (MCP)](https://mo
 
 You can configure MCP servers separately for the regular chat assistant and the Deep Research mode in your `config.ini` file.
 
+**Simple Configuration:**
+
+For simple cases, you can provide the command directly.
+
 ```ini
 [MCP_CHAT_ASSISTANT]
-# Add servers for the regular chat mode
 # name = command_to_run_server
 my_weather_tool = /path/to/weather_server.py
+```
 
+**Advanced Configuration (with Environment Variables):**
+
+For more complex setups, such as running a Docker container or passing environment variables, you can use a JSON object.
+
+```ini
 [MCP_DEEP_RESEARCH]
 # Add servers for the deep research mode
 my_database_tool = /path/to/db_server.sh
+# Example using a JSON object for advanced configuration:
+github_mcp = {"command": ["docker", "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"], "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_pat_here"}}
 ```
+
+In the example above:
+- `command`: A list containing the executable and its arguments.
+- `env`: A dictionary of environment variables to set for the server process. These are added to the environment Hermes runs in.
 
 Hermes will start these servers in the background. Tools provided by connected MCP servers will be available as `<<<command>>>` blocks for the assistant to use.
 

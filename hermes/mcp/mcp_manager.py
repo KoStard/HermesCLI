@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 class McpManager:
     def __init__(
         self,
-        chat_mcp_servers: dict[str, str],
-        deep_research_mcp_servers: dict[str, str],
+        chat_mcp_servers: dict[str, dict[str, Any] | str],
+        deep_research_mcp_servers: dict[str, dict[str, Any] | str],
         notifications_printer: "CLINotificationsPrinter",
     ):
         self.chat_servers_config = chat_mcp_servers
@@ -39,18 +39,19 @@ class McpManager:
     async def _load_clients(self):
         logger.info("Starting MCP client loading in background.")
         chat_tasks = [
-            self._create_and_start_client(name, cmd, self.chat_clients) for name, cmd in self.chat_servers_config.items()
+            self._create_and_start_client(name, config, self.chat_clients)
+            for name, config in self.chat_servers_config.items()
         ]
         dr_tasks = [
-            self._create_and_start_client(name, cmd, self.deep_research_clients)
-            for name, cmd in self.deep_research_servers_config.items()
+            self._create_and_start_client(name, config, self.deep_research_clients)
+            for name, config in self.deep_research_servers_config.items()
         ]
         await asyncio.gather(*chat_tasks, *dr_tasks)
         self.initial_load_complete = True
         logger.info("Finished loading all MCP clients.")
 
-    async def _create_and_start_client(self, name: str, cmd: str, client_list: list[McpClient]):
-        client = McpClient(name, cmd, self.loop)
+    async def _create_and_start_client(self, name: str, config: dict | str, client_list: list[McpClient]):
+        client = McpClient(name, config, self.loop)
         client_list.append(client)
         await client.start()
 

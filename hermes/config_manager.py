@@ -1,5 +1,7 @@
 import configparser
+import json
 import sys
+from typing import Any
 
 from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.utils.config_utils import get_config_path
@@ -31,17 +33,22 @@ class ConfigManager:
         base_section = self.config["BASE"]
         return base_section.get("model")
 
-    def get_mcp_chat_assistant_servers(self) -> dict[str, str]:
+    def get_mcp_chat_assistant_servers(self) -> dict[str, dict[str, Any] | str]:
         return self._get_mcp_servers("MCP_CHAT_ASSISTANT")
 
-    def get_mcp_deep_research_servers(self) -> dict[str, str]:
+    def get_mcp_deep_research_servers(self) -> dict[str, dict[str, Any] | str]:
         return self._get_mcp_servers("MCP_DEEP_RESEARCH")
 
-    def _get_mcp_servers(self, section_name: str) -> dict[str, str]:
-        servers = {}
+    def _get_mcp_servers(self, section_name: str) -> dict[str, dict[str, Any] | str]:
+        servers: dict[str, dict[str, Any] | str] = {}
         if section_name in self.config:
-            for name, command in self.config[section_name].items():
-                servers[name] = command
+            for name, value in self.config[section_name].items():
+                try:
+                    # Try to parse as JSON for complex configuration
+                    servers[name] = json.loads(value)
+                except json.JSONDecodeError:
+                    # Fallback to simple command string
+                    servers[name] = value
         return servers
 
     def _load_config(self) -> configparser.ConfigParser:

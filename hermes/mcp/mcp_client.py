@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import shlex
 from asyncio import StreamReader, StreamWriter
 from typing import Any
@@ -17,9 +18,30 @@ class McpError(Exception):
 
 
 class McpClient:
-    def __init__(self, name: str, command: str, loop: asyncio.AbstractEventLoop):
+    def __init__(self, name: str, config: dict | str, loop: asyncio.AbstractEventLoop):
         self.name = name
-        self.command = command
+        self._command_parts: list[str]
+        self._env: dict[str, str] | None = None
+
+        if isinstance(config, str):
+            self._command_parts = shlex.split(config)
+        else:
+            cmd = config.get("command")
+            args = config.get("args")
+            if isinstance(cmd, list):
+                self._command_parts = cmd
+            elif isinstance(cmd, str) and isinstance(args, list):
+                self._command_parts = [cmd] + args
+            elif isinstance(cmd, str):
+                self._command_parts = shlex.split(cmd)
+            else:
+                raise ValueError(f"Invalid command configuration for MCP server '{name}'")
+
+            env_update = config.get("env")
+            if env_update and isinstance(env_update, dict):
+                self._env = os.environ.copy()
+                self._env.update(env_update)
+
         self.loop = loop
         self.process: asyncio.subprocess.Process | None = None
         self.reader: StreamReader | None = None
@@ -33,12 +55,12 @@ class McpClient:
     async def start(self):
         self.status = "connecting"
         try:
-            cmd_parts = shlex.split(self.command)
             self.process = await asyncio.create_subprocess_exec(
-                *cmd_parts,
+                *self._command_parts,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=self._env,
             )
             self.reader = self.process.stdout
             self.writer = self.process.stdin
