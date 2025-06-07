@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from hermes.chat.interface.assistant.framework.commands import CommandContext
 
 if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
     from hermes.chat.interface.assistant.deep_research.research import Research, ResearchNode
     from hermes.chat.interface.assistant.deep_research.research.research_node_component.artifact import Artifact
+    from hermes.chat.interface.assistant.deep_research.task_processor import TaskProcessor
 
 
 class ResearchCommandContext(CommandContext, ABC):
@@ -59,15 +61,7 @@ class ResearchCommandContext(CommandContext, ABC):
         pass
 
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
-
 ResearchCommandContextType = TypeVar("ResearchCommandContextType", bound=ResearchCommandContext)
-
-if TYPE_CHECKING:
-    from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
-    from hermes.chat.interface.assistant.deep_research.research import ResearchNode
-    from hermes.chat.interface.assistant.deep_research.task_processor import TaskProcessor
 
 
 class ResearchCommandContextFactory(ABC, Generic[ResearchCommandContextType]):
@@ -76,3 +70,5 @@ class ResearchCommandContextFactory(ABC, Generic[ResearchCommandContextType]):
         self, task_processor: "TaskProcessor", current_node: "ResearchNode", command_processor: "CommandProcessor"
     ) -> ResearchCommandContextType:
         pass
+
+from .commands import register_deep_research_commands
