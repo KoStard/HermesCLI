@@ -38,10 +38,7 @@ class McpManager:
 
     async def _load_clients(self):
         logger.info("Starting MCP client loading in background.")
-        chat_tasks = [
-            self._create_and_start_client(name, config, self.chat_clients)
-            for name, config in self.chat_servers_config.items()
-        ]
+        chat_tasks = [self._create_and_start_client(name, config, self.chat_clients) for name, config in self.chat_servers_config.items()]
         dr_tasks = [
             self._create_and_start_client(name, config, self.deep_research_clients)
             for name, config in self.deep_research_servers_config.items()
@@ -197,9 +194,7 @@ class McpManager:
         if has_complex_arg:
             # For simplicity, if any argument is complex, we ask for all arguments in a single JSON blob.
             is_data_json_required = any(prop_name in required for prop_name in properties.keys())
-            command.add_section(
-                "data_json", is_data_json_required, "All tool arguments as a single JSON object."
-            )
+            command.add_section("data_json", is_data_json_required, "All tool arguments as a single JSON object.")
         else:
             # All arguments are simple types (string, number, etc.)
             for prop_name, prop_details in properties.items():

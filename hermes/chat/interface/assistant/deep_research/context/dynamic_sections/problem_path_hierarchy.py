@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicSectionData, \
-    DynamicSectionRenderer
+from hermes.chat.interface.assistant.deep_research.context.dynamic_sections import DynamicSectionData, DynamicSectionRenderer
 from hermes.chat.interface.assistant.deep_research.research import ResearchNode
 
 # Import PrimitiveSubproblemData needed for sibling representation

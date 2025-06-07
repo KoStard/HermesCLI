@@ -69,9 +69,7 @@ class ApplicationOrchestrator:
         if hasattr(assistant_interface, "update_mcp_commands"):
             # This branch is for DeepResearchAssistantInterface
             assistant_interface.update_mcp_commands()
-        elif hasattr(assistant_interface, "control_panel") and hasattr(
-            assistant_interface.control_panel, "update_mcp_commands"
-        ):
+        elif hasattr(assistant_interface, "control_panel") and hasattr(assistant_interface.control_panel, "update_mcp_commands"):
             # This branch is for ChatAssistantInterface and DebugInterface
             assistant_interface.control_panel.update_mcp_commands()
 

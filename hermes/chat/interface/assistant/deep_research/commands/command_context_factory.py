@@ -12,6 +12,6 @@ if TYPE_CHECKING:
 
 class ResearchCommandContextFactoryImpl(ResearchCommandContextFactory[ResearchCommandContextImpl]):
     def create_command_context(
-        self, task_processor: "TaskProcessor", current_node: "ResearchNode", command_processor: 'CommandProcessor'
+        self, task_processor: "TaskProcessor", current_node: "ResearchNode", command_processor: "CommandProcessor"
     ) -> ResearchCommandContextImpl:
         return ResearchCommandContextImpl(task_processor, command_processor, current_node)
