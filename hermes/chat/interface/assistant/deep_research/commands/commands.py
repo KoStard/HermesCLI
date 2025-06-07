@@ -13,10 +13,10 @@ from hermes.chat.interface.commands.command import Command as BaseCommand
 from hermes.chat.interface.commands.command import CommandRegistry
 
 # Import the specific context for Deep Research
-from .command_context import CommandContextImpl
+from .command_context import ResearchCommandContextImpl
 
 
-class AddCriteriaCommand(BaseCommand[CommandContextImpl, None]):
+class AddCriteriaCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_criteria",
@@ -24,7 +24,7 @@ class AddCriteriaCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("criteria", True, "Criteria text")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Add criteria to the current problem"""
         current_node = context.current_node
 
@@ -42,7 +42,7 @@ class AddCriteriaCommand(BaseCommand[CommandContextImpl, None]):
         context.add_command_output(self.name, args, f"Criteria '{criteria_text}' added.")
 
 
-class MarkCriteriaAsDoneCommand(BaseCommand[CommandContextImpl, None]):
+class MarkCriteriaAsDoneCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "mark_criteria_as_done",
@@ -50,7 +50,7 @@ class MarkCriteriaAsDoneCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("criteria_number", True, "Number of the criteria to mark as done")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Mark criteria as done"""
         current_node = context.current_node
 
@@ -88,7 +88,7 @@ class MarkCriteriaAsDoneCommand(BaseCommand[CommandContextImpl, None]):
         return errors
 
 
-class AddSubproblemCommand(BaseCommand[CommandContextImpl, None]):
+class AddSubproblemCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_subproblem",
@@ -97,7 +97,7 @@ class AddSubproblemCommand(BaseCommand[CommandContextImpl, None]):
         self.add_section("title", True, "Title of the subproblem")
         self.add_section("content", True, "Content of the subproblem definition")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Add a subproblem to the current problem"""
         current_node = context.current_node
 
@@ -114,7 +114,7 @@ class AddSubproblemCommand(BaseCommand[CommandContextImpl, None]):
         context.add_command_output(self.name, args, f"Subproblem '{title}' added.")
 
 
-class AddArtifactCommand(BaseCommand[CommandContextImpl, None]):
+class AddArtifactCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_artifact",
@@ -130,7 +130,7 @@ class AddArtifactCommand(BaseCommand[CommandContextImpl, None]):
             "Short summary of the artifact. Can be 1-2 paragraphs, should call out what's important in this artifact.",
         )
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Add an artifact to the current problem"""
         current_node = context.current_node
 
@@ -146,7 +146,7 @@ class AddArtifactCommand(BaseCommand[CommandContextImpl, None]):
         context.add_command_output(self.name, args, f"Artifact '{args['name']}' added.")
 
 
-class AppendToProblemDefinitionCommand(BaseCommand[CommandContextImpl, None]):
+class AppendToProblemDefinitionCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "append_to_problem_definition",
@@ -154,7 +154,7 @@ class AppendToProblemDefinitionCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("content", True, "Content to append")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Append to the problem definition"""
         current_node = context.current_node
 
@@ -164,7 +164,7 @@ class AppendToProblemDefinitionCommand(BaseCommand[CommandContextImpl, None]):
         context.add_command_output(self.name, args, "Problem definition updated.")
 
 
-class AddCriteriaToSubproblemCommand(BaseCommand[CommandContextImpl, None]):
+class AddCriteriaToSubproblemCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_criteria_to_subproblem",
@@ -173,7 +173,7 @@ class AddCriteriaToSubproblemCommand(BaseCommand[CommandContextImpl, None]):
         self.add_section("title", True, "Title of the subproblem")
         self.add_section("criteria", True, "Criteria text")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Add criteria to a subproblem"""
         current_node = context.current_node
 
@@ -205,7 +205,7 @@ class AddCriteriaToSubproblemCommand(BaseCommand[CommandContextImpl, None]):
         context.add_command_output(self.name, args, f"Criteria added to subproblem '{title}'.")
 
 
-class ActivateSubproblems(BaseCommand[CommandContextImpl, None]):
+class ActivateSubproblems(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "activate_subproblems",
@@ -213,7 +213,7 @@ class ActivateSubproblems(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("title", True, "Title of the subproblem to activate", allow_multiple=True)
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Activate subproblems for parallel execution"""
         titles = args["title"]
         if not isinstance(titles, list):
@@ -243,7 +243,7 @@ class ActivateSubproblems(BaseCommand[CommandContextImpl, None]):
         )
 
 
-class WaitForSubproblems(BaseCommand[CommandContextImpl, None]):
+class WaitForSubproblems(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "wait_for_subproblems",
@@ -251,7 +251,7 @@ class WaitForSubproblems(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("title", True, "Title of the subproblem to wait for", allow_multiple=True)
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Wait for specified subproblems to complete"""
         titles = args["title"]
         if not isinstance(titles, list):
@@ -283,7 +283,7 @@ class WaitForSubproblems(BaseCommand[CommandContextImpl, None]):
         )
 
 
-class FinishCommand(BaseCommand[CommandContextImpl, None]):
+class FinishCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "finish_problem",
@@ -310,7 +310,7 @@ class FinishCommand(BaseCommand[CommandContextImpl, None]):
             help_text="Optional message to pass to the parent task upon completion.",
         )
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         # Get the optional message from args
         completion_message = args.get("message")
 
@@ -325,7 +325,7 @@ class FinishCommand(BaseCommand[CommandContextImpl, None]):
             raise ValueError("Failed to finish the session.")
 
 
-class FailCommand(BaseCommand[CommandContextImpl, None]):
+class FailCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "fail_problem",
@@ -352,7 +352,7 @@ class FailCommand(BaseCommand[CommandContextImpl, None]):
             help_text="Optional message to pass to the parent task explaining the failure.",
         )
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         # Get the optional message from args
         failure_message = args.get("message")
 
@@ -376,7 +376,7 @@ class FailCommand(BaseCommand[CommandContextImpl, None]):
                 raise ValueError(f"Failed to mark problem as failed '{current_node_title}'.")
 
 
-class CancelSubproblemCommand(BaseCommand[CommandContextImpl, None]):
+class CancelSubproblemCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "cancel_subproblem",
@@ -385,7 +385,7 @@ class CancelSubproblemCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("title", True, "Title of the subproblem to cancel")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Cancel a subproblem"""
         current_node = context.current_node
 
@@ -410,7 +410,7 @@ class CancelSubproblemCommand(BaseCommand[CommandContextImpl, None]):
         context.add_command_output(self.name, args, f"Subproblem '{title}' cancelled.")
 
 
-class AddLogEntryCommand(BaseCommand[CommandContextImpl, None]):
+class AddLogEntryCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_log_entry",
@@ -418,7 +418,7 @@ class AddLogEntryCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("content", True, "Content of the log entry")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Add a log entry"""
         content = args.get("content", "")
         if content:
@@ -427,7 +427,7 @@ class AddLogEntryCommand(BaseCommand[CommandContextImpl, None]):
             context.add_command_output(self.name, args, "Log entry added.")
 
 
-class OpenArtifactCommand(BaseCommand[CommandContextImpl, None]):
+class OpenArtifactCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "open_artifact",
@@ -435,7 +435,7 @@ class OpenArtifactCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("name", True, "Name of the artifact to open")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Execute the command to open an artifact"""
         artifact_name = args["name"]
 
@@ -454,7 +454,7 @@ class OpenArtifactCommand(BaseCommand[CommandContextImpl, None]):
         )
 
 
-class CloseArtifactCommand(BaseCommand[CommandContextImpl, None]):
+class CloseArtifactCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "close_artifact",
@@ -462,7 +462,7 @@ class CloseArtifactCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("name", True, "Name of the artifact to close")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Execute the command to half-close an artifact"""
         artifact_name = args["name"]
 
@@ -482,7 +482,7 @@ class CloseArtifactCommand(BaseCommand[CommandContextImpl, None]):
         )
 
 
-class ThinkCommand(BaseCommand[CommandContextImpl, None]):
+class ThinkCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "think",
@@ -490,14 +490,14 @@ class ThinkCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("content", False, "Thinking content, as long as needed")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """This is a dummy command that doesn't trigger any actions"""
         # This command doesn't do anything, it's just a place for the assistant to think
         # No output needed for think command
         pass
 
 
-class AddKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
+class AddKnowledgeCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_knowledge",
@@ -512,7 +512,7 @@ class AddKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
             allow_multiple=True,
         )
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Add an entry to the shared knowledge base."""
         current_node = context.current_node
 
@@ -537,7 +537,7 @@ class AddKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
             context.add_command_output(self.name, args, f"Error: {str(e)}")
 
 
-class AppendKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
+class AppendKnowledgeCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "append_knowledge",
@@ -546,7 +546,7 @@ class AppendKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
         self.add_section("title", True, "Title of the knowledge entry to append to.")
         self.add_section("content", True, "Content to append to the existing entry.")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Append content to an existing knowledge entry."""
         title = args["title"]
         content = args["content"]
@@ -563,7 +563,7 @@ class AppendKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
             context.add_command_output(self.name, args, f"Error: {str(e)}")
 
 
-class RewriteKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
+class RewriteKnowledgeCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "rewrite_knowledge",
@@ -579,7 +579,7 @@ class RewriteKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
             allow_multiple=True,
         )
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Rewrite the content of an existing knowledge entry."""
         title = args["title"]
         content = args["content"]
@@ -606,7 +606,7 @@ class RewriteKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
             context.add_command_output(self.name, args, f"Error: {str(e)}")
 
 
-class DeleteKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
+class DeleteKnowledgeCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "delete_knowledge",
@@ -614,7 +614,7 @@ class DeleteKnowledgeCommand(BaseCommand[CommandContextImpl, None]):
         )
         self.add_section("title", True, "Title of the knowledge entry to delete.")
 
-    def execute(self, context: CommandContextImpl, args: dict[str, Any]) -> None:
+    def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
         """Delete an existing knowledge entry."""
         title = args["title"]
 

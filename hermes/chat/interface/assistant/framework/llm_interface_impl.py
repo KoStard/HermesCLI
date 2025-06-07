@@ -19,13 +19,12 @@ logger = logging.getLogger(__name__)
 class ChatModelLLMInterface(LLMInterface):
     """Implementation of LLMInterface using ChatModel"""
 
-    def __init__(self, model: ChatModel, research_dir: Path):
+    def __init__(self, model: ChatModel):
         self.model = model
 
     def generate_request(
         self,
         history_messages: list[dict],
-        node_path: Path,
     ) -> dict:
         """Generate a request for the LLM based on the rendered interface and history"""
         request_builder = self.model.get_request_builder()

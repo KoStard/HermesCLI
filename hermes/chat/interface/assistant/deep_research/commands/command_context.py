@@ -1,13 +1,13 @@
 from typing import Any
 
 from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
-from hermes.chat.interface.assistant.deep_research.commands import CommandContext
+from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContext
 from hermes.chat.interface.assistant.deep_research.research import Research, ResearchNode
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.artifact import Artifact
 from hermes.chat.interface.assistant.deep_research.task_processor import TaskProcessor
 
 
-class CommandContextImpl(CommandContext):
+class ResearchCommandContextImpl(ResearchCommandContext):
     """
     Concrete implementation of CommandContext for Deep Research commands.
     Provides commands with access to necessary components via the TaskProcessor.

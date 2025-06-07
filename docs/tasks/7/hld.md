@@ -65,36 +65,36 @@ The core idea is to introduce a `TaskProcessor` that takes a `TaskTreeNode` and 
     *   Handling the generation of the final research report once all tasks are completed.
 *   **`execute()` Method (Refactored):**
     *   The existing detailed LLM interaction loop will be removed.
-    *   It will now primarily consist of:
-        ```python
-        # Simplified conceptual flow
-        while True:
-            current_task_tree_node = self.task_tree.next()
-            if current_task_tree_node is None:
-                # All tasks completed
-                self.final_root_completion_message = ... # (Need to decide how this is set if root finishes)
-                break # Exit main loop
+    * It will now primarily consist of:
+      ```python
+      # Simplified conceptual flow
+      while True:
+          current_task_tree_node = self.task_tree.next()
+          if current_task_tree_node is None:
+              # All tasks completed
+              self.final_root_completion_message = ... # (Need to decide how this is set if root finishes)
+              break # Exit main loop
 
-            task_processor = TaskProcessor(
-                current_task_tree_node,
-                self.research,
-                self.llm_interface,
-                self.command_registry,
-                self.command_context_factory,
-                self.template_manager,
-                self.renderer_registry,
-                self.interface, # AgentInterface
-                self.status_printer,
-                self.budget_manager # or self directly if it manages budget
-            )
-            task_processor.run()
+          task_processor = TaskProcessor(
+              current_task_tree_node,
+              self.research,
+              self._llm_interface,
+              self.command_registry,
+              self.command_context_factory,
+              self.template_manager,
+              self.renderer_registry,
+              self.interface, # AgentInterface
+              self.status_printer,
+              self.budget_manager # or self directly if it manages budget
+          )
+          task_processor.run()
 
-            if self.budget_manager.is_globally_exhausted_and_stop_signaled(): # example
-                 break
-        
-        # Final reporting, etc.
-        print("Engine execution complete. Awaiting new instruction or shutdown.")
-        ```
+          if self.budget_manager.is_globally_exhausted_and_stop_signaled(): # example
+               break
+      
+      # Final reporting, etc.
+      print("Engine execution complete. Awaiting new instruction or shutdown.")
+      ```
 *   **Budget Finalization:** The `final_root_completion_message` and overall `should_finish` logic (if the root node processing within a `TaskProcessor` decided the whole research should conclude) needs to be communicated back to the `AgentEngine`. `TaskProcessor.run()` could return a status object.
 
 ### 3.3. `CommandProcessor` (Usage Change)

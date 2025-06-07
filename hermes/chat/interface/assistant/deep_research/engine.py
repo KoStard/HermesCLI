@@ -2,7 +2,7 @@ import threading
 from pathlib import Path
 from typing import Generic
 
-from hermes.chat.interface.assistant.deep_research.commands import CommandContextType, CommandContextFactory
+from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextType, ResearchCommandContextFactory
 from hermes.chat.interface.assistant.deep_research.report import ReportGenerator
 from hermes.chat.interface.assistant.deep_research.budget_manager import BudgetManager
 from hermes.chat.interface.assistant.deep_research.context import AssistantInterface
@@ -27,7 +27,7 @@ from hermes.chat.interface.commands.command_parser import CommandParser
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
-class ResearchEngine(Generic[CommandContextType]):
+class ResearchEngine(Generic[ResearchCommandContextType]):
     """Core engine for Deep Research functionality, independent of UI implementation"""
 
     def __init__(
@@ -35,7 +35,7 @@ class ResearchEngine(Generic[CommandContextType]):
         root_dir: Path,
         llm_interface: LLMInterface,
         command_registry: CommandRegistry,
-        command_context_factory: CommandContextFactory[CommandContextType],
+        command_context_factory: ResearchCommandContextFactory[ResearchCommandContextType],
         template_manager: TemplateManager,
         renderer_registry: DynamicDataTypeToRendererMap,
         agent_interface: AssistantInterface,

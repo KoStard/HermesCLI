@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from hermes.chat.history import History
     from hermes.chat.interface import Interface
     from hermes.chat.interface.debug.debug_interface import DebugInterface
-    from hermes.chat.messages import Message
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +19,8 @@ class DebugParticipant(Participant):
     def __init__(self, interface: "DebugInterface"):
         self.interface = interface
 
-    def consume_events_and_render(self, history_snapshot: list["Message"], events: Generator["Event", None, None]):
-        self.interface.render(history_snapshot, events)
+    def consume_events_and_render(self, events: Generator["Event", None, None]):
+        self.interface.render(events)
 
     def get_interface(self) -> "Interface":
         return self.interface

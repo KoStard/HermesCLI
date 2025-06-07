@@ -8,15 +8,14 @@ if TYPE_CHECKING:
     from hermes.chat.history import History
     from hermes.chat.interface import Interface
     from hermes.chat.interface.user.interface.user_interface import UserInterface
-    from hermes.chat.messages import Message
 
 
 class UserParticipant(Participant):
     def __init__(self, interface: "UserInterface"):
         self.interface = interface
 
-    def consume_events_and_render(self, history_snapshot: list["Message"], events: Generator["Event", None, None]):
-        self.interface.render(history_snapshot, events)
+    def consume_events_and_render(self, events: Generator["Event", None, None]):
+        self.interface.render(events)
 
     def get_interface(self) -> "Interface":
         return self.interface

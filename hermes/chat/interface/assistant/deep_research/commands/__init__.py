@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
+from hermes.chat.interface.assistant.framework.commands import CommandContext
+
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research.research import Research, ResearchNode
     from hermes.chat.interface.assistant.deep_research.research.research_node_component.artifact import Artifact
 
 
-class CommandContext(ABC):
+class ResearchCommandContext(CommandContext, ABC):
     """
     Abstract base class for command execution context.
     Provides an interface for commands to interact with the agent's framework
@@ -23,11 +25,6 @@ class CommandContext(ABC):
     @abstractmethod
     def research_project(self) -> "Research":
         """The overall Research project instance."""
-        pass
-
-    @abstractmethod
-    def add_command_output(self, command_name: str, args: dict, output: str) -> None:
-        """Add command output to be included in the automatic response for the current node."""
         pass
 
     @abstractmethod
@@ -64,7 +61,7 @@ class CommandContext(ABC):
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-CommandContextType = TypeVar("CommandContextType", bound=CommandContext)
+ResearchCommandContextType = TypeVar("ResearchCommandContextType", bound=ResearchCommandContext)
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
@@ -72,9 +69,9 @@ if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research.task_processor import TaskProcessor
 
 
-class CommandContextFactory(ABC, Generic[CommandContextType]):
+class ResearchCommandContextFactory(ABC, Generic[ResearchCommandContextType]):
     @abstractmethod
     def create_command_context(
         self, task_processor: "TaskProcessor", current_node: "ResearchNode", command_processor: "CommandProcessor"
-    ) -> CommandContextType:
+    ) -> ResearchCommandContextType:
         pass

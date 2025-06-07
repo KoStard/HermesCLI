@@ -7,6 +7,7 @@ from hermes.chat.events import (
     MessageEvent,
     RawContentForHistoryEvent,
 )
+from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
 from hermes.chat.interface import Interface
 from hermes.chat.interface.assistant.chat_assistant.control_panel import (
     ChatAssistantControlPanel,
@@ -34,7 +35,7 @@ class ChatAssistantInterface(Interface):
         self._initialized = False
         self.control_panel = control_panel
 
-    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
+    def render(self, events: Generator[Event, None, None]):
         if not self._initialized:
             self._initialized = True
             self.model.initialize()
@@ -51,10 +52,10 @@ class ChatAssistantInterface(Interface):
         if help_message:
             rendered_messages.append(TextMessage(author="user", text=help_message))
 
-        for message in history_snapshot:
-            rendered_messages.append(message)
-
         for event in events:
+            if isinstance(event, HistoryRecoveryEvent):
+                for message in event.get_messages():
+                    rendered_messages.append(message)
             if not isinstance(event, MessageEvent):
                 continue
             message = event.get_message()

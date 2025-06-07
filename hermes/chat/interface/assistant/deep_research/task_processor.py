@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Generic
 
-from hermes.chat.interface.assistant.deep_research.commands import CommandContextType, CommandContextFactory
+from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextType, ResearchCommandContextFactory
 from hermes.chat.interface.assistant.deep_research.command_processor import CommandProcessor
 from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.problem_definition_manager import (
@@ -31,7 +31,7 @@ class TaskProcessorCancelledException(Exception):
     pass
 
 
-class TaskProcessor(Generic[CommandContextType]):
+class TaskProcessor(Generic[ResearchCommandContextType]):
     """
     Manages the execution lifecycle of a single TaskTreeNode.
     It contains the primary loop for interacting with the LLM,
@@ -44,7 +44,7 @@ class TaskProcessor(Generic[CommandContextType]):
         research_project: "Research",
         llm_interface_to_use: "LLMInterface",
         command_registry_to_use: "CommandRegistry",
-        command_context_factory_to_use: "CommandContextFactory[CommandContextType]",
+        command_context_factory_to_use: "ResearchCommandContextFactory[ResearchCommandContextType]",
         template_manager_to_use: "TemplateManager",
         dynamic_section_renderer_registry: "DynamicDataTypeToRendererMap",
         agent_interface_for_ui: "AssistantInterface",
@@ -139,7 +139,7 @@ class TaskProcessor(Generic[CommandContextType]):
 
     def _generate_llm_request(self, research_node: "ResearchNode", history_messages: list[dict]) -> dict:
         """Generate the LLM request with all necessary data."""
-        llm_request = self.llm_interface.generate_request(history_messages, research_node.get_path())
+        llm_request = self.llm_interface.generate_request(history_messages)
 
         # Log the request
         research_node.get_logger().log_llm_request(history_messages, llm_request)

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Generic
 
-from hermes.chat.interface.assistant.deep_research.commands import CommandContextType, CommandContextFactory
+from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextType, ResearchCommandContextFactory
 from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
@@ -16,15 +16,15 @@ if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research.task_processor import TaskProcessor
 
 
-class CommandProcessor(Generic[CommandContextType]):
+class CommandProcessor(Generic[ResearchCommandContextType]):
     """Helper class to encapsulate command processing logic, operating within a TaskProcessor."""
 
     def __init__(
         self,
-        task_processor: "TaskProcessor[CommandContextType]",
+        task_processor: "TaskProcessor[ResearchCommandContextType]",
         command_parser: CommandParser,
         command_registry: CommandRegistry,
-        command_context_factory: CommandContextFactory[CommandContextType],
+        command_context_factory: ResearchCommandContextFactory[ResearchCommandContextType],
     ):
         self.task_processor = task_processor
         self.command_parser = command_parser

@@ -14,12 +14,11 @@ from collections.abc import Generator
 if typing.TYPE_CHECKING:
     from hermes.chat.events import Event
     from hermes.chat.history import History
-    from hermes.chat.messages import Message
 
 
 class Interface(ABC):
     @abstractmethod
-    def render(self, history_snapshot: list["Message"], events: Generator["Event", None, None]):
+    def render(self, events: Generator["Event", None, None]):
         """
         Render events to the participant.
         It might yield events for the other participant.

@@ -5,9 +5,10 @@ from pathlib import Path
 
 # Import other necessary types
 from hermes.chat.events import Event, MessageEvent
+from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
 from hermes.chat.history import History
 from hermes.chat.interface import Interface
-from hermes.chat.interface.assistant.deep_research.commands.command_context_factory import CommandContextFactoryImpl
+from hermes.chat.interface.assistant.deep_research.commands.command_context_factory import ResearchCommandContextFactoryImpl
 from hermes.chat.interface.assistant.deep_research.commands.commands import register_deep_research_commands
 from hermes.chat.interface.assistant.deep_research.context.dynamic_sections.registry import (
     get_data_type_to_renderer_instance_map,
@@ -47,7 +48,7 @@ class DeepResearchAssistantInterface(Interface):
         self.model = model
         self.mcp_manager = mcp_manager
 
-        llm_interface = ChatModelLLMInterface(self.model, research_path)
+        llm_interface = ChatModelLLMInterface(self.model)
         self.command_registry = CommandRegistry()
 
         if extension_commands:
@@ -59,7 +60,7 @@ class DeepResearchAssistantInterface(Interface):
         templates_dir = Path(__file__).parent / "templates"
         template_manager = TemplateManager(templates_dir)
         commands_help_generator = CommandHelpGenerator()
-        command_context_factory = CommandContextFactoryImpl()
+        command_context_factory = ResearchCommandContextFactoryImpl()
         renderer_registry: DynamicDataTypeToRendererMap = get_data_type_to_renderer_instance_map(template_manager)
         research_interface = DeepResearcherInterface(
             template_manager,
@@ -87,7 +88,7 @@ class DeepResearchAssistantInterface(Interface):
         self._instruction: str | None = None
         self._history_has_been_imported = False
 
-    def render(self, history_snapshot: list[Message], events: Generator[Event, None, None]):
+    def render(self, events: Generator[Event, None, None]):
         """Render the interface with the given history and events"""
         logger.debug("Rendering Deep Research Assistant interface")
 
@@ -100,7 +101,11 @@ class DeepResearchAssistantInterface(Interface):
             self._history_has_been_imported = True
 
         # Process new messages and file uploads
-        messages = [event.get_message() for event in events if isinstance(event, MessageEvent)]
+        # Ignoring global history, each node has a separate history
+        messages = []
+        for event in events:
+            if isinstance(event, MessageEvent):
+                messages.append(event.get_message())
         self._add_data_from_messages(messages, textual_files, instruction_pieces)
 
         self._instruction = "\n".join(instruction_pieces)

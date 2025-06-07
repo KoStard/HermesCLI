@@ -13,14 +13,12 @@ class LLMInterface(ABC):
     def generate_request(
         self,
         history_messages: list[dict],
-        node_path: Path,
     ) -> dict:
         """
         Generate a request for the LLM based on the rendered interface and history
 
         Args:
             history_messages: List of message dictionaries with author and content
-            node_path: For logging
 
         Returns:
             Dict: The request object to send to the LLM
