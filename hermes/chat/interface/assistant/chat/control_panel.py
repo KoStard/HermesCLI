@@ -15,7 +15,8 @@ from hermes.chat.interface.user.control_panel.exa_client import ExaClient
 from hermes.chat.messages import (
     Message,
     TextGeneratorMessage,
-    TextMessage, InvisibleMessage,
+    TextMessage,
+    InvisibleMessage,
 )
 
 from .commands import (
@@ -83,7 +84,6 @@ class ChatAssistantControlPanel:
         mcp_commands = self.mcp_manager.create_commands_for_mode("chat")
         for command in mcp_commands:
             self.command_registry.register(command)
-
 
     def _register_commands(self):
         """Register all commands with the registry"""
@@ -172,24 +172,16 @@ class ChatAssistantControlPanel:
         command_outputs = self.command_context.get_command_outputs()
         command_output_str_collection = []
         for command_name, args, output in command_outputs:
-            command_output_str = (
-f"""
-${'####'} <<< ${command_name}
+            command_output_str = f"""
+${"####"} <<< ${command_name}
 Arguments: ${", ".join(f"{k}: {str(v)[:100]}" for k, v in args.items())}
 ```
 {output}
 ```
 """
-            )
             command_output_str_collection.append(command_output_str)
         command_output_str = "\n".join(command_output_str_collection)
-        yield MessageEvent(
-            InvisibleMessage(
-                author="user",
-                text=command_output_str,
-                text_role="command_outputs_and_errors"
-            )
-        )
+        yield MessageEvent(InvisibleMessage(author="user", text=command_output_str, text_role="command_outputs_and_errors"))
 
     def set_command_override_status(self, command_id: str, status: str) -> None:
         """

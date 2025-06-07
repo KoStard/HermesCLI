@@ -19,7 +19,8 @@ from hermes.chat.interface.assistant.chat.response_types import (
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 from hermes.chat.messages import (
     TextMessage,
-    ThinkingAndResponseGeneratorMessage, TextGeneratorMessage,
+    ThinkingAndResponseGeneratorMessage,
+    TextGeneratorMessage,
 )
 from hermes.utils.recording_generator import RecordingGenerator
 
@@ -43,7 +44,9 @@ class ChatAssistantOrchestrator(Orchestrator):
 
         rendered_messages = []
 
-        assistant_prompt = self.assistant_prompt_factory.build_for(self.control_panel.get_active_commands(), is_agent_mode=self.control_panel.is_agent_mode)
+        assistant_prompt = self.assistant_prompt_factory.build_for(
+            self.control_panel.get_active_commands(), is_agent_mode=self.control_panel.is_agent_mode
+        )
         rendered_messages.append(TextMessage(author="user", text=assistant_prompt))
 
         for event in events:
@@ -63,7 +66,7 @@ class ChatAssistantOrchestrator(Orchestrator):
         response_message = self._send_request()
         recording_response_raw_generator = RecordingGenerator(response_message.get_content_for_user())
         yield self._build_text_generator_message_event(recording_response_raw_generator)
-        collected_message = ''.join(recording_response_raw_generator.collected_values)
+        collected_message = "".join(recording_response_raw_generator.collected_values)
         yield from self.control_panel.extract_and_execute_commands(collected_message)
 
     def _ensure_model_readiness(self):
@@ -75,7 +78,9 @@ class ChatAssistantOrchestrator(Orchestrator):
         llm_responses_generator = self._handle_string_output(self.model.send_request(self.request))
         return ThinkingAndResponseGeneratorMessage(author="assistant", thinking_and_response_generator=llm_responses_generator)
 
-    def _handle_string_output(self, llm_response_generator: Generator[str | BaseLLMResponse, None, None]) -> Generator[BaseLLMResponse, None, None]:
+    def _handle_string_output(
+        self, llm_response_generator: Generator[str | BaseLLMResponse, None, None]
+    ) -> Generator[BaseLLMResponse, None, None]:
         """
         This is implemented for backwards compatibility, as not all models support thinking tokens yet
         and they currently just return string.

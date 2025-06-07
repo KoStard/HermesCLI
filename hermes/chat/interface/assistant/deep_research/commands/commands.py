@@ -24,7 +24,6 @@ from .rewrite_knowledge_command import RewriteKnowledgeCommand
 from .delete_knowledge_command import DeleteKnowledgeCommand
 
 
-
 def register_deep_research_commands(registry: CommandRegistry):
     """Registers all built-in Deep Research commands to the given registry."""
     commands_to_register = [

@@ -71,4 +71,5 @@ class ResearchCommandContextFactory(ABC, Generic[ResearchCommandContextType]):
     ) -> ResearchCommandContextType:
         pass
 
+
 from .commands import register_deep_research_commands

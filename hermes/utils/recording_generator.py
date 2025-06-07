@@ -2,6 +2,7 @@ from typing import TypeVar, Generic, Generator
 
 GeneratorItemType = TypeVar("GeneratorItemType")
 
+
 class RecordingGenerator(Generic[GeneratorItemType]):
     def __init__(self, original_generator: Generator[GeneratorItemType, None, None]):
         self.original_generator: Generator[GeneratorItemType, None, None] = original_generator
