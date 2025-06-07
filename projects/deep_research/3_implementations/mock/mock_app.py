@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hermes.chat.interface.assistant.agent.framework.engine import AgentEngine
+from hermes.chat.interface.assistant.agent_old.framework.engine import AgentEngine
 from hermes.extensions_loader import load_extensions
 
 from .mock_llm_interface import MockLLMInterface
