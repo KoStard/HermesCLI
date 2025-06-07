@@ -41,7 +41,7 @@ class ControlPanel(ABC):
         pass
 
     @abstractmethod
-    def break_down_and_execute_message(self, message: Message) -> Generator[Event, None, None]:
+    def extract_and_execute_commands(self, message: Message) -> Generator[Event, None, None]:
         pass
 
     def _register_command(self, command: ControlPanelCommand):

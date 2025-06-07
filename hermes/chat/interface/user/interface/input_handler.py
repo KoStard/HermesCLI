@@ -119,7 +119,7 @@ class InputHandler:
     def _process_input_message(self, input_message: TextMessage, message_source: MessageSource) -> Generator[Event, None, None]:
         sendable_content_present = False
 
-        for event in self.control_panel.break_down_and_execute_message(input_message):
+        for event in self.control_panel.extract_and_execute_commands(input_message):
             if self._is_sendable_event(event, message_source):
                 sendable_content_present = True
             yield event

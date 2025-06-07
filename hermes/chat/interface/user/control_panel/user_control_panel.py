@@ -443,7 +443,7 @@ class UserControlPanel(ControlPanel):
 
         return "\n".join(results)
 
-    def break_down_and_execute_message(self, message: Message) -> Generator[Event, None, None]:
+    def extract_and_execute_commands(self, message: Message) -> Generator[Event, None, None]:
         peekable_generator = PeekableGenerator(self._lines_from_message(message))
         prioritised_backlog = []
         # Collecting the text message, can be interrupted by commands

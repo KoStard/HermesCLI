@@ -19,7 +19,3 @@ class PromptBuilderFactory(ABC):
     @abstractmethod
     def create_prompt_builder(self) -> PromptBuilder:
         pass
-
-    @abstractmethod
-    def get_help_message(self) -> str:
-        pass

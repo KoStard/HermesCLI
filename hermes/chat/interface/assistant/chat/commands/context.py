@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from hermes.chat.events import MessageEvent
 from hermes.chat.events.base import Event
+from hermes.chat.interface.assistant.framework.commands import CommandContext
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
 from hermes.chat.interface.markdown.document_updater import (
     MarkdownDocumentUpdater,
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 ChatAssistantExecuteResponseType = Generator[Event, None, None]
 
 
-class ChatAssistantCommandContext:
+class ChatAssistantCommandContext(CommandContext):
     """Context for executing ChatAssistant commands."""
 
     def __init__(self, control_panel):  # control_panel type is ChatAssistantControlPanel
@@ -33,6 +34,7 @@ class ChatAssistantCommandContext:
         self.notifications_printer: "CLINotificationsPrinter" = control_panel.notifications_printer
         self.exa_client: "ExaClient | None" = control_panel.exa_client
         self._cwd = os.getcwd()
+        self._command_outputs = []
 
     def print_notification(self, message: str, color: CLIColors = CLIColors.BLUE) -> None:
         """Print a notification using the notifications printer."""
@@ -155,3 +157,12 @@ class ChatAssistantCommandContext:
         except Exception as e:
             self.print_notification(f"Error updating markdown section: {str(e)}", CLIColors.RED)
             return False
+
+    def add_command_output(self, command_name: str, args: dict, output: str) -> None:
+        self._command_outputs.append((command_name, args, output))
+
+    def clear_command_outputs(self):
+        self._command_outputs = []
+
+    def get_command_outputs(self) -> list[tuple[str, dict, str]]:
+        return self._command_outputs

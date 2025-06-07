@@ -1,6 +1,7 @@
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Iterable
 
 from hermes.chat.messages.base import Message
 
@@ -9,7 +10,7 @@ from hermes.chat.messages.base import Message
 class TextGeneratorMessage(Message):
     """Class for messages that contain a text generator"""
 
-    text_generator: Generator[str, None, None]
+    text_generator: Iterable[str]
     text: str
     has_finished: bool
     is_directly_entered: bool
@@ -20,7 +21,7 @@ class TextGeneratorMessage(Message):
         self,
         *,
         author: str,
-        text_generator: Generator[str, None, None],
+        text_generator: Iterable[str],
         timestamp: datetime | None = None,
         is_directly_entered: bool = False,
         name: str | None = None,

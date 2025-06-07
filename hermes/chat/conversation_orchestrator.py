@@ -1,9 +1,12 @@
 import logging
+from itertools import chain
+
 import sys
 from collections.abc import Generator, Iterable
 from typing import TYPE_CHECKING
 
 from hermes.chat.events import EngineCommandEvent, Event, MessageEvent, SaveHistoryEvent
+from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
 from hermes.chat.file_operations_handler import FileOperationsHandler
 from hermes.chat.history import History
 from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotificationsPrinter
@@ -86,9 +89,10 @@ class ConversationOrchestrator:
 
     def _consume_events_from_user_and_render_assistant(self, events: Generator[Event, None, None]):
         all_events = list(self._swallow_engine_commands_from_stream(events))
-        all_events = self._track_events_in_history(all_events)
-        history_snapshot = self.history.get_history_for(self.assistant_participant.get_name())
-        self.assistant_participant.consume_events_and_render(history_snapshot, (event for event in all_events))
+        history_recovery_event = HistoryRecoveryEvent(self.history.get_history_for(self.assistant_participant.get_name()))
+        all_events = list(self._track_events_in_history(all_events))
+        all_events.insert(0, history_recovery_event)
+        self.assistant_participant.consume_events_and_render(event for event in all_events)
 
     def _get_assistant_input_and_run_commands(self) -> Generator[Event, None, None]:
         if self.assistant_participant.is_agent_mode_enabled():
@@ -100,15 +104,15 @@ class ConversationOrchestrator:
         yield from self.assistant_participant.get_input_and_run_commands()
         while not self._received_assistant_done_event:
             continuation_event = self._get_agent_continuation_event_from_user()
-            history_snapshot = self.history.get_history_for(self.assistant_participant.get_name())
+            history_snapshot = HistoryRecoveryEvent(self.history.get_history_for(self.assistant_participant.get_name()))
             self._track_events_in_history([continuation_event])
-            self.assistant_participant.consume_events_and_render(history_snapshot, (event for event in [continuation_event]))
+            self.assistant_participant.consume_events_and_render(event for event in [history_snapshot, continuation_event])
             yield from self.assistant_participant.get_input_and_run_commands()
 
     def _get_agent_continuation_event_from_user(self) -> Event:
         continuation_msg = TextMessage(
             author="user",
-            text="AUTOMATIC RESPONSE: No ///done command found in your repsonse. "
+            text="AUTOMATIC RESPONSE: No ///done command found in your response. "
             "Please continue, and use ///done command when you finish with the whole task.",
             is_directly_entered=True,
         )
@@ -116,9 +120,9 @@ class ConversationOrchestrator:
 
     def _consume_events_from_assistant_and_render_user(self, events: Generator[Event, None, None]):
         events = self._swallow_engine_commands_from_stream(events)
+        history_snapshot = HistoryRecoveryEvent(self.history.get_history_for(self.user_participant.get_name()))
         events = self._track_events_in_history(events)
-        history_snapshot = self.history.get_history_for(self.user_participant.get_name())
-        self.user_participant.consume_events_and_render(history_snapshot, events)
+        self.user_participant.consume_events_and_render(event for event in chain([history_snapshot], events))
 
     def _commit_history(self):
         self.history.commit()

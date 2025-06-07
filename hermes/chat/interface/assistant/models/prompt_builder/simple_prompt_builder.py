@@ -55,14 +55,3 @@ class SimplePromptBuilder(PromptBuilder):
 class SimplePromptBuilderFactory(PromptBuilderFactory):
     def create_prompt_builder(self) -> PromptBuilder:
         return SimplePromptBuilder()
-
-    def get_help_message(self) -> str:
-        return textwrap.dedent(
-            """
-        You are a helpful assistant. Your response is not limited to XML. In fact, you can respond with any text, including markdown,
-        and should not use xml unless directly asked, as it's frustrating for the user.
-        The user prompts are wrapped in simple xml tags to help you understand the structure of the prompt.
-        This structure is applied only to the user prompts, not to the assistant responses.
-        Check other instructions for assistant response format.
-        """
-        )

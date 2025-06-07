@@ -67,14 +67,14 @@ class DebugInterface(ChatAssistantOrchestrator):
     def get_input(self) -> Generator[Event, None, None]:
         message = self._send_request()
 
-        yield from self.control_panel.break_down_and_execute_message(message)
+        yield from self.control_panel.extract_and_execute_commands(message)
 
     def _send_request(self):
         message_data = json.dumps(self.request)
         self.connection.send(message_data.encode())
 
         response = self.connection.recv(1024).decode()
-        return TextMessage(author="assistant", text=response)
+        return response
 
     def cleanup(self):
         if self.connection:
