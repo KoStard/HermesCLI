@@ -1,11 +1,10 @@
 import logging
 from collections.abc import Generator
-from pathlib import Path
 
 from hermes.chat.interface.assistant.framework.llm_interface import (
     LLMInterface,
 )
-from hermes.chat.interface.assistant.chat_assistant.response_types import (
+from hermes.chat.interface.assistant.chat.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
     ThinkingLLMResponse,

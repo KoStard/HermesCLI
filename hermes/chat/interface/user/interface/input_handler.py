@@ -8,7 +8,7 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 
-from hermes.chat.events import Event, MessageEvent, RawContentForHistoryEvent
+from hermes.chat.events import Event, MessageEvent
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
 from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
@@ -48,7 +48,6 @@ class InputHandler:
             user_input = self._get_terminal_input()
 
         input_message = TextMessage(author="user", text=user_input)
-        yield RawContentForHistoryEvent(input_message)
 
         yield from self._process_input_message(input_message, message_source)
 

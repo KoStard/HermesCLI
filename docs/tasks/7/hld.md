@@ -83,7 +83,7 @@ The core idea is to introduce a `TaskProcessor` that takes a `TaskTreeNode` and 
               self.command_context_factory,
               self.template_manager,
               self.renderer_registry,
-              self.interface, # AgentInterface
+              self.orchestrator, # AgentInterface
               self.status_printer,
               self.budget_manager # or self directly if it manages budget
           )

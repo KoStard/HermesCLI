@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from hermes.chat.events import Event
 from hermes.chat.history import History
-from hermes.chat.interface import Interface
+from hermes.chat.interface import Orchestrator
 from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotificationsPrinter
 from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
 from hermes.chat.interface.user.interface.markdown_highlighter import MarkdownHighlighter
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 
 
-class UserInterface(Interface):
+class UserOrchestrator(Orchestrator):
     def __init__(
         self,
         *,

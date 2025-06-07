@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
     from hermes.chat.history import History
 
 
-class Interface(ABC):
+class Orchestrator(ABC):
     @abstractmethod
     def render(self, events: Generator["Event", None, None]):
         """

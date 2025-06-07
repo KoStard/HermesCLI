@@ -3,7 +3,7 @@ import json
 import sys
 from typing import Any
 
-from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
+from hermes.chat.interface.assistant.chat.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.utils.config_utils import get_config_path
 
 

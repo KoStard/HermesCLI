@@ -5,7 +5,7 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 from hermes.chat.events import Event, MessageEvent
-from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
+from hermes.chat.interface.assistant.chat.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.chat.interface.commands.command import Command, CommandRegistry
 from hermes.chat.interface.commands.command_parser import CommandParser
 from hermes.chat.interface.control_panel import ControlPanel
@@ -87,79 +87,6 @@ class ChatAssistantControlPanel(ControlPanel):
         for command in mcp_commands:
             self.command_registry.register(command)
 
-    def _add_initial_help_content(self):
-        """Add initial help content about command usage"""
-        self._add_help_content(
-            textwrap.dedent(
-                """
-            You are allowed to use the following commands.
-            Use them **only** if the user directly asks for them.
-            Understand that they can cause the user frustration and lose trust if used incorrectly.
-            The commands will be programmatically parsed, make sure to follow the instructions precisely when using them.
-            You don't have access to tools other than these. Know that the user doesn't have access to your tools.
-            If the content doesn't match these instructions, they will be ignored.
-            The command syntax should be used literally, symbol-by-symbol correctly.
-            The commands will be parsed and executed only after you send the full message. You'll receive the responses in the next message.
-
-            Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break.
-            The commands should start from an empty line, from first symbol in the line.
-            Don't put anything else in the lines of the commands.
-
-            You write down the commands you want to send in this interface.
-
-            ⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses,
-            then consider the next steps.
-
-            Notice that we use <<< for opening the commands, >>> for closing, and /// for arguments. Make sure you use the exact syntax.
-
-            ```
-            <<< command_name
-            ///section_name
-            Section content goes here
-            ///another_section
-            Another section's content
-            >>>
-            ```
-
-            1. **Direct Commands**:
-                - When the user directly asks for something (e.g., "create a file", "make a file"),
-                use the command syntax **without** the `#` prefix. Example:
-                    ```
-                    <<< create_file
-                    ///path
-                    example.txt
-                    ///content
-                    This is the file content.
-                    >>>
-                    ```
-
-            2. **Example Commands**:
-                - When the user asks for an **example** of how to use a command (e.g., "how would you create a file?"),
-                use the `#` prefix to indicate it is an example. Example:
-                    ```
-                    #<<< create_file
-                    #///path
-                    #example.txt
-                    #///content
-                    #This is an example file content.
-                    #>>>
-                    ```
-
-            Note that below, you'll have only the "direct commands" listed, but if you are making an example,
-            you can use the example syntax.
-
-            In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER".
-            If the system detects this code anywhere in your response it will halt the system and the admin will check it.
-            """
-            )
-        )
-
-        self._add_help_content(
-            textwrap.dedent(f"""
-            **CURRENT WORKING DIRECTORY:** {os.getcwd()}
-            All relative paths will be resolved from this location.
-            """)
-        )
 
     def _register_commands(self):
         """Register all commands with the registry"""
@@ -193,82 +120,6 @@ class ChatAssistantControlPanel(ControlPanel):
         # Register all commands
         for command in file_commands + markdown_commands + utility_commands + agent_commands:
             self.command_registry.register(command)
-
-        # Add help content for agent commands
-        self._add_help_content(
-            textwrap.dedent(
-                """
-            **Agent Mode Enabled**
-            You are now in the agent mode.
-
-            The difference here is that you don't have to finish the task in one reply.
-            If the task is too big, you can finish it with multiple messages.
-            When you send a message without completing the task, you'll be able to continue with sending your next message,
-            the turn will not move to the user.
-            If the task requires information that you don't yet have, or want to check something, you can use the commands,
-            finish your message,
-            the engine will run the commands and you'll see the results, which will allow you to continue with the task in next messages.
-
-            Then after you have confirmed that you finished the task, and you want to show your results to the user, you can use
-            the done command.
-
-            You should aim to minimize user interventions until you achieve your task.
-            But if it is the case that you lack some important information, don't make assumptions.
-            Compile clear, good questions, then use the ask_the_user command to get that information from the user.
-            The user will be informed about your command, but preferrably run it early in the process, while they are at the computer.
-
-            *Don't see response of command you are executed?*
-            You won't receive the response of the commands you use immediately. You need to finish your message, without having the
-            response, to allow the engine to run your commands.
-            When you finish your turn, you'll receive a response with the results of the command execution.
-
-            CORRECT workflow:
-            1. Write your complete message including all needed commands
-            2. Finish your message
-            3. Wait for response
-            4. Process the response in your next message
-
-            INCORRECT workflow:
-            ❌ Run command
-            ❌ Look for immediate results
-            ❌ Run another command
-            ❌ Make conclusions before message completion
-
-            ⚠️ IMPORTANT: Commands are executed ONLY AFTER your complete message is sent.
-            Do NOT expect immediate results while writing your message.
-
-            ### Commands FAQ
-
-            #### Q: What to do if I don't see any results
-
-            A: If you send a command, a search, and don't see any results, that's likely because you didn't finish your message to wait for
-            the engine to process the whole message. Just finish your message and wait.
-            The concept of sending a full message for processing and receiving a consolidated response requires a shift from interactive
-            interfaces but allows for batch processing of commands
-
-            #### Q: How many commands to send at once?
-
-            A: If you already know that you'll need multiple pieces of information, and getting the results of part of them won't influence
-            the need for others, send a command for all of them, don't spend another message/response cycle. Commands are parallelizable!
-            You can go even with 20-30 commands without worry, you'll then receive all of their outputs in the response.
-
-            #### Q: How to input same argument multiple times for a command?
-
-            A: You need to put `///section_name` each time, example:
-            <<< command_with_multiple_inputs
-            ///title
-            title 1
-            ///title
-            title 2
-            >>>
-
-            #### Q: When to finish problem?
-
-            A: You should always verify the results (not details, but the completeness) before finishing the task.
-            """
-            ),
-            is_agent_only=True,
-        )
 
     def render(self) -> str:
         content = []

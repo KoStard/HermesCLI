@@ -14,12 +14,12 @@ class ListResearchEvent(EngineCommandEvent):
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         """List all research instances"""
-        if hasattr(orchestrator.assistant_participant.interface, "list_research_instances"):
+        if hasattr(orchestrator.assistant_participant.orchestrator, "list_research_instances"):
             try:
-                instances = orchestrator.assistant_participant.interface.list_research_instances()
+                instances = orchestrator.assistant_participant.orchestrator.list_research_instances()
                 current = None
-                if hasattr(orchestrator.assistant_participant.interface, "get_current_research_name"):
-                    current = orchestrator.assistant_participant.interface.get_current_research_name()
+                if hasattr(orchestrator.assistant_participant.orchestrator, "get_current_research_name"):
+                    current = orchestrator.assistant_participant.orchestrator.get_current_research_name()
 
                 if not instances:
                     orchestrator.notifications_printer.print_notification("No research instances found")

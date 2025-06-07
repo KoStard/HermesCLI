@@ -5,20 +5,18 @@ from typing import Any
 from hermes.chat.events import (
     Event,
     MessageEvent,
-    RawContentForHistoryEvent,
 )
 from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
-from hermes.chat.interface import Interface
-from hermes.chat.interface.assistant.chat_assistant.control_panel import (
+from hermes.chat.interface import Orchestrator
+from hermes.chat.interface.assistant.chat.control_panel import (
     ChatAssistantControlPanel,
 )
-from hermes.chat.interface.assistant.chat_assistant.response_types import (
+from hermes.chat.interface.assistant.chat.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
 )
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 from hermes.chat.messages import (
-    Message,
     TextMessage,
     ThinkingAndResponseGeneratorMessage,
 )
@@ -26,7 +24,7 @@ from hermes.chat.messages import (
 logger = logging.getLogger(__name__)
 
 
-class ChatAssistantInterface(Interface):
+class ChatAssistantOrchestrator(Orchestrator):
     model: ChatModel
     request: Any
 
@@ -68,7 +66,6 @@ class ChatAssistantInterface(Interface):
         logger.debug("Sending request to LLM")
         llm_responses_generator = self._handle_string_output(self.model.send_request(self.request))
         message = ThinkingAndResponseGeneratorMessage(author="assistant", thinking_and_response_generator=llm_responses_generator)
-        yield RawContentForHistoryEvent(message)
         yield from self.control_panel.break_down_and_execute_message(message)
 
     def _handle_string_output(self, llm_response_generator: Generator[str, None, None]) -> Generator[BaseLLMResponse, None, None]:

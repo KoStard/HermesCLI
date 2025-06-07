@@ -23,13 +23,11 @@ from hermes.chat.events.engine_commands import (
 )
 from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.events.notification_event import NotificationEvent
-from hermes.chat.events.raw_content_event import RawContentForHistoryEvent
 
 __all__ = [
     "Event",
     "MessageEvent",
     "NotificationEvent",
-    "RawContentForHistoryEvent",
     "EngineCommandEvent",
     "ClearHistoryEvent",
     "SaveHistoryEvent",

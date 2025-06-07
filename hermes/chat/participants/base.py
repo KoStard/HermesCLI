@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from hermes.chat.events import Event
     from hermes.chat.history import History
-    from hermes.chat.interface import Interface
+    from hermes.chat.interface import Orchestrator
 
 
 class Participant(ABC):
@@ -14,7 +14,7 @@ class Participant(ABC):
         pass
 
     @abstractmethod
-    def get_interface(self) -> "Interface":
+    def get_interface(self) -> "Orchestrator":
         pass
 
     @abstractmethod

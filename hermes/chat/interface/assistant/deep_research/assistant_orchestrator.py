@@ -7,7 +7,7 @@ from pathlib import Path
 from hermes.chat.events import Event, MessageEvent
 from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
 from hermes.chat.history import History
-from hermes.chat.interface import Interface
+from hermes.chat.interface import Orchestrator
 from hermes.chat.interface.assistant.deep_research.commands.command_context_factory import ResearchCommandContextFactoryImpl
 from hermes.chat.interface.assistant.deep_research.commands.commands import register_deep_research_commands
 from hermes.chat.interface.assistant.deep_research.context.dynamic_sections.registry import (
@@ -34,7 +34,7 @@ from hermes.utils.file_reader import FileReader
 logger = logging.getLogger(__name__)
 
 
-class DeepResearchAssistantInterface(Interface):
+class DeepResearchAssistantOrchestrator(Orchestrator):
     """Interface for the Deep Research Assistant"""
 
     def __init__(

@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from typing import Any
 
-from hermes.chat.interface.assistant.chat_assistant.response_types import (
+from hermes.chat.interface.assistant.chat.response_types import (
     BaseLLMResponse,
     TextLLMResponse,
     ThinkingLLMResponse,

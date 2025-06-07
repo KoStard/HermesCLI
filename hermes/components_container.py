@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
+from hermes.chat.interface.assistant.chat.control_panel import ChatAssistantControlPanel
 from hermes.chat.interface.assistant.models.model_factory import ModelFactory
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
 from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant

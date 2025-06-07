@@ -16,9 +16,9 @@ class SwitchResearchEvent(EngineCommandEvent):
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         """Switch to a different research instance"""
-        if hasattr(orchestrator.assistant_participant.interface, "switch_research"):
+        if hasattr(orchestrator.assistant_participant.orchestrator, "switch_research"):
             try:
-                orchestrator.assistant_participant.interface.switch_research(self.name)
+                orchestrator.assistant_participant.orchestrator.switch_research(self.name)
                 orchestrator.notifications_printer.print_notification(f"Switched to research instance: {self.name}")
             except ValueError as e:
                 orchestrator.notifications_printer.print_notification(str(e), CLIColors.RED)

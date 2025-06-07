@@ -65,7 +65,7 @@ class ApplicationOrchestrator:
 
         # Wait for MCP clients to load, then update the available commands.
         components.mcp_manager.wait_for_initial_load()
-        assistant_interface = participants.assistant.interface
+        assistant_interface = participants.assistant.orchestrator
         if hasattr(assistant_interface, "update_mcp_commands"):
             # This branch is for DeepResearchAssistantInterface
             assistant_interface.update_mcp_commands()
@@ -97,6 +97,6 @@ class ApplicationOrchestrator:
             self._cleanup_if_needed(assistant)
 
     def _cleanup_if_needed(self, assistant_participant):
-        if assistant_participant and hasattr(assistant_participant, "interface") and hasattr(assistant_participant.interface, "cleanup"):
+        if assistant_participant and hasattr(assistant_participant, "interface") and hasattr(assistant_participant.orchestrator, "cleanup"):
             print("Cleaning up debug interface")
-            assistant_participant.interface.cleanup()
+            assistant_participant.orchestrator.cleanup()

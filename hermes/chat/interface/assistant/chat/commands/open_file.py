@@ -3,7 +3,7 @@ from collections.abc import Generator
 from typing import Any
 
 from hermes.chat.events import Event, MessageEvent
-from hermes.chat.interface.assistant.chat_assistant.commands.context import (
+from hermes.chat.interface.assistant.chat.commands.context import (
     ChatAssistantCommandContext,
     ChatAssistantExecuteResponseType,
 )

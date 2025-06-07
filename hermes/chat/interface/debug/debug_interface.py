@@ -7,15 +7,15 @@ import sys
 from collections.abc import Generator
 
 from hermes.chat.events import Event
-from hermes.chat.interface.assistant.chat_assistant.control_panel import (
+from hermes.chat.interface.assistant.chat.control_panel import (
     ChatAssistantControlPanel,
 )
-from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssistantInterface
+from hermes.chat.interface.assistant.chat.assistant_orchestrator import ChatAssistantOrchestrator
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 from hermes.chat.messages import TextMessage
 
 
-class DebugInterface(ChatAssistantInterface):
+class DebugInterface(ChatAssistantOrchestrator):
     def __init__(
         self,
         control_panel: ChatAssistantControlPanel,

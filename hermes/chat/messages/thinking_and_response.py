@@ -2,7 +2,7 @@ from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime
 
-from hermes.chat.interface.assistant.chat_assistant.response_types import (
+from hermes.chat.interface.assistant.chat.response_types import (
     BaseLLMResponse,
     ThinkingLLMResponse,
 )

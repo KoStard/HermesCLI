@@ -3,7 +3,7 @@ import sys
 from collections.abc import Generator, Iterable
 from typing import TYPE_CHECKING
 
-from hermes.chat.events import EngineCommandEvent, Event, MessageEvent, RawContentForHistoryEvent, SaveHistoryEvent
+from hermes.chat.events import EngineCommandEvent, Event, MessageEvent, SaveHistoryEvent
 from hermes.chat.file_operations_handler import FileOperationsHandler
 from hermes.chat.history import History
 from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotificationsPrinter
@@ -127,8 +127,6 @@ class ConversationOrchestrator:
         for event in events:
             if isinstance(event, MessageEvent):
                 self.history.add_message(event.get_message())
-            elif isinstance(event, RawContentForHistoryEvent):
-                self.history.add_raw_content(event)
             yield event
 
     def _handle_mcp_status(self):

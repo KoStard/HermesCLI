@@ -4,9 +4,9 @@ from argparse import Namespace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from hermes.chat.interface.assistant.chat_assistant.command_status_override import ChatAssistantCommandStatusOverride
-from hermes.chat.interface.assistant.chat_assistant.control_panel import ChatAssistantControlPanel
-from hermes.chat.interface.assistant.chat_assistant.interface import ChatAssistantInterface
+from hermes.chat.interface.assistant.chat.command_status_override import ChatAssistantCommandStatusOverride
+from hermes.chat.interface.assistant.chat.control_panel import ChatAssistantControlPanel
+from hermes.chat.interface.assistant.chat.assistant_orchestrator import ChatAssistantOrchestrator
 from hermes.chat.interface.assistant.models.model_factory import ModelFactory
 from hermes.chat.interface.debug.debug_interface import DebugInterface
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
@@ -14,7 +14,7 @@ from hermes.chat.interface.user.control_panel.exa_client import ExaClient
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
 from hermes.chat.interface.user.interface.command_completer.command_completer import CommandCompleter
 from hermes.chat.interface.user.interface.markdown_highlighter import MarkdownHighlighter
-from hermes.chat.interface.user.interface.user_interface import UserInterface
+from hermes.chat.interface.user.interface.user_interface import UserOrchestrator
 from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant
 from hermes.components_container import CoreComponents, Participants
 from hermes.extensions_loader import Extensions, ExtensionsLoader
@@ -111,7 +111,7 @@ class ApplicationInitializer:
 
         user_control_panel.is_deep_research_mode = bool(cli_args.research_repo)
 
-        user_interface = UserInterface(
+        user_interface = UserOrchestrator(
             control_panel=user_control_panel,
             command_completer=CommandCompleter(user_control_panel.get_command_labels()),
             markdown_highlighter=markdown_highlighter,
@@ -180,7 +180,7 @@ class ApplicationInitializer:
     def _create_deep_research_participant(
         self, cli_args, model, extension_deep_research_commands, mcp_manager: "McpManager"
     ) -> LLMParticipant:
-        from hermes.chat.interface.assistant.deep_research.interface import DeepResearchAssistantInterface
+        from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 
         provided_research_repo_argument = cli_args.research_repo
         if ":" in provided_research_repo_argument:
@@ -191,7 +191,7 @@ class ApplicationInitializer:
 
         research_repo_path = Path(research_repo_path).absolute()
 
-        deep_research_interface = DeepResearchAssistantInterface(
+        deep_research_interface = DeepResearchAssistantOrchestrator(
             model=model,
             research_path=research_repo_path,
             extension_commands=extension_deep_research_commands,
@@ -204,7 +204,7 @@ class ApplicationInitializer:
         return LLMParticipant(deep_research_interface)
 
     def _create_chat_participant(self, model, llm_control_panel) -> LLMParticipant:
-        llm_interface = ChatAssistantInterface(model, control_panel=llm_control_panel)
+        llm_interface = ChatAssistantOrchestrator(model, control_panel=llm_control_panel)
         return LLMParticipant(llm_interface)
 
     def _validate_model_info_string(self, model_info_string: str | None) -> str:

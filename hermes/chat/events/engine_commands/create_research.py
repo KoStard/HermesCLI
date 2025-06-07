@@ -16,9 +16,9 @@ class CreateResearchEvent(EngineCommandEvent):
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         """Create a new research instance and switch to it"""
-        if hasattr(orchestrator.assistant_participant.interface, "create_new_research"):
+        if hasattr(orchestrator.assistant_participant.orchestrator, "create_new_research"):
             try:
-                orchestrator.assistant_participant.interface.create_new_research(self.name)
+                orchestrator.assistant_participant.orchestrator.create_new_research(self.name)
                 orchestrator.notifications_printer.print_notification(f"Created and switched to new research instance: {self.name}")
             except ValueError as e:
                 orchestrator.notifications_printer.print_notification(str(e), CLIColors.RED)
