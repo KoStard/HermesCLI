@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from hermes.chat.interface.assistant.agent_old.framework.llm_interface import (
+from hermes.chat.interface.assistant.framework.llm_interface import (
     LLMInterface,
 )
 

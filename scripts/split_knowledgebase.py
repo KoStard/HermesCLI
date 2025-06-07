@@ -13,14 +13,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from hermes.chat.interface.assistant.agent_old.framework.research.file_system.markdown_file_with_metadata import (
+from hermes.chat.interface.assistant.framework.research import (
     MarkdownFileWithMetadataImpl,
 )
 
 
 def parse_old_knowledge_base(content: str) -> list[dict[str, Any]]:
     """Parse the old knowledge base format and extract entries."""
-    from hermes.chat.interface.assistant.agent_old.framework.research.file_system.frontmatter_manager import (
+    from hermes.chat.interface.assistant.framework.research import (
         FrontmatterManager,
     )
 

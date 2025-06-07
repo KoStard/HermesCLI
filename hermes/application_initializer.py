@@ -180,7 +180,7 @@ class ApplicationInitializer:
     def _create_deep_research_participant(
         self, cli_args, model, extension_deep_research_commands, mcp_manager: "McpManager"
     ) -> LLMParticipant:
-        from hermes.chat.interface.assistant.agent_old.deep_research.interface import DeepResearchAssistantInterface
+        from hermes.chat.interface.assistant.deep_research.interface import DeepResearchAssistantInterface
 
         provided_research_repo_argument = cli_args.research_repo
         if ":" in provided_research_repo_argument:
