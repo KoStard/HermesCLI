@@ -16,7 +16,7 @@ class AssistantPromptFactory:
 
     def build_for(self, commands: list[Command[Any, Any]], is_agent_mode: bool) -> str:
         commands_help = self._render_commands_help(commands)
-        return self.template_manager.render_template("static.mako", commands_help=commands_help, is_agent_mode=is_agent_mode)
+        return self.template_manager.render_template("assistant_static.mako", commands_help=commands_help, is_agent_mode=is_agent_mode)
 
     def _render_commands_help(self, commands: list[Command[Any, Any]]) -> str:
         command_help_contents = []

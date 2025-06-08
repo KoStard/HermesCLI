@@ -39,7 +39,8 @@ class Gemini2Model(ChatModel):
     def _supports_thinking(self) -> bool:
         return "thinking" in self.model_tag
 
-    def send_request(self, request: Any) -> Generator[str, None, None]:
+    def _make_api_call(self, request):
+        """Make the API call with retry logic and handle errors."""
         from google.genai.errors import ClientError
         from google.genai.types import GenerateContentConfig
         from tenacity import (
@@ -48,7 +49,7 @@ class Gemini2Model(ChatModel):
             stop_after_attempt,
             wait_exponential,
         )
-
+        
         @retry(
             stop=stop_after_attempt(5),
             wait=wait_exponential(multiplier=1, max=60),
@@ -63,27 +64,36 @@ class Gemini2Model(ChatModel):
                     tools=request["tools"],
                 ),
             )
-
+        
         try:
-            response = _send_request_with_retry()
+            return _send_request_with_retry()
         except ClientError as e:
             if e.status == 429:
                 raise RuntimeError("Gemini API quota exceeded - try again later or check your Google Cloud quota") from e
             raise
 
-        # has_finished_thinking = False if self._supports_thinking else True
-        has_finished_thinking = True  # The implementation with google api is not good
-
+    def _process_response_parts(self, response):
+        """Process response parts and yield LLM responses."""
+        # The implementation with google api is not good
+        has_finished_thinking = True
+        
         if not response.candidates:
             print(response)
-            yield from []
             return
-
+            
         for part in response.candidates[0].content.parts or []:
-            yield from self._convert_to_llm_response(self._handle_part(part), is_thinking=not has_finished_thinking)
-
+            yield from self._convert_to_llm_response(
+                self._handle_part(part), 
+                is_thinking=not has_finished_thinking
+            )
+            
             # Handle thinking state transitions
             has_finished_thinking = not (hasattr(part, "thought") and part.thought)
+
+    def send_request(self, request: Any) -> Generator[str, None, None]:
+        """Send a request to the Gemini API and yield responses."""
+        response = self._make_api_call(request)
+        yield from self._process_response_parts(response)
 
     def _handle_part(self, part) -> Generator[str, None, None]:
         if hasattr(part, "text"):

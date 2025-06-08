@@ -24,13 +24,39 @@ class BedrockRequestBuilder(RequestBuilder):
     def _add_content(self, content: dict, author: str):
         self.all_messages_aggregator.add_message(content, author)
 
-    def compile_request(self) -> Any:
-        self._flush_text_messages()
-
+    def _build_final_messages(self) -> list:
+        """Build the final message list from aggregated messages."""
         final_messages = []
         for messages, author in self.all_messages_aggregator.get_aggregated_messages():
             final_messages.append({"role": self._get_message_role(author), "content": messages})
+        return final_messages
 
+    def _get_max_tokens_for_model(self) -> int | None:
+        """Determine max tokens based on model tag."""
+        for tag, tokens in MODEL_TAG_TO_MAX_TOKENS.items():
+            if tag in self.model_tag:
+                return tokens
+        return None
+
+    def _configure_inference_parameters(self, response: dict, max_tokens: int | None) -> None:
+        """Configure inference parameters based on reasoning effort and max tokens."""
+        if not self.reasoning_effort:
+            return
+        
+        response["additionalModelRequestFields"] = {
+            "thinking": {"type": "enabled", "budget_tokens": self.reasoning_effort}
+        }
+        
+        if max_tokens:
+            response["inferenceConfig"]["maxTokens"] = max_tokens
+        else:
+            response["inferenceConfig"]["maxTokens"] = self.reasoning_effort + 5000
+
+    def compile_request(self) -> Any:
+        """Compile the request for the Bedrock model."""
+        self._flush_text_messages()
+        
+        final_messages = self._build_final_messages()
         response = {
             "modelId": self.model_tag,
             "system": [],
@@ -39,20 +65,10 @@ class BedrockRequestBuilder(RequestBuilder):
             # "guardrailConfig": {},
             "messages": final_messages,
         }
-
-        max_tokens = None
-        for tag in MODEL_TAG_TO_MAX_TOKENS:
-            if tag in self.model_tag:
-                max_tokens = MODEL_TAG_TO_MAX_TOKENS[tag]
-                break
-
-        if self.reasoning_effort:
-            response["additionalModelRequestFields"] = {"thinking": {"type": "enabled", "budget_tokens": self.reasoning_effort}}
-            if max_tokens:
-                response["inferenceConfig"]["maxTokens"] = max_tokens
-            else:
-                response["inferenceConfig"]["maxTokens"] = self.reasoning_effort + 5000
-
+        
+        max_tokens = self._get_max_tokens_for_model()
+        self._configure_inference_parameters(response, max_tokens)
+        
         # Using Converse API
         return response
 

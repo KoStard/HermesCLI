@@ -46,93 +46,77 @@ class RequestBuilder(ABC):
         self._url_contents = {}
 
     def build_request(self, messages: Sequence[Message]) -> Any:
+        """
+        Build a request for the LLM provider from a sequence of messages.
+        
+        Args:
+            messages: A sequence of Message objects to include in the request.
+            
+        Returns:
+            A provider-specific request object.
+        """
         self.initialize_request()
 
         for message in messages:
-            if isinstance(message, TextMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    content = content.strip()
-                    if content:
-                        self.handle_text_message(
-                            text=content,
-                            author=message.author,
-                            message_id=id(message),
-                            name=message.name,
-                            text_role=message.text_role,
-                        )
-            elif isinstance(message, TextGeneratorMessage | ThinkingAndResponseGeneratorMessage | InvisibleMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    content = content.strip()
-                    if content:
-                        self.handle_text_message(
-                            content,
-                            message.author,
-                            id(message),
-                            message.name,
-                            message.text_role,
-                        )
-            elif isinstance(message, ImageUrlMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    self.handle_image_url_message(content, message.author, id(message))
-            elif isinstance(message, ImageMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    self.handle_image_message(content, message.author, id(message))
-            elif isinstance(message, AudioFileMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    self.handle_audio_file_message(content, message.author, id(message))
-            elif isinstance(message, VideoMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    self.handle_video_message(content, message.author, id(message))
-            elif isinstance(message, EmbeddedPDFMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    self.handle_embedded_pdf_message(
-                        content["pdf_filepath"],
-                        content["pages"],
-                        message.author,
-                        id(message),
-                    )
-            elif isinstance(message, TextualFileMessage):
-                content = message.get_content_for_assistant()
-                if content["textual_content"]:
-                    self.handle_text_message(
-                        content["textual_content"],
-                        message.author,
-                        id(message),
-                        name=message.name,
-                        text_role=message.file_role,
-                    )
-                elif content["text_filepath"]:
-                    self.handle_textual_file_message(
-                        content["text_filepath"],
-                        message.author,
-                        id(message),
-                        file_role=message.file_role,
-                    )
-            elif isinstance(message, UrlMessage):
-                content = message.get_content_for_assistant()
-                if content:
-                    self.handle_url_message(content, message.author, id(message))
-            elif isinstance(message, LLMRunCommandOutput):
-                content = message.get_content_for_assistant()
-                if content:
-                    self.handle_llm_run_command_output(
-                        text=content,
-                        author=message.author,
-                        message_id=id(message),
-                        name=message.name,
-                    )
-            else:
-                self.notifications_printer.print_error(f"Unsupported message type: {type(message)}. Discarding message.")
-                continue
+            self._process_message(message)
 
         return self.compile_request()
+        
+    def _process_message(self, message: Message) -> None:
+        """
+        Process a single message and delegate to the appropriate handler.
+        
+        Args:
+            message: The Message object to process.
+        """
+        # Use dedicated methods for handling different message types
+        handler = self._get_message_handler(message)
+        if handler:
+            handler(message)
+        else:
+            self.notifications_printer.print_error(f"Unsupported message type: {type(message)}. Discarding message.")
+            
+    def _get_message_handler(self, message: Message):
+        """
+        Determine the appropriate handler method for the given message type.
+        
+        Args:
+            message: The Message object to find a handler for.
+            
+        Returns:
+            A method to handle the message or None if no handler is found.
+        """
+        message_type_map = self._get_message_type_handler_map()
+        
+        # Check direct type matches first
+        if type(message) in message_type_map:
+            return message_type_map[type(message)]
+        
+        # Check for grouped message types
+        for types, handler in message_type_map.items():
+            if isinstance(types, tuple) and isinstance(message, types):
+                return handler
+        
+        return None
+    
+    def _get_message_type_handler_map(self):
+        """
+        Returns a mapping of message types to their handler methods.
+        """
+        return {
+            TextMessage: self._process_text_message,
+            # Group similar message types with the same handler
+            (TextGeneratorMessage, ThinkingAndResponseGeneratorMessage, InvisibleMessage): 
+                self._process_text_generator_message,
+            ImageUrlMessage: self._process_image_url_message,
+            ImageMessage: self._process_image_message,
+            AudioFileMessage: self._process_audio_file_message,
+            VideoMessage: self._process_video_message,
+            EmbeddedPDFMessage: self._process_embedded_pdf_message,
+            TextualFileMessage: self._process_textual_file_message,
+            UrlMessage: self._process_url_message,
+            LLMRunCommandOutput: self._process_llm_run_command_output,
+        }
 
     def handle_text_message(
         self,
@@ -261,30 +245,8 @@ class RequestBuilder(ABC):
         For directories, process each file recursively.
         """
         if os.path.isdir(text_filepath):
-            # Use FileReader to process the entire directory
-            file_contents = FileReader.read_directory(text_filepath)
-
-            # Process each file in the directory
-            for relative_path, content in file_contents.items():
-                full_path = os.path.join(text_filepath, relative_path)
-                try:
-                    # Use the content we already read
-                    role = "TextualFile"
-                    if full_path.endswith(".ipynb"):
-                        role = "JupyterNotebook"
-
-                    if file_role:
-                        role = f"{role} with role={file_role}"
-
-                    self.handle_text_message(
-                        text=content,
-                        author=author,
-                        message_id=message_id,
-                        name=full_path,
-                        text_role=role,
-                    )
-                except Exception as e:
-                    self.notifications_printer.print_error(f"Error processing file {full_path}: {e}")
+            # Process directory contents
+            self._process_directory(text_filepath, author, message_id, file_role)
             return
 
         # If it's a single file, process it directly
@@ -304,14 +266,7 @@ class RequestBuilder(ABC):
         file_content, success = FileReader.read_file(text_filepath)
 
         if success:
-            # Determine the appropriate role based on file type
-            role = "TextualFile"
-            if text_filepath.endswith(".ipynb"):
-                role = "JupyterNotebook"
-
-            # Add file_role if specified
-            if file_role:
-                role = f"{role} with role={file_role}"
+            role = self._determine_file_role(text_filepath, file_role)
 
             # Handle the message with the content
             self.handle_text_message(
@@ -331,6 +286,43 @@ class RequestBuilder(ABC):
                 name=text_filepath,
                 text_role="ErrorReadingFile",
             )
+
+    def _process_directory(self, directory_path: str, author: str, message_id: int, file_role: str | None = None):
+        """
+        Process all files in a directory and send their content as messages.
+        """
+        # Use FileReader to process the entire directory
+        file_contents = FileReader.read_directory(directory_path)
+
+        # Process each file in the directory
+        for relative_path, content in file_contents.items():
+            full_path = os.path.join(directory_path, relative_path)
+            try:
+                # Use the content we already read
+                role = self._determine_file_role(full_path, file_role)
+                
+                self.handle_text_message(
+                    text=content,
+                    author=author,
+                    message_id=message_id,
+                    name=full_path,
+                    text_role=role,
+                )
+            except Exception as e:
+                self.notifications_printer.print_error(f"Error processing file {full_path}: {e}")
+
+    def _determine_file_role(self, file_path: str, base_file_role: str | None = None) -> str:
+        """
+        Determine the appropriate role for a file based on its type and any provided base role.
+        """
+        role = "TextualFile"
+        if file_path.endswith(".ipynb"):
+            role = "JupyterNotebook"
+
+        if base_file_role:
+            role = f"{role} with role={base_file_role}"
+            
+        return role
 
     def _extract_pages_from_pdf(self, pdf_path: str, pages: list[int]) -> str:
         """
@@ -369,3 +361,101 @@ class RequestBuilder(ABC):
         except Exception as e:
             self.notifications_printer.print_error(f"Error extracting pages from PDF {pdf_path}, sending whole file: {e}")
             return pdf_path  # Return original file path if extraction fails
+    def _process_text_message(self, message: TextMessage) -> None:
+        """Process a text message."""
+        content = message.get_content_for_assistant()
+        if content:
+            content = content.strip()
+            if content:
+                self.handle_text_message(
+                    text=content,
+                    author=message.author,
+                    message_id=id(message),
+                    name=message.name,
+                    text_role=message.text_role,
+                )
+                
+    def _process_text_generator_message(self, message: TextGeneratorMessage | ThinkingAndResponseGeneratorMessage | InvisibleMessage) -> None:
+        """Process a text generator, thinking and response, or invisible message."""
+        content = message.get_content_for_assistant()
+        if content:
+            content = content.strip()
+            if content:
+                self.handle_text_message(
+                    content,
+                    message.author,
+                    id(message),
+                    message.name,
+                    message.text_role,
+                )
+                
+    def _process_image_url_message(self, message: ImageUrlMessage) -> None:
+        """Process an image URL message."""
+        content = message.get_content_for_assistant()
+        if content:
+            self.handle_image_url_message(content, message.author, id(message))
+            
+    def _process_image_message(self, message: ImageMessage) -> None:
+        """Process an image message."""
+        content = message.get_content_for_assistant()
+        if content:
+            self.handle_image_message(content, message.author, id(message))
+            
+    def _process_audio_file_message(self, message: AudioFileMessage) -> None:
+        """Process an audio file message."""
+        content = message.get_content_for_assistant()
+        if content:
+            self.handle_audio_file_message(content, message.author, id(message))
+            
+    def _process_video_message(self, message: VideoMessage) -> None:
+        """Process a video message."""
+        content = message.get_content_for_assistant()
+        if content:
+            self.handle_video_message(content, message.author, id(message))
+            
+    def _process_embedded_pdf_message(self, message: EmbeddedPDFMessage) -> None:
+        """Process an embedded PDF message."""
+        content = message.get_content_for_assistant()
+        if content:
+            self.handle_embedded_pdf_message(
+                content["pdf_filepath"],
+                content["pages"],
+                message.author,
+                id(message),
+            )
+            
+    def _process_textual_file_message(self, message: TextualFileMessage) -> None:
+        """Process a textual file message."""
+        content = message.get_content_for_assistant()
+        if content["textual_content"]:
+            self.handle_text_message(
+                content["textual_content"],
+                message.author,
+                id(message),
+                name=message.name,
+                text_role=message.file_role,
+            )
+        elif content["text_filepath"]:
+            self.handle_textual_file_message(
+                content["text_filepath"],
+                message.author,
+                id(message),
+                file_role=message.file_role,
+            )
+            
+    def _process_url_message(self, message: UrlMessage) -> None:
+        """Process a URL message."""
+        content = message.get_content_for_assistant()
+        if content:
+            self.handle_url_message(content, message.author, id(message))
+            
+    def _process_llm_run_command_output(self, message: LLMRunCommandOutput) -> None:
+        """Process an LLM run command output message."""
+        content = message.get_content_for_assistant()
+        if content:
+            self.handle_llm_run_command_output(
+                text=content,
+                author=message.author,
+                message_id=id(message),
+                name=message.name,
+            )

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Any, Generic
 
 from hermes.chat.interface.assistant.deep_research.commands import ResearchCommandContextFactory, ResearchCommandContextType
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.problem_definition_manager import (
@@ -71,31 +71,58 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         finish_or_fail_skipped = False
 
         for i, cmd in enumerate(commands):
-            # Skip commands with syntax errors
             if cmd.errors:
                 continue
 
             cmd_key = f"{cmd.command_name}_{i}"
-            line_num = cmd.errors[0].line_number if cmd.errors else None
-
-            # Skip finish/fail commands if there are errors
-            if self._is_terminal_command_with_errors(cmd, has_parsing_errors, failed_commands):
-                finish_or_fail_skipped = True
-                status_map[cmd_key] = self._create_skipped_status(cmd, "other errors detected in the message", line_num)
-                continue
-
-            # Execute the command
-            result, exception = self._run_command(cmd, current_node)
-
-            # Handle execution result
-            if exception:  # Error occurred
-                failed_info = {"name": cmd.command_name, "status": f"failed: {str(exception)}", "line": line_num}
-                status_map[cmd_key] = failed_info
-                failed_commands.append(failed_info)
-            elif result:  # Command executed successfully
-                status_map[cmd_key] = {"name": cmd.command_name, "status": "success", "line": line_num}
+            line_num = self._get_line_number(cmd)
+            
+            # Process the command
+            finish_or_fail_skipped, status_map, failed_commands = self._process_command(
+                cmd, has_parsing_errors, failed_commands, finish_or_fail_skipped, 
+                status_map, current_node, cmd_key, line_num
+            )
 
         return failed_commands, finish_or_fail_skipped, status_map
+        
+    def _get_line_number(self, cmd: ParseResult) -> int | None:
+        """Extract line number from command result"""
+        return cmd.errors[0].line_number if cmd.errors else None
+        
+    def _process_command(
+        self, cmd: ParseResult, has_parsing_errors: bool, failed_commands: list[dict], 
+        finish_or_fail_skipped: bool, status_map: dict, current_node: "ResearchNode", 
+        cmd_key: str, line_num: int | None
+    ) -> tuple[bool, dict, list[dict]]:
+        """Process a command and update tracking information"""
+        # Skip terminal commands if there are errors
+        if self._is_terminal_command_with_errors(cmd, has_parsing_errors, failed_commands):
+            finish_or_fail_skipped = True
+            status_map[cmd_key] = self._create_skipped_status(cmd, "other errors detected in the message", line_num)
+            return finish_or_fail_skipped, status_map, failed_commands
+            
+        # Execute the command
+        result, exception = self._run_command(cmd, current_node)
+        
+        # Update status based on execution result
+        status_map, failed_commands = self._update_command_status(
+            cmd, result, exception, status_map, failed_commands, cmd_key, line_num
+        )
+            
+        return finish_or_fail_skipped, status_map, failed_commands
+        
+    def _update_command_status(
+        self, cmd: ParseResult, result: Any, exception: Exception | None, 
+        status_map: dict, failed_commands: list[dict], cmd_key: str, line_num: int | None
+    ) -> tuple[dict, list[dict]]:
+        """Update status tracking based on command execution result"""
+        if exception:  # Error occurred
+            failed_info = {"name": cmd.command_name, "status": f"failed: {str(exception)}", "line": line_num}
+            status_map[cmd_key] = failed_info
+            failed_commands.append(failed_info)
+        elif result:  # Command executed successfully
+            status_map[cmd_key] = {"name": cmd.command_name, "status": "success", "line": line_num}
+        return status_map, failed_commands
 
     def _is_terminal_command_with_errors(self, cmd: ParseResult, has_parsing_errors: bool, failed_commands: list[dict]) -> bool:
         """Check if this is a terminal command when there are errors."""
@@ -136,34 +163,47 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         if not parsing_report and not execution_errors:
             return ""
 
-        # Start with parsing errors
-        final_report = parsing_report
-
-        # Add execution errors if any exist
-        if execution_errors:
-            exec_report = ["### Execution Status Report:"]
-
-            for error in execution_errors:
-                cmd_name = error["name"]
-                status = error["status"]
-                line_info = f" at line {error['line']}" if error.get("line") is not None else ""
-                exec_report.append(f"- Command '{cmd_name}'{line_info} {status}")
-
-            exec_report_text = "\n".join(exec_report)
-
-            # Combine reports appropriately
-            if not final_report:
-                final_report = exec_report_text
-            elif "### Errors report:" in final_report:
-                final_report += f"\n---\n{exec_report_text}"
-            else:
-                final_report += f"\n{exec_report_text}"
-
-        # Ensure proper formatting
-        if final_report and not ("### Errors report:" in final_report or "### Execution Status Report:" in final_report):
-            final_report = f"### Errors report:\n{final_report}"
-
-        return final_report
+        # Build report components
+        parsing_section = self._format_parsing_errors(parsing_report)
+        execution_section = self._format_execution_errors(execution_errors)
+        
+        # Combine reports
+        return self._combine_error_reports(parsing_section, execution_section)
+        
+    def _format_parsing_errors(self, parsing_report: str) -> str:
+        """Format parsing errors section"""
+        if not parsing_report:
+            return ""
+            
+        if "### Errors report:" not in parsing_report:
+            return f"### Errors report:\n{parsing_report}"
+            
+        return parsing_report
+        
+    def _format_execution_errors(self, execution_errors: list[dict]) -> str:
+        """Format execution errors into report section"""
+        if not execution_errors:
+            return ""
+            
+        lines = ["### Execution Status Report:"]
+        
+        for error in execution_errors:
+            cmd_name = error["name"]
+            status = error["status"]
+            line_info = f" at line {error['line']}" if error.get("line") is not None else ""
+            lines.append(f"- Command '{cmd_name}'{line_info} {status}")
+            
+        return "\n".join(lines)
+        
+    def _combine_error_reports(self, parsing_section: str, execution_section: str) -> str:
+        """Combine parsing and execution error sections"""
+        if not parsing_section:
+            return execution_section
+            
+        if not execution_section:
+            return parsing_section
+            
+        return f"{parsing_section}\n---\n{execution_section}"
 
     def _add_to_auto_reply(self, current_node: "ResearchNode", error_report: str, needs_confirmation: bool) -> None:
         """Add reports and confirmation requests to auto-reply."""

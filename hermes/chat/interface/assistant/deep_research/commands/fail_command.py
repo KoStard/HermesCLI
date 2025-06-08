@@ -34,24 +34,31 @@ class FailCommand(BaseCommand[ResearchCommandContextImpl, None]):
         )
 
     def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
-        # Get the optional message from args
         failure_message = args.get("message")
+        self._validate_no_running_subtasks(context)
+        self._attempt_fail_node(context, failure_message)
 
+    def _validate_no_running_subtasks(self, context: ResearchCommandContextImpl) -> None:
+        """Ensure no child nodes are still running before failing"""
         for child_node in context.current_node.list_child_nodes():
             if child_node.get_problem_status() == ProblemStatus.IN_PROGRESS:
                 raise ValueError("Failed to mark the session as failed as there are running subtasks, cancel or wait for them.")
 
-        # Pass the message to the context method
+    def _attempt_fail_node(self, context: ResearchCommandContextImpl, failure_message: str | None) -> None:
+        """Attempt to fail the node and handle any errors"""
         result = context.fail_node(message=failure_message)
-
         if not result:
-            # Keep existing error handling, refine slightly for root node case
-            current_node_title = context.current_node.get_title()
+            self._handle_fail_error(context, failure_message)
 
-            if not context.current_node.get_parent():
-                # Specific error if it's the root node trying to fail with a message meant for a parent
-                if failure_message:
-                    raise ValueError(f"Cannot pass a failure message from the root node '{current_node_title}' as there is no parent.")
-            else:
-                # General failure case if not root or root without message
-                raise ValueError(f"Failed to mark problem as failed '{current_node_title}'.")
+    def _handle_fail_error(self, context: ResearchCommandContextImpl, failure_message: str | None) -> None:
+        """Handle errors when failing a node"""
+        current_node_title = context.current_node.get_title()
+        
+        if self._is_root_node_with_message(context, failure_message):
+            raise ValueError(f"Cannot pass a failure message from the root node '{current_node_title}' as there is no parent.")
+        else:
+            raise ValueError(f"Failed to mark problem as failed '{current_node_title}'.")
+
+    def _is_root_node_with_message(self, context: ResearchCommandContextImpl, failure_message: str | None) -> bool:
+        """Check if this is a root node trying to fail with a message"""
+        return not context.current_node.get_parent() and failure_message

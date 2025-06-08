@@ -122,13 +122,16 @@ class ResearchNodeHistoryAdapter:
         """Calculate how many times each section changes in future blocks."""
         future_changes_map: dict[int, int] = defaultdict(int)
 
-        for future_block in blocks[current_index + 1 :]:
-            if isinstance(future_block, AutoReply):
-                for section_index, _ in future_block.dynamic_sections:
-                    future_changes_map[section_index] += 1
-            elif isinstance(future_block, InitialInterface):
-                # InitialInterface blocks also count as changes for sections
-                for section_index, _ in future_block.dynamic_sections:
-                    future_changes_map[section_index] += 1
+        for future_block in blocks[current_index + 1:]:
+            self._update_future_changes_for_block(future_changes_map, future_block)
 
         return future_changes_map
+    
+    def _update_future_changes_for_block(self, changes_map: dict[int, int], block) -> None:
+        """Update the future changes map based on dynamic sections in a block."""
+        if not isinstance(block, (AutoReply, InitialInterface)):
+            return
+            
+        if hasattr(block, 'dynamic_sections'):
+            for section_index, _ in block.dynamic_sections:
+                changes_map[section_index] += 1

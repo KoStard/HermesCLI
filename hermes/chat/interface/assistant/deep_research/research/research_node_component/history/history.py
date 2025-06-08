@@ -134,102 +134,115 @@ class ResearchNodeHistory:
 
         for block in blocks:
             if isinstance(block, ChatMessage):
-                serialized.append({"type": "ChatMessage", "author": block.author, "content": block.content})
+                serialized.append(self._serialize_chat_message(block))
             elif isinstance(block, InitialInterface):
-                # Serialize InitialInterface block
-                dynamic_sections = []
-                if block.dynamic_sections:
-                    for idx, section_data in block.dynamic_sections:
-                        dynamic_sections.append({"index": idx, "section_data": section_data.serialize() if section_data else None})
-
-                serialized.append(
-                    {
-                        "type": "InitialInterface",
-                        "static_content": block.static_content,
-                        "dynamic_sections": dynamic_sections,
-                    }
-                )
+                serialized.append(self._serialize_initial_interface(block))
             elif isinstance(block, AutoReply):
-                # For AutoReply, we need proper serialization of dynamic sections
-                dynamic_sections = []
-                if block.dynamic_sections:
-                    for idx, section_data in block.dynamic_sections:
-                        # Use the DynamicSectionData serialization method
-                        dynamic_sections.append({"index": idx, "section_data": section_data.serialize() if section_data else None})
-
-                # Use jsonpickle for command_outputs to handle complex nested structures
-                import jsonpickle
-
-                serialized.append(
-                    {
-                        "type": "AutoReply",
-                        "error_report": block.error_report,
-                        "command_outputs": jsonpickle.encode(block.command_outputs),
-                        "messages": block.messages,
-                        "confirmation_request": block.confirmation_request,
-                        "dynamic_sections": dynamic_sections,
-                    }
-                )
+                serialized.append(self._serialize_auto_reply(block))
 
         return serialized
+
+    def _serialize_chat_message(self, block: ChatMessage) -> dict[str, Any]:
+        """Serialize a ChatMessage block to JSON-compatible format"""
+        return {"type": "ChatMessage", "author": block.author, "content": block.content}
+
+    def _serialize_initial_interface(self, block: InitialInterface) -> dict[str, Any]:
+        """Serialize an InitialInterface block to JSON-compatible format"""
+        return {
+            "type": "InitialInterface",
+            "static_content": block.static_content,
+            "dynamic_sections": self._serialize_dynamic_sections(block.dynamic_sections),
+        }
+
+    def _serialize_auto_reply(self, block: AutoReply) -> dict[str, Any]:
+        """Serialize an AutoReply block to JSON-compatible format"""
+        import jsonpickle
+        return {
+            "type": "AutoReply",
+            "error_report": block.error_report,
+            "command_outputs": jsonpickle.encode(block.command_outputs),
+            "messages": block.messages,
+            "confirmation_request": block.confirmation_request,
+            "dynamic_sections": self._serialize_dynamic_sections(block.dynamic_sections),
+        }
+
+    def _serialize_dynamic_sections(self, dynamic_sections: list) -> list[dict[str, Any]]:
+        """Serialize dynamic sections to JSON-compatible format"""
+        serialized_sections = []
+        if dynamic_sections:
+            for idx, section_data in dynamic_sections:
+                serialized_sections.append({
+                    "index": idx, 
+                    "section_data": section_data.serialize() if section_data else None
+                })
+        return serialized_sections
 
     def _deserialize_blocks(self, serialized_blocks: list[dict[str, Any]]) -> list[HistoryBlock]:
         """Deserialize history blocks from JSON data"""
         blocks = []
-        import jsonpickle
-
+        
         for block_data in serialized_blocks:
             block_type = block_data.get("type")
-
             if block_type == "ChatMessage":
-                blocks.append(ChatMessage(author=block_data.get("author", ""), content=block_data.get("content", "")))
+                blocks.append(self._deserialize_chat_message(block_data))
             elif block_type == "InitialInterface":
-                # Deserialize InitialInterface block
-                dynamic_sections = []
-                for section_data in block_data.get("dynamic_sections", []):
-                    idx = section_data.get("index")
-                    serialized_section = section_data.get("section_data")
-
-                    if idx is not None and serialized_section:
-                        deserialized_section = DynamicSectionData.deserialize(serialized_section)
-                        if deserialized_section:
-                            dynamic_sections.append((idx, deserialized_section))
-
-                blocks.append(
-                    InitialInterface(
-                        static_content=block_data.get("static_content", ""),
-                        dynamic_sections=dynamic_sections,
-                    )
-                )
+                blocks.append(self._deserialize_initial_interface(block_data))
             elif block_type == "AutoReply":
-                # Deserialize dynamic sections
-                dynamic_sections = []
-                for section_data in block_data.get("dynamic_sections", []):
-                    idx = section_data.get("index")
-                    serialized_section = section_data.get("section_data")
-
-                    if idx is not None and serialized_section:
-                        # Use the DynamicSectionData deserialization method
-                        deserialized_section = DynamicSectionData.deserialize(serialized_section)
-                        if deserialized_section:
-                            dynamic_sections.append((idx, deserialized_section))
-
-                # Use jsonpickle to decode command outputs
-                command_outputs = []
-                try:
-                    command_outputs_str = block_data.get("command_outputs", "[]")
-                    command_outputs = jsonpickle.decode(command_outputs_str)
-                except Exception as e:
-                    print(f"Error decoding command outputs: {e}")
-
-                blocks.append(
-                    AutoReply(
-                        error_report=block_data.get("error_report", ""),
-                        command_outputs=command_outputs,
-                        messages=block_data.get("messages", []),
-                        confirmation_request=block_data.get("confirmation_request"),
-                        dynamic_sections=dynamic_sections,
-                    )
-                )
+                blocks.append(self._deserialize_auto_reply(block_data))
 
         return blocks
+        
+    def _deserialize_chat_message(self, block_data: dict) -> ChatMessage:
+        """Deserialize a ChatMessage block"""
+        return ChatMessage(
+            author=block_data.get("author", ""), 
+            content=block_data.get("content", "")
+        )
+    
+    def _deserialize_dynamic_sections(self, section_data_list: list) -> list:
+        """Deserialize dynamic sections common to multiple block types"""
+        dynamic_sections = []
+        for section_data in section_data_list:
+            idx = section_data.get("index")
+            serialized_section = section_data.get("section_data")
+
+            if idx is not None and serialized_section:
+                deserialized_section = DynamicSectionData.deserialize(serialized_section)
+                if deserialized_section:
+                    dynamic_sections.append((idx, deserialized_section))
+        return dynamic_sections
+        
+    def _deserialize_initial_interface(self, block_data: dict) -> InitialInterface:
+        """Deserialize an InitialInterface block"""
+        dynamic_sections = self._deserialize_dynamic_sections(
+            block_data.get("dynamic_sections", [])
+        )
+        
+        return InitialInterface(
+            static_content=block_data.get("static_content", ""),
+            dynamic_sections=dynamic_sections,
+        )
+    
+    def _deserialize_auto_reply(self, block_data: dict) -> AutoReply:
+        """Deserialize an AutoReply block"""
+        import jsonpickle
+        
+        dynamic_sections = self._deserialize_dynamic_sections(
+            block_data.get("dynamic_sections", [])
+        )
+        
+        # Use jsonpickle to decode command outputs
+        command_outputs = []
+        try:
+            command_outputs_str = block_data.get("command_outputs", "[]")
+            command_outputs = jsonpickle.decode(command_outputs_str)
+        except Exception as e:
+            print(f"Error decoding command outputs: {e}")
+
+        return AutoReply(
+            error_report=block_data.get("error_report", ""),
+            command_outputs=command_outputs,
+            messages=block_data.get("messages", []),
+            confirmation_request=block_data.get("confirmation_request"),
+            dynamic_sections=dynamic_sections,
+        )

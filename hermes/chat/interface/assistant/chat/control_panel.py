@@ -131,51 +131,87 @@ class ChatAssistantControlPanel:
         if not self._commands_processing_enabled:
             yield from []
             return
-
+            
         self.command_context.clear_command_outputs()
+        sorted_results = self._get_sorted_parse_results(message_content)
+        
+        # Execute commands
+        for result in sorted_results:
+            yield from self._process_command_result(result)
+        
+        # Format and yield outputs
+        yield from self._yield_command_outputs()
 
+    def _get_sorted_parse_results(self, message_content: str) -> list:
+        """Parse and sort command results by position in text"""
         parse_results = self.command_parser.parse_text(message_content)
-
-        # Sort parse_results by their position in the text
-        sorted_results = sorted(
+        return sorted(
             [r for r in parse_results if r.block_start_line_index is not None],
             key=lambda r: r.block_start_line_index,
         )
 
-        for result in sorted_results:
-            # Check if this is a valid command
-            if result.command_name and not result.errors:
-                # Execute the command
-                command = self.command_registry.get_command(result.command_name)
-                if command:
-                    self.notifications_printer.print_notification(f"LLM used command: {result.command_name}")
-                    try:
-                        yield from command.execute(self.command_context, result.args)
-                    except Exception as e:
-                        error_msg = f"Command '{result.command_name}' failed: {str(e)}"
-                        self.command_context.add_command_output(result.command_name, result.args, error_msg)
-                        self.notifications_printer.print_notification(error_msg, CLIColors.RED)
-            else:
-                # Handle command errors
-                error_report = self.command_parser.generate_error_report([result])
-                if error_report:
-                    error_msg = f"Command parsing error: {error_report}"
-                    self.command_context.add_command_output(result.command_name, result.args, error_msg)
-                    self.notifications_printer.print_notification(error_msg, CLIColors.RED)
+    def _process_command_result(self, result) -> Generator[Event, None, None]:
+        """Process a single parsed command result"""
+        if self._is_valid_command(result):
+            yield from self._execute_valid_command(result)
+        else:
+            self._handle_command_error(result)
+        
+    def _is_valid_command(self, result) -> bool:
+        """Check if this is a valid command with no errors"""
+        return result.command_name and not result.errors
 
+    def _execute_valid_command(self, result) -> Generator[Event, None, None]:
+        """Execute a valid command and handle any exceptions"""
+        command = self.command_registry.get_command(result.command_name)
+        if not command:
+            return
+            
+        self.notifications_printer.print_notification(f"LLM used command: {result.command_name}")
+        try:
+            yield from command.execute(self.command_context, result.args)
+        except Exception as e:
+            self._record_command_error(result.command_name, result.args, str(e))
+
+    def _handle_command_error(self, result) -> None:
+        """Handle errors from invalid commands"""
+        error_report = self.command_parser.generate_error_report([result])
+        if error_report:
+            error_msg = f"Command parsing error: {error_report}"
+            self._record_command_error(result.command_name, result.args, error_msg)
+
+    def _record_command_error(self, command_name: str, args: dict, error_message: str) -> None:
+        """Record command error to context and display notification"""
+        self.command_context.add_command_output(command_name, args, error_message)
+        self.notifications_printer.print_notification(error_message, CLIColors.RED)
+
+    def _yield_command_outputs(self) -> Generator[Event, None, None]:
+        """Format and yield all command outputs"""
         command_outputs = self.command_context.get_command_outputs()
-        command_output_str_collection = []
+        if not command_outputs:
+            return
+            
+        command_output_str = self._format_command_outputs(command_outputs)
+        yield MessageEvent(InvisibleMessage(
+            author="user", 
+            text=command_output_str, 
+            text_role="command_outputs_and_errors"
+        ))
+
+    def _format_command_outputs(self, command_outputs) -> str:
+        """Format multiple command outputs into a string"""
+        output_strings = []
         for command_name, args, output in command_outputs:
-            command_output_str = f"""
+            formatted_args = ", ".join(f"{k}: {str(v)[:100]}" for k, v in args.items())
+            output_str = f"""
 ${"####"} <<< ${command_name}
-Arguments: ${", ".join(f"{k}: {str(v)[:100]}" for k, v in args.items())}
+Arguments: ${formatted_args}
 ```
 {output}
 ```
 """
-            command_output_str_collection.append(command_output_str)
-        command_output_str = "\n".join(command_output_str_collection)
-        yield MessageEvent(InvisibleMessage(author="user", text=command_output_str, text_role="command_outputs_and_errors"))
+            output_strings.append(output_str)
+        return "\n".join(output_strings)
 
     def set_command_override_status(self, command_id: str, status: str) -> None:
         """

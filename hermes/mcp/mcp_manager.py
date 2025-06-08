@@ -103,6 +103,21 @@ class McpManager:
                 commands.append(self._create_command_from_schema(client, tool_schema, mode))
         return commands
 
+    def _parse_tool_args(self, args: dict[str, Any]) -> dict[str, Any]:
+        """Parse command arguments, handling both direct args and JSON blob."""
+        tool_args = {}
+        if "data_json" in args:
+            try:
+                json_args = json.loads(args["data_json"])
+                tool_args.update(json_args)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON in data_json: {e}") from e
+
+        for arg_name, arg_value in args.items():
+            if arg_name != "data_json":
+                tool_args[arg_name] = arg_value
+        return tool_args
+        
     def _create_command_from_schema(self, client: McpClient, tool_schema: dict, mode: str) -> Command:
         from hermes.chat.events import Event
         from hermes.mcp.mcp_client import McpError
@@ -111,79 +126,109 @@ class McpManager:
         description = tool_schema.get("description", "An MCP-based tool.")
         help_text = f"MCP Tool: {name}\n\n{description}"
         loop = self.loop
-
-        def _parse_tool_args(args: dict[str, Any]) -> dict[str, Any]:
-            tool_args = {}
-            if "data_json" in args:
-                try:
-                    json_args = json.loads(args["data_json"])
-                    tool_args.update(json_args)
-                except json.JSONDecodeError as e:
-                    raise ValueError(f"Invalid JSON in data_json: {e}") from e
-
-            for arg_name, arg_value in args.items():
-                if arg_name != "data_json":
-                    tool_args[arg_name] = arg_value
-            return tool_args
-
-        def _call_tool_and_get_output(tool_args: dict[str, Any]) -> str:
-            try:
-                future = asyncio.run_coroutine_threadsafe(client.call_tool(name, tool_args), loop)
-                result = future.result(timeout=60)
-
-                content_parts = []
-                if isinstance(result, dict) and "content" in result:
-                    for content_item in result.get("content", []):
-                        if content_item.get("type") == "text":
-                            content_parts.append(content_item.get("text", ""))
-                elif isinstance(result, str):
-                    content_parts.append(result)
-                elif result is not None:
-                    content_parts.append(json.dumps(result, indent=2))
-
-                output = "\n".join(content_parts)
-                if not output and result is None:
-                    return f"Tool '{name}' executed successfully with no output."
-                return output
-
-            except McpError as e:
-                return f"MCP Tool Error from '{name}':\n{e.message}"
-            except asyncio.TimeoutError:
-                return f"Error: MCP tool '{name}' timed out after 60 seconds."
-            except Exception as e:
-                logger.error(f"Unexpected error calling MCP tool '{name}': {e}", exc_info=True)
-                return f"Error: An unexpected error occurred while running command '{name}'."
-
+        
         if mode == "chat":
-
-            class McpChatToolCommand(Command[Any, Generator[Event, None, None]]):
-                def execute(self, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
-                    tool_args = _parse_tool_args(args)
-                    output = _call_tool_and_get_output(tool_args)
-
-                    if hasattr(context, "create_assistant_notification"):
-                        yield context.create_assistant_notification(f"MCP Tool '{name}' output:\n{output}")
-                    else:
-                        logger.warning(f"MCP chat command context for '{name}' is missing create_assistant_notification.")
-                        # Fallback for contexts like DebugInterface that might not have the notification method
-                        if hasattr(context, "print_notification"):
-                            context.print_notification(f"MCP Tool '{name}' output:\n{output}")
-
-            command = McpChatToolCommand(name, help_text)
+            command = self._create_chat_command(client, name, help_text)
         else:  # deep_research
+            command = self._create_deep_research_command(client, name, help_text)
 
-            class McpDeepResearchToolCommand(Command[Any, None]):
-                def execute(self, context: Any, args: dict[str, Any]) -> None:
-                    tool_args = _parse_tool_args(args)
-                    output = _call_tool_and_get_output(tool_args)
-                    if hasattr(context, "add_command_output"):
-                        context.add_command_output(name, args, output)
-                    else:
-                        logger.warning(f"MCP deep_research command context for '{name}' is missing add_command_output.")
+        # Configure command sections
+        self._configure_command_sections(command, tool_schema)
+        
+        return command
 
-            command = McpDeepResearchToolCommand(name, help_text)
+    def _execute_tool_call(self, client: McpClient, tool_name: str, tool_args: dict[str, Any]) -> Any:
+        """Execute the tool call and return the raw result."""
+        future = asyncio.run_coroutine_threadsafe(client.call_tool(tool_name, tool_args), self.loop)
+        return future.result(timeout=60)
+        
+    def _extract_text_content(self, result_dict: dict) -> list[str]:
+        """Extract text content from a dictionary result format."""
+        content_parts = []
+        for content_item in result_dict.get("content", []):
+            if content_item.get("type") == "text":
+                content_parts.append(content_item.get("text", ""))
+        return content_parts
+    
+    def _format_non_dict_result(self, result: Any) -> list[str]:
+        """Format non-dictionary results."""
+        if isinstance(result, str):
+            return [result]
+        if result is not None:
+            return [json.dumps(result, indent=2)]
+        return []
+        
+    def _create_output_message(self, tool_name: str, content_parts: list[str], result: Any) -> str:
+        """Create the final output message from content parts."""
+        output = "\n".join(content_parts)
+        if not output and result is None:
+            return f"Tool '{tool_name}' executed successfully with no output."
+        return output
+        
+    def _format_tool_result(self, tool_name: str, result: Any) -> str:
+        """Format the tool result into a string output."""
+        if isinstance(result, dict) and "content" in result:
+            content_parts = self._extract_text_content(result)
+        else:
+            content_parts = self._format_non_dict_result(result)
+            
+        return self._create_output_message(tool_name, content_parts, result)
 
-        # Configure the command sections based on the tool's input schema
+    def _call_tool_and_get_output(self, client: McpClient, tool_name: str, tool_args: dict[str, Any]) -> str:
+        """Call the tool with arguments and return formatted output or error message."""
+        from hermes.mcp.mcp_client import McpError
+        
+        try:
+            result = self._execute_tool_call(client, tool_name, tool_args)
+            return self._format_tool_result(tool_name, result)
+        except McpError as e:
+            return f"MCP Tool Error from '{tool_name}':\n{e.message}"
+        except asyncio.TimeoutError:
+            return f"Error: MCP tool '{tool_name}' timed out after 60 seconds."
+        except Exception as e:
+            logger.error(f"Unexpected error calling MCP tool '{tool_name}': {e}", exc_info=True)
+            return f"Error: An unexpected error occurred while running command '{tool_name}'."
+
+    def _create_chat_command(self, client: McpClient, tool_name: str, help_text: str) -> Command:
+        """Create a command for chat assistant mode."""
+        from hermes.chat.events import Event
+        
+        class McpChatToolCommand(Command[Any, Generator[Event, None, None]]):
+            def execute(self_cmd, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
+                tool_args = self._parse_tool_args(args)
+                output = self._call_tool_and_get_output(client, tool_name, tool_args)
+
+                if hasattr(context, "create_assistant_notification"):
+                    yield context.create_assistant_notification(f"MCP Tool '{tool_name}' output:\n{output}")
+                else:
+                    logger.warning(f"MCP chat command context for '{tool_name}' is missing create_assistant_notification.")
+                    # Fallback for contexts like DebugInterface that might not have the notification method
+                    if hasattr(context, "print_notification"):
+                        context.print_notification(f"MCP Tool '{tool_name}' output:\n{output}")
+
+        # Need to bind instance methods to the command class instance
+        cmd = McpChatToolCommand(tool_name, help_text)
+        cmd.execute.__globals__['self'] = self
+        return cmd
+
+    def _create_deep_research_command(self, client: McpClient, tool_name: str, help_text: str) -> Command:
+        """Create a command for deep research mode."""
+        class McpDeepResearchToolCommand(Command[Any, None]):
+            def execute(self_cmd, context: Any, args: dict[str, Any]) -> None:
+                tool_args = self._parse_tool_args(args)
+                output = self._call_tool_and_get_output(client, tool_name, tool_args)
+                if hasattr(context, "add_command_output"):
+                    context.add_command_output(tool_name, args, output)
+                else:
+                    logger.warning(f"MCP deep_research command context for '{tool_name}' is missing add_command_output.")
+
+        # Need to bind instance methods to the command class instance
+        cmd = McpDeepResearchToolCommand(tool_name, help_text)
+        cmd.execute.__globals__['self'] = self
+        return cmd
+        
+    def _configure_command_sections(self, command: Command, tool_schema: dict) -> None:
+        """Configure the sections for a command based on tool schema."""
         input_schema = tool_schema.get("inputSchema", {})
         properties = input_schema.get("properties", {})
         required = input_schema.get("required", [])
@@ -201,5 +246,3 @@ class McpManager:
                 is_required = prop_name in required
                 prop_description = prop_details.get("description", "")
                 command.add_section(prop_name, is_required, prop_description)
-
-        return command

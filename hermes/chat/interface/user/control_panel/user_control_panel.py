@@ -3,6 +3,7 @@ import shlex
 from argparse import ArgumentParser, Namespace
 from collections.abc import Generator
 from datetime import datetime, timezone
+from typing import Any
 
 from hermes.chat.events import (
     AgentModeEvent,
@@ -444,71 +445,90 @@ class UserControlPanel(ControlPanel):
         return "\n".join(results)
 
     def extract_and_execute_commands(self, message: Message) -> Generator[Event, None, None]:
+        """
+        Extract commands from a message and execute them, yielding resulting events.
+        """
         peekable_generator = PeekableGenerator(self._lines_from_message(message))
         prioritised_backlog = []
-        # Collecting the text message, can be interrupted by commands
         current_message_text = ""
+        
+        # Process each line from the message
         for line in peekable_generator:
             matching_command = self._line_command_match(line)
             if matching_command:
+                # If we have accumulated text, create a message from it
                 if current_message_text:
-                    prioritised_backlog.append(
-                        (
-                            0,
-                            MessageEvent(
-                                TextMessage(
-                                    author="user",
-                                    text=current_message_text,
-                                    is_directly_entered=True,
-                                )
-                            ),
-                        )
-                    )
+                    prioritised_backlog.append(self._create_text_message_event(current_message_text))
                     current_message_text = ""
-
-                command_priority = self.commands[matching_command].priority
-                command_parser = self.commands[matching_command].parser
-                command_content = self._extract_command_content_in_line(matching_command, line)
-
-                try:
-                    parsed_command_events = command_parser(command_content)
-                except Exception as e:
-                    self.notifications_printer.print_error(f"Command {matching_command} failed: {e}")
-                    continue
-
-                if parsed_command_events is None:
-                    continue
-
-                if not isinstance(parsed_command_events, list):
-                    parsed_command_events = [parsed_command_events]
-
-                for parsed_command_event in parsed_command_events:
-                    if not isinstance(parsed_command_event, Event):
-                        self.notifications_printer.print_error(
-                            f"Command {matching_command} returned a non-event object: {parsed_command_event}"
-                        )
-                        continue
-
-                    prioritised_backlog.append((command_priority, parsed_command_event))
+                
+                # Process the command and add resulting events to the backlog
+                command_results = self._process_command_line(matching_command, line)
+                prioritised_backlog.extend(command_results)
             else:
                 current_message_text += line
 
+        # Handle any remaining text after processing all lines
         if current_message_text:
-            prioritised_backlog.append(
-                (
-                    0,
-                    MessageEvent(
-                        TextMessage(
-                            author="user",
-                            text=current_message_text,
-                            is_directly_entered=True,
-                        )
-                    ),
-                )
-            )
+            prioritised_backlog.append(self._create_text_message_event(current_message_text))
 
-        # Highest priority first
-        for _, event in sorted(prioritised_backlog, key=lambda x: -x[0]):
+        # Yield events in priority order
+        yield from self._execute_commands_in_priority_order(prioritised_backlog)
+    
+    def _create_text_message_event(self, text_content: str) -> tuple[int, MessageEvent]:
+        """Create a text message event with priority 0."""
+        return (
+            0,
+            MessageEvent(
+                TextMessage(
+                    author="user",
+                    text=text_content,
+                    is_directly_entered=True,
+                )
+            ),
+        )
+    
+    def _parse_command_safely(self, command_label: str, command_parser, command_content: str) -> Any:
+        """Safely parse a command, handling exceptions."""
+        try:
+            return command_parser(command_content)
+        except Exception as e:
+            self.notifications_printer.print_error(f"Command {command_label} failed: {e}")
+            return None
+
+    def _normalize_command_events(self, parsed_command_events: Any) -> list:
+        """Normalize command events to a list of events."""
+        if parsed_command_events is None:
+            return []
+        if not isinstance(parsed_command_events, list):
+            return [parsed_command_events]
+        return parsed_command_events
+
+    def _collect_valid_events(self, command_label: str, events: list, command_priority: int) -> list[tuple[int, Event]]:
+        """Validate and collect events with their priorities."""
+        result_events = []
+        for parsed_event in events:
+            if not isinstance(parsed_event, Event):
+                self.notifications_printer.print_error(
+                    f"Command {command_label} returned a non-event object: {parsed_event}"
+                )
+                continue
+            result_events.append((command_priority, parsed_event))
+        return result_events
+
+    def _process_command_line(self, command_label: str, line: str) -> list[tuple[int, Event]]:
+        """Process a single command line and return a list of prioritized events."""
+        command_priority = self.commands[command_label].priority
+        command_parser = self.commands[command_label].parser
+        command_content = self._extract_command_content_in_line(command_label, line)
+
+        parsed_events = self._parse_command_safely(command_label, command_parser, command_content)
+        normalized_events = self._normalize_command_events(parsed_events)
+        return self._collect_valid_events(command_label, normalized_events, command_priority)
+        
+    def _execute_commands_in_priority_order(self, prioritised_events: list[tuple[int, Event]]) -> Generator[Event, None, None]:
+        """Execute commands in priority order (highest first) and yield the events."""
+        # Sort events by priority (highest to lowest)
+        for _, event in sorted(prioritised_events, key=lambda x: -x[0]):
             yield event
 
     def get_command_labels(self) -> list[str]:
@@ -546,21 +566,38 @@ class UserControlPanel(ControlPanel):
         parser.add_argument("--prompt", type=str, action="append", help="Prompt for the LLM")
         self._cli_arguments.add("prompt")
 
+    def _format_boolean_arg(self, arg: str, value: bool) -> list[str]:
+        """Format a boolean CLI argument into command text."""
+        if value:
+            return [f"/{arg}"]
+        return []
+
+    def _format_prompt_arg(self, values: list[str]) -> list[str]:
+        """Format prompt arguments into command text."""
+        return list(values)
+
+    def _format_standard_arg(self, arg: str, values: list[str]) -> list[str]:
+        """Format a standard CLI argument into command text."""
+        return [f"/{arg} {v}" for v in values]
+
     def convert_cli_arguments_to_text(self, parser: ArgumentParser, args: Namespace) -> str:
+        """Convert CLI arguments to text commands for processing."""
         lines = []
         args_dict = vars(args)
+        
         for arg, value in args_dict.items():
-            if value is not None and arg in self._cli_arguments:
-                if isinstance(value, bool):
-                    if value:
-                        lines.append(f"/{arg}")
-                    continue
-                if arg != "prompt":
-                    for v in value:
-                        lines.append(f"/{arg} {v}")
-                else:
-                    for v in value:
-                        lines.append(v)
+            # Skip arguments that are None or not registered
+            if value is None or arg not in self._cli_arguments:
+                continue
+                
+            # Handle different argument types
+            if isinstance(value, bool):
+                lines.extend(self._format_boolean_arg(arg, value))
+            elif arg == "prompt":
+                lines.extend(self._format_prompt_arg(value))
+            else:
+                lines.extend(self._format_standard_arg(arg, value))
+                
         return "\n".join(lines)
 
     def _parse_create_research_command(self, content: str) -> Event | None:

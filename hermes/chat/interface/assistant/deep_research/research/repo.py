@@ -66,6 +66,53 @@ class Repo:
         """List all research instance names."""
         return list(self._research_instances.keys())
 
+    def _is_valid_research_directory(self, path: Path) -> bool:
+        """
+        Check if the given path is a valid research directory.
+        
+        Args:
+            path: Path to check
+            
+        Returns:
+            True if the path is a valid research directory, False otherwise
+        """
+        # Must be a directory
+        if not path.is_dir():
+            return False
+            
+        # Skip system files/directories
+        if path.name.startswith("_"):
+            return False
+            
+        return True
+    
+    def _load_research_from_path(self, research_path: Path) -> None:
+        """
+        Load a research instance from the given path.
+        
+        Args:
+            research_path: Path to the research directory
+        """
+        research_name = research_path.name
+        
+        # Create research instance
+        research = ResearchImpl(
+            root_directory=research_path,
+            dual_directory_file_system=self.dual_directory_file_system,
+            shared_knowledge_base=self._shared_knowledge_base,
+            repo=self,
+        )
+        
+        # Create task tree for this research
+        task_tree = TaskTreeImpl(research)
+        self._task_trees[research_name] = task_tree
+        
+        # Load the research if it exists on disk
+        if research.research_already_exists():
+            research.load_existing_research(task_tree)
+            
+        self._research_instances[research_name] = research
+    
     def _load_existing_research_instances(self):
         """
         Scan the research directory and load existing research instances.
@@ -79,32 +126,8 @@ class Repo:
 
         # Scan for subdirectories that contain research data
         for research_path in repo_path.iterdir():
-            if not research_path.is_dir():
-                continue
-
-            # Skip system files/directories
-            if research_path.name.startswith("_"):
-                continue
-
-            research_name = research_path.name
-
-            # Create and fully load the research instance
-            research = ResearchImpl(
-                root_directory=research_path,
-                dual_directory_file_system=self.dual_directory_file_system,
-                shared_knowledge_base=self._shared_knowledge_base,
-                repo=self,
-            )
-
-            # Create task tree for this research
-            task_tree = TaskTreeImpl(research)
-            self._task_trees[research_name] = task_tree
-
-            # Load the research if it exists on disk
-            if research.research_already_exists():
-                research.load_existing_research(task_tree)
-
-            self._research_instances[research_name] = research
+            if self._is_valid_research_directory(research_path):
+                self._load_research_from_path(research_path)
 
     def get_all_artifacts(self) -> dict[str, list[tuple[ResearchNode, Artifact]]]:
         """

@@ -73,8 +73,8 @@ def save_entry_to_new_format(entry: dict[str, Any], knowledgebase_dir: Path) -> 
     file_with_metadata.save_file_in_directory(knowledgebase_dir)
 
 
-def migrate_knowledge_base(shared_file_path: Path) -> None:
-    """Migrate knowledge base from old format to new format."""
+def validate_file_path(shared_file_path: Path) -> str:
+    """Validate the file path and return the content."""
     if not shared_file_path.exists():
         print(f"Error: File {shared_file_path} does not exist")
         sys.exit(1)
@@ -85,11 +85,14 @@ def migrate_knowledge_base(shared_file_path: Path) -> None:
 
     # Read the old knowledge base file
     try:
-        content = shared_file_path.read_text(encoding="utf-8")
+        return shared_file_path.read_text(encoding="utf-8")
     except Exception as e:
         print(f"Error reading file {shared_file_path}: {e}")
         sys.exit(1)
 
+
+def process_migration(content: str, shared_file_path: Path) -> None:
+    """Process the actual migration of the knowledge base."""
     # Parse entries from old format
     entries = parse_old_knowledge_base(content)
 
@@ -113,6 +116,12 @@ def migrate_knowledge_base(shared_file_path: Path) -> None:
 
     print(f"\nMigration completed: {successful_migrations}/{len(entries)} entries migrated successfully")
     print(f"New knowledge base location: {knowledgebase_dir}")
+
+
+def migrate_knowledge_base(shared_file_path: Path) -> None:
+    """Migrate knowledge base from old format to new format."""
+    content = validate_file_path(shared_file_path)
+    process_migration(content, shared_file_path)
 
 
 def main():

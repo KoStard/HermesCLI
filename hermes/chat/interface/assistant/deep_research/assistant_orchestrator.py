@@ -5,6 +5,7 @@ from pathlib import Path
 
 # Import other necessary types
 from hermes.chat.events import Event, MessageEvent
+from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
 from hermes.chat.history import History
 from hermes.chat.interface import Orchestrator
 from hermes.chat.interface.assistant.deep_research.commands.command_context_factory import ResearchCommandContextFactoryImpl
@@ -94,21 +95,31 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         instruction_pieces = []
         textual_files = []
 
-        # Initialize the engine if it doesn't exist yet
-        if not self._history_has_been_imported:
-            self._add_data_from_messages(history_snapshot, textual_files, instruction_pieces)
-            self._history_has_been_imported = True
+        # Collect messages from events
+        messages = self._collect_messages_from_events(events)
+        
+        # Process messages to extract instruction pieces and textual files
+        self._add_data_from_messages(messages, textual_files, instruction_pieces)
 
-        # Process new messages and file uploads
-        # Ignoring global history, each node has a separate history
+        # Set instruction and add files to the engine
+        self._instruction = "\n".join(instruction_pieces)
+        self._add_files_to_engine(textual_files)
+
+    def _collect_messages_from_events(self, events: Generator[Event, None, None]) -> list[Message]:
+        """Collect messages from events"""
         messages = []
         for event in events:
             if isinstance(event, MessageEvent):
                 messages.append(event.get_message())
-        self._add_data_from_messages(messages, textual_files, instruction_pieces)
+            elif isinstance(event, HistoryRecoveryEvent):
+                if not self._history_has_been_imported:
+                    messages.extend(event.get_messages())
+        
+        self._history_has_been_imported = True
+        return messages
 
-        self._instruction = "\n".join(instruction_pieces)
-
+    def _add_files_to_engine(self, textual_files: list[tuple[str, str]]):
+        """Add textual files to the engine"""
         for filename, file_content in textual_files:
             self._engine.research.get_external_file_manager().add_external_file(filename, file_content)
 

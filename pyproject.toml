@@ -55,24 +55,53 @@ include = ["hermes"]
 [dependency-groups]
 dev = ["invoke>=2.2.0", "pyright>=1.1.400", "ruff>=0.11.8"]
 
-[tool.ruff.lint]
-select = [
-    # pycodestyle
-    "E",
-    # Pyflakes
-    "F",
-    # pyupgrade
-    "UP",
-    # flake8-bugbear
-    "B",
-    # flake8-simplify
-    "SIM",
-    # isort
-    "I",
-]
-
 [tool.ruff]
 line-length = 140
 
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",      # Flake8 core
+    "C90",              # McCabe complexity
+    "I",                # isort
+    "N",                # pep8-naming
+    "D",                # pydocstrings
+    "UP",               # pyupgrade
+    "ANN",              # flake8-annotations
+    "S",                # flake8-bandit
+    "BLE",              # flake8-blind-except
+    "B",                # flake8-bugbear
+    "A",                # flake8-builtins
+    "COM",              # flake8-commas
+    "DTZ",              # flake8-datetimez
+    "EM",               # flake8-errmsg
+    "FA",               # flake8-future-annotations
+    "G",                # flake8-logging-format
+    "ICN",              # flake8-import-conventions
+    "PIE",              # flake8-pie
+    "T20",              # flake8-print
+    "RET",              # flake8-return
+    "SIM",              # flake8-simplify
+    "TID",              # flake8-tidy-imports
+    "ARG",              # flake8-unused-arguments
+    "PLR",              # Pylint refactor
+]
+
+# Aggressive settings for strict clean code
+[tool.ruff.lint.mccabe]
+max-complexity = 5
+
+[tool.ruff.lint.pylint]
+max-args = 4
+max-branches = 8
+max-returns = 4
+max-statements = 20
+
+[tool.ruff.lint.flake8-annotations]
+mypy-init-return = true
+suppress-dummy-args = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # or "numpy", "pep257"
 [tool.pyright]
 python.pythonPath = ".venv/bin/python"

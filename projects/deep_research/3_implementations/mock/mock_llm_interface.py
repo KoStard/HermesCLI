@@ -35,6 +35,50 @@ class MockLLMInterface(LLMInterface):
             "history": history_messages[1:],
         }
 
+    def _clear_screen_and_print_header(self):
+        """Clear the screen and print the header for the mock interface."""
+        print("\033c", end="")  # ANSI escape code to clear screen
+        print("\n" + "=" * 100)
+        print("MOCK LLM INTERFACE - YOU ARE PLAYING THE ROLE OF THE AI ASSISTANT")
+        print("=" * 100 + "\n")
+
+    def _print_interface_content(self, interface_content):
+        """Print the interface content."""
+        print(interface_content)
+
+    def _print_chat_history(self, history):
+        """Print the chat history if available."""
+        if not history:
+            return
+            
+        print("\n" + "=" * 50)
+        print("CHAT HISTORY:")
+        print("=" * 50)
+        for message in history:
+            print(f"\n## {message['author']}")
+            print(message["content"])
+            print("-" * 50)
+
+    def _print_input_prompt(self):
+        """Print the prompt for user input."""
+        print("\n" + "=" * 100)
+        print("ENTER YOUR RESPONSE AS THE AI ASSISTANT (type END_RESPONSE on a new line when finished):")
+        print("=" * 100 + "\n")
+
+    def _collect_response_from_stdin(self) -> str:
+        """Collect response from standard input until END_RESPONSE is entered."""
+        response_lines = []
+        while True:
+            try:
+                line = input()
+                if line.strip() == "END_RESPONSE":
+                    break
+                response_lines.append(line)
+            except EOFError:
+                break
+
+        return "\n".join(response_lines)
+
     def send_request(self, request: dict) -> Generator[str, None, None]:
         """
         Send a request to the LLM and get a generator of responses.
@@ -47,41 +91,10 @@ class MockLLMInterface(LLMInterface):
         Returns:
             Generator[str, None, None]: Generator yielding LLM responses
         """
-        # Clear the screen for better readability
-        print("\033c", end="")  # ANSI escape code to clear screen
-
-        # Print a clear separator
-        print("\n" + "=" * 100)
-        print("MOCK LLM INTERFACE - YOU ARE PLAYING THE ROLE OF THE AI ASSISTANT")
-        print("=" * 100 + "\n")
-
-        # Print the interface content
-        print(request["interface"])
-
-        # Print the chat history if available
-        if request["history"]:
-            print("\n" + "=" * 50)
-            print("CHAT HISTORY:")
-            print("=" * 50)
-            for message in request["history"]:
-                print(f"\n## {message['author']}")
-                print(message["content"])
-                print("-" * 50)
-
-        print("\n" + "=" * 100)
-        print("ENTER YOUR RESPONSE AS THE AI ASSISTANT (type END_RESPONSE on a new line when finished):")
-        print("=" * 100 + "\n")
-
-        # Collect the response from STDIN
-        response_lines = []
-        while True:
-            try:
-                line = input()
-                if line.strip() == "END_RESPONSE":
-                    break
-                response_lines.append(line)
-            except EOFError:
-                break
-
-        full_response = "\n".join(response_lines)
+        self._clear_screen_and_print_header()
+        self._print_interface_content(request["interface"])
+        self._print_chat_history(request["history"])
+        self._print_input_prompt()
+        
+        full_response = self._collect_response_from_stdin()
         yield full_response

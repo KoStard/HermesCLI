@@ -83,17 +83,30 @@ class ArtifactManager:
             return [artifacts_manager]
 
         artifacts_dir = dual_directory_fs.get_artifact_directory_for_node_path(node_path)
-
-        if artifacts_dir.exists():
-            for artifact_file in artifacts_dir.iterdir():
-                if artifact_file.is_file() and artifact_file.suffix == ".md":
-                    try:
-                        artifact = Artifact.load_from_file(artifact_file)
-                        artifacts_manager._artifacts.append(artifact)
-                    except Exception as e:
-                        print(f"Error loading artifact {artifact_file}: {e}")
+        cls._load_artifacts_from_directory(artifacts_manager, artifacts_dir)
 
         return [artifacts_manager]
+
+    @staticmethod
+    def _load_artifacts_from_directory(artifacts_manager: "ArtifactManager", artifacts_dir: Path) -> None:
+        """Load all artifacts from a directory into the artifacts manager"""
+        if not artifacts_dir.exists():
+            return
+
+        for artifact_file in artifacts_dir.iterdir():
+            ArtifactManager._try_load_artifact_file(artifacts_manager, artifact_file)
+
+    @staticmethod
+    def _try_load_artifact_file(artifacts_manager: "ArtifactManager", artifact_file: Path) -> None:
+        """Attempt to load a single artifact file and add it to the manager"""
+        if not artifact_file.is_file() or artifact_file.suffix != ".md":
+            return
+            
+        try:
+            artifact = Artifact.load_from_file(artifact_file)
+            artifacts_manager._artifacts.append(artifact)
+        except Exception as e:
+            print(f"Error loading artifact {artifact_file}: {e}")
 
     def add_artifact(self, artifact: Artifact):
         if artifact.name in (a.name for a in self._artifacts):

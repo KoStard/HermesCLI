@@ -21,6 +21,49 @@ class CriteriaManager:
         self.criteria: list[Criterion] = []
 
     @classmethod
+    def _get_criteria_path(cls, node_path):
+        """Get the path to the criteria file"""
+        return node_path / "Criteria of Definition of Done.md"
+
+    @classmethod
+    def _parse_criterion_line(cls, line: str) -> tuple[str, bool] | None:
+        """Parse a criterion line and return (content, is_completed) if valid"""
+        line = line.strip()
+        
+        # Skip empty lines or non-criteria lines
+        if not line or not line[0].isdigit():
+            return None
+            
+        # Split into number and content
+        parts = line.split(". ", 1)
+        if len(parts) != 2:
+            return None
+            
+        criterion_text = parts[1]
+        
+        # Check completion status
+        done = "[x]" in criterion_text or "[X]" in criterion_text
+        
+        # Extract criterion content
+        if "] " in criterion_text:
+            criterion_text = criterion_text.split("] ", 1)[1]
+            
+        return criterion_text, done
+
+    @classmethod
+    def _read_criteria_from_file(cls, criteria_path, manager):
+        """Read criteria from file and add them to the manager"""
+        try:
+            with open(criteria_path, encoding="utf-8") as f:
+                for line in f:
+                    result = cls._parse_criterion_line(line)
+                    if result:
+                        content, is_completed = result
+                        manager.criteria.append(Criterion(content=content, is_completed=is_completed))
+        except Exception as e:
+            print(f"Error loading criteria: {e}")
+
+    @classmethod
     def load_for_research_node(cls, research_node: "ResearchNode") -> list["CriteriaManager"]:
         """Load criteria for a research node"""
         manager = cls(research_node)
@@ -29,25 +72,9 @@ class CriteriaManager:
         if not node_path:
             return [manager]
 
-        # Load criteria from the criteria file
-        criteria_path = node_path / "Criteria of Definition of Done.md"
+        criteria_path = cls._get_criteria_path(node_path)
         if criteria_path.exists():
-            try:
-                with open(criteria_path, encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line and line[0].isdigit():
-                            # Parse criteria line (format: "1. [x] Criterion text")
-                            parts = line.split(". ", 1)
-                            if len(parts) == 2:
-                                criterion_text = parts[1]
-                                # Check if it's marked as done
-                                done = "[x]" in criterion_text or "[X]" in criterion_text
-                                # Remove status marker
-                                criterion_text = criterion_text.split("] ", 1)[1] if "] " in criterion_text else criterion_text
-                                manager.criteria.append(Criterion(content=criterion_text, is_completed=done))
-            except Exception as e:
-                print(f"Error loading criteria: {e}")
+            cls._read_criteria_from_file(criteria_path, manager)
 
         return [manager]
 

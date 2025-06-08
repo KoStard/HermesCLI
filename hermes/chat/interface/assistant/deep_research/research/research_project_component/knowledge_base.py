@@ -67,28 +67,47 @@ class KnowledgeBase:
         self._knowledge_base_dir = repo_root_path / "Knowledgebase"
         self._entries: dict[str, KnowledgeEntry] = {}  # Map title to entry
 
+    def _load_single_entry(self, file_path: Path) -> bool:
+        """Load a single knowledge base entry from a file.
+        
+        Args:
+            file_path: Path to the markdown file
+            
+        Returns:
+            bool: True if loaded successfully, False otherwise
+        """
+        if file_path.suffix != ".md":
+            return False
+            
+        try:
+            # Load the file using MarkdownFileWithMetadata
+            file_with_metadata = MarkdownFileWithMetadataImpl.load_from_file(file_path)
+            metadata = file_with_metadata.get_metadata()
+            content = file_with_metadata.get_content()
+
+            # Create KnowledgeEntry from the loaded data
+            entry = KnowledgeEntry.from_dict(metadata, content)
+            self._entries[entry.title] = entry
+            return True
+        except Exception as e:
+            print(f"Warning: Error loading knowledge entry from {file_path}: {e}")
+            return False
+
+    def _process_knowledge_base_directory(self) -> None:
+        """Process all files in the knowledge base directory."""
+        try:
+            # Get all files in the Knowledgebase directory
+            for file_path in self._knowledge_base_dir.iterdir():
+                self._load_single_entry(file_path)
+        except Exception as e:
+            print(f"Error loading knowledge base directory: {e}")
+
     def load_entries(self) -> None:
         """Load knowledge base entries from individual files in /Knowledgebase/ folder."""
         if not self._file_system.directory_exists(self._knowledge_base_dir):
             return
-
-        try:
-            # Get all markdown files in the Knowledgebase directory
-            for file_path in self._knowledge_base_dir.iterdir():
-                if file_path.suffix == ".md":
-                    try:
-                        # Load the file using MarkdownFileWithMetadata
-                        file_with_metadata = MarkdownFileWithMetadataImpl.load_from_file(file_path)
-                        metadata = file_with_metadata.get_metadata()
-                        content = file_with_metadata.get_content()
-
-                        # Create KnowledgeEntry from the loaded data
-                        entry = KnowledgeEntry.from_dict(metadata, content)
-                        self._entries[entry.title] = entry
-                    except Exception as e:
-                        print(f"Warning: Error loading knowledge entry from {file_path}: {e}")
-        except Exception as e:
-            print(f"Error loading knowledge base directory: {e}")
+        
+        self._process_knowledge_base_directory()
 
     def save_entries(self) -> None:
         """Save knowledge base entries as individual files."""

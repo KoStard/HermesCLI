@@ -117,13 +117,25 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
         Execute the deep research process. Runs until the current task is completed
         (node finished/failed and focus returns to root, or budget exhausted, or shutdown).
         """
+        self._validate_execution_prerequisites()
+        self._initialize_execution_state()
+        threads = self._execute_task_processing_loop()
+        self._wait_for_completion(threads)
+        return self._generate_final_report()
+
+    def _validate_execution_prerequisites(self) -> None:
+        """Validate that execution can proceed"""
         if not self.has_root_problem_defined():
             raise ValueError("Root problem must be defined before execution")
 
+    def _initialize_execution_state(self) -> None:
+        """Initialize engine state for execution"""
         self.engine_should_stop = False
         self.engine_interrupted = False
-        threads = []
 
+    def _execute_task_processing_loop(self) -> list:
+        """Execute the main task processing loop and return threads"""
+        threads = []
         current_task_tree = self._get_task_tree_for_current_research()
 
         try:
@@ -131,19 +143,25 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
                 next_node = current_task_tree.next()
                 if not next_node:
                     break
-
-                next_node.set_problem_status(ProblemStatus.IN_PROGRESS)
-                self.status_printer.print_status(self.research)
-                thread = threading.Thread(target=self._run_node, args=(next_node,))
+                thread = self._start_node_processing(next_node)
                 threads.append(thread)
-                thread.start()
-
-            for thread in threads:
-                thread.join()
         except KeyboardInterrupt:
             self.engine_interrupted = True
+            
+        return threads
 
-        return self._generate_final_report()
+    def _start_node_processing(self, node: ResearchNode) -> threading.Thread:
+        """Start processing a single node and return the thread"""
+        node.set_problem_status(ProblemStatus.IN_PROGRESS)
+        self.status_printer.print_status(self.research)
+        thread = threading.Thread(target=self._run_node, args=(node,))
+        thread.start()
+        return thread
+
+    def _wait_for_completion(self, threads: list) -> None:
+        """Wait for all processing threads to complete"""
+        for thread in threads:
+            thread.join()
 
     def _get_or_create_research(self, name: str) -> Research:
         """Get existing research or create new one."""

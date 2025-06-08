@@ -42,18 +42,22 @@ class BedrockModel(ChatModel):
             ),
         )
 
+    def _process_content_delta(self, delta: dict) -> Generator[Any, None, None]:
+        """Process the content delta from Bedrock response and yield appropriate responses."""
+        if "reasoningContent" in delta:
+            content = delta["reasoningContent"].get("text", "")
+            yield ThinkingLLMResponse(content)
+        if "text" in delta:
+            content = delta.get("text", "")
+            yield TextLLMResponse(content)
+
     def send_request(self, request: Any) -> Generator[str, None, None]:
         response = self._call_and_retry_if_needed(request)
 
         for event in response["stream"]:
             if "contentBlockDelta" in event:
                 delta = event["contentBlockDelta"]["delta"]
-                if "reasoningContent" in delta:
-                    content = delta["reasoningContent"].get("text", "")
-                    yield ThinkingLLMResponse(content)
-                if "text" in delta:
-                    content = delta.get("text", "")
-                    yield TextLLMResponse(content)
+                yield from self._process_content_delta(delta)
             elif "messageStop" in event:
                 break
 

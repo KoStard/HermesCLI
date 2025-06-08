@@ -106,7 +106,7 @@ class DeepResearcherInterface(AssistantInterface):
             "commands_help_content": self._generate_command_help(),
         }
 
-        return self.template_manager.render_template("static.mako", **context)
+        return self.template_manager.render_template("research_static.mako", **context)
 
     def _gather_dynamic_section_data(
         self,
@@ -117,81 +117,81 @@ class DeepResearcherInterface(AssistantInterface):
         remaining_budget: int | None,
     ) -> list[DynamicSectionData]:
         """Gathers data required for each dynamic section and returns a list of data objects."""
-        all_data = {}  # Store data keyed by type for easy access
+        all_data = self._create_basic_section_data(target_node, permanent_logs, budget, remaining_budget)
+        self._add_artifacts_data(all_data, research, target_node)
+        self._add_hierarchy_and_criteria_data(all_data, research, target_node)
+        self._add_knowledge_base_data(all_data, research)
+        return self._order_and_validate_data(all_data)
 
-        # --- Gather data for each section type ---
+    def _create_basic_section_data(
+        self,
+        target_node: ResearchNode,
+        permanent_logs: list[str],
+        budget: int | None,
+        remaining_budget: int | None,
+    ) -> dict:
+        """Create basic section data that doesn't require complex processing"""
+        return {
+            HeaderSectionData: HeaderSectionData(),
+            ProblemDefinitionData: ProblemDefinitionData.from_node(target_node=target_node),
+            PermanentLogsData: PermanentLogsData(permanent_logs=permanent_logs),
+            BudgetSectionData: BudgetSectionData(budget=budget, remaining_budget=remaining_budget),
+            GoalSectionData: GoalSectionData(),
+        }
 
-        # Header: No data needed
-        all_data[HeaderSectionData] = HeaderSectionData()
-
-        # Problem Definition - Use factory method
-        all_data[ProblemDefinitionData] = ProblemDefinitionData.from_node(target_node=target_node)
-
-        # Permanent Logs
-        all_data[PermanentLogsData] = PermanentLogsData(permanent_logs=permanent_logs)
-
-        # Budget
-        all_data[BudgetSectionData] = BudgetSectionData(budget=budget, remaining_budget=remaining_budget)
-
-        # Artifacts
-        node_artifacts_list = []
-        # Use target_node directly if root is not yet defined (e.g., during initial define_problem)
-        root_node = research.get_root_node() if research.has_root_problem_defined() else target_node
-        if root_node:
-            node_artifacts_list = self._collect_artifacts_recursively(root_node, target_node)
-
-        parent_repo = research.get_repo()
-        if parent_repo:
-            # Get artifacts from all research instances
-            all_research_artifacts = parent_repo.get_all_artifacts()
-
-            # Add artifacts from other research instances (marked as external)
-            for research_name, artifacts in all_research_artifacts.items():
-                # Skip current research instance
-                if parent_repo.get_research(research_name) == research:
-                    continue
-
-                for node, artifact in artifacts:
-                    node_artifacts_list.append((node, artifact, False))
-
-        # Get external files from manager and convert to dict by name
+    def _add_artifacts_data(self, all_data: dict, research: Research, target_node: ResearchNode) -> None:
+        """Add artifacts data to the section data collection"""
+        node_artifacts_list = self._collect_node_artifacts(research, target_node)
+        self._add_external_research_artifacts(node_artifacts_list, research)
         external_files = research.get_external_file_manager().get_external_files()
-
-        # Use factory method for ArtifactsSectionData
+        
         all_data[ArtifactsSectionData] = ArtifactsSectionData.from_artifact_lists(
             external_files_dict=external_files, node_artifacts_list=node_artifacts_list
         )
 
-        # Problem Hierarchy (Short) - Use factory method
+    def _collect_node_artifacts(self, research: Research, target_node: ResearchNode) -> list:
+        """Collect artifacts from the current research node tree"""
+        root_node = research.get_root_node() if research.has_root_problem_defined() else target_node
+        return self._collect_artifacts_recursively(root_node, target_node) if root_node else []
+
+    def _add_external_research_artifacts(self, node_artifacts_list: list, research: Research) -> None:
+        """Add artifacts from other research instances"""
+        parent_repo = research.get_repo()
+        if not parent_repo:
+            return
+            
+        all_research_artifacts = parent_repo.get_all_artifacts()
+        for research_name, artifacts in all_research_artifacts.items():
+            if parent_repo.get_research(research_name) == research:
+                continue
+            for node, artifact in artifacts:
+                node_artifacts_list.append((node, artifact, False))
+
+    def _add_hierarchy_and_criteria_data(self, all_data: dict, research: Research, target_node: ResearchNode) -> None:
+        """Add hierarchy and criteria related data"""
         all_data[ProblemHierarchyData] = ProblemHierarchyData.from_research_node(
             target_node=target_node, root_node=research.get_root_node()
         )
-
-        # Criteria - Use factory method
         all_data[CriteriaSectionData] = CriteriaSectionData.from_node(target_node=target_node)
-
-        # Subproblems - Use factory method
         all_data[SubproblemsSectionData] = SubproblemsSectionData.from_node(target_node=target_node)
-
-        # Problem Path Hierarchy - Use factory method
+        
         parent_chain = self._get_parent_chain(target_node)
-        all_data[ProblemPathHierarchyData] = ProblemPathHierarchyData.from_parent_chain(parent_chain=parent_chain, current_node=target_node)
+        all_data[ProblemPathHierarchyData] = ProblemPathHierarchyData.from_parent_chain(
+            parent_chain=parent_chain, current_node=target_node
+        )
 
-        # Knowledge Base - Use factory method
+    def _add_knowledge_base_data(self, all_data: dict, research: Research) -> None:
+        """Add knowledge base data"""
         knowledge_base = research.get_knowledge_base()
         all_data[KnowledgeBaseData] = KnowledgeBaseData.from_knowledge_base(knowledge_base=knowledge_base)
 
-        # Goal: No data needed
-        all_data[GoalSectionData] = GoalSectionData()
-
-        # --- Return data objects in the defined order ---
+    def _order_and_validate_data(self, all_data: dict) -> list[DynamicSectionData]:
+        """Order data according to defined order and validate completeness"""
         ordered_data = [all_data[section_type] for section_type in DYNAMIC_SECTION_ORDER if section_type in all_data]
-
-        # Sanity check: Ensure all expected sections were populated
+        
         if len(ordered_data) != len(DYNAMIC_SECTION_ORDER):
             print("Warning: Mismatch between expected dynamic sections and gathered data.")
-            # Potentially raise an error or log more details
-
+            
         return ordered_data
 
     def _collect_artifacts_recursively(self, node: ResearchNode, current_node: ResearchNode) -> list[tuple[ResearchNode, Artifact, bool]]:

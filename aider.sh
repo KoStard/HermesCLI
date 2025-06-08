@@ -9,12 +9,13 @@ while IFS= read -r file; do
   read_only_files+=("$file")
 done < <(find hermes -type f -name "__init__.py")
 
-# Build the aider command
-cmd="aider"
+# Build the command using an array (safer than string concatenation + eval)
+args=()
+args+=(aider)
 for file in "${read_only_files[@]}"; do
-  cmd+=" --read \"$file\""
+  args+=(--read "$file")
 done
-cmd+=" --file \"$editable_file\""
+args+=(--file "$editable_file")
 
-# Execute the command
-eval "$cmd"
+# Execute the command with all arguments preserved
+"${args[@]}" "$@"

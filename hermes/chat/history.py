@@ -72,17 +72,35 @@ class History:
         return [MessageEvent(item.message) for item in all_items if item.message]
 
     def get_history_for(self, author: str) -> list[Message]:
+        """Get history messages filtered for a specific author"""
         results = []
-        all_items = self._committed_items + self._uncommitted_items
+        all_items = self._get_all_history_items()
+        
         for item in all_items:
-            if item.message:
-                if item.message.author != author:
-                    results.append(item.message)
-                elif item.message.author == author:
-                    if hasattr(item.message, "is_directly_entered") and item.message.is_directly_entered:
-                        continue
-                    results.append(item.message)
+            if self._should_include_in_history(item, author):
+                results.append(item.message)
+                
         return results
+
+    def _get_all_history_items(self) -> list[HistoryItem]:
+        """Get all history items, both committed and uncommitted"""
+        return self._committed_items + self._uncommitted_items
+
+    def _should_include_in_history(self, item: HistoryItem, author: str) -> bool:
+        """Determine if history item should be included for the author"""
+        # Ignore items without messages
+        if not item.message:
+            return False
+            
+        # For other authors, always include
+        if item.message.author != author:
+            return True
+            
+        # For messages from the target author, exclude directly entered ones
+        if hasattr(item.message, "is_directly_entered") and item.message.is_directly_entered:
+            return False
+            
+        return True
 
     def clear(self):
         self._committed_items = []

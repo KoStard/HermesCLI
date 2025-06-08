@@ -56,32 +56,36 @@ class ChatAssistantCommandContext(CommandContext):
             os.makedirs(directory, exist_ok=True)
 
     def confirm_file_overwrite_with_user(self, file_path: str) -> bool:
-        """Ask user for confirmation before overwriting an existing file.
-
-        Args:
-            file_path: The path to the file that would be overwritten
-
-        Returns:
-            bool: True if user confirms overwrite, False otherwise
-        """
+        """Ask user for confirmation before overwriting an existing file."""
         if not os.path.exists(file_path):
             return True
 
         self.print_notification(f"File '{file_path}' already exists. Overwrite? (y/n): ")
+        return self._get_user_overwrite_confirmation(file_path)
 
-        while True:
-            try:
-                response = input().strip().lower()
-                if response in ["y", "yes"]:
-                    return True
-                elif response in ["n", "no"]:
-                    self.print_notification(f"File overwrite declined for: {file_path}", CLIColors.YELLOW)
-                    return False
-                else:
-                    self.print_notification("Please enter 'y' or 'n': ")
-            except (KeyboardInterrupt, EOFError):
-                self.print_notification("\nFile overwrite cancelled", CLIColors.YELLOW)
-                return False
+    def _get_user_overwrite_confirmation(self, file_path: str) -> bool:
+        """Get user confirmation for file overwrite via input."""
+        try:
+            response = input().strip().lower()
+            return self._process_overwrite_response(response, file_path)
+        except (KeyboardInterrupt, EOFError):
+            return self._handle_overwrite_interruption(file_path)
+
+    def _process_overwrite_response(self, response: str, file_path: str) -> bool:
+        """Process the user's response to file overwrite confirmation."""
+        if response in ["y", "yes"]:
+            return True
+        elif response in ["n", "no"]:
+            self.print_notification(f"File overwrite declined for: {file_path}", CLIColors.YELLOW)
+            return False
+        else:
+            self.print_notification("Please enter 'y' or 'n': ")
+            return self._get_user_overwrite_confirmation(file_path)
+
+    def _handle_overwrite_interruption(self, file_path: str) -> bool:
+        """Handle keyboard interruption during file overwrite confirmation."""
+        self.print_notification("\nFile overwrite cancelled", CLIColors.YELLOW)
+        return False
 
     def backup_existing_file(self, file_path: str) -> None:
         """Backup the existing file to prevent possible data loss."""

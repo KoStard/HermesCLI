@@ -46,8 +46,20 @@ class ThinkingAndResponseGeneratorMessage(Message):
         self.text_role = text_role
 
     def get_content_for_user(self) -> Generator[str, None, None]:
+        """Get content for user presentation, yielding both thinking and response chunks."""
+        yield from self._yield_existing_thinking()
+        yield from self._process_thinking_content()
+        yield from self._yield_thinking_finished()
+        yield from self._yield_existing_response()
+        yield from self._process_response_content()
+
+    def _yield_existing_thinking(self) -> Generator[str, None, None]:
+        """Yield existing thinking text if available."""
         if self.thinking_text:
             yield self.thinking_text
+
+    def _process_thinking_content(self) -> Generator[str, None, None]:
+        """Process and yield new thinking content if thinking not finished."""
         if not self.thinking_finished:
             for line in chunks_to_lines(
                 chunk.text
@@ -62,13 +74,22 @@ class ThinkingAndResponseGeneratorMessage(Message):
                 self.thinking_text += line
                 yield "> " + line
             self.thinking_finished = True
+
+    def _yield_thinking_finished(self) -> Generator[str, None, None]:
+        """Yield thinking finished message if there was thinking content."""
         if self.thinking_text:
             yield """
 > Thinking finished
 ---
 """
+
+    def _yield_existing_response(self) -> Generator[str, None, None]:
+        """Yield existing response text if available."""
         if self.response_text:
             yield self.response_text
+
+    def _process_response_content(self) -> Generator[str, None, None]:
+        """Process and yield new response content if response not finished."""
         if not self.response_finished:
             for chunk in self.thinking_and_response_generator:
                 self.response_text += chunk.text

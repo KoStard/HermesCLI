@@ -27,6 +27,28 @@ class AutoReplyAggregator:
     def add_internal_message_from(self, message: str, origin_node_title: str):
         self.internal_messages.append((message, origin_node_title))
 
+    def _initialize_dynamic_sections(self, new_sections_data: list[DynamicSectionData]):
+        """Initialize the dynamic sections state for first-time use."""
+        self.last_dynamic_sections_state = new_sections_data[:]  # Use slicing for a copy
+        self.dynamic_sections_to_report = []  # No changes to report on first init
+
+    def _detect_structural_changes(self, new_sections_data: list[DynamicSectionData]) -> list[tuple[int, DynamicSectionData]]:
+        """Handle the case where the number of sections has changed."""
+        changed_sections = []
+        print("Warning: Number of dynamic sections changed. Re-evaluating all.")
+        for i, data_instance in enumerate(new_sections_data):
+            if i >= len(self.last_dynamic_sections_state) or data_instance != self.last_dynamic_sections_state[i]:
+                changed_sections.append((i, data_instance))
+        return changed_sections
+
+    def _detect_content_changes(self, new_sections_data: list[DynamicSectionData]) -> list[tuple[int, DynamicSectionData]]:
+        """Compare data objects element-wise to detect content changes."""
+        changed_sections = []
+        for i, current_data in enumerate(new_sections_data):
+            if current_data != self.last_dynamic_sections_state[i]:
+                changed_sections.append((i, current_data))
+        return changed_sections
+
     def update_dynamic_sections(self, new_sections_data: list[DynamicSectionData]):
         """
         Compare new dynamic section data with the last known state and track changes.
@@ -34,35 +56,19 @@ class AutoReplyAggregator:
         Args:
             new_sections_data: List of data objects for all current dynamic sections.
         """
-        changed_sections_with_indices: list[tuple[int, DynamicSectionData]] = []
-
-        # Ensure lengths match for comparison, handle initialization
+        # Handle first-time initialization
         if not self.last_dynamic_sections_state:
-            # First time seeing sections, consider all as 'changed' for the initial view,
-            # but don't report them in the *first* auto-reply unless explicitly needed.
-            # For simplicity now, just initialize the state. The first auto-reply won't
-            # list "updated sections" unless something else triggers it.
-            self.last_dynamic_sections_state = new_sections_data[:]  # Use slicing for a copy
-        elif len(new_sections_data) != len(self.last_dynamic_sections_state):
-            # This indicates a structural change (sections added/removed), which
-            # the current design doesn't handle dynamically. Treat all as changed.
-            # Or log an error/warning. For now, assume fixed structure.
-            print("Warning: Number of dynamic sections changed. Re-evaluating all.")
-            for i, data_instance in enumerate(new_sections_data):
-                # Check against old state if index exists, otherwise it's new/changed
-                if i >= len(self.last_dynamic_sections_state) or data_instance != self.last_dynamic_sections_state[i]:
-                    changed_sections_with_indices.append((i, data_instance))
+            self._initialize_dynamic_sections(new_sections_data)
+            return
+
+        # Detect changes based on whether structure or just content changed
+        if len(new_sections_data) != len(self.last_dynamic_sections_state):
+            self.dynamic_sections_to_report = self._detect_structural_changes(new_sections_data)
         else:
-            # Compare data objects element-wise using dataclass equality (__eq__)
-            for i, current_data in enumerate(new_sections_data):
-                if current_data != self.last_dynamic_sections_state[i]:
-                    changed_sections_with_indices.append((i, current_data))
+            self.dynamic_sections_to_report = self._detect_content_changes(new_sections_data)
 
-        # Store the changed sections (data + index) to be included in the *next* auto-reply
-        self.dynamic_sections_to_report = changed_sections_with_indices
-
-        # Update the last known state for *all* sections
-        self.last_dynamic_sections_state = new_sections_data[:]  # Use slicing for a copy
+        # Update the last known state for all sections
+        self.last_dynamic_sections_state = new_sections_data[:]
 
     def clear(self):
         self.error_reports = []
@@ -118,39 +124,51 @@ class AutoReplyAggregator:
             "last_dynamic_sections_state": last_sections_state,
         }
 
-    def deserialize(self, data: dict[str, Any]) -> None:
-        """Deserialize aggregator state from JSON data"""
+    def _deserialize_command_outputs(self, data: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
+        """Helper method to deserialize command outputs from JSON data"""
         import jsonpickle
-
-        self.error_reports = data.get("error_reports", [])
-
-        # Deserialize command outputs with jsonpickle
         try:
             command_outputs_data = data.get("command_outputs", "[]")
-            self.command_outputs = jsonpickle.decode(command_outputs_data)
+            return jsonpickle.decode(command_outputs_data)
         except Exception as e:
             print(f"Error decoding command outputs in aggregator: {e}")
-            self.command_outputs = []
+            return []
 
-        self.internal_messages = data.get("internal_messages", [])
-        self.confirmation_requests = data.get("confirmation_requests", [])
-
-        # Restore dynamic sections using DynamicSectionData deserialization
-        self.dynamic_sections_to_report = []
-        dynamic_sections_data = data.get("dynamic_sections_to_report", [])
-        for section in dynamic_sections_data:
+    def _deserialize_dynamic_sections(self, sections_data: list[dict[str, Any]]) -> list[tuple[int, DynamicSectionData]]:
+        """Helper method to deserialize dynamic sections data"""
+        result = []
+        for section in sections_data:
             idx = section.get("index")
             serialized_section = section.get("section_data")
 
             if idx is not None and serialized_section:
                 deserialized_section = DynamicSectionData.deserialize(serialized_section)
                 if deserialized_section:
-                    self.dynamic_sections_to_report.append((idx, deserialized_section))
+                    result.append((idx, deserialized_section))
+        return result
 
-        # Restore last dynamic sections state
-        self.last_dynamic_sections_state = []
-        for serialized_section in data.get("last_sections_state", []):
+    def _deserialize_last_sections_state(self, sections_data: list[dict[str, Any]]) -> list[DynamicSectionData]:
+        """Helper method to deserialize the last sections state"""
+        result = []
+        for serialized_section in sections_data:
             if serialized_section:
                 deserialized_section = DynamicSectionData.deserialize(serialized_section)
                 if deserialized_section:
-                    self.last_dynamic_sections_state.append(deserialized_section)
+                    result.append(deserialized_section)
+        return result
+
+    def deserialize(self, data: dict[str, Any]) -> None:
+        """Deserialize aggregator state from JSON data"""
+        # Basic properties
+        self.error_reports = data.get("error_reports", [])
+        self.internal_messages = data.get("internal_messages", [])
+        self.confirmation_requests = data.get("confirmation_requests", [])
+        
+        # Complex properties that need special handling
+        self.command_outputs = self._deserialize_command_outputs(data)
+        self.dynamic_sections_to_report = self._deserialize_dynamic_sections(
+            data.get("dynamic_sections_to_report", [])
+        )
+        self.last_dynamic_sections_state = self._deserialize_last_sections_state(
+            data.get("last_sections_state", [])
+        )

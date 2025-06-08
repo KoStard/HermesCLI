@@ -44,23 +44,27 @@ class ChatModelLLMInterface(LLMInterface):
         """Send a request to the LLM and get a generator of responses"""
         # Process the LLM response and handle thinking vs text tokens
         llm_responses_generator = self._handle_string_output(self.model.send_request(request))
-
+        
         # Collect the response
-        is_thinking = False
-        is_working = False
+        state = {"is_thinking": False, "is_working": False}
         for response in llm_responses_generator:
-            if isinstance(response, TextLLMResponse):
-                if is_thinking:
-                    is_thinking = False
-                if not is_working:
-                    is_working = True
-                yield response.text
-                logger.debug(response.text)
-            else:
-                assert isinstance(response, ThinkingLLMResponse)
-                if not is_thinking:
-                    is_thinking = True
-                logger.debug(response.text)
+            yield from self._process_response(response, state)
+    
+    def _process_response(self, response: BaseLLMResponse, state: dict) -> Generator[str, None, None]:
+        """Process a single LLM response and update state"""
+        if isinstance(response, TextLLMResponse):
+            # Update state flags
+            state["is_thinking"] = False
+            state["is_working"] = True
+            
+            # Log and yield the text response
+            logger.debug(response.text)
+            yield response.text
+        else:
+            # Must be a thinking response
+            assert isinstance(response, ThinkingLLMResponse)
+            state["is_thinking"] = True
+            logger.debug(response.text)
 
     def _handle_string_output(self, llm_response_generator: Generator[str, None, None]) -> Generator[BaseLLMResponse, None, None]:
         """
