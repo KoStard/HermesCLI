@@ -72,8 +72,7 @@ class DebugInterface(ChatAssistantOrchestrator):
         message_data = json.dumps(self.request)
         self.connection.send(message_data.encode())
 
-        response = self.connection.recv(1024).decode()
-        return response
+        return self.connection.recv(1024).decode()
 
     def cleanup(self):
         if self.connection:

@@ -7,7 +7,7 @@ from hermes.chat.interface.assistant.deep_research.research.research_node_compon
     ProblemStatus,
 )
 from hermes.chat.interface.assistant.deep_research.research.research_node_history_adapter import ResearchNodeHistoryAdapter
-from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
+from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedError
 from hermes.chat.interface.commands.command_parser import CommandParser
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ class TaskProcessorRunResult(Enum):
     ENGINE_STOP_REQUESTED = auto()  # The task processing led to a budget exhaustion or shutdown command
 
 
-class TaskProcessorCancelledException(Exception):
+class TaskProcessorCancelledError(Exception):
     pass
 
 
@@ -74,9 +74,9 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
                 state = self._execute_task_processing_cycle(self.current_node)
                 if state:
                     return state
-            except EngineShutdownRequestedException:
+            except EngineShutdownRequestedError:
                 return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
-            except TaskProcessorCancelledException:
+            except TaskProcessorCancelledError:
                 return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
         return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
 
@@ -208,7 +208,7 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
             for piece in response_generator:
                 full_llm_response_pieces.append(piece)
                 if self._is_interrupted:
-                    raise TaskProcessorCancelledException()
+                    raise TaskProcessorCancelledError()
             full_llm_response = "".join(full_llm_response_pieces)
             research_node.get_logger().log_llm_response(full_llm_response)
             return full_llm_response
@@ -222,7 +222,7 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
         Returns:
             bool: True if should retry, False otherwise
         """
-        if isinstance(exception, TaskProcessorCancelledException):
+        if isinstance(exception, TaskProcessorCancelledError):
             return False
 
         import traceback

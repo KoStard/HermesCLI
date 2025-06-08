@@ -91,14 +91,13 @@ class AutoReplyAggregator:
         """Compiles aggregated data into an AutoReply object without clearing."""
         error_report = "\n".join(self.error_reports)
         confirmation_request = "\n".join(self.confirmation_requests) if self.confirmation_requests else None
-        auto_reply = AutoReply(
+        return AutoReply(
             error_report,
             self.command_outputs,
             self.internal_messages,
             confirmation_request,
             self.dynamic_sections_to_report,  # Pass the changed sections data
         )
-        return auto_reply
 
     def serialize(self) -> dict[str, Any]:
         """Serialize the aggregator state"""

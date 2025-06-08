@@ -134,7 +134,7 @@ class ResearchNodeHistoryAdapter:
 
     def _update_future_changes_for_block(self, changes_map: dict[int, int], block) -> None:
         """Update the future changes map based on dynamic sections in a block."""
-        if not isinstance(block, (AutoReply, InitialInterface)):
+        if not isinstance(block, AutoReply | InitialInterface):
             return
 
         if hasattr(block, "dynamic_sections"):

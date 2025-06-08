@@ -123,9 +123,7 @@ class ChatAssistantControlPanel:
             return True
         if command_status_override == ChatAssistantCommandStatusOverride.AGENT_ONLY:
             return self._agent_mode
-        if not is_agent_command or is_agent_command and self._agent_mode:
-            return True
-        return False
+        return bool(not is_agent_command or is_agent_command and self._agent_mode)
 
     def extract_and_execute_commands(self, message_content: str) -> Generator[Event, None, None]:
         if not self._commands_processing_enabled:

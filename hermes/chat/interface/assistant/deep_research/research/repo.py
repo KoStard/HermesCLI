@@ -78,10 +78,7 @@ class Repo:
             return False
 
         # Skip system files/directories
-        if path.name.startswith("_"):
-            return False
-
-        return True
+        return not path.name.startswith("_")
 
     def _load_research_from_path(self, research_path: Path) -> None:
         """Load a research instance from the given path.

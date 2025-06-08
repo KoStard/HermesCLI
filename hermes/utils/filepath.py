@@ -23,6 +23,4 @@ def prepare_filepath(filepath: str) -> str:
         expanded_path = os.path.abspath(expanded_path)
 
     # Normalize the path (resolve .. and . components)
-    normalized_path = os.path.normpath(expanded_path)
-
-    return normalized_path
+    return os.path.normpath(expanded_path)

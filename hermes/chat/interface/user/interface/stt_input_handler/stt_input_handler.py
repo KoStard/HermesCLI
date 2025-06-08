@@ -1,4 +1,5 @@
 import os
+import sys
 
 from hermes.chat.interface.user.interface.stt_input_handler.audio_recorder import AudioRecorder
 from hermes.chat.interface.user.interface.stt_input_handler.audio_transcriber import AudioTranscriber

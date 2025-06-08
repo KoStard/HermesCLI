@@ -56,11 +56,9 @@ class ResearchCommandContextImpl(ResearchCommandContext):
             all_results = self.research_project.search_artifacts_including_siblings(artifact_name)
 
             # Filter to only include results from current research
-            current_research_name = None
-            for name, node, artifact in all_results:
+            for _name, node, artifact in all_results:
                 # Find current research name
                 if any((n, a) == (node, artifact) for n, a in results):
-                    current_research_name = name
                     break
 
             # Return results from current research

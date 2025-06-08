@@ -60,6 +60,4 @@ class FrontmatterManager:
         frontmatter_yaml = yaml.dump(metadata, default_flow_style=False, sort_keys=False)
 
         # Combine frontmatter with content
-        result = f"---\n{frontmatter_yaml}---\n\n{content.lstrip()}"
-
-        return result
+        return f"---\n{frontmatter_yaml}---\n\n{content.lstrip()}"

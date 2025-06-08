@@ -51,8 +51,7 @@ class TextMessagesAggregator:
                 name=message.get("name"),
                 text_role=message.get("text_role"),
             )
-        compiled_prompt = prompt_builder.compile_prompt()
-        return compiled_prompt
+        return prompt_builder.compile_prompt()
 
     def clear(self):
         self.messages = []

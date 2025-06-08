@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-from .. import file_system
+from hermes.chat.interface.assistant.deep_research.research import file_system
 
 
 class DiskFileSystem(file_system.FileSystem):

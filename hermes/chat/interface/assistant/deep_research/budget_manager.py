@@ -82,7 +82,7 @@ class BudgetManager:
         assert self.budget is not None
         print("\n===== BUDGET COMPLETELY EXHAUSTED =====")
         print(
-            f"Current usage: {self.message_cycles_used} cycles (Initial budget: {self.budget - 10 if self.budget_warning_shown else self.budget})",
+            f"Current usage: {self.message_cycles_used} cycles (Initial budget: {self.budget})",
         )
         user_input = input("Would you like to add 20 more cycles to continue? (y/N): ").strip().lower()
         if user_input == "y":

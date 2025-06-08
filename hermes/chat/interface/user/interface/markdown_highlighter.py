@@ -10,8 +10,7 @@ class MarkdownHighlighter:
         self.state = mistune.BlockState()
 
     def render_to_markdown(self, element):
-        rendered = self.renderer([element], self.state)
-        return rendered
+        return self.renderer([element], self.state)
 
     def get_lexer(self, element):
         import pygments
@@ -97,7 +96,7 @@ class MarkdownHighlighter:
         parsed = ast(buffer)
 
         # Skip processing if not valid parsing
-        if type(parsed) != list:
+        if not isinstance(parsed, list):
             return buffer, old_parsed, original_text, output_text, parsed
 
         # Skip processing if no new elements
@@ -142,7 +141,7 @@ class MarkdownHighlighter:
             )
 
             # Skip to next line if we didn't get valid parsing results
-            if type(parsed) != list:
+            if not isinstance(parsed, list):
                 continue
 
             # Process all complete elements

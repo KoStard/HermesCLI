@@ -95,10 +95,7 @@ class History:
             return True
 
         # For messages from the target author, exclude directly entered ones
-        if hasattr(item.message, "is_directly_entered") and item.message.is_directly_entered:
-            return False
-
-        return True
+        return not (hasattr(item.message, "is_directly_entered") and item.message.is_directly_entered)
 
     def clear(self):
         self._committed_items = []

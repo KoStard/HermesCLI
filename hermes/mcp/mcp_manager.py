@@ -122,7 +122,6 @@ class McpManager:
         name = tool_schema.get("name", "unknown_mcp_tool")
         description = tool_schema.get("description", "An MCP-based tool.")
         help_text = f"MCP Tool: {name}\n\n{description}"
-        loop = self.loop
 
         if mode == "chat":
             command = self._create_chat_command(client, name, help_text)
@@ -191,7 +190,7 @@ class McpManager:
         from hermes.chat.events import Event
 
         class McpChatToolCommand(Command[Any, Generator[Event, None, None]]):
-            def execute(self_cmd, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
+            def execute(self, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
                 tool_args = self._parse_tool_args(args)
                 output = self._call_tool_and_get_output(client, tool_name, tool_args)
 
@@ -212,7 +211,7 @@ class McpManager:
         """Create a command for deep research mode."""
 
         class McpDeepResearchToolCommand(Command[Any, None]):
-            def execute(self_cmd, context: Any, args: dict[str, Any]) -> None:
+            def execute(self, context: Any, args: dict[str, Any]) -> None:
                 tool_args = self._parse_tool_args(args)
                 output = self._call_tool_and_get_output(client, tool_name, tool_args)
                 if hasattr(context, "add_command_output"):
@@ -236,7 +235,7 @@ class McpManager:
 
         if has_complex_arg:
             # For simplicity, if any argument is complex, we ask for all arguments in a single JSON blob.
-            is_data_json_required = any(prop_name in required for prop_name in properties.keys())
+            is_data_json_required = any(prop_name in required for prop_name in properties)
             command.add_section("data_json", is_data_json_required, "All tool arguments as a single JSON object.")
         else:
             # All arguments are simple types (string, number, etc.)

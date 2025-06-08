@@ -4,7 +4,7 @@ from hermes.chat.interface.assistant.deep_research.commands import ResearchComma
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.problem_definition_manager import (
     ProblemStatus,
 )
-from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedException
+from hermes.chat.interface.assistant.framework.engine_shutdown_requested_exception import EngineShutdownRequestedError
 from hermes.chat.interface.commands.command import (
     Command,
     CommandRegistry,
@@ -45,10 +45,11 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         error_report = self._build_error_report(parsing_report, failed_commands)
 
         self._add_to_auto_reply(current_node, error_report, needs_confirmation)
+        return None
 
     def _handle_shutdown_command(self):
         """Handle shutdown command and return updated state."""
-        raise EngineShutdownRequestedException()
+        raise EngineShutdownRequestedError()
 
     def _add_message_to_history(self, text: str, current_node: "ResearchNode") -> None:
         """Add the assistant's message to history."""

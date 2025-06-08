@@ -7,7 +7,7 @@ def is_binary(file_path):
     :param file_path: Path to the file.
     :return: True if the file is likely binary, False if it is likely text.
     """
-    NULL_BYTE = b"\x00"
+    null_byte = b"\x00"
 
     if not os.path.exists(file_path):
         return False
@@ -18,7 +18,7 @@ def is_binary(file_path):
             sample = f.read(1024)
 
         # Check for null bytes, which are common in binary files
-        if NULL_BYTE in sample:
+        if null_byte in sample:
             return True
 
         # Try to decode as UTF-8, which covers all Unicode characters

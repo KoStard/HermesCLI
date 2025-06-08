@@ -1,2 +1,2 @@
-class EngineShutdownRequestedException(Exception):
+class EngineShutdownRequestedError(Exception):
     pass

@@ -111,9 +111,8 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         for event in events:
             if isinstance(event, MessageEvent):
                 messages.append(event.get_message())
-            elif isinstance(event, HistoryRecoveryEvent):
-                if not self._history_has_been_imported:
-                    messages.extend(event.get_messages())
+            elif isinstance(event, HistoryRecoveryEvent) and not self._history_has_been_imported:
+                messages.extend(event.get_messages())
 
         self._history_has_been_imported = True
         return messages

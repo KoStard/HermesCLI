@@ -36,9 +36,7 @@ class ChatModelLLMInterface(LLMInterface):
             rendered_messages.append(TextMessage(author=message["author"], text=message["content"]))
 
         # Build and return the request
-        request = request_builder.build_request(rendered_messages)
-
-        return request
+        return request_builder.build_request(rendered_messages)
 
     def send_request(self, request: dict) -> Generator[str, None, None]:
         """Send a request to the LLM and get a generator of responses"""

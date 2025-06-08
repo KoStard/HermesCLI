@@ -128,7 +128,7 @@ class Gemini2Model(ChatModel):
 
     @staticmethod
     def get_model_tags() -> list[str]:
-        models = [
+        return [
             "gemini-2.0-flash-exp",
             "gemini-2.0-flash-exp/grounded",
             "gemini-2.0-flash-thinking-exp-1219",
@@ -138,7 +138,6 @@ class Gemini2Model(ChatModel):
             "gemini-2.0-flash",
             "gemini-2.5-pro-exp-03-25",
         ]
-        return models
 
     def get_request_builder(self) -> RequestBuilder:
         return self.request_builder
