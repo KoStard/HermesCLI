@@ -75,6 +75,7 @@ select = [
     "RET", # flake8-return
     "SIM", # flake8-simplify
     "TID", # flake8-tidy-imports
+    "SLF", # flake8-self, private-member-access
 ]
 
 # Aggressive settings for strict clean code
