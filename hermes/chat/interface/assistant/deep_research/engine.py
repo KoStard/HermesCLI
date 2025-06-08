@@ -73,8 +73,7 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
         return self.research.has_root_problem_defined()
 
     def define_root_problem(self, instruction: str):
-        """Handle the initial problem definition phase.
-        """
+        """Handle the initial problem definition phase."""
         current_task_tree = self._get_task_tree_for_current_research()
 
         problem_definition = ProblemDefinition(content=instruction)
@@ -207,13 +206,11 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
             self.engine_should_stop = True  # Budget exhaustion or shutdown command from task
 
     def set_budget(self, budget_value: int | None):
-        """Set the budget for the Deep Research Assistant. Delegates to BudgetManager.
-        """
+        """Set the budget for the Deep Research Assistant. Delegates to BudgetManager."""
         self.budget_manager.set_budget(budget_value)
 
     def create_new_research(self, name: str) -> Research:
-        """Create a new research instance under the repo.
-        """
+        """Create a new research instance under the repo."""
         return self.repo.create_research(name)
 
     def switch_research(self, name: str):

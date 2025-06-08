@@ -150,7 +150,10 @@ class ResearchNodeImpl(ResearchNode):
 
     @classmethod
     def _load_child_nodes_for(
-        cls, parent_node: "ResearchNode", task_tree: "TaskTree", dual_directory_fs: "DualDirectoryFileSystem",
+        cls,
+        parent_node: "ResearchNode",
+        task_tree: "TaskTree",
+        dual_directory_fs: "DualDirectoryFileSystem",
     ) -> None:
         """Load child nodes for a parent node from the file system.
 

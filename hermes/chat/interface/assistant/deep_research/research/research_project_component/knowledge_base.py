@@ -69,10 +69,10 @@ class KnowledgeBase:
 
     def _load_single_entry(self, file_path: Path) -> bool:
         """Load a single knowledge base entry from a file.
-        
+
         Args:
             file_path: Path to the markdown file
-            
+
         Returns:
             bool: True if loaded successfully, False otherwise
         """

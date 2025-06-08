@@ -126,6 +126,7 @@ class AutoReplyAggregator:
     def _deserialize_command_outputs(self, data: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
         """Helper method to deserialize command outputs from JSON data"""
         import jsonpickle
+
         try:
             command_outputs_data = data.get("command_outputs", "[]")
             return jsonpickle.decode(command_outputs_data)

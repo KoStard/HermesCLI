@@ -23,7 +23,11 @@ from . import Research, ResearchNode
 
 class ResearchImpl(Research):
     def __init__(
-        self, root_directory: Path, dual_directory_file_system: DualDirectoryFileSystem, shared_knowledge_base: KnowledgeBase, repo: "Repo",
+        self,
+        root_directory: Path,
+        dual_directory_file_system: DualDirectoryFileSystem,
+        shared_knowledge_base: KnowledgeBase,
+        repo: "Repo",
     ):
         # Initialize without creating a new knowledge base
         self.root_directory = root_directory

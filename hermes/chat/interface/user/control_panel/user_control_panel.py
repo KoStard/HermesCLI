@@ -445,8 +445,7 @@ class UserControlPanel(ControlPanel):
         return "\n".join(results)
 
     def extract_and_execute_commands(self, message: Message) -> Generator[Event, None, None]:
-        """Extract commands from a message and execute them, yielding resulting events.
-        """
+        """Extract commands from a message and execute them, yielding resulting events."""
         peekable_generator = PeekableGenerator(self._lines_from_message(message))
         prioritised_backlog = []
         current_message_text = ""

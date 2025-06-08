@@ -133,7 +133,12 @@ class MarkdownHighlighter:
         # Process each line of input
         for line in self.line_aggregator(markdown_generator):
             buffer, old_parsed, original_text, output_text, parsed = self._process_line(
-                line, buffer, old_parsed, original_text, output_text, ast,
+                line,
+                buffer,
+                old_parsed,
+                original_text,
+                output_text,
+                ast,
             )
 
             # Skip to next line if we didn't get valid parsing results

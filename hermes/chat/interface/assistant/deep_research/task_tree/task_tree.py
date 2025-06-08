@@ -11,8 +11,7 @@ class TaskTreeImpl(TaskTree):
         self._events_queue = Queue()
 
     def next(self) -> ResearchNode | None:
-        """Should lock the thread until at least one node becomes ready to run or all of them finish, in which case it should return None.
-        """
+        """Should lock the thread until at least one node becomes ready to run or all of them finish, in which case it should return None."""
         while True:
             if node := self._find_next_available():
                 return node

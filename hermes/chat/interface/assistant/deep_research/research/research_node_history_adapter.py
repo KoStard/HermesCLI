@@ -35,7 +35,10 @@ class ResearchNodeHistoryAdapter:
         return history_messages[::-1]
 
     def _process_history_blocks(
-        self, compiled_blocks: list, template_manager: "TemplateManager", renderer_registry: "DynamicDataTypeToRendererMap",
+        self,
+        compiled_blocks: list,
+        template_manager: "TemplateManager",
+        renderer_registry: "DynamicDataTypeToRendererMap",
     ) -> list[dict[str, str]]:
         """Process history blocks and convert them to message format."""
         history_messages = []
@@ -51,7 +54,9 @@ class ResearchNodeHistoryAdapter:
             elif isinstance(block, AutoReply):
                 auto_reply_counter, max_length = self._update_auto_reply_counters(auto_reply_counter, iterative_auto_reply_max_length)
                 history_messages.append(
-                    self._process_auto_reply(block, compiled_blocks, i, auto_reply_counter, max_length, template_manager, renderer_registry),
+                    self._process_auto_reply(
+                        block, compiled_blocks, i, auto_reply_counter, max_length, template_manager, renderer_registry
+                    ),
                 )
 
         return history_messages
@@ -122,7 +127,7 @@ class ResearchNodeHistoryAdapter:
         """Calculate how many times each section changes in future blocks."""
         future_changes_map: dict[int, int] = defaultdict(int)
 
-        for future_block in blocks[current_index + 1:]:
+        for future_block in blocks[current_index + 1 :]:
             self._update_future_changes_for_block(future_changes_map, future_block)
 
         return future_changes_map
@@ -132,6 +137,6 @@ class ResearchNodeHistoryAdapter:
         if not isinstance(block, (AutoReply, InitialInterface)):
             return
 
-        if hasattr(block, 'dynamic_sections'):
+        if hasattr(block, "dynamic_sections"):
             for section_index, _ in block.dynamic_sections:
                 changes_map[section_index] += 1

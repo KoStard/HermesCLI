@@ -119,7 +119,6 @@ class McpManager:
         return tool_args
 
     def _create_command_from_schema(self, client: McpClient, tool_schema: dict, mode: str) -> Command:
-
         name = tool_schema.get("name", "unknown_mcp_tool")
         description = tool_schema.get("description", "An MCP-based tool.")
         help_text = f"MCP Tool: {name}\n\n{description}"
@@ -206,11 +205,12 @@ class McpManager:
 
         # Need to bind instance methods to the command class instance
         cmd = McpChatToolCommand(tool_name, help_text)
-        cmd.execute.__globals__['self'] = self
+        cmd.execute.__globals__["self"] = self
         return cmd
 
     def _create_deep_research_command(self, client: McpClient, tool_name: str, help_text: str) -> Command:
         """Create a command for deep research mode."""
+
         class McpDeepResearchToolCommand(Command[Any, None]):
             def execute(self_cmd, context: Any, args: dict[str, Any]) -> None:
                 tool_args = self._parse_tool_args(args)
@@ -222,7 +222,7 @@ class McpManager:
 
         # Need to bind instance methods to the command class instance
         cmd = McpDeepResearchToolCommand(tool_name, help_text)
-        cmd.execute.__globals__['self'] = self
+        cmd.execute.__globals__["self"] = self
         return cmd
 
     def _configure_command_sections(self, command: Command, tool_schema: dict) -> None:

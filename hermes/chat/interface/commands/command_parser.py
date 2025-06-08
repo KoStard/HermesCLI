@@ -88,7 +88,10 @@ class CommandParser:
         return blocks, errors
 
     def _process_lines_for_blocks_and_errors(
-        self, lines: list[str], blocks: list[tuple[int, list[str]]], errors: list[CommandError],
+        self,
+        lines: list[str],
+        blocks: list[tuple[int, list[str]]],
+        errors: list[CommandError],
     ) -> int | None:
         """Process lines to identify blocks and syntax errors."""
         open_tag_index: int | None = None
@@ -250,7 +253,9 @@ class CommandParser:
 
     @staticmethod
     def _parse_command_sections(
-        content: str, content_start_line: int, command: Command[Any, Any],
+        content: str,
+        content_start_line: int,
+        command: Command[Any, Any],
     ) -> tuple[dict[str, Any], list[CommandError]]:
         """Helper to parse ///section delimiters within command content.
 
@@ -270,17 +275,29 @@ class CommandParser:
 
         # Check content before first marker and collect section matches
         last_pos, errors = CommandParser._check_content_before_first_marker(
-            content, content_start_line, command, errors,
+            content,
+            content_start_line,
+            command,
+            errors,
         )
 
         # Find and process all section matches
         sections_found, last_pos, errors = CommandParser._process_section_matches(
-            content, content_start_line, command, sections_found, errors,
+            content,
+            content_start_line,
+            command,
+            sections_found,
+            errors,
         )
 
         # Check content after last marker
         sections_found, errors = CommandParser._check_content_after_last_marker(
-            content, content_start_line, last_pos, command, sections_found, errors,
+            content,
+            content_start_line,
+            last_pos,
+            command,
+            sections_found,
+            errors,
         )
 
         # Process collected sections according to command rules
@@ -290,7 +307,10 @@ class CommandParser:
 
     @staticmethod
     def _check_content_before_first_marker(
-        content: str, content_start_line: int, command: Command[Any, Any], errors: list[CommandError],
+        content: str,
+        content_start_line: int,
+        command: Command[Any, Any],
+        errors: list[CommandError],
     ) -> tuple[int, list[CommandError]]:
         """Check if there's any content before the first section marker."""
         first_marker_match = re.search(r"^\s*///", content, re.MULTILINE)

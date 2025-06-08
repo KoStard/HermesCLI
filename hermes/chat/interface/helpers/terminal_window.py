@@ -1,5 +1,4 @@
-"""This module is responsible for getting information about the terminal window, like size.
-"""
+"""This module is responsible for getting information about the terminal window, like size."""
 
 import os
 

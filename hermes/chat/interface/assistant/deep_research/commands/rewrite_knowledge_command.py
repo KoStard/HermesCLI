@@ -39,7 +39,9 @@ class RewriteKnowledgeCommand(BaseCommand[ResearchCommandContextImpl, None]):
                 title_msg = f" and title updated to '{new_title}'" if new_title else ""
                 tags_msg = f" and tags updated to {new_tags}" if new_tags is not None else ""
                 context.add_command_output(
-                    self.name, args, f"Knowledge entry '{title}' content rewritten{title_msg}{tags_msg} successfully.",
+                    self.name,
+                    args,
+                    f"Knowledge entry '{title}' content rewritten{title_msg}{tags_msg} successfully.",
                 )
             else:
                 context.add_command_output(self.name, args, f"Error: Knowledge entry with title '{title}' not found.")

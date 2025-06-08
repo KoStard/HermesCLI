@@ -10,7 +10,12 @@ class ContentProcessor:
         self.section_finder = SectionFinder()
 
     def process_content(
-        self, lines: list[str], section_path: list[str], new_content: str, mode: str, is_preface: bool = False,
+        self,
+        lines: list[str],
+        section_path: list[str],
+        new_content: str,
+        mode: str,
+        is_preface: bool = False,
     ) -> tuple[list[str], bool]:
         """Process document lines and apply the update."""
         self._validate_mode(mode)
@@ -27,7 +32,12 @@ class ContentProcessor:
         return section_path[:-1] if is_preface else section_path
 
     def _process_lines(
-        self, lines: list[str], section_path: list[str], new_content: str, mode: str, is_preface: bool,
+        self,
+        lines: list[str],
+        section_path: list[str],
+        new_content: str,
+        mode: str,
+        is_preface: bool,
     ) -> tuple[list[str], bool]:
         """Process lines and track section matches."""
         path_tracker = SectionPath()
@@ -70,7 +80,14 @@ class ContentProcessor:
         return self._handle_section_match(lines, i, header.level, new_content, mode, is_preface, updated_lines)
 
     def _handle_section_match(
-        self, lines: list[str], i: int, level: int, new_content: str, mode: str, is_preface: bool, updated_lines: list[str],
+        self,
+        lines: list[str],
+        i: int,
+        level: int,
+        new_content: str,
+        mode: str,
+        is_preface: bool,
+        updated_lines: list[str],
     ) -> int:
         """Handle when a section match is found."""
         if is_preface:

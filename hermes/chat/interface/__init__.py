@@ -24,8 +24,7 @@ class Orchestrator(ABC):
 
     @abstractmethod
     def get_input(self) -> Generator["Event", None, None]:
-        """Get input from the participant. It propagates the input as events.
-        """
+        """Get input from the participant. It propagates the input as events."""
 
     @abstractmethod
     def clear(self):

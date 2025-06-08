@@ -47,10 +47,10 @@ class RequestBuilder(ABC):
 
     def build_request(self, messages: Sequence[Message]) -> Any:
         """Build a request for the LLM provider from a sequence of messages.
-        
+
         Args:
             messages: A sequence of Message objects to include in the request.
-            
+
         Returns:
             A provider-specific request object.
         """
@@ -63,7 +63,7 @@ class RequestBuilder(ABC):
 
     def _process_message(self, message: Message) -> None:
         """Process a single message and delegate to the appropriate handler.
-        
+
         Args:
             message: The Message object to process.
         """
@@ -76,10 +76,10 @@ class RequestBuilder(ABC):
 
     def _get_message_handler(self, message: Message):
         """Determine the appropriate handler method for the given message type.
-        
+
         Args:
             message: The Message object to find a handler for.
-            
+
         Returns:
             A method to handle the message or None if no handler is found.
         """
@@ -97,13 +97,11 @@ class RequestBuilder(ABC):
         return None
 
     def _get_message_type_handler_map(self):
-        """Returns a mapping of message types to their handler methods.
-        """
+        """Returns a mapping of message types to their handler methods."""
         return {
             TextMessage: self._process_text_message,
             # Group similar message types with the same handler
-            (TextGeneratorMessage, ThinkingAndResponseGeneratorMessage, InvisibleMessage):
-                self._process_text_generator_message,
+            (TextGeneratorMessage, ThinkingAndResponseGeneratorMessage, InvisibleMessage): self._process_text_generator_message,
             ImageUrlMessage: self._process_image_url_message,
             ImageMessage: self._process_image_message,
             AudioFileMessage: self._process_audio_file_message,
@@ -252,8 +250,7 @@ class RequestBuilder(ABC):
         message_id: int,
         file_role: str | None = None,
     ):
-        """Process a single file and send its content as a message.
-        """
+        """Process a single file and send its content as a message."""
         # Use the shared FileReader utility to get file content
         file_content, success = FileReader.read_file(text_filepath)
 
@@ -280,8 +277,7 @@ class RequestBuilder(ABC):
             )
 
     def _process_directory(self, directory_path: str, author: str, message_id: int, file_role: str | None = None):
-        """Process all files in a directory and send their content as messages.
-        """
+        """Process all files in a directory and send their content as messages."""
         # Use FileReader to process the entire directory
         file_contents = FileReader.read_directory(directory_path)
 
@@ -303,8 +299,7 @@ class RequestBuilder(ABC):
                 self.notifications_printer.print_error(f"Error processing file {full_path}: {e}")
 
     def _determine_file_role(self, file_path: str, base_file_role: str | None = None) -> str:
-        """Determine the appropriate role for a file based on its type and any provided base role.
-        """
+        """Determine the appropriate role for a file based on its type and any provided base role."""
         role = "TextualFile"
         if file_path.endswith(".ipynb"):
             role = "JupyterNotebook"
@@ -350,6 +345,7 @@ class RequestBuilder(ABC):
         except Exception as e:
             self.notifications_printer.print_error(f"Error extracting pages from PDF {pdf_path}, sending whole file: {e}")
             return pdf_path  # Return original file path if extraction fails
+
     def _process_text_message(self, message: TextMessage) -> None:
         """Process a text message."""
         content = message.get_content_for_assistant()
@@ -364,7 +360,9 @@ class RequestBuilder(ABC):
                     text_role=message.text_role,
                 )
 
-    def _process_text_generator_message(self, message: TextGeneratorMessage | ThinkingAndResponseGeneratorMessage | InvisibleMessage) -> None:
+    def _process_text_generator_message(
+        self, message: TextGeneratorMessage | ThinkingAndResponseGeneratorMessage | InvisibleMessage
+    ) -> None:
         """Process a text generator, thinking and response, or invisible message."""
         content = message.get_content_for_assistant()
         if content:

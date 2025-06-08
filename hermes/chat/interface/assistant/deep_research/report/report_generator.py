@@ -5,8 +5,7 @@ from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
 class ReportGeneratorImpl(ReportGenerator):
-    """Responsible for generating reports based on the research data using Mako templates.
-    """
+    """Responsible for generating reports based on the research data using Mako templates."""
 
     def __init__(self, template_manager: TemplateManager):
         """Initialize ReportGenerator.

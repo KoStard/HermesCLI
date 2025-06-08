@@ -1,4 +1,3 @@
-
 from hermes.chat.interface.commands.command import CommandRegistry
 
 from .activate_subproblems_command import ActivateSubproblems

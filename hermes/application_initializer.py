@@ -177,7 +177,11 @@ class ApplicationInitializer:
         return DebugParticipant(debug_interface)
 
     def _create_deep_research_participant(
-        self, cli_args, model, extension_deep_research_commands, mcp_manager: "McpManager",
+        self,
+        cli_args,
+        model,
+        extension_deep_research_commands,
+        mcp_manager: "McpManager",
     ) -> LLMParticipant:
         from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 

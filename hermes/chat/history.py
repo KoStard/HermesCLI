@@ -1,5 +1,4 @@
-"""History keeps track of the messages in the conversation.
-"""
+"""History keeps track of the messages in the conversation."""
 
 import json
 from dataclasses import dataclass

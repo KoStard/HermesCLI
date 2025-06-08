@@ -144,7 +144,8 @@ class DeepResearcherInterface(AssistantInterface):
         external_files = research.get_external_file_manager().get_external_files()
 
         all_data[ArtifactsSectionData] = ArtifactsSectionData.from_artifact_lists(
-            external_files_dict=external_files, node_artifacts_list=node_artifacts_list,
+            external_files_dict=external_files,
+            node_artifacts_list=node_artifacts_list,
         )
 
     def _collect_node_artifacts(self, research: Research, target_node: ResearchNode) -> list:
@@ -168,14 +169,16 @@ class DeepResearcherInterface(AssistantInterface):
     def _add_hierarchy_and_criteria_data(self, all_data: dict, research: Research, target_node: ResearchNode) -> None:
         """Add hierarchy and criteria related data"""
         all_data[ProblemHierarchyData] = ProblemHierarchyData.from_research_node(
-            target_node=target_node, root_node=research.get_root_node(),
+            target_node=target_node,
+            root_node=research.get_root_node(),
         )
         all_data[CriteriaSectionData] = CriteriaSectionData.from_node(target_node=target_node)
         all_data[SubproblemsSectionData] = SubproblemsSectionData.from_node(target_node=target_node)
 
         parent_chain = self._get_parent_chain(target_node)
         all_data[ProblemPathHierarchyData] = ProblemPathHierarchyData.from_parent_chain(
-            parent_chain=parent_chain, current_node=target_node,
+            parent_chain=parent_chain,
+            current_node=target_node,
         )
 
     def _add_knowledge_base_data(self, all_data: dict, research: Research) -> None:

@@ -154,6 +154,7 @@ class ResearchNodeHistory:
     def _serialize_auto_reply(self, block: AutoReply) -> dict[str, Any]:
         """Serialize an AutoReply block to JSON-compatible format"""
         import jsonpickle
+
         return {
             "type": "AutoReply",
             "error_report": block.error_report,
@@ -168,10 +169,12 @@ class ResearchNodeHistory:
         serialized_sections = []
         if dynamic_sections:
             for idx, section_data in dynamic_sections:
-                serialized_sections.append({
-                    "index": idx,
-                    "section_data": section_data.serialize() if section_data else None,
-                })
+                serialized_sections.append(
+                    {
+                        "index": idx,
+                        "section_data": section_data.serialize() if section_data else None,
+                    }
+                )
         return serialized_sections
 
     def _deserialize_blocks(self, serialized_blocks: list[dict[str, Any]]) -> list[HistoryBlock]:

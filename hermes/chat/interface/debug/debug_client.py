@@ -25,6 +25,7 @@ def main():
     client_socket = connect_to_server(args.port)
     main_loop(client_socket)
 
+
 def receive_buffer(client_socket):
     """Receive data from the socket with timeout handling."""
     buffer = []
@@ -89,6 +90,7 @@ def process_communication_cycle(client_socket):
     except KeyboardInterrupt:
         # Just return to main loop, which will continue
         pass
+
 
 def main_loop(client_socket):
     """Main communication loop for the debug client."""

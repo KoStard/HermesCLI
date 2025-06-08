@@ -61,7 +61,10 @@ ResearchCommandContextType = TypeVar("ResearchCommandContextType", bound=Researc
 class ResearchCommandContextFactory(ABC, Generic[ResearchCommandContextType]):
     @abstractmethod
     def create_command_context(
-        self, task_processor: "TaskProcessor", current_node: "ResearchNode", command_processor: "CommandProcessor",
+        self,
+        task_processor: "TaskProcessor",
+        current_node: "ResearchNode",
+        command_processor: "CommandProcessor",
     ) -> ResearchCommandContextType:
         pass
 

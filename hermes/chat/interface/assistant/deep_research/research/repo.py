@@ -66,10 +66,10 @@ class Repo:
 
     def _is_valid_research_directory(self, path: Path) -> bool:
         """Check if the given path is a valid research directory.
-        
+
         Args:
             path: Path to check
-            
+
         Returns:
             True if the path is a valid research directory, False otherwise
         """
@@ -85,7 +85,7 @@ class Repo:
 
     def _load_research_from_path(self, research_path: Path) -> None:
         """Load a research instance from the given path.
-        
+
         Args:
             research_path: Path to the research directory
         """

@@ -7,8 +7,7 @@ from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
 class StatusPrinterImpl(StatusPrinter):
-    """Responsible for printing the current status of the research to the console using Mako templates.
-    """
+    """Responsible for printing the current status of the research to the console using Mako templates."""
 
     def __init__(self, template_manager: TemplateManager):
         """Initialize StatusPrinter.

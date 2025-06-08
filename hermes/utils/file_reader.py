@@ -51,6 +51,7 @@ class FileReader:
             from hermes.chat.interface.assistant.models.request_builder.notebook_converter import (
                 convert_notebook_custom,
             )
+
             content = convert_notebook_custom(filepath)
             return content, True
         except Exception as e:
@@ -62,6 +63,7 @@ class FileReader:
         """Try to read file using markitdown library."""
         try:
             from markitdown import MarkItDown
+
             markitdown = MarkItDown()
             conversion_result = markitdown.convert(filepath)
             return conversion_result.text_content, True
@@ -87,7 +89,7 @@ class FileReader:
     @staticmethod
     def _process_single_file(full_path: str, directory_path: str, result: dict) -> None:
         """Process a single file and add its content to the result dictionary if successfully read.
-        
+
         Args:
             full_path: Full path to the file
             directory_path: Base directory path for calculating relative paths

@@ -62,7 +62,10 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         return error_report, results
 
     def _execute_valid_commands(
-        self, commands: list[ParseResult], current_node: "ResearchNode", parsing_error_report: str,
+        self,
+        commands: list[ParseResult],
+        current_node: "ResearchNode",
+        parsing_error_report: str,
     ) -> tuple[list[dict], bool, dict]:
         """Execute valid commands and return execution results."""
         has_parsing_errors = bool(parsing_error_report)
@@ -79,8 +82,14 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
 
             # Process the command
             finish_or_fail_skipped, status_map, failed_commands = self._process_command(
-                cmd, has_parsing_errors, failed_commands, finish_or_fail_skipped,
-                status_map, current_node, cmd_key, line_num,
+                cmd,
+                has_parsing_errors,
+                failed_commands,
+                finish_or_fail_skipped,
+                status_map,
+                current_node,
+                cmd_key,
+                line_num,
             )
 
         return failed_commands, finish_or_fail_skipped, status_map
@@ -90,9 +99,15 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         return cmd.errors[0].line_number if cmd.errors else None
 
     def _process_command(
-        self, cmd: ParseResult, has_parsing_errors: bool, failed_commands: list[dict],
-        finish_or_fail_skipped: bool, status_map: dict, current_node: "ResearchNode",
-        cmd_key: str, line_num: int | None,
+        self,
+        cmd: ParseResult,
+        has_parsing_errors: bool,
+        failed_commands: list[dict],
+        finish_or_fail_skipped: bool,
+        status_map: dict,
+        current_node: "ResearchNode",
+        cmd_key: str,
+        line_num: int | None,
     ) -> tuple[bool, dict, list[dict]]:
         """Process a command and update tracking information"""
         # Skip terminal commands if there are errors
@@ -106,14 +121,26 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
 
         # Update status based on execution result
         status_map, failed_commands = self._update_command_status(
-            cmd, result, exception, status_map, failed_commands, cmd_key, line_num,
+            cmd,
+            result,
+            exception,
+            status_map,
+            failed_commands,
+            cmd_key,
+            line_num,
         )
 
         return finish_or_fail_skipped, status_map, failed_commands
 
     def _update_command_status(
-        self, cmd: ParseResult, result: Any, exception: Exception | None,
-        status_map: dict, failed_commands: list[dict], cmd_key: str, line_num: int | None,
+        self,
+        cmd: ParseResult,
+        result: Any,
+        exception: Exception | None,
+        status_map: dict,
+        failed_commands: list[dict],
+        cmd_key: str,
+        line_num: int | None,
     ) -> tuple[dict, list[dict]]:
         """Update status tracking based on command execution result"""
         if exception:  # Error occurred
@@ -266,7 +293,11 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         else:
             # Add messages to parent's auto-reply
             self._add_status_message_to_parent(
-                parent_node, research_node, "Task marked FINISHED, focusing back up.", message, "[Completion Message]: ",
+                parent_node,
+                research_node,
+                "Task marked FINISHED, focusing back up.",
+                message,
+                "[Completion Message]: ",
             )
 
         return True
@@ -285,13 +316,22 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         else:
             # Add messages to parent's auto-reply
             self._add_status_message_to_parent(
-                parent_node, research_node, "Task marked FAILED, focusing back up.", message, "[Failure Message]: ",
+                parent_node,
+                research_node,
+                "Task marked FAILED, focusing back up.",
+                message,
+                "[Failure Message]: ",
             )
 
         return True
 
     def _add_status_message_to_parent(
-        self, parent_node: "ResearchNode", research_node: "ResearchNode", status_msg: str, custom_msg: str | None = None, prefix: str = "",
+        self,
+        parent_node: "ResearchNode",
+        research_node: "ResearchNode",
+        status_msg: str,
+        custom_msg: str | None = None,
+        prefix: str = "",
     ) -> None:
         """Add status and optional custom message to parent's auto-reply."""
         source_title = research_node.get_title()

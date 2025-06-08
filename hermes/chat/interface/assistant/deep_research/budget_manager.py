@@ -97,7 +97,8 @@ class BudgetManager:
             return False  # Continue with extended budget
         print("Finishing research due to budget constraints.")
         research_node.get_history().get_auto_reply_aggregator().add_internal_message_from(
-            "Research stopped due to budget exhaustion (user declined extension).", "SYSTEM",
+            "Research stopped due to budget exhaustion (user declined extension).",
+            "SYSTEM",
         )
         return True  # Signal to finish
 

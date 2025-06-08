@@ -192,11 +192,13 @@ class ChatAssistantControlPanel:
             return
 
         command_output_str = self._format_command_outputs(command_outputs)
-        yield MessageEvent(InvisibleMessage(
-            author="user",
-            text=command_output_str,
-            text_role="command_outputs_and_errors",
-        ))
+        yield MessageEvent(
+            InvisibleMessage(
+                author="user",
+                text=command_output_str,
+                text_role="command_outputs_and_errors",
+            )
+        )
 
     def _format_command_outputs(self, command_outputs) -> str:
         """Format multiple command outputs into a string"""
