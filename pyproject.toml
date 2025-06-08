@@ -9,7 +9,7 @@ description = "An extendable CLI interface for LLMs"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "appdirs>=1.4.4", # Added for cross-platform config directory
+    "appdirs>=1.4.4",             # Added for cross-platform config directory
     "anthropic>=0.40.0",
     "boto3>=1.37.0",
     "exa-py>=1.7.3",
@@ -61,29 +61,21 @@ line-length = 140
 
 [tool.ruff.lint]
 select = [
-    "E", "W", "F",      # Flake8 core
-    "C90",              # McCabe complexity
-    "I",                # isort
-    "N",                # pep8-naming
-    "D",                # pydocstrings
-    "UP",               # pyupgrade
-    "ANN",              # flake8-annotations
-    "S",                # flake8-bandit
-    "BLE",              # flake8-blind-except
-    "B",                # flake8-bugbear
-    "A",                # flake8-builtins
-    "DTZ",              # flake8-datetimez
-    "EM",               # flake8-errmsg
-    "FA",               # flake8-future-annotations
-    "G",                # flake8-logging-format
-    "ICN",              # flake8-import-conventions
-    "PIE",              # flake8-pie
-    "T20",              # flake8-print
-    "RET",              # flake8-return
-    "SIM",              # flake8-simplify
-    "TID",              # flake8-tidy-imports
-    "ARG",              # flake8-unused-arguments
-    "PLR",              # Pylint refactor
+    "E",
+    "W",
+    "F",   # Flake8 core
+    "C90", # McCabe complexity
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "ICN", # flake8-import-conventions
+    "PIE", # flake8-pie
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
 ]
 
 # Aggressive settings for strict clean code
@@ -96,11 +88,7 @@ max-branches = 8
 max-returns = 4
 max-statements = 20
 
-[tool.ruff.lint.flake8-annotations]
-mypy-init-return = true
-suppress-dummy-args = true
-
 [tool.ruff.lint.pydocstyle]
-convention = "google"  # or "numpy", "pep257"
+convention = "google" # or "numpy", "pep257"
 [tool.pyright]
 python.pythonPath = ".venv/bin/python"

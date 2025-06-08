@@ -13,9 +13,6 @@ class RecordingGenerator(Generic[GeneratorItemType]):
         return self
 
     def __next__(self) -> GeneratorItemType:
-        try:
-            value = next(self.original_generator)
-            self.collected_values.append(value)
-            return value
-        except StopIteration:
-            raise StopIteration
+        value = next(self.original_generator)
+        self.collected_values.append(value)
+        return value

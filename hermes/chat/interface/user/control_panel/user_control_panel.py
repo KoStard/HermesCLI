@@ -21,7 +21,9 @@ from hermes.chat.events import (
     SwitchResearchEvent,
     ThinkingLevelEvent,
 )
+from hermes.chat.interface.control_panel import ControlPanel, ControlPanelCommand
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.chat.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.chat.interface.helpers.terminal_coloring import CLIColors
 from hermes.chat.interface.user.control_panel.exa_client import ExaClient
 from hermes.chat.interface.user.control_panel.fuzzy_selector import FuzzyFilesSelector
@@ -38,9 +40,6 @@ from hermes.chat.messages import (
 )
 from hermes.utils.file_extension import remove_quotes
 from hermes.utils.tree_generator import TreeGenerator
-
-from ...control_panel import ControlPanel, ControlPanelCommand
-from ...helpers.peekable_generator import PeekableGenerator
 
 
 class UserControlPanel(ControlPanel):
