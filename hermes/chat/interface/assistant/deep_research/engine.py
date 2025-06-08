@@ -73,8 +73,7 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
         return self.research.has_root_problem_defined()
 
     def define_root_problem(self, instruction: str):
-        """
-        Handle the initial problem definition phase.
+        """Handle the initial problem definition phase.
         """
         current_task_tree = self._get_task_tree_for_current_research()
 
@@ -113,8 +112,7 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
         auto_reply_aggregator.add_internal_message_from(formatted_instruction, "USER MESSAGE")
 
     def execute(self) -> str | None:
-        """
-        Execute the deep research process. Runs until the current task is completed
+        """Execute the deep research process. Runs until the current task is completed
         (node finished/failed and focus returns to root, or budget exhausted, or shutdown).
         """
         self._validate_execution_prerequisites()
@@ -147,7 +145,7 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
                 threads.append(thread)
         except KeyboardInterrupt:
             self.engine_interrupted = True
-            
+
         return threads
 
     def _start_node_processing(self, node: ResearchNode) -> threading.Thread:
@@ -209,20 +207,17 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
             self.engine_should_stop = True  # Budget exhaustion or shutdown command from task
 
     def set_budget(self, budget_value: int | None):
-        """
-        Set the budget for the Deep Research Assistant. Delegates to BudgetManager.
+        """Set the budget for the Deep Research Assistant. Delegates to BudgetManager.
         """
         self.budget_manager.set_budget(budget_value)
 
     def create_new_research(self, name: str) -> Research:
-        """
-        Create a new research instance under the repo.
+        """Create a new research instance under the repo.
         """
         return self.repo.create_research(name)
 
     def switch_research(self, name: str):
-        """
-        Switch to a different research instance.
+        """Switch to a different research instance.
 
         Args:
             name: Name of the research instance to switch to
@@ -234,8 +229,7 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
         self.research = self._get_or_create_research(name)
 
     def list_research_instances(self) -> list[str]:
-        """
-        List all available research instances.
+        """List all available research instances.
 
         Returns:
             List of research instance names

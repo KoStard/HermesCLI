@@ -20,8 +20,7 @@ class ProblemHierarchyData(DynamicSectionData):
 
     @staticmethod
     def from_research_node(target_node: "ResearchNode", root_node: "ResearchNode") -> "ProblemHierarchyData":
-        """
-        Generate problem hierarchy data from a research node.
+        """Generate problem hierarchy data from a research node.
 
         Args:
             target_node: The current node to highlight in the hierarchy
@@ -43,8 +42,7 @@ class ProblemHierarchyData(DynamicSectionData):
         indent_level: int,
         current_node: "ResearchNode | None" = None,
     ) -> None:
-        """
-        Recursively build the hierarchy tree in XML-like format
+        """Recursively build the hierarchy tree in XML-like format
 
         Args:
             node: The current node to process

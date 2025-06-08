@@ -46,7 +46,7 @@ def display_message_history(data):
     """Format and display the message history."""
     print("\nMessage History:")
     print("-" * 50)
-    
+
     data = json.loads(data)
     try:
         for message in data["messages"]:
@@ -54,7 +54,7 @@ def display_message_history(data):
             print(message["content"])
     except Exception:
         print(data)
-    
+
     print("-" * 50)
 
 
@@ -66,7 +66,7 @@ def get_user_input():
         multiline=True,
         prompt_continuation=lambda width, line_number, is_soft_wrap: " " * width,
     )
-    
+
     return session.prompt(HTML("\n<ansiyellow>Your response: </ansiyellow>"))
 
 
@@ -74,13 +74,13 @@ def process_communication_cycle(client_socket):
     """Process a single communication cycle with the server."""
     # Receive message history
     data = receive_buffer(client_socket)
-    
+
     if not data:
         return
-        
+
     # Display the message history
     display_message_history(data)
-    
+
     # Get and send user input
     try:
         user_input = get_user_input()

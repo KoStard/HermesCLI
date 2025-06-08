@@ -1,7 +1,6 @@
 class FrontmatterManager:
     def extract_frontmatter(self, full_content: str) -> tuple[dict, str]:
-        """
-        Provided with the full content of the markdown file, extract the front-matter into a dict and return the rest of the content.
+        """Provided with the full content of the markdown file, extract the front-matter into a dict and return the rest of the content.
 
         Frontmatter is expected to be at the beginning of the file, enclosed between triple-dash lines (---).
 
@@ -41,8 +40,7 @@ class FrontmatterManager:
         return frontmatter, content
 
     def add_frontmatter(self, content: str, metadata: dict) -> str:
-        """
-        Given with the future content of the markdown file and the metadata for it,
+        """Given with the future content of the markdown file and the metadata for it,
         add the metadata as a front-matter and return the final content
 
         Args:

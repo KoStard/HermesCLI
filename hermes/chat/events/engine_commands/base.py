@@ -15,4 +15,3 @@ class EngineCommandEvent(Event):
     @abstractmethod
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         """Execute the command using the conversation orchestrator."""
-        pass

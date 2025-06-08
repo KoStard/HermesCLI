@@ -20,13 +20,13 @@ class McpError(Exception):
 class McpClient:
     def __init__(self, name: str, config: dict | str, loop: asyncio.AbstractEventLoop):
         self.name = name
-        
+
         # Parse command configuration
         self._command_parts = self._parse_command_config(config)
-        
+
         # Setup environment variables
         self._env = self._setup_environment(config) if not isinstance(config, str) else None
-        
+
         # Initialize other attributes
         self.loop = loop
         self.process: asyncio.subprocess.Process | None = None
@@ -37,23 +37,22 @@ class McpClient:
         self.tools: list[dict] = []
         self.status = "disconnected"
         self.error_message: str | None = None
-    
+
     def _parse_command_config(self, config: dict | str) -> list[str]:
         """Extract command parts from configuration."""
         if isinstance(config, str):
             return shlex.split(config)
-        
+
         cmd = config.get("command")
         args = config.get("args")
-        
+
         if isinstance(cmd, list):
             return cmd
-        elif isinstance(cmd, str) and isinstance(args, list):
+        if isinstance(cmd, str) and isinstance(args, list):
             return [cmd] + args
-        elif isinstance(cmd, str):
+        if isinstance(cmd, str):
             return shlex.split(cmd)
-        else:
-            raise ValueError(f"Invalid command configuration for MCP server '{self.name}'")
+        raise ValueError(f"Invalid command configuration for MCP server '{self.name}'")
 
     def _setup_environment(self, config: dict) -> dict[str, str] | None:
         """Set up environment variables for the MCP process."""
@@ -94,7 +93,7 @@ class McpClient:
             if not line:
                 break
             self._process_message_line(line)
-    
+
     def _process_message_line(self, line: bytes) -> None:
         """Process a single message line from the MCP server."""
         try:
@@ -102,14 +101,14 @@ class McpClient:
             self._handle_json_message(message)
         except json.JSONDecodeError:
             logger.warning(f"MCP client {self.name}: Received non-JSON message: {line.decode().strip()}")
-    
+
     def _handle_json_message(self, message: dict) -> None:
         """Handle a parsed JSON message from the MCP server."""
         if "id" in message and message["id"] in self.futures:
             self._resolve_future(message)
         else:
             logger.debug(f"Received unhandled message from {self.name}: {message}")
-    
+
     def _resolve_future(self, message: dict) -> None:
         """Resolve a future with either a result or an exception."""
         future = self.futures.pop(message["id"])

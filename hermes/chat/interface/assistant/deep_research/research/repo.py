@@ -9,8 +9,7 @@ from hermes.chat.interface.assistant.deep_research.task_tree.task_tree import Ta
 
 
 class Repo:
-    """
-    Root repository that manages multiple Research instances.
+    """Root repository that manages multiple Research instances.
     All Research instances share a common knowledge base and can see each other's artifacts.
     """
 
@@ -28,8 +27,7 @@ class Repo:
         self._load_existing_research_instances()
 
     def create_research(self, name: str) -> Research:
-        """
-        Create a new Research instance under this Repo.
+        """Create a new Research instance under this Repo.
 
         Args:
             name: Name of the research instance
@@ -67,8 +65,7 @@ class Repo:
         return list(self._research_instances.keys())
 
     def _is_valid_research_directory(self, path: Path) -> bool:
-        """
-        Check if the given path is a valid research directory.
+        """Check if the given path is a valid research directory.
         
         Args:
             path: Path to check
@@ -79,22 +76,21 @@ class Repo:
         # Must be a directory
         if not path.is_dir():
             return False
-            
+
         # Skip system files/directories
         if path.name.startswith("_"):
             return False
-            
+
         return True
-    
+
     def _load_research_from_path(self, research_path: Path) -> None:
-        """
-        Load a research instance from the given path.
+        """Load a research instance from the given path.
         
         Args:
             research_path: Path to the research directory
         """
         research_name = research_path.name
-        
+
         # Create research instance
         research = ResearchImpl(
             root_directory=research_path,
@@ -102,20 +98,19 @@ class Repo:
             shared_knowledge_base=self._shared_knowledge_base,
             repo=self,
         )
-        
+
         # Create task tree for this research
         task_tree = TaskTreeImpl(research)
         self._task_trees[research_name] = task_tree
-        
+
         # Load the research if it exists on disk
         if research.research_already_exists():
             research.load_existing_research(task_tree)
-            
+
         self._research_instances[research_name] = research
-    
+
     def _load_existing_research_instances(self):
-        """
-        Scan the research directory and load existing research instances.
+        """Scan the research directory and load existing research instances.
         This allows the repo to discover research instances that were created in previous sessions.
         """
         repo_path = self.dual_directory_file_system.get_repo_path()
@@ -130,8 +125,7 @@ class Repo:
                 self._load_research_from_path(research_path)
 
     def get_all_artifacts(self) -> dict[str, list[tuple[ResearchNode, Artifact]]]:
-        """
-        Get all artifacts from all research instances.
+        """Get all artifacts from all research instances.
 
         Returns:
             Dictionary mapping research name to list of (node, artifact) tuples
@@ -153,8 +147,7 @@ class Repo:
             self._collect_artifacts_recursive(child, artifacts)
 
     def search_artifacts_across_all(self, name: str) -> list[tuple[str, ResearchNode, Artifact]]:
-        """
-        Search for artifacts across all research instances.
+        """Search for artifacts across all research instances.
 
         Args:
             name: The name to search for in artifact names

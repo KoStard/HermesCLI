@@ -16,4 +16,3 @@ class ThinkCommand(BaseCommand[ResearchCommandContextImpl, None]):
         """This is a dummy command that doesn't trigger any actions"""
         # This command doesn't do anything, it's just a place for the assistant to think
         # No output needed for think command
-        pass

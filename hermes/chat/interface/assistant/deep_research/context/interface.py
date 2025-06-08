@@ -39,8 +39,7 @@ DYNAMIC_SECTION_ORDER: list[type[DynamicSectionData]] = [
 
 
 class DeepResearcherInterface(AssistantInterface):
-    """
-    Responsible for rendering interface content as strings.
+    """Responsible for rendering interface content as strings.
     This class handles all string formatting and presentation logic.
     """
 
@@ -73,8 +72,7 @@ class DeepResearcherInterface(AssistantInterface):
         budget: int | None,
         remaining_budget: int | None,
     ) -> tuple[str, list[DynamicSectionData]]:
-        """
-        Prepare the interface content when a problem is defined.
+        """Prepare the interface content when a problem is defined.
 
         Returns:
             A tuple containing:
@@ -144,9 +142,9 @@ class DeepResearcherInterface(AssistantInterface):
         node_artifacts_list = self._collect_node_artifacts(research, target_node)
         self._add_external_research_artifacts(node_artifacts_list, research)
         external_files = research.get_external_file_manager().get_external_files()
-        
+
         all_data[ArtifactsSectionData] = ArtifactsSectionData.from_artifact_lists(
-            external_files_dict=external_files, node_artifacts_list=node_artifacts_list
+            external_files_dict=external_files, node_artifacts_list=node_artifacts_list,
         )
 
     def _collect_node_artifacts(self, research: Research, target_node: ResearchNode) -> list:
@@ -159,7 +157,7 @@ class DeepResearcherInterface(AssistantInterface):
         parent_repo = research.get_repo()
         if not parent_repo:
             return
-            
+
         all_research_artifacts = parent_repo.get_all_artifacts()
         for research_name, artifacts in all_research_artifacts.items():
             if parent_repo.get_research(research_name) == research:
@@ -170,14 +168,14 @@ class DeepResearcherInterface(AssistantInterface):
     def _add_hierarchy_and_criteria_data(self, all_data: dict, research: Research, target_node: ResearchNode) -> None:
         """Add hierarchy and criteria related data"""
         all_data[ProblemHierarchyData] = ProblemHierarchyData.from_research_node(
-            target_node=target_node, root_node=research.get_root_node()
+            target_node=target_node, root_node=research.get_root_node(),
         )
         all_data[CriteriaSectionData] = CriteriaSectionData.from_node(target_node=target_node)
         all_data[SubproblemsSectionData] = SubproblemsSectionData.from_node(target_node=target_node)
-        
+
         parent_chain = self._get_parent_chain(target_node)
         all_data[ProblemPathHierarchyData] = ProblemPathHierarchyData.from_parent_chain(
-            parent_chain=parent_chain, current_node=target_node
+            parent_chain=parent_chain, current_node=target_node,
         )
 
     def _add_knowledge_base_data(self, all_data: dict, research: Research) -> None:
@@ -188,15 +186,14 @@ class DeepResearcherInterface(AssistantInterface):
     def _order_and_validate_data(self, all_data: dict) -> list[DynamicSectionData]:
         """Order data according to defined order and validate completeness"""
         ordered_data = [all_data[section_type] for section_type in DYNAMIC_SECTION_ORDER if section_type in all_data]
-        
+
         if len(ordered_data) != len(DYNAMIC_SECTION_ORDER):
             print("Warning: Mismatch between expected dynamic sections and gathered data.")
-            
+
         return ordered_data
 
     def _collect_artifacts_recursively(self, node: ResearchNode, current_node: ResearchNode) -> list[tuple[ResearchNode, Artifact, bool]]:
-        """
-        Recursively collect artifacts from a node and all its descendants.
+        """Recursively collect artifacts from a node and all its descendants.
 
         Args:
             node: The node to collect artifacts from

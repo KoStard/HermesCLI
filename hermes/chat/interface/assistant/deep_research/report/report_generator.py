@@ -5,13 +5,11 @@ from hermes.chat.interface.templates.template_manager import TemplateManager
 
 
 class ReportGeneratorImpl(ReportGenerator):
-    """
-    Responsible for generating reports based on the research data using Mako templates.
+    """Responsible for generating reports based on the research data using Mako templates.
     """
 
     def __init__(self, template_manager: TemplateManager):
-        """
-        Initialize ReportGenerator.
+        """Initialize ReportGenerator.
 
         Args:
             research: The Research instance containing research data.
@@ -20,8 +18,7 @@ class ReportGeneratorImpl(ReportGenerator):
         self.template_manager = template_manager
 
     def generate_final_report(self, research: Research, interface: AssistantInterface, root_completion_message: str | None = None) -> str:
-        """
-        Generate a summary of all artifacts created during the research using a template.
+        """Generate a summary of all artifacts created during the research using a template.
 
         Args:
             interface: The DeepResearcherInterface instance (needed for _collect_artifacts_recursively).
@@ -40,20 +37,20 @@ class ReportGeneratorImpl(ReportGenerator):
     def _collect_artifacts_by_problem(self, root_node, interface: AssistantInterface) -> dict[str, list[str]]:
         """Collect and group artifacts by problem title"""
         artifacts_by_problem: dict[str, list[str]] = {}
-        
+
         if not root_node:
             return artifacts_by_problem
-            
+
         all_artifacts = interface._collect_artifacts_recursively(root_node, root_node)
         if not all_artifacts:
             return artifacts_by_problem
-            
+
         for node, artifact, _ in all_artifacts:
             owner_title = node.get_title()
             if owner_title not in artifacts_by_problem:
                 artifacts_by_problem[owner_title] = []
             artifacts_by_problem[owner_title].append(artifact.name)
-            
+
         return artifacts_by_problem
 
     def _build_template_context(self, root_node, artifacts_by_problem: dict, root_completion_message: str | None) -> dict:
@@ -76,10 +73,10 @@ class ReportGeneratorImpl(ReportGenerator):
         print(f"Error generating final report: {error}")
         fallback_report = "# Deep Research Report Generation Failed\n\n"
         fallback_report += f"An error occurred while generating the final report: {error}\n"
-        
+
         if root_node:
             fallback_report += f"Root Problem: {root_node.get_title()}\n"
         if artifacts_by_problem:
             fallback_report += f"Found artifacts for {len(artifacts_by_problem)} problems.\n"
-            
+
         return fallback_report

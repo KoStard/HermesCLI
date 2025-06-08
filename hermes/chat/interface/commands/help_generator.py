@@ -7,8 +7,7 @@ from .command import Command
 
 
 class CommandHelpGenerator:
-    """
-    Generates help text for commands using Mako templates.
+    """Generates help text for commands using Mako templates.
 
     This class provides a way to generate help documentation for commands
     in various formats. It uses the TemplateManager to render templates
@@ -20,8 +19,7 @@ class CommandHelpGenerator:
         self.template_manager = TemplateManager(default_templates_dir)
 
     def generate_help(self, commands: dict[str, Command[Any, Any]]) -> str:
-        """
-        Generate help text for given commands.
+        """Generate help text for given commands.
 
         Args:
             commands: Map of all commands

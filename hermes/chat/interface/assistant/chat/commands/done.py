@@ -38,7 +38,7 @@ Make sure you have finished and read through all the command outputs before mark
                 text=report_content,
                 text_role="AgentReport",
                 name="Task Completion Report",
-            )
+            ),
         )
 
     def get_additional_information(self):

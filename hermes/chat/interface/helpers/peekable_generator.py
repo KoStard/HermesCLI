@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
-"""
-Implement iterate_while function and a peekable generator.
+"""Implement iterate_while function and a peekable generator.
 Allows easier branching in the processing of the generator.
 
 This answers the question:
@@ -37,14 +36,12 @@ class PeekableGenerator:
 
 
 def iterate_while(peekable_generator: PeekableGenerator, condition) -> Generator[T, None, None]:
-    """
-    Iterate over a peekable generator while condition is True.
+    """Iterate over a peekable generator while condition is True.
 
     Args:
         peekable_generator: PeekableGenerator
         condition: Callable that takes one item and returns bool
     """
-
     try:
         while condition(peekable_generator.peek()):
             yield peekable_generator.next()

@@ -13,13 +13,11 @@ class FileWithMetadata(ABC):
 
     @abstractmethod
     def add_user_friendly_name(self, user_friendly_name):
-        """
-        Each file has a filename.
+        """Each file has a filename.
         But for markdown files with metadata, we can store the user-friendly name as a property, while save it in a filesystem-friendly
         filename file.
         We are given with user_friendly_name and we'll build the raw filename. user_friendly_name won't have a file extension either.
         """
-        pass
 
     @abstractmethod
     def get_user_friendly_name(self) -> str:
@@ -58,13 +56,11 @@ class FileWithMetadata(ABC):
     @abstractmethod
     def load_from_directory(directory_path: Path, user_friendly_name: str) -> "FileWithMetadata":
         """Load a file with metadata from a directory using its user-friendly name"""
-        pass
 
     @staticmethod
     @abstractmethod
     def file_exists(directory_path: Path, user_friendly_name: str) -> bool:
         """Check if a file with the given user-friendly name exists in the directory"""
-        pass
 
 
 class MarkdownFileWithMetadataImpl(FileWithMetadata):

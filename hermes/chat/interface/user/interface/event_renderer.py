@@ -37,7 +37,7 @@ class EventRenderer:
     def _render_message(self, message: Message, last_author: str | None) -> str | None:
         if isinstance(message, TextMessage):
             return self._render_text_message(message, last_author)
-        elif isinstance(message, TextGeneratorMessage):
+        if isinstance(message, TextGeneratorMessage):
             return self._render_text_generator_message(message, last_author)
         return last_author
 

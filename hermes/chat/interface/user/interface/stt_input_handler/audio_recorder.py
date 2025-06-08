@@ -50,7 +50,7 @@ class AudioRecorder:
                 "Press Enter to start recording! Ctrl+C to fall back to the keyboard.",
                 "🔴 Recording... Press Enter to stop.",
                 "✅ Recording finished.",
-            ]
+            ],
         )
 
     def _save_audio(self, audio_data: list) -> str:

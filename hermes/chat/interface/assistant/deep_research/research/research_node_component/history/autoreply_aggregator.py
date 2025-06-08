@@ -50,8 +50,7 @@ class AutoReplyAggregator:
         return changed_sections
 
     def update_dynamic_sections(self, new_sections_data: list[DynamicSectionData]):
-        """
-        Compare new dynamic section data with the last known state and track changes.
+        """Compare new dynamic section data with the last known state and track changes.
 
         Args:
             new_sections_data: List of data objects for all current dynamic sections.
@@ -163,12 +162,12 @@ class AutoReplyAggregator:
         self.error_reports = data.get("error_reports", [])
         self.internal_messages = data.get("internal_messages", [])
         self.confirmation_requests = data.get("confirmation_requests", [])
-        
+
         # Complex properties that need special handling
         self.command_outputs = self._deserialize_command_outputs(data)
         self.dynamic_sections_to_report = self._deserialize_dynamic_sections(
-            data.get("dynamic_sections_to_report", [])
+            data.get("dynamic_sections_to_report", []),
         )
         self.last_dynamic_sections_state = self._deserialize_last_sections_state(
-            data.get("last_sections_state", [])
+            data.get("last_sections_state", []),
         )

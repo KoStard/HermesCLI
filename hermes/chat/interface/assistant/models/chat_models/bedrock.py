@@ -76,12 +76,10 @@ class BedrockModel(ChatModel):
                     print(f"Sleeping for {seconds}")
                     time.sleep(seconds)
                     return self._call_and_retry_if_needed(request, tries + 1)
-                else:
-                    print("Attempted 3 Times But No Success.")
-                    print("Raising Exception.....")
-                    raise
-            else:
+                print("Attempted 3 Times But No Success.")
+                print("Raising Exception.....")
                 raise
+            raise
         return response
 
     def get_request_builder(self) -> RequestBuilder:

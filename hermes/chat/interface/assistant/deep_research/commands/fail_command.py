@@ -53,11 +53,10 @@ class FailCommand(BaseCommand[ResearchCommandContextImpl, None]):
     def _handle_fail_error(self, context: ResearchCommandContextImpl, failure_message: str | None) -> None:
         """Handle errors when failing a node"""
         current_node_title = context.current_node.get_title()
-        
+
         if self._is_root_node_with_message(context, failure_message):
             raise ValueError(f"Cannot pass a failure message from the root node '{current_node_title}' as there is no parent.")
-        else:
-            raise ValueError(f"Failed to mark problem as failed '{current_node_title}'.")
+        raise ValueError(f"Failed to mark problem as failed '{current_node_title}'.")
 
     def _is_root_node_with_message(self, context: ResearchCommandContextImpl, failure_message: str | None) -> bool:
         """Check if this is a root node trying to fail with a message"""

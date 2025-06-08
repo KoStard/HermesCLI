@@ -94,7 +94,7 @@ class OpenAIRequestBuilder(RequestBuilder):
                 {
                     "role": author,
                     "content": messages if len(messages) > 1 else messages[0]["text"],
-                }
+                },
             )
 
         request = {

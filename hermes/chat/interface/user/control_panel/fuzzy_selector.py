@@ -7,8 +7,7 @@ class FuzzyFilesSelector:
         pass
 
     def select_files(self, multi=True):
-        """
-        Select files using fuzzy finder.
+        """Select files using fuzzy finder.
         Behaviour like fzf, getting from current working directory child files, recursively through the files, excluding files
         starting with a dot.
         Return should be a list of absolute paths for the selected files.
@@ -35,7 +34,7 @@ class FuzzyFilesSelector:
                 "long_instruction": "Use arrow keys to navigate, tab to select, enter to confirm, Ctrl+c to cancel selection",
                 "mandatory": False,
                 "height": min(15, len(choices) + 2),
-            }
+            },
         ]
 
         # Show the prompt and get the selection

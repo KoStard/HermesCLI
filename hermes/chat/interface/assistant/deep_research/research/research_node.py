@@ -118,8 +118,7 @@ class ResearchNodeImpl(ResearchNode):
         dual_directory_fs: "DualDirectoryFileSystem",
         parent_node: "ResearchNode | None" = None,
     ) -> "ResearchNode":
-        """
-        Load a node and all its children from a directory.
+        """Load a node and all its children from a directory.
 
         Args:
             node_path: Path to the node directory
@@ -151,10 +150,9 @@ class ResearchNodeImpl(ResearchNode):
 
     @classmethod
     def _load_child_nodes_for(
-        cls, parent_node: "ResearchNode", task_tree: "TaskTree", dual_directory_fs: "DualDirectoryFileSystem"
+        cls, parent_node: "ResearchNode", task_tree: "TaskTree", dual_directory_fs: "DualDirectoryFileSystem",
     ) -> None:
-        """
-        Load child nodes for a parent node from the file system.
+        """Load child nodes for a parent node from the file system.
 
         Args:
             parent_node: The parent node to load children for
@@ -182,8 +180,7 @@ class ResearchNodeImpl(ResearchNode):
         # Each child node manages its own saving through its components
 
     def create_child_node(self, title: str, problem_content: str) -> ResearchNode:
-        """
-        Create a new child node with the given title and problem content.
+        """Create a new child node with the given title and problem content.
         This method handles path construction and node initialization internally.
 
         Args:
@@ -226,8 +223,7 @@ class ResearchNodeImpl(ResearchNode):
         return self.criteria_manager.criteria
 
     def mark_criterion_as_done(self, index: int) -> bool:
-        """
-        Mark criterion as done and return success
+        """Mark criterion as done and return success
 
         Args:
             index: Index of the criterion to mark as done
@@ -244,8 +240,7 @@ class ResearchNodeImpl(ResearchNode):
         return self.criteria_manager.get_criteria_total_count()
 
     def append_to_problem_definition(self, content: str):
-        """
-        Append additional content to the problem definition
+        """Append additional content to the problem definition
 
         Args:
             content: The content to append
@@ -262,8 +257,7 @@ class ResearchNodeImpl(ResearchNode):
         self._state_manager.set_artifact_status(artifact, True)
 
     def add_criterion(self, criterion: Criterion):
-        """
-        Add a criterion and return its index
+        """Add a criterion and return its index
         If the criterion already exists, return its index
         """
         self.criteria_manager.add_criterion(criterion)

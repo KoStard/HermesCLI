@@ -26,8 +26,7 @@ class ExtensionsLoader:
         self.deep_research_commands = []
 
     def load_extensions(self) -> Extensions:
-        """
-        Load all extensions and return their commands and utils
+        """Load all extensions and return their commands and utils
         Returns: (user_commands, llm_commands, utils_builders, deep_research_commands)
         """
         root_directory = get_extensions_dir_path()

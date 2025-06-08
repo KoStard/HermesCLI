@@ -22,8 +22,7 @@ class Artifact:
     def content(self):
         if not self._path or not self._path.exists():
             return self._content
-        else:
-            return self._get_content()
+        return self._get_content()
 
     def _get_content(self) -> str:
         assert self._path
@@ -101,7 +100,7 @@ class ArtifactManager:
         """Attempt to load a single artifact file and add it to the manager"""
         if not artifact_file.is_file() or artifact_file.suffix != ".md":
             return
-            
+
         try:
             artifact = Artifact.load_from_file(artifact_file)
             artifacts_manager._artifacts.append(artifact)
@@ -120,6 +119,6 @@ class ArtifactManager:
     def _get_directory(self) -> Path | None:
         node_path = self._node.get_path()
         if not node_path:
-            return
+            return None
 
         return self._dual_directory_fs.get_artifact_directory_for_node_path(node_path)

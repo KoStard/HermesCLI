@@ -78,7 +78,7 @@ class KnowledgeBase:
         """
         if file_path.suffix != ".md":
             return False
-            
+
         try:
             # Load the file using MarkdownFileWithMetadata
             file_with_metadata = MarkdownFileWithMetadataImpl.load_from_file(file_path)
@@ -106,7 +106,7 @@ class KnowledgeBase:
         """Load knowledge base entries from individual files in /Knowledgebase/ folder."""
         if not self._file_system.directory_exists(self._knowledge_base_dir):
             return
-        
+
         self._process_knowledge_base_directory()
 
     def save_entries(self) -> None:

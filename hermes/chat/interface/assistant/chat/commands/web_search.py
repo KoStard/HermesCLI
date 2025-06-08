@@ -34,7 +34,7 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
         if not context.exa_client:
             yield from self._handle_missing_client(context)
             return
-            
+
         try:
             yield from self._perform_search(context, query)
         except Exception as e:
@@ -50,11 +50,11 @@ or when you absolutely need up-to-date information that isn't in your knowledge 
         """Execute the search and return results"""
         context.print_notification(f"Performing web search for: {query}")
         results = context.exa_client.search(query, num_results=10)
-        
+
         if not results:
             yield context.create_assistant_notification(f"No results found for: {query}", "Web Search Results")
             return
-            
+
         result_text = self._format_search_results(query, results)
         yield MessageEvent(self._create_results_message(query, result_text))
         yield context.create_assistant_notification(f"Completed web search for: {query}", "Web Search Complete")

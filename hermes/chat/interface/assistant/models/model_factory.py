@@ -41,8 +41,7 @@ class ModelFactory:
         self.provider_and_model_tag_pairs = list(self.provider_model_map.keys())
 
     def get_provider_model_pairs(self) -> list[tuple]:
-        """
-        Returns a list of all known (provider, model_tag) pairs
+        """Returns a list of all known (provider, model_tag) pairs
 
         Returns:
             List[tuple]: List of (provider, model_tag) tuples
@@ -50,8 +49,7 @@ class ModelFactory:
         return self.provider_and_model_tag_pairs
 
     def get_model(self, provider: str, model_tag: str, config: ConfigParser) -> ChatModel:
-        """
-        Creates and returns an appropriate chat model instance based on the provider and model tag.
+        """Creates and returns an appropriate chat model instance based on the provider and model tag.
 
         Args:
             provider: The model provider (e.g., 'openai', 'anthropic', etc.)
@@ -84,7 +82,7 @@ class ModelFactory:
             self.notifications_printer.print_notification(
                 f"Multiple model implementations found for provider '{provider}' "
                 f"and unknown model tag '{model_tag}'. Using first implementation: "
-                f"{matching_classes[0].__name__}"
+                f"{matching_classes[0].__name__}",
             )
 
         model_class = matching_classes[0]
@@ -98,6 +96,6 @@ def get_config_section(config: ConfigParser, provider: str):
     if provider not in config.sections():
         raise ValueError(
             f"Config section {provider} is not found. Please double check it and specify "
-            "it in the config file ~/.config/hermes/config.ini. You might need to specify the api_key there."
+            "it in the config file ~/.config/hermes/config.ini. You might need to specify the api_key there.",
         )
     return config[provider]

@@ -1,6 +1,5 @@
 class AllMessagesAggregator:
-    """
-    With add_message(message, author) method, lots of messages are added to the aggregator.
+    """With add_message(message, author) method, lots of messages are added to the aggregator.
     With get_aggregated_messages() method, [([message, ...], author), ...] is returned, grouping sequential messages by author.
     """
 
@@ -8,8 +7,7 @@ class AllMessagesAggregator:
         self._message_pairs = []
 
     def add_message(self, message, author):
-        """
-        Add a message with its author to the aggregator.
+        """Add a message with its author to the aggregator.
 
         Args:
             message: The message content
@@ -18,8 +16,7 @@ class AllMessagesAggregator:
         self._message_pairs.append((message, author))
 
     def get_aggregated_messages(self):
-        """
-        Returns a list of tuples, where each tuple contains:
+        """Returns a list of tuples, where each tuple contains:
         - A list of sequential messages from the same author
         - The author of those messages
 

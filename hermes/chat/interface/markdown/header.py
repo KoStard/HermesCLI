@@ -12,8 +12,7 @@ class Header:
 
     @staticmethod
     def parse(line: str) -> Optional["Header"]:
-        """
-        Parse a line and return a Header object if it's a markdown header.
+        """Parse a line and return a Header object if it's a markdown header.
 
         Args:
             line: A line from the document

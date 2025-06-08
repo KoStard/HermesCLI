@@ -54,7 +54,7 @@ If the file doesn't exist or cannot be read due to permissions, an error message
                         text_filepath=file_path,
                         textual_content=None,
                         file_role="CommandOutput",
-                    )
+                    ),
                 )
                 yield context.create_assistant_notification(f"Successfully read file: {file_path}", "File Read")
             except Exception as e:

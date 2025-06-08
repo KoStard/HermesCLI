@@ -55,8 +55,7 @@ class EmbeddedPDFMessage(Message):
 
     @staticmethod
     def build_from_line(author: str, raw_line: str) -> "EmbeddedPDFMessage":
-        """
-        Build a EmbeddedPDFMessage from a line of user input.
+        """Build a EmbeddedPDFMessage from a line of user input.
         Input format: <pdf_filepath> {<page_number>, <page_number>:<page_number>, ...}
         Page numbers are 1-indexed.
         It can be individual pages or ranges of pages.
@@ -87,8 +86,7 @@ class EmbeddedPDFMessage(Message):
 
 @dataclass(init=False)
 class TextualFileMessage(Message):
-    """
-    Class for messages that are textual files
+    """Class for messages that are textual files
     Supports both real files with path, and virtual files that have only content.
     """
 

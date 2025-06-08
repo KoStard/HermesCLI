@@ -117,16 +117,14 @@ class McpManager:
             if arg_name != "data_json":
                 tool_args[arg_name] = arg_value
         return tool_args
-        
+
     def _create_command_from_schema(self, client: McpClient, tool_schema: dict, mode: str) -> Command:
-        from hermes.chat.events import Event
-        from hermes.mcp.mcp_client import McpError
 
         name = tool_schema.get("name", "unknown_mcp_tool")
         description = tool_schema.get("description", "An MCP-based tool.")
         help_text = f"MCP Tool: {name}\n\n{description}"
         loop = self.loop
-        
+
         if mode == "chat":
             command = self._create_chat_command(client, name, help_text)
         else:  # deep_research
@@ -134,14 +132,14 @@ class McpManager:
 
         # Configure command sections
         self._configure_command_sections(command, tool_schema)
-        
+
         return command
 
     def _execute_tool_call(self, client: McpClient, tool_name: str, tool_args: dict[str, Any]) -> Any:
         """Execute the tool call and return the raw result."""
         future = asyncio.run_coroutine_threadsafe(client.call_tool(tool_name, tool_args), self.loop)
         return future.result(timeout=60)
-        
+
     def _extract_text_content(self, result_dict: dict) -> list[str]:
         """Extract text content from a dictionary result format."""
         content_parts = []
@@ -149,7 +147,7 @@ class McpManager:
             if content_item.get("type") == "text":
                 content_parts.append(content_item.get("text", ""))
         return content_parts
-    
+
     def _format_non_dict_result(self, result: Any) -> list[str]:
         """Format non-dictionary results."""
         if isinstance(result, str):
@@ -157,27 +155,27 @@ class McpManager:
         if result is not None:
             return [json.dumps(result, indent=2)]
         return []
-        
+
     def _create_output_message(self, tool_name: str, content_parts: list[str], result: Any) -> str:
         """Create the final output message from content parts."""
         output = "\n".join(content_parts)
         if not output and result is None:
             return f"Tool '{tool_name}' executed successfully with no output."
         return output
-        
+
     def _format_tool_result(self, tool_name: str, result: Any) -> str:
         """Format the tool result into a string output."""
         if isinstance(result, dict) and "content" in result:
             content_parts = self._extract_text_content(result)
         else:
             content_parts = self._format_non_dict_result(result)
-            
+
         return self._create_output_message(tool_name, content_parts, result)
 
     def _call_tool_and_get_output(self, client: McpClient, tool_name: str, tool_args: dict[str, Any]) -> str:
         """Call the tool with arguments and return formatted output or error message."""
         from hermes.mcp.mcp_client import McpError
-        
+
         try:
             result = self._execute_tool_call(client, tool_name, tool_args)
             return self._format_tool_result(tool_name, result)
@@ -192,7 +190,7 @@ class McpManager:
     def _create_chat_command(self, client: McpClient, tool_name: str, help_text: str) -> Command:
         """Create a command for chat assistant mode."""
         from hermes.chat.events import Event
-        
+
         class McpChatToolCommand(Command[Any, Generator[Event, None, None]]):
             def execute(self_cmd, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
                 tool_args = self._parse_tool_args(args)
@@ -226,7 +224,7 @@ class McpManager:
         cmd = McpDeepResearchToolCommand(tool_name, help_text)
         cmd.execute.__globals__['self'] = self
         return cmd
-        
+
     def _configure_command_sections(self, command: Command, tool_schema: dict) -> None:
         """Configure the sections for a command based on tool schema."""
         input_schema = tool_schema.get("inputSchema", {})

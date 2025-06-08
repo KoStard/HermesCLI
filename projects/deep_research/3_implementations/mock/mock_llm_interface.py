@@ -6,8 +6,7 @@ from hermes.chat.interface.assistant.framework.llm_interface import (
 
 
 class MockLLMInterface(LLMInterface):
-    """
-    Mock implementation of LLMInterface that uses STDOUT/STDIN instead of calling an LLM.
+    """Mock implementation of LLMInterface that uses STDOUT/STDIN instead of calling an LLM.
     This allows a human to play the role of the LLM in the mock setup.
     """
 
@@ -20,8 +19,7 @@ class MockLLMInterface(LLMInterface):
         history_messages: list[dict],
         current_node_path,
     ) -> dict:
-        """
-        Generate a request for the LLM based on the rendered interface and history
+        """Generate a request for the LLM based on the rendered interface and history
 
         Args:
 
@@ -50,7 +48,7 @@ class MockLLMInterface(LLMInterface):
         """Print the chat history if available."""
         if not history:
             return
-            
+
         print("\n" + "=" * 50)
         print("CHAT HISTORY:")
         print("=" * 50)
@@ -80,8 +78,7 @@ class MockLLMInterface(LLMInterface):
         return "\n".join(response_lines)
 
     def send_request(self, request: dict) -> Generator[str, None, None]:
-        """
-        Send a request to the LLM and get a generator of responses.
+        """Send a request to the LLM and get a generator of responses.
         In this mock implementation, it prints the interface to STDOUT
         and reads the response from STDIN.
 
@@ -95,6 +92,6 @@ class MockLLMInterface(LLMInterface):
         self._print_interface_content(request["interface"])
         self._print_chat_history(request["history"])
         self._print_input_prompt()
-        
+
         full_response = self._collect_response_from_stdin()
         yield full_response

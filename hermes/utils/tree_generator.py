@@ -9,8 +9,7 @@ class TreeGenerator:
         self.exclusions = exclusions
 
     def generate_tree(self, root_path: str, depth: int) -> str:
-        """
-        Generates a text-based tree representation of a directory structure.
+        """Generates a text-based tree representation of a directory structure.
 
         Args:
             root_path: The path to the root directory.
@@ -22,8 +21,7 @@ class TreeGenerator:
         return self._build_tree(root_path, "", depth, 0)
 
     def _build_tree(self, current_path: str, prefix: str, depth: int, current_depth: int) -> str:
-        """
-        Recursively builds the tree string.
+        """Recursively builds the tree string.
 
         Args:
             current_path: The current path being processed.

@@ -13,16 +13,14 @@ class DynamicSectionData:
     """Base class for dynamic section data. Frozen makes instances hashable."""
 
     def serialize(self) -> dict[str, Any]:
-        """
-        Serialize this instance to a dictionary for JSON storage.
+        """Serialize this instance to a dictionary for JSON storage.
         Uses jsonpickle for robust serialization of nested structures.
         """
         return {"type": self.__class__.__name__, "data": jsonpickle.encode(self)}
 
     @classmethod
     def deserialize(cls, data: dict[str, Any]) -> Optional["DynamicSectionData"]:
-        """
-        Deserialize from a dictionary (previously serialized with serialize()).
+        """Deserialize from a dictionary (previously serialized with serialize()).
         Uses jsonpickle for robust deserialization of nested structures.
         """
         if not data or "type" not in data or "data" not in data:
@@ -47,8 +45,7 @@ class DynamicSectionRenderer(ABC):
 
     @abstractmethod
     def render(self, data: "DynamicSectionData", future_changes: int) -> str:
-        """
-        Renders the section based on the provided data and future changes.
+        """Renders the section based on the provided data and future changes.
 
         Args:
             data: The specific data dataclass instance for this section.
@@ -58,7 +55,6 @@ class DynamicSectionRenderer(ABC):
         Returns:
             The rendered HTML/Markdown string for the section, or an error message.
         """
-        pass
 
     def _render_template(self, context: dict) -> str:
         """Helper to render the template with common error handling."""

@@ -42,11 +42,11 @@ class BedrockRequestBuilder(RequestBuilder):
         """Configure inference parameters based on reasoning effort and max tokens."""
         if not self.reasoning_effort:
             return
-        
+
         response["additionalModelRequestFields"] = {
-            "thinking": {"type": "enabled", "budget_tokens": self.reasoning_effort}
+            "thinking": {"type": "enabled", "budget_tokens": self.reasoning_effort},
         }
-        
+
         if max_tokens:
             response["inferenceConfig"]["maxTokens"] = max_tokens
         else:
@@ -55,7 +55,7 @@ class BedrockRequestBuilder(RequestBuilder):
     def compile_request(self) -> Any:
         """Compile the request for the Bedrock model."""
         self._flush_text_messages()
-        
+
         final_messages = self._build_final_messages()
         response = {
             "modelId": self.model_tag,
@@ -65,10 +65,10 @@ class BedrockRequestBuilder(RequestBuilder):
             # "guardrailConfig": {},
             "messages": final_messages,
         }
-        
+
         max_tokens = self._get_max_tokens_for_model()
         self._configure_inference_parameters(response, max_tokens)
-        
+
         # Using Converse API
         return response
 
@@ -115,9 +115,9 @@ class BedrockRequestBuilder(RequestBuilder):
                     "format": "pdf",
                     "name": self._get_file_name(pdf_path),  # Using original name for PDF file
                     "source": {
-                        "bytes": self._get_file_bytes(final_pdf_path)  # Using the extracted document
+                        "bytes": self._get_file_bytes(final_pdf_path),  # Using the extracted document
                     },
-                }
+                },
             },
             author,
         )

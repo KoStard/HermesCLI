@@ -119,11 +119,11 @@ class ChatAssistantControlPanel:
         command_status_override = self._command_status_overrides.get(name)
         if command_status_override == ChatAssistantCommandStatusOverride.OFF:
             return False
-        elif command_status_override == ChatAssistantCommandStatusOverride.ON:
+        if command_status_override == ChatAssistantCommandStatusOverride.ON:
             return True
-        elif command_status_override == ChatAssistantCommandStatusOverride.AGENT_ONLY:
+        if command_status_override == ChatAssistantCommandStatusOverride.AGENT_ONLY:
             return self._agent_mode
-        elif not is_agent_command or is_agent_command and self._agent_mode:
+        if not is_agent_command or is_agent_command and self._agent_mode:
             return True
         return False
 
@@ -131,14 +131,14 @@ class ChatAssistantControlPanel:
         if not self._commands_processing_enabled:
             yield from []
             return
-            
+
         self.command_context.clear_command_outputs()
         sorted_results = self._get_sorted_parse_results(message_content)
-        
+
         # Execute commands
         for result in sorted_results:
             yield from self._process_command_result(result)
-        
+
         # Format and yield outputs
         yield from self._yield_command_outputs()
 
@@ -156,7 +156,7 @@ class ChatAssistantControlPanel:
             yield from self._execute_valid_command(result)
         else:
             self._handle_command_error(result)
-        
+
     def _is_valid_command(self, result) -> bool:
         """Check if this is a valid command with no errors"""
         return result.command_name and not result.errors
@@ -166,7 +166,7 @@ class ChatAssistantControlPanel:
         command = self.command_registry.get_command(result.command_name)
         if not command:
             return
-            
+
         self.notifications_printer.print_notification(f"LLM used command: {result.command_name}")
         try:
             yield from command.execute(self.command_context, result.args)
@@ -190,12 +190,12 @@ class ChatAssistantControlPanel:
         command_outputs = self.command_context.get_command_outputs()
         if not command_outputs:
             return
-            
+
         command_output_str = self._format_command_outputs(command_outputs)
         yield MessageEvent(InvisibleMessage(
-            author="user", 
-            text=command_output_str, 
-            text_role="command_outputs_and_errors"
+            author="user",
+            text=command_output_str,
+            text_role="command_outputs_and_errors",
         ))
 
     def _format_command_outputs(self, command_outputs) -> str:
@@ -214,8 +214,7 @@ Arguments: ${formatted_args}
         return "\n".join(output_strings)
 
     def set_command_override_status(self, command_id: str, status: str) -> None:
-        """
-        Set the override status for a command.
+        """Set the override status for a command.
 
         Args:
             command_id: The unique ID of the command to override
@@ -238,8 +237,7 @@ Arguments: ${formatted_args}
         self._command_status_overrides[command_id] = status
 
     def get_command_override_statuses(self) -> dict:
-        """
-        Get all command override statuses.
+        """Get all command override statuses.
 
         Returns:
             dict: Mapping of command IDs to their override status (ON, OFF, or AGENT_ONLY)

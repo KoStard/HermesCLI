@@ -29,25 +29,25 @@ class CriteriaManager:
     def _parse_criterion_line(cls, line: str) -> tuple[str, bool] | None:
         """Parse a criterion line and return (content, is_completed) if valid"""
         line = line.strip()
-        
+
         # Skip empty lines or non-criteria lines
         if not line or not line[0].isdigit():
             return None
-            
+
         # Split into number and content
         parts = line.split(". ", 1)
         if len(parts) != 2:
             return None
-            
+
         criterion_text = parts[1]
-        
+
         # Check completion status
         done = "[x]" in criterion_text or "[X]" in criterion_text
-        
+
         # Extract criterion content
         if "] " in criterion_text:
             criterion_text = criterion_text.split("] ", 1)[1]
-            
+
         return criterion_text, done
 
     @classmethod
@@ -95,8 +95,7 @@ class CriteriaManager:
             print(f"Error saving criteria: {e}")
 
     def add_criterion(self, criterion: Criterion) -> int:
-        """
-        Add a criterion and return its index
+        """Add a criterion and return its index
         If the criterion already exists, return its index
         """
         # Check if criterion already exists
@@ -110,8 +109,7 @@ class CriteriaManager:
         return len(self.criteria) - 1
 
     def mark_criterion_as_done(self, index: int) -> bool:
-        """
-        Mark criterion as done and return success
+        """Mark criterion as done and return success
 
         Args:
             index: Index of the criterion to mark as done

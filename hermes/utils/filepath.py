@@ -2,8 +2,7 @@ import os
 
 
 def prepare_filepath(filepath: str) -> str:
-    """
-    Convert various filepath formats to a normalized absolute path.
+    """Convert various filepath formats to a normalized absolute path.
 
     Args:
         filepath: Input path that can be:

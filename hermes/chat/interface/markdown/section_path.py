@@ -9,8 +9,7 @@ class SectionPath:
         self.min_level: int = 1  # Track the minimum header level seen
 
     def update(self, header: Header) -> None:
-        """
-        Update the current path based on a new header.
+        """Update the current path based on a new header.
 
         Args:
             header: The new header encountered

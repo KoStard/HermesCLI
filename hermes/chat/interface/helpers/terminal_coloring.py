@@ -1,5 +1,4 @@
-"""
-Task:
+"""Task:
 - Provide functions that colorize the text that will be printed into the CLI.
 - Use the ANSI escape codes for coloring.
 - Define the colors as enum.

@@ -7,7 +7,7 @@ class FuzzyMatcher:
         if not pattern:
             return True, float("inf")
         return None
-    
+
     @staticmethod
     def _find_char_position(char: str, command: str, start_idx: int) -> int | None:
         """Finds the position of a character in the command string starting from start_idx."""
@@ -26,18 +26,17 @@ class FuzzyMatcher:
             idx = FuzzyMatcher._find_char_position(char, command, last_idx + 1)
             if idx is None:
                 return False, float("inf")
-            
+
             if last_idx != -1:
                 score += idx - last_idx - 1
-                
+
             last_idx = idx
-            
+
         return True, score
 
     @staticmethod
     def match(pattern: str, command: str) -> tuple[bool, float]:
-        """
-        Returns (is_match, score) where:
+        """Returns (is_match, score) where:
         - is_match is True if pattern chars appear in order in command
         - score is lower for better matches (consecutive chars score better)
         """

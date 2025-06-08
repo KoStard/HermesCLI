@@ -21,7 +21,6 @@ class ResearchNodeLogger:
 
     def save(self):
         """No need to save anything for the logger as it saves on each log call"""
-        pass
 
     def _ensure_logs_directory(self) -> Path:
         """Ensure logs_and_debug directory exists for the current problem"""

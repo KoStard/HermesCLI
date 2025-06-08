@@ -75,12 +75,11 @@ class ChatAssistantCommandContext(CommandContext):
         """Process the user's response to file overwrite confirmation."""
         if response in ["y", "yes"]:
             return True
-        elif response in ["n", "no"]:
+        if response in ["n", "no"]:
             self.print_notification(f"File overwrite declined for: {file_path}", CLIColors.YELLOW)
             return False
-        else:
-            self.print_notification("Please enter 'y' or 'n': ")
-            return self._get_user_overwrite_confirmation(file_path)
+        self.print_notification("Please enter 'y' or 'n': ")
+        return self._get_user_overwrite_confirmation(file_path)
 
     def _handle_overwrite_interruption(self, file_path: str) -> bool:
         """Handle keyboard interruption during file overwrite confirmation."""
@@ -152,12 +151,11 @@ class ChatAssistantCommandContext(CommandContext):
             was_updated = updater.update_section(section_path, new_content, submode)
             if was_updated:
                 return True
-            else:
-                self.print_notification(
-                    f"Warning: Section {' > '.join(section_path)} not found in {file_path}. No changes made.",
-                    color=CLIColors.YELLOW,
-                )
-                return False
+            self.print_notification(
+                f"Warning: Section {' > '.join(section_path)} not found in {file_path}. No changes made.",
+                color=CLIColors.YELLOW,
+            )
+            return False
         except Exception as e:
             self.print_notification(f"Error updating markdown section: {str(e)}", CLIColors.RED)
             return False

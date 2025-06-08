@@ -87,7 +87,7 @@ class UserControlPanel(ControlPanel):
                 description="Add text to the conversation",
                 short_description="Send a text message",
                 parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directly_entered=True)),
-            )
+            ),
         )
 
         self._register_command(
@@ -98,7 +98,7 @@ class UserControlPanel(ControlPanel):
                 short_description="Exit Hermes",
                 parser=lambda _: ExitEvent(),
                 priority=-100,  # Run exit after running any other command
-            )
+            ),
         )
 
     def _register_file_commands(self):
@@ -110,7 +110,7 @@ class UserControlPanel(ControlPanel):
                 description="Add image to the conversation",
                 short_description="Share an image file",
                 parser=lambda line: MessageEvent(ImageMessage(author="user", image_path=line)),
-            )
+            ),
         )
 
         self._register_command(
@@ -120,7 +120,7 @@ class UserControlPanel(ControlPanel):
                 description="Add image from url to the conversation",
                 short_description="Share an image via URL",
                 parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line)),
-            )
+            ),
         )
 
         self._register_command(
@@ -130,7 +130,7 @@ class UserControlPanel(ControlPanel):
                 description="Add audio to the conversation",
                 short_description="Share an audio file",
                 parser=lambda line: MessageEvent(AudioFileMessage(author="user", audio_filepath=line)),
-            )
+            ),
         )
 
         self._register_command(
@@ -140,7 +140,7 @@ class UserControlPanel(ControlPanel):
                 description="Add video to the conversation",
                 short_description="Share a video file",
                 parser=lambda line: MessageEvent(VideoMessage(author="user", video_filepath=line)),
-            )
+            ),
         )
 
         self._register_command(
@@ -151,7 +151,7 @@ class UserControlPanel(ControlPanel):
                 "{<page_number>, <page_number>:<page_number>, ...} to specify pages.",
                 short_description="Share a PDF file",
                 parser=lambda line: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line)),
-            )
+            ),
         )
 
         self._register_command(
@@ -161,7 +161,7 @@ class UserControlPanel(ControlPanel):
                 description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
                 short_description="Share a text-based document",
                 parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
-            )
+            ),
         )
 
         self._register_command(
@@ -173,7 +173,7 @@ class UserControlPanel(ControlPanel):
                 parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
                 visible_from_interface=False,
                 default_on_cli=True,
-            )
+            ),
         )
 
         self._register_command(
@@ -184,7 +184,7 @@ class UserControlPanel(ControlPanel):
                 short_description="Share a text-based document",
                 parser=lambda line: self._parse_fuzzy_select_command(line),
                 with_argument=False,
-            )
+            ),
         )
 
         self._register_command(
@@ -194,7 +194,7 @@ class UserControlPanel(ControlPanel):
                 description="Add url to the conversation",
                 short_description="Share a URL",
                 parser=lambda line: MessageEvent(UrlMessage(author="user", url=line)),
-            )
+            ),
         )
 
         self._register_command(
@@ -205,7 +205,7 @@ class UserControlPanel(ControlPanel):
                 short_description="Fetch URL content with Exa",
                 parser=self._parse_exa_url_command,
                 visible_from_cli=True,
-            )
+            ),
         )
 
     def _register_history_commands(self):
@@ -219,7 +219,7 @@ class UserControlPanel(ControlPanel):
                 parser=lambda _: ClearHistoryEvent(),
                 priority=99,  # Clear history should be first
                 visible_from_cli=False,
-            )
+            ),
         )
 
         self._register_command(
@@ -230,7 +230,7 @@ class UserControlPanel(ControlPanel):
                 short_description="Save chat history",
                 parser=lambda line: SaveHistoryEvent(line),
                 visible_from_cli=False,
-            )
+            ),
         )
 
         self._register_command(
@@ -241,7 +241,7 @@ class UserControlPanel(ControlPanel):
                 short_description="Load chat history",
                 parser=lambda line: LoadHistoryEvent(line),
                 priority=98,
-            )
+            ),
         )
 
     def _register_utility_commands(self):
@@ -253,7 +253,7 @@ class UserControlPanel(ControlPanel):
                 description="Enable or disable execution of LLM commands (on/off)",
                 short_description="Toggle LLM command execution",
                 parser=lambda line: LLMCommandsExecutionEvent(enabled=line.strip().lower() == "on"),
-            )
+            ),
         )
         self._register_command(
             ControlPanelCommand(
@@ -262,7 +262,7 @@ class UserControlPanel(ControlPanel):
                 description="Generate a directory tree",
                 short_description="Show directory structure",
                 parser=self._parse_tree_command,
-            )
+            ),
         )
 
         self._register_command(
@@ -272,7 +272,7 @@ class UserControlPanel(ControlPanel):
                 description="Enable or disable agent mode (on/off)",
                 short_description="Toggle agent mode",
                 parser=lambda line: AgentModeEvent(enabled=line.strip().lower() == "on"),
-            )
+            ),
         )
 
         self._register_command(
@@ -282,7 +282,7 @@ class UserControlPanel(ControlPanel):
                 description="Enable or disable once mode - exit after completing current cycle (on/off)",
                 short_description="Toggle once mode",
                 parser=lambda line: OnceEvent(enabled=line.strip().lower() == "on"),
-            )
+            ),
         )
 
         self._register_command(
@@ -292,7 +292,7 @@ class UserControlPanel(ControlPanel):
                 description="List all assistant commands and their current status",
                 short_description="Show assistant commands",
                 parser=self._parse_list_assistant_commands,
-            )
+            ),
         )
 
         self._register_command(
@@ -302,7 +302,7 @@ class UserControlPanel(ControlPanel):
                 description="Set the thinking tokens (number)",
                 short_description="Set thinking tokens",
                 parser=lambda line: ThinkingLevelEvent(count=int(line.strip().lower())),
-            )
+            ),
         )
 
         self._register_command(
@@ -313,7 +313,7 @@ class UserControlPanel(ControlPanel):
                 short_description="Set Deep Research budget",
                 parser=self._parse_set_deep_research_budget_command,
                 is_deep_research=True,
-            )
+            ),
         )
         self._register_command(
             ControlPanelCommand(
@@ -322,7 +322,7 @@ class UserControlPanel(ControlPanel):
                 description="Set the status of an assistant command (ON/OFF/AGENT_ONLY)",
                 short_description="Set assistant command status",
                 parser=self._parse_set_assistant_command_status,
-            )
+            ),
         )
 
         self._register_command(
@@ -333,7 +333,7 @@ class UserControlPanel(ControlPanel):
                 short_description="Create new research instance",
                 parser=self._parse_create_research_command,
                 is_deep_research=True,
-            )
+            ),
         )
 
         self._register_command(
@@ -344,7 +344,7 @@ class UserControlPanel(ControlPanel):
                 short_description="Switch research instance",
                 parser=self._parse_switch_research_command,
                 is_deep_research=True,
-            )
+            ),
         )
 
         self._register_command(
@@ -356,14 +356,14 @@ class UserControlPanel(ControlPanel):
                 parser=self._parse_list_research_command,
                 with_argument=False,
                 is_deep_research=True,
-            )
+            ),
         )
 
     def _parse_set_assistant_command_status(self, content: str) -> None:
         """Set the status of an assistant command"""
         if not self.llm_control_panel:
             self.notifications_printer.print_notification("Error: LLM control panel not available", CLIColors.RED)
-            return None
+            return
 
         try:
             command_id, status = content.strip().split()
@@ -373,13 +373,13 @@ class UserControlPanel(ControlPanel):
                 "Error: Invalid format. Use: /set_assistant_command_status <command_id> <status>",
                 CLIColors.RED,
             )
-        return None
+        return
 
     def _parse_list_assistant_commands(self, _: str) -> None:
         """List all assistant commands with their current status"""
         if not self.llm_control_panel:
             self.notifications_printer.print_notification("Error: LLM control panel not available", CLIColors.RED)
-            return None
+            return
 
         overrides = self.llm_control_panel.get_command_override_statuses()
         commands = self.llm_control_panel.get_commands()
@@ -395,7 +395,7 @@ class UserControlPanel(ControlPanel):
 
         self.notifications_printer.print_notification("\n".join(output))
 
-        return None
+        return
 
     def _parse_set_deep_research_budget_command(self, content: str) -> Event | None:
         """Parse the /set_deep_research_budget command"""
@@ -425,8 +425,8 @@ class UserControlPanel(ControlPanel):
                             author="user",
                             text_filepath=absolute_file_path,
                             textual_content=None,
-                        )
-                    )
+                        ),
+                    ),
                 )
             return result_events
         except Exception as e:
@@ -445,13 +445,12 @@ class UserControlPanel(ControlPanel):
         return "\n".join(results)
 
     def extract_and_execute_commands(self, message: Message) -> Generator[Event, None, None]:
-        """
-        Extract commands from a message and execute them, yielding resulting events.
+        """Extract commands from a message and execute them, yielding resulting events.
         """
         peekable_generator = PeekableGenerator(self._lines_from_message(message))
         prioritised_backlog = []
         current_message_text = ""
-        
+
         # Process each line from the message
         for line in peekable_generator:
             matching_command = self._line_command_match(line)
@@ -460,7 +459,7 @@ class UserControlPanel(ControlPanel):
                 if current_message_text:
                     prioritised_backlog.append(self._create_text_message_event(current_message_text))
                     current_message_text = ""
-                
+
                 # Process the command and add resulting events to the backlog
                 command_results = self._process_command_line(matching_command, line)
                 prioritised_backlog.extend(command_results)
@@ -473,7 +472,7 @@ class UserControlPanel(ControlPanel):
 
         # Yield events in priority order
         yield from self._execute_commands_in_priority_order(prioritised_backlog)
-    
+
     def _create_text_message_event(self, text_content: str) -> tuple[int, MessageEvent]:
         """Create a text message event with priority 0."""
         return (
@@ -483,10 +482,10 @@ class UserControlPanel(ControlPanel):
                     author="user",
                     text=text_content,
                     is_directly_entered=True,
-                )
+                ),
             ),
         )
-    
+
     def _parse_command_safely(self, command_label: str, command_parser, command_content: str) -> Any:
         """Safely parse a command, handling exceptions."""
         try:
@@ -509,7 +508,7 @@ class UserControlPanel(ControlPanel):
         for parsed_event in events:
             if not isinstance(parsed_event, Event):
                 self.notifications_printer.print_error(
-                    f"Command {command_label} returned a non-event object: {parsed_event}"
+                    f"Command {command_label} returned a non-event object: {parsed_event}",
                 )
                 continue
             result_events.append((command_priority, parsed_event))
@@ -524,7 +523,7 @@ class UserControlPanel(ControlPanel):
         parsed_events = self._parse_command_safely(command_label, command_parser, command_content)
         normalized_events = self._normalize_command_events(parsed_events)
         return self._collect_valid_events(command_label, normalized_events, command_priority)
-        
+
     def _execute_commands_in_priority_order(self, prioritised_events: list[tuple[int, Event]]) -> Generator[Event, None, None]:
         """Execute commands in priority order (highest first) and yield the events."""
         # Sort events by priority (highest to lowest)
@@ -584,12 +583,12 @@ class UserControlPanel(ControlPanel):
         """Convert CLI arguments to text commands for processing."""
         lines = []
         args_dict = vars(args)
-        
+
         for arg, value in args_dict.items():
             # Skip arguments that are None or not registered
             if value is None or arg not in self._cli_arguments:
                 continue
-                
+
             # Handle different argument types
             if isinstance(value, bool):
                 lines.extend(self._format_boolean_arg(arg, value))
@@ -597,7 +596,7 @@ class UserControlPanel(ControlPanel):
                 lines.extend(self._format_prompt_arg(value))
             else:
                 lines.extend(self._format_standard_arg(arg, value))
-                
+
         return "\n".join(lines)
 
     def _parse_create_research_command(self, content: str) -> Event | None:
@@ -649,12 +648,11 @@ class UserControlPanel(ControlPanel):
                 text_filepath=None,
                 file_role="url_content",
                 textual_content=result_text,
-            )
+            ),
         )
 
     def _parse_tree_command(self, content: str) -> MessageEvent:
-        """
-        Parse the /tree command and generate a directory tree.
+        """Parse the /tree command and generate a directory tree.
 
         Args:
             content: The command content after the label

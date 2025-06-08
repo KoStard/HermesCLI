@@ -32,8 +32,7 @@ class TaskProcessorCancelledException(Exception):
 
 
 class TaskProcessor(Generic[ResearchCommandContextType]):
-    """
-    Manages the execution lifecycle of a single TaskTreeNode.
+    """Manages the execution lifecycle of a single TaskTreeNode.
     It contains the primary loop for interacting with the LLM,
     processing commands, updating task history, and managing the task's state.
     """
@@ -67,8 +66,7 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
         self._engine = engine
 
     def run(self) -> TaskProcessorRunResult:
-        """
-        Runs the assigned task_tree_node until its status changes significantly
+        """Runs the assigned task_tree_node until its status changes significantly
         (FINISHED, FAILED, PENDING), or budget/shutdown dictates a stop.
         """
         while not self._is_interrupted:
@@ -112,7 +110,7 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
         """Prepares UI, history, generates and executes LLM request, returns LLM response."""
         self._prepare_interface_and_history_for_node(research_node)
         history_messages = ResearchNodeHistoryAdapter(research_node).get_history_messages(
-            self.template_manager, self.renderer_registry, research_node.get_history().get_initial_interface_content()
+            self.template_manager, self.renderer_registry, research_node.get_history().get_initial_interface_content(),
         )
 
         # Get interface content and generate request
@@ -240,8 +238,7 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
             return False
 
     def add_command_output_to_auto_reply(self, command_name: str, args: dict, output: str, current_node: "ResearchNode"):
-        """
-        Add command output to be included in the automatic response for the current node.
+        """Add command output to be included in the automatic response for the current node.
         """
         if not output:  # Ensure output is not None for the dict
             output = ""

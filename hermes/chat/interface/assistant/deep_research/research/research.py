@@ -23,7 +23,7 @@ from . import Research, ResearchNode
 
 class ResearchImpl(Research):
     def __init__(
-        self, root_directory: Path, dual_directory_file_system: DualDirectoryFileSystem, shared_knowledge_base: KnowledgeBase, repo: "Repo"
+        self, root_directory: Path, dual_directory_file_system: DualDirectoryFileSystem, shared_knowledge_base: KnowledgeBase, repo: "Repo",
     ):
         # Initialize without creating a new knowledge base
         self.root_directory = root_directory
@@ -89,8 +89,7 @@ class ResearchImpl(Research):
         return self._external_files_manager
 
     def search_artifacts(self, name: str) -> list[tuple[ResearchNode, Artifact]]:
-        """
-        Search for artifacts with matching names across all research nodes.
+        """Search for artifacts with matching names across all research nodes.
         Now searches in the Results/ directory structure.
 
         Args:
@@ -108,8 +107,7 @@ class ResearchImpl(Research):
         return result
 
     def _search_artifacts_recursive(self, node: ResearchNode, search_term: str, result: list[tuple[ResearchNode, Artifact]]) -> None:
-        """
-        Recursively search for artifacts in a node and its children.
+        """Recursively search for artifacts in a node and its children.
 
         Args:
             node: The node to search in
@@ -135,8 +133,7 @@ class ResearchImpl(Research):
         return self._repo
 
     def search_artifacts_including_siblings(self, name: str) -> list[tuple[str, ResearchNode, Artifact]]:
-        """
-        Search for artifacts in this research and all sibling research instances.
+        """Search for artifacts in this research and all sibling research instances.
 
         Returns:
             List of (research_name, node, artifact) tuples

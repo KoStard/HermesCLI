@@ -1,5 +1,4 @@
-"""
-Messages are what the participant sends to the other participant through the engine
+"""Messages are what the participant sends to the other participant through the engine
 Some messages are commands, they might not go through to the other participant, maybe they are for the engine itself.
 Imagine using Telegram or some other messaging app. What you can add and press Send is what a message is.
 With difference that you can send multiple messages at once.

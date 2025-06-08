@@ -14,8 +14,7 @@ class MarkdownFilename:
         return self.sanitized_filename
 
     def _sanitize(self, original_filename: str) -> str:
-        """
-        Sanitizes a filename to be safe for the filesystem.
+        """Sanitizes a filename to be safe for the filesystem.
 
         - Replaces invalid characters
         - Removes leading/trailing whitespace and punctuation

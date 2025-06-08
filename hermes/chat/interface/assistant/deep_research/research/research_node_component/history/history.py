@@ -63,8 +63,7 @@ class ResearchNodeHistory:
         return len(self._compiled_blocks) > 0 and isinstance(self._compiled_blocks[0], InitialInterface)
 
     def prepare_and_add_auto_reply_block(self) -> None:
-        """
-        Compiles the current aggregator data into an AutoReply block, adds it
+        """Compiles the current aggregator data into an AutoReply block, adds it
         to the history, but does NOT save or clear the aggregator.
         This is part of a transactional process.
         """
@@ -75,16 +74,14 @@ class ResearchNodeHistory:
         self._compiled_blocks.append(auto_reply)
 
     def rollback_last_auto_reply(self) -> None:
-        """
-        Removes the last block from history if it's an AutoReply.
+        """Removes the last block from history if it's an AutoReply.
         Used to roll back a transaction if the LLM call fails.
         """
         if self._compiled_blocks and isinstance(self._compiled_blocks[-1], AutoReply):
             self._compiled_blocks.pop()
 
     def commit_llm_turn(self, llm_response_content: str) -> None:
-        """
-        Finalizes the transaction by clearing the aggregator and saving the
+        """Finalizes the transaction by clearing the aggregator and saving the
         history, optionally adding the LLM response message first.
         """
         self._auto_reply_aggregator.clear()
@@ -172,15 +169,15 @@ class ResearchNodeHistory:
         if dynamic_sections:
             for idx, section_data in dynamic_sections:
                 serialized_sections.append({
-                    "index": idx, 
-                    "section_data": section_data.serialize() if section_data else None
+                    "index": idx,
+                    "section_data": section_data.serialize() if section_data else None,
                 })
         return serialized_sections
 
     def _deserialize_blocks(self, serialized_blocks: list[dict[str, Any]]) -> list[HistoryBlock]:
         """Deserialize history blocks from JSON data"""
         blocks = []
-        
+
         for block_data in serialized_blocks:
             block_type = block_data.get("type")
             if block_type == "ChatMessage":
@@ -191,14 +188,14 @@ class ResearchNodeHistory:
                 blocks.append(self._deserialize_auto_reply(block_data))
 
         return blocks
-        
+
     def _deserialize_chat_message(self, block_data: dict) -> ChatMessage:
         """Deserialize a ChatMessage block"""
         return ChatMessage(
-            author=block_data.get("author", ""), 
-            content=block_data.get("content", "")
+            author=block_data.get("author", ""),
+            content=block_data.get("content", ""),
         )
-    
+
     def _deserialize_dynamic_sections(self, section_data_list: list) -> list:
         """Deserialize dynamic sections common to multiple block types"""
         dynamic_sections = []
@@ -211,26 +208,26 @@ class ResearchNodeHistory:
                 if deserialized_section:
                     dynamic_sections.append((idx, deserialized_section))
         return dynamic_sections
-        
+
     def _deserialize_initial_interface(self, block_data: dict) -> InitialInterface:
         """Deserialize an InitialInterface block"""
         dynamic_sections = self._deserialize_dynamic_sections(
-            block_data.get("dynamic_sections", [])
+            block_data.get("dynamic_sections", []),
         )
-        
+
         return InitialInterface(
             static_content=block_data.get("static_content", ""),
             dynamic_sections=dynamic_sections,
         )
-    
+
     def _deserialize_auto_reply(self, block_data: dict) -> AutoReply:
         """Deserialize an AutoReply block"""
         import jsonpickle
-        
+
         dynamic_sections = self._deserialize_dynamic_sections(
-            block_data.get("dynamic_sections", [])
+            block_data.get("dynamic_sections", []),
         )
-        
+
         # Use jsonpickle to decode command outputs
         command_outputs = []
         try:

@@ -46,13 +46,12 @@ class MarkdownHighlighter:
     def _create_custom_ast_parser(self):
         """Create and configure a custom AST parser with fixed rendering."""
         import mistune
-        
+
         ast = mistune.create_markdown(renderer="ast")
-        
+
         # Define the custom render function
         def _iter_render(tokens, state):
-            """
-            Fix to a bug where some characters get serialised:
+            """Fix to a bug where some characters get serialised:
             Test:
                 ⋊  python -c 'from hermes.utils.markdown_highlighter import MarkdownHighlighter;
                 print(MarkdownHighlighter().process_markdown("`<>!@#$%^&*()-=`"))'
@@ -67,11 +66,11 @@ class MarkdownHighlighter:
                     text = tok.pop("text")
                     tok["children"] = [{"type": "text", "raw": text.strip(" \r\n\t\f")}]
                 yield tok
-                
+
         # Apply the custom render function
         ast._iter_render = _iter_render
         return ast
-    
+
     def _process_parsed_elements(self, parsed_elements):
         """Process parsed markdown elements and render them."""
         output_text = ""
@@ -80,37 +79,37 @@ class MarkdownHighlighter:
             self.print_markdown(rendered, self.get_lexer(element))
             output_text += rendered
         return output_text
-    
+
     def _handle_remaining_buffer(self, buffer, ast):
         """Process any remaining content in the buffer."""
         if not buffer:
             return ""
-            
+
         parsed = ast(buffer)
         return self._process_parsed_elements(parsed)
-    
+
     def _process_line(self, line, buffer, old_parsed, original_text, output_text, ast):
         """Process a single line of markdown input and update state."""
         original_text += line
         buffer += line
-            
+
         # Parse current buffer
         parsed = ast(buffer)
-        
+
         # Skip processing if not valid parsing
         if type(parsed) != list:
             return buffer, old_parsed, original_text, output_text, parsed
-            
+
         # Skip processing if no new elements
         if len(parsed) == len(old_parsed):
             return buffer, old_parsed, original_text, output_text, parsed
-            
+
         # Process new elements
         old_parsed = parsed
         buffer = line
-        
+
         return buffer, old_parsed, original_text, output_text, parsed
-    
+
     def _process_complete_elements(self, parsed, output_text):
         """Process all complete elements in parsed list."""
         while len(parsed) > 1:
@@ -119,12 +118,12 @@ class MarkdownHighlighter:
             self.print_markdown(rendered, self.get_lexer(element))
             output_text += rendered
         return output_text
-    
+
     def process_markdown(self, markdown_generator: Generator[str, None, None]):
         """Process markdown content and apply syntax highlighting."""
         # Create the AST parser
         ast = self._create_custom_ast_parser()
-        
+
         # Initialize tracking variables
         buffer = ""
         old_parsed = []
@@ -134,16 +133,16 @@ class MarkdownHighlighter:
         # Process each line of input
         for line in self.line_aggregator(markdown_generator):
             buffer, old_parsed, original_text, output_text, parsed = self._process_line(
-                line, buffer, old_parsed, original_text, output_text, ast
+                line, buffer, old_parsed, original_text, output_text, ast,
             )
-            
+
             # Skip to next line if we didn't get valid parsing results
             if type(parsed) != list:
                 continue
-                
+
             # Process all complete elements
             output_text = self._process_complete_elements(parsed, output_text)
-                
+
         # Process any remaining content
         if buffer:
             output_text += self._handle_remaining_buffer(buffer, ast)

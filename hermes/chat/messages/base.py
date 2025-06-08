@@ -7,8 +7,7 @@ from typing import Any
 
 @dataclass(init=False)
 class Message(ABC):
-    """
-    Base abstract class for all message types
+    """Base abstract class for all message types
     A single message might represent only a part of the message
     During one interaction, a single participant might send multiple messages
     """

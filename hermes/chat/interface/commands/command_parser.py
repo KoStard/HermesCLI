@@ -38,8 +38,7 @@ class CommandParser:
         self.registry = command_registry
 
     def parse_text(self, text: str) -> list[ParseResult]:
-        """
-        Parse all command blocks from the input text.
+        """Parse all command blocks from the input text.
 
         Args:
             text: The raw text potentially containing command blocks.
@@ -70,8 +69,7 @@ class CommandParser:
         return results
 
     def _find_blocks_and_check_syntax(self, lines: list[str]) -> tuple[list[tuple[int, list[str]]], list[CommandError]]:
-        """
-        Identifies potential command blocks (<<< ... >>>) and checks for syntax errors
+        """Identifies potential command blocks (<<< ... >>>) and checks for syntax errors
         like mismatched or nested tags.
 
         Returns:
@@ -82,67 +80,66 @@ class CommandParser:
         blocks = []
         errors = []
         open_tag_index = self._process_lines_for_blocks_and_errors(lines, blocks, errors)
-        
+
         # Check for unclosed blocks after processing all lines
         if open_tag_index is not None:
             errors.append(self._create_unclosed_block_error(open_tag_index))
-        
+
         return blocks, errors
 
     def _process_lines_for_blocks_and_errors(
-        self, lines: list[str], blocks: list[tuple[int, list[str]]], errors: list[CommandError]
+        self, lines: list[str], blocks: list[tuple[int, list[str]]], errors: list[CommandError],
     ) -> int | None:
         """Process lines to identify blocks and syntax errors."""
         open_tag_index: int | None = None
-        
+
         for i, line in enumerate(lines):
             stripped_line = line.strip()
             open_tag_index = self._handle_line_tags(i, stripped_line, open_tag_index, lines, blocks, errors)
-        
+
         return open_tag_index
-        
+
     def _handle_line_tags(
-        self, 
-        line_index: int, 
-        stripped_line: str, 
+        self,
+        line_index: int,
+        stripped_line: str,
         open_tag_index: int | None,
         lines: list[str],
         blocks: list[tuple[int, list[str]]],
-        errors: list[CommandError]
+        errors: list[CommandError],
     ) -> int | None:
         """Handle opening and closing tags for a single line."""
         if self._is_opening_tag(stripped_line):
             return self._handle_opening_tag(line_index, open_tag_index, errors)
-        elif self._is_closing_tag(stripped_line):
+        if self._is_closing_tag(stripped_line):
             return self._handle_closing_tag(line_index, open_tag_index, lines, blocks, errors)
         return open_tag_index
-        
+
     def _handle_opening_tag(
-        self, 
-        line_index: int, 
-        open_tag_index: int | None, 
-        errors: list[CommandError]
+        self,
+        line_index: int,
+        open_tag_index: int | None,
+        errors: list[CommandError],
     ) -> int:
         """Handle an opening tag."""
         if open_tag_index is not None:
             errors.append(self._create_nested_tag_error(line_index))
         return line_index
-        
+
     def _handle_closing_tag(
-        self, 
-        line_index: int, 
-        open_tag_index: int | None, 
+        self,
+        line_index: int,
+        open_tag_index: int | None,
         lines: list[str],
         blocks: list[tuple[int, list[str]]],
-        errors: list[CommandError]
+        errors: list[CommandError],
     ) -> int | None:
         """Handle a closing tag."""
         if open_tag_index is not None:
             blocks.append((open_tag_index, lines[open_tag_index : line_index + 1]))
             return None
-        else:
-            errors.append(self._create_unmatched_closing_tag_error(line_index))
-            return open_tag_index
+        errors.append(self._create_unmatched_closing_tag_error(line_index))
+        return open_tag_index
 
     def _is_opening_tag(self, line: str) -> bool:
         """Check if the line is an opening tag."""
@@ -194,7 +191,7 @@ class CommandParser:
                     "Invalid block opening line format.",
                     block_start_index + 1,
                     True,
-                )
+                ),
             )
             result.has_block_syntax_error = True
             return result
@@ -209,7 +206,7 @@ class CommandParser:
                     command_name=command_name,
                     message=f"Unknown command: '{command_name}'",
                     line_number=block_start_index + 1,
-                )
+                ),
             )
             return result  # Cannot parse sections or validate if command is unknown
 
@@ -231,7 +228,7 @@ class CommandParser:
                     command_name=command_name,
                     message=f"Error during argument transformation: {e}",
                     line_number=block_start_index + 1,  # Error relates to the whole block
-                )
+                ),
             )
             # Continue with original args for validation if transformation fails? Or stop?
             # Let's stop processing this command further if transform fails.
@@ -246,17 +243,16 @@ class CommandParser:
                     command_name=command_name,
                     message=error_msg,
                     line_number=block_start_index + 1,  # Validation error applies to the block
-                )
+                ),
             )
 
         return result
 
     @staticmethod
     def _parse_command_sections(
-        content: str, content_start_line: int, command: Command[Any, Any]
+        content: str, content_start_line: int, command: Command[Any, Any],
     ) -> tuple[dict[str, Any], list[CommandError]]:
-        """
-        Helper to parse ///section delimiters within command content.
+        """Helper to parse ///section delimiters within command content.
 
         Args:
             content: The string content between <<< and >>>.
@@ -274,27 +270,27 @@ class CommandParser:
 
         # Check content before first marker and collect section matches
         last_pos, errors = CommandParser._check_content_before_first_marker(
-            content, content_start_line, command, errors
+            content, content_start_line, command, errors,
         )
-        
+
         # Find and process all section matches
         sections_found, last_pos, errors = CommandParser._process_section_matches(
-            content, content_start_line, command, sections_found, errors
+            content, content_start_line, command, sections_found, errors,
         )
 
         # Check content after last marker
         sections_found, errors = CommandParser._check_content_after_last_marker(
-            content, content_start_line, last_pos, command, sections_found, errors
+            content, content_start_line, last_pos, command, sections_found, errors,
         )
 
         # Process collected sections according to command rules
         args = CommandParser._build_args_from_sections(command, sections_found, errors)
-        
+
         return args, errors
 
     @staticmethod
     def _check_content_before_first_marker(
-        content: str, content_start_line: int, command: Command[Any, Any], errors: list[CommandError]
+        content: str, content_start_line: int, command: Command[Any, Any], errors: list[CommandError],
     ) -> tuple[int, list[CommandError]]:
         """Check if there's any content before the first section marker."""
         first_marker_match = re.search(r"^\s*///", content, re.MULTILINE)
@@ -306,7 +302,7 @@ class CommandParser:
                         command_name=command.name,
                         message="Content found before the first '///section' marker.",
                         line_number=content_start_line,
-                    )
+                    ),
                 )
             return first_marker_match.start(), errors
         return 0, errors
@@ -335,7 +331,7 @@ class CommandParser:
                         command_name=command.name,
                         message=f"Unknown section '///{section_name}' for command '{command.name}'.",
                         line_number=line_num,
-                    )
+                    ),
                 )
                 continue
 
@@ -345,7 +341,7 @@ class CommandParser:
                         command_name=command.name,
                         message=f"Section '///{section_name}' cannot be empty.",
                         line_number=line_num,
-                    )
+                    ),
                 )
                 continue
 
@@ -380,16 +376,16 @@ class CommandParser:
                     command_name=command.name,
                     message="Content found after the last '///section' marker.",
                     line_number=line_num,
-                )
+                ),
             )
 
         return sections_found, errors
 
     @staticmethod
     def _build_args_from_sections(
-        command: Command[Any, Any], 
+        command: Command[Any, Any],
         sections_found: dict[str, list[tuple[str, int]]],
-        errors: list[CommandError]
+        errors: list[CommandError],
     ) -> dict[str, Any]:
         """Build the final arguments dictionary from collected sections."""
         args: dict[str, Any] = {}
@@ -397,7 +393,7 @@ class CommandParser:
 
         for name, content_list in sections_found.items():
             allows_multiple = allow_multiple_dict.get(name, False)
-            
+
             # Handle multiple sections when only one is allowed
             if len(content_list) > 1 and not allows_multiple:
                 # Add errors for duplicates (skip the first one which is valid)
@@ -407,7 +403,7 @@ class CommandParser:
                             command_name=command.name,
                             message=f"Multiple instances of section '///{name}' found, but only one is allowed.",
                             line_number=line_num,
-                        )
+                        ),
                     )
                 # Only use the first instance
                 args[name] = content_list[0][0]
@@ -417,13 +413,12 @@ class CommandParser:
             else:
                 # For single-instance sections with just one value
                 args[name] = content_list[0][0]
-                
+
         return args
 
     @staticmethod
     def generate_error_report(parse_results: list[ParseResult]) -> str:
-        """
-        Generate a formatted error report string from a list of ParseResult objects.
+        """Generate a formatted error report string from a list of ParseResult objects.
 
         Args:
             parse_results: The list of results from `parse_text`.
@@ -444,7 +439,7 @@ class CommandParser:
         for i, error in enumerate(all_errors, 1):
             error_lines, is_syntax_error = CommandParser._format_error(i, error)
             report_parts.extend(error_lines)
-            
+
             if is_syntax_error:
                 syntax_errors_found = True
             else:
@@ -468,9 +463,9 @@ class CommandParser:
             key=lambda e: (
                 e.line_number if e.line_number is not None else -1,
                 e.message,
-            )
+            ),
         )
-        
+
         return all_errors
 
     @staticmethod
@@ -482,9 +477,9 @@ class CommandParser:
         error_type = "Syntax Error" if error.is_syntax_error else "Error"
         error_lines = [
             f"#### {error_type} {index}{line_info}{cmd_info}:",
-            f"- {error.message}"
+            f"- {error.message}",
         ]
-        
+
         return error_lines, error.is_syntax_error
 
     @staticmethod
@@ -495,7 +490,7 @@ class CommandParser:
             footer_lines.append("**Note:** Commands with block syntax errors (<<< >>> issues) were not parsed or executed.")
         if other_errors_found:
             footer_lines.append(
-                "**Note:** Commands with other errors (e.g., unknown command, missing/invalid sections) might be skipped during execution."
+                "**Note:** Commands with other errors (e.g., unknown command, missing/invalid sections) might be skipped during execution.",
             )
-        
+
         return footer_lines

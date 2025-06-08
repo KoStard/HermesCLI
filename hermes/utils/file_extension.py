@@ -3,8 +3,7 @@ def get_file_extension(file_path: str) -> str:
 
 
 def remove_quotes(path: str) -> str:
-    """
-    Remove various types of quotes from the path.
+    """Remove various types of quotes from the path.
 
     Args:
         path: Input path that might contain quotes

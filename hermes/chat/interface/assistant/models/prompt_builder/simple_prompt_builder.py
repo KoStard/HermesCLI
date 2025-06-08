@@ -16,8 +16,7 @@ class SimplePromptBuilder(PromptBuilder):
         self.text_pieces: list[SimplePromptTextPiece] = []
 
     def add_text(self, text: str, name: str | None = None, text_role: str | None = None):
-        """
-        Adds a piece of text to the prompt.
+        """Adds a piece of text to the prompt.
 
         Args:
             text (str): The text to add
@@ -27,8 +26,7 @@ class SimplePromptBuilder(PromptBuilder):
         self.text_pieces.append(SimplePromptTextPiece(text.strip(), name, text_role))
 
     def compile_prompt(self) -> str:
-        """
-        Compiles all added text pieces into a single prompt.
+        """Compiles all added text pieces into a single prompt.
 
         Returns:
             str: The compiled prompt with empty lines between text pieces

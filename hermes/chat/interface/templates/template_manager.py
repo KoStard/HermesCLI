@@ -10,8 +10,7 @@ class TemplateManager:
     """Manages loading and rendering of Mako templates for Hermes interfaces"""
 
     def __init__(self, template_dir):
-        """
-        Initialize the template manager with a specific template directory.
+        """Initialize the template manager with a specific template directory.
 
         Args:
             template_dir: Path to directory containing template files
@@ -34,8 +33,7 @@ class TemplateManager:
         return self._lookup
 
     def render_template(self, template_name: str, **context: Any) -> str:
-        """
-        Render a template with the given context.
+        """Render a template with the given context.
 
         Args:
             template_name: Name of the template file (e.g. 'base.mako')
@@ -53,8 +51,7 @@ class TemplateManager:
             raise
 
     def get_template(self, template_name: str) -> Optional["Template"]:
-        """
-        Get a template object for the given template name.
+        """Get a template object for the given template name.
 
         Args:
             template_name: Name of the template file

@@ -24,8 +24,7 @@ class CommandSection:
 
 # Make the Command class Generic, parameterized by the ContextType
 class Command(ABC, Generic[ContextType, ExecuteResponseType]):
-    """
-    Base class for all commands, generic over the execution context.
+    """Base class for all commands, generic over the execution context.
 
     Specific command implementations should inherit from this class,
     specifying the concrete context type they expect (e.g., Command[MySpecificContext]).
@@ -67,8 +66,7 @@ class Command(ABC, Generic[ContextType, ExecuteResponseType]):
 
     @abstractmethod
     def execute(self, context: ContextType, args: dict[str, Any]) -> ExecuteResponseType:
-        """
-        Execute the command with the given arguments and a context object
+        """Execute the command with the given arguments and a context object
         provided by the calling interface.
 
         Args:
@@ -80,11 +78,9 @@ class Command(ABC, Generic[ContextType, ExecuteResponseType]):
         Returns:
             Generator of events produced by command execution.
         """
-        pass
 
     def validate(self, args: dict[str, Any]) -> list[str]:
-        """
-        Validate command arguments against defined sections.
+        """Validate command arguments against defined sections.
         Returns a list of error messages.
         """
         errors = []
@@ -96,15 +92,13 @@ class Command(ABC, Generic[ContextType, ExecuteResponseType]):
         return errors
 
     def transform_args(self, args: dict[str, Any]) -> dict[str, Any]:
-        """
-        Transform arguments before validation or execution if needed.
+        """Transform arguments before validation or execution if needed.
         Default implementation returns args unchanged.
         """
         return args
 
     def get_additional_information(self) -> dict[Any, Any]:
-        """
-        Returns a dictionary with additional information about the command.
+        """Returns a dictionary with additional information about the command.
         Default is an empty dictionary.
         """
         return {}

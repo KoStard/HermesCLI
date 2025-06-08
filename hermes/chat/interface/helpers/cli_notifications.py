@@ -1,5 +1,4 @@
-"""
-Goal:
+"""Goal:
 - Print into the CLI notifications/status messages.
 - Have the first implementation, which prints the given message to the CLI in a round rectangle.
 """

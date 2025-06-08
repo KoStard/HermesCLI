@@ -30,8 +30,7 @@ class InitialInterface(HistoryBlock):
         renderer_registry: DynamicDataTypeToRendererMap,
         future_changes_map: dict[int, int],
     ) -> str:
-        """
-        Generate the initial interface content with dynamic sections rendered using future changes logic.
+        """Generate the initial interface content with dynamic sections rendered using future changes logic.
 
         Args:
             template_manager: The template manager instance
@@ -103,8 +102,7 @@ class AutoReply(HistoryBlock):
         future_changes_map: dict[int, int],
         per_command_output_maximum_length: int | None = None,
     ) -> str:
-        """
-        Generate an automatic reply using a Mako template, rendering dynamic sections on the fly.
+        """Generate an automatic reply using a Mako template, rendering dynamic sections on the fly.
 
         Args:
             template_manager: The template manager instance.

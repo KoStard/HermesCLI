@@ -49,7 +49,7 @@ class Gemini2Model(ChatModel):
             stop_after_attempt,
             wait_exponential,
         )
-        
+
         @retry(
             stop=stop_after_attempt(5),
             wait=wait_exponential(multiplier=1, max=60),
@@ -64,7 +64,7 @@ class Gemini2Model(ChatModel):
                     tools=request["tools"],
                 ),
             )
-        
+
         try:
             return _send_request_with_retry()
         except ClientError as e:
@@ -76,17 +76,17 @@ class Gemini2Model(ChatModel):
         """Process response parts and yield LLM responses."""
         # The implementation with google api is not good
         has_finished_thinking = True
-        
+
         if not response.candidates:
             print(response)
             return
-            
+
         for part in response.candidates[0].content.parts or []:
             yield from self._convert_to_llm_response(
-                self._handle_part(part), 
-                is_thinking=not has_finished_thinking
+                self._handle_part(part),
+                is_thinking=not has_finished_thinking,
             )
-            
+
             # Handle thinking state transitions
             has_finished_thinking = not (hasattr(part, "thought") and part.thought)
 

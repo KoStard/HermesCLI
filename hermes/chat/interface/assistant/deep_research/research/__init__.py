@@ -121,7 +121,6 @@ class ResearchNode(ABC):
     @abstractmethod
     def increment_iteration(self) -> None:
         """Increment the iteration counter for auto-close functionality"""
-        pass
 
     @abstractmethod
     def get_history(self) -> ResearchNodeHistory:
@@ -141,8 +140,7 @@ class ResearchNode(ABC):
 
     @abstractmethod
     def create_child_node(self, title: str, problem_content: str) -> "ResearchNode":
-        """
-        Create a new child node for this research node.
+        """Create a new child node for this research node.
 
         Args:
             title: Title of the child node
@@ -151,7 +149,6 @@ class ResearchNode(ABC):
         Returns:
             The newly created child node
         """
-        pass
 
     @abstractmethod
     def get_resolution_message(self) -> str | None:

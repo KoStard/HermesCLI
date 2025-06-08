@@ -97,7 +97,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
 
         # Collect messages from events
         messages = self._collect_messages_from_events(events)
-        
+
         # Process messages to extract instruction pieces and textual files
         self._add_data_from_messages(messages, textual_files, instruction_pieces)
 
@@ -114,7 +114,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
             elif isinstance(event, HistoryRecoveryEvent):
                 if not self._history_has_been_imported:
                     messages.extend(event.get_messages())
-        
+
         self._history_has_been_imported = True
         return messages
 
@@ -145,8 +145,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
             filepath = Path(message.text_filepath)
             if filepath.is_dir():
                 return self._ingest_directory_external_files(filepath)
-            else:
-                return self._ingest_external_file(filepath)
+            return self._ingest_external_file(filepath)
 
         return []
 
@@ -174,8 +173,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
             self.command_registry.register(command)
 
     def get_input(self) -> Generator[Event, None, None]:
-        """
-        Process instructions and drive the Deep Research Engine execution cycles.
+        """Process instructions and drive the Deep Research Engine execution cycles.
         Yields status messages based on the engine's state.
         """
         logger.debug("Processing instruction in Deep Research Assistant")
@@ -206,7 +204,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
                 TextMessage(
                     author="assistant",
                     text="Error: Deep Research Engine not initialized.",
-                )
+                ),
             )
         return None
 
@@ -217,7 +215,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
                 TextMessage(
                     author="assistant",
                     text="Please provide an initial research instruction.",
-                )
+                ),
             )
             return
 
@@ -267,7 +265,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
             TextMessage(
                 author="assistant",
                 text=f"{prefix}. Waiting for next instruction...",
-            )
+            ),
         )
 
     def _handle_engine_exception(self, error: Exception) -> Generator[Event, None, None]:
@@ -281,7 +279,6 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
 
     def initialize_from_history(self, history: History):
         """Initialize the interface from history"""
-        pass
 
     def change_thinking_level(self, level: int):
         if hasattr(self.model, "set_thinking_level"):
@@ -292,8 +289,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         self._engine.set_budget(budget)
 
     def create_new_research(self, name: str):
-        """
-        Create a new research instance under the repo and switch to it.
+        """Create a new research instance under the repo and switch to it.
 
         Args:
             name: Name for the new research instance
@@ -302,8 +298,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         self._engine.switch_research(name)
 
     def switch_research(self, name: str):
-        """
-        Switch to a different research instance.
+        """Switch to a different research instance.
 
         Args:
             name: Name of the research instance to switch to
@@ -311,8 +306,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         self._engine.switch_research(name)
 
     def list_research_instances(self) -> list[str]:
-        """
-        List all available research instances.
+        """List all available research instances.
 
         Returns:
             List of research instance names
@@ -320,8 +314,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         return self._engine.list_research_instances()
 
     def get_current_research_name(self) -> str | None:
-        """
-        Get the name of the current research instance.
+        """Get the name of the current research instance.
 
         Returns:
             Name of current research instance

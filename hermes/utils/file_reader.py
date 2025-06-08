@@ -7,15 +7,13 @@ logger = logging.getLogger(__name__)
 
 
 class FileReader:
-    """
-    Utility class for reading files with appropriate format handling and fallback strategies.
+    """Utility class for reading files with appropriate format handling and fallback strategies.
     Supports Jupyter notebooks, markdown files, and plain text files.
     """
 
     @staticmethod
     def read_file(filepath: str) -> tuple[str, bool]:
-        """
-        Read a file with appropriate format handling.
+        """Read a file with appropriate format handling.
 
         Args:
             filepath: Path to the file to read
@@ -88,8 +86,7 @@ class FileReader:
 
     @staticmethod
     def _process_single_file(full_path: str, directory_path: str, result: dict) -> None:
-        """
-        Process a single file and add its content to the result dictionary if successfully read.
+        """Process a single file and add its content to the result dictionary if successfully read.
         
         Args:
             full_path: Full path to the file
@@ -98,20 +95,19 @@ class FileReader:
         """
         # Get the file name without the path
         file_name = os.path.basename(full_path)
-        
+
         # Skip hidden files
         if file_name.startswith("."):
             return
-        
+
         relative_path = os.path.relpath(full_path, directory_path)
         content, success = FileReader.read_file(full_path)
         if success:
             result[relative_path] = content
-            
+
     @staticmethod
     def read_directory(directory_path: str) -> dict:
-        """
-        Read all files in a directory recursively.
+        """Read all files in a directory recursively.
 
         Args:
             directory_path: Path to the directory

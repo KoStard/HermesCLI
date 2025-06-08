@@ -5,8 +5,7 @@ from .disk_file_system import DiskFileSystem
 
 
 class DualDirectoryFileSystem(FileSystem):
-    """
-    File system that separates artifacts (Results/) from research data (Research/).
+    """File system that separates artifacts (Results/) from research data (Research/).
 
     - Results/: Contains all artifacts organized by subproblem hierarchy
     - Research/: Contains all internal research data (problem definitions, logs, etc.)
@@ -34,8 +33,7 @@ class DualDirectoryFileSystem(FileSystem):
         return self._repo_directory / relative_path
 
     def get_artifact_directory_for_node_path(self, node_path: Path) -> Path:
-        """
-        Get the Results directory path for artifacts from a given research node path.
+        """Get the Results directory path for artifacts from a given research node path.
 
         Args:
             node_path: Path to the research node (in Research/ directory)
@@ -73,8 +71,7 @@ class DualDirectoryFileSystem(FileSystem):
         return self._disk_fs.is_empty(directory)
 
     def list_artifacts_recursive(self, node_relative_path: Path = Path()) -> list[Path]:
-        """
-        List all artifact files recursively from the Results directory.
+        """List all artifact files recursively from the Results directory.
 
         Args:
             node_relative_path: Relative path from the root (empty for root artifacts)

@@ -48,7 +48,7 @@ class DebugInterface(ChatAssistantOrchestrator):
                             client_path,
                             "--port",
                             str(self.port),
-                        ]
+                        ],
                     )
                     break
                 except FileNotFoundError:

@@ -1,5 +1,4 @@
-"""
-Interface alone can handle text input and output
+"""Interface alone can handle text input and output
 Control panel is a part of the interface that handles user interaction
 """
 
@@ -45,8 +44,7 @@ class ControlPanel(ABC):
         pass
 
     def _register_command(self, command: ControlPanelCommand):
-        """
-        Register a command that can be executed by a participant
+        """Register a command that can be executed by a participant
         The parser will receive a line that starts with the command
         """
         self.commands[command.command_label] = command

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Deep Research Mock Application
+"""Deep Research Mock Application
 
 This is a mock implementation of the Deep Research system where:
 1. The user's instructions are hardcoded

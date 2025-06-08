@@ -8,8 +8,7 @@ from hermes.chat.interface.assistant.deep_research.task_processor import TaskPro
 
 
 class ResearchCommandContextImpl(ResearchCommandContext):
-    """
-    Concrete implementation of CommandContext for Deep Research commands.
+    """Concrete implementation of CommandContext for Deep Research commands.
     Provides commands with access to necessary components via the TaskProcessor.
     """
 
@@ -70,17 +69,15 @@ class ResearchCommandContextImpl(ResearchCommandContext):
         return results
 
     def search_all_research_artifacts(self, artifact_name: str) -> list[tuple[str, "ResearchNode", "Artifact"]]:
-        """
-        Search for artifacts across all research instances (when using repo structure).
+        """Search for artifacts across all research instances (when using repo structure).
 
         Returns:
             List of (research_name, node, artifact) tuples
         """
         if hasattr(self.research_project, "search_artifacts_including_siblings"):
             return self.research_project.search_artifacts_including_siblings(artifact_name)
-        else:
-            # Fallback to current research only
-            return [("current", node, artifact) for node, artifact in self.research_project.search_artifacts(artifact_name)]
+        # Fallback to current research only
+        return [("current", node, artifact) for node, artifact in self.research_project.search_artifacts(artifact_name)]
 
     def add_knowledge_entry(self, entry: Any) -> None:
         self.research_project.get_knowledge_base().add_entry(entry)

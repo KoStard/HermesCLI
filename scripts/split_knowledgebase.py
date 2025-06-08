@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Script to migrate knowledge base from old format to new format.
+"""Script to migrate knowledge base from old format to new format.
 
 Old format: Single file at Researches/_shared_knowledge_base.md
 New format: Individual files under Knowledgebase/{title}.md

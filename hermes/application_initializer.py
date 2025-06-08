@@ -135,8 +135,8 @@ class ApplicationInitializer:
             Welcome to Hermes!
 
             Using model {model_info_string}
-            """
-            )
+            """,
+            ),
         )
 
     def _create_stt_input_handler(self, cli_args: Namespace) -> "STTInputHandler | None":
@@ -168,17 +168,16 @@ class ApplicationInitializer:
 
         if cli_args.debug:
             return self._create_debug_participant(model, llm_control_panel)
-        elif cli_args.research_repo:
+        if cli_args.research_repo:
             return self._create_deep_research_participant(cli_args, model, extension_deep_research_commands, mcp_manager)
-        else:
-            return self._create_chat_participant(model, llm_control_panel)
+        return self._create_chat_participant(model, llm_control_panel)
 
     def _create_debug_participant(self, model, llm_control_panel) -> DebugParticipant:
         debug_interface = DebugInterface(control_panel=llm_control_panel, model=model)
         return DebugParticipant(debug_interface)
 
     def _create_deep_research_participant(
-        self, cli_args, model, extension_deep_research_commands, mcp_manager: "McpManager"
+        self, cli_args, model, extension_deep_research_commands, mcp_manager: "McpManager",
     ) -> LLMParticipant:
         from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 
@@ -199,7 +198,7 @@ class ApplicationInitializer:
             research_name=research_name,
         )
         self.notifications_printer.print_notification(
-            f"Using Deep Research Assistant interface with research directory: {research_repo_path}"
+            f"Using Deep Research Assistant interface with research directory: {research_repo_path}",
         )
         return LLMParticipant(deep_research_interface)
 
@@ -211,7 +210,7 @@ class ApplicationInitializer:
         if not model_info_string:
             raise ValueError(
                 "No model specified. Please specify a model using the --model argument or add a default model in the config "
-                "file ~/.config/hermes/config.ini."
+                "file ~/.config/hermes/config.ini.",
             )
         if "/" not in model_info_string:
             raise ValueError("Model info string should be in the format provider/model_tag")

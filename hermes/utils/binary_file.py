@@ -2,8 +2,7 @@ import os
 
 
 def is_binary(file_path):
-    """
-    Determine if a file is binary or text by checking for non-printable characters.
+    """Determine if a file is binary or text by checking for non-printable characters.
 
     :param file_path: Path to the file.
     :return: True if the file is likely binary, False if it is likely text.

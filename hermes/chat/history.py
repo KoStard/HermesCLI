@@ -1,5 +1,4 @@
-"""
-History keeps track of the messages in the conversation.
+"""History keeps track of the messages in the conversation.
 """
 
 import json
@@ -30,7 +29,7 @@ class HistoryItem:
                 "Missing 'message' key in history data, skipping:",
                 history_item,
             )
-            return
+            return None
 
         message_data = history_item["message"]
         message_type = message_data["type"]
@@ -75,11 +74,11 @@ class History:
         """Get history messages filtered for a specific author"""
         results = []
         all_items = self._get_all_history_items()
-        
+
         for item in all_items:
             if self._should_include_in_history(item, author):
                 results.append(item.message)
-                
+
         return results
 
     def _get_all_history_items(self) -> list[HistoryItem]:
@@ -91,15 +90,15 @@ class History:
         # Ignore items without messages
         if not item.message:
             return False
-            
+
         # For other authors, always include
         if item.message.author != author:
             return True
-            
+
         # For messages from the target author, exclude directly entered ones
         if hasattr(item.message, "is_directly_entered") and item.message.is_directly_entered:
             return False
-            
+
         return True
 
     def clear(self):
@@ -107,8 +106,7 @@ class History:
         self._uncommitted_items = []
 
     def save(self, filename: str):
-        """
-        Save the conversation history to a JSON file.
+        """Save the conversation history to a JSON file.
 
         Args:
             filename (str): Path to the file where history should be saved
@@ -119,8 +117,7 @@ class History:
             json.dump(history_data, f, indent=2, ensure_ascii=False)
 
     def load(self, filename: str):
-        """
-        Load conversation history from a JSON file.
+        """Load conversation history from a JSON file.
 
         Args:
             filename (str): Path to the file containing saved history
