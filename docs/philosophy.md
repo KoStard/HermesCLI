@@ -40,6 +40,7 @@ This document captures the development philosophy you should follow throughout a
 - Minimize unnecessary comments. If there is need for comments, there is likely need to simplify. Either do it or create a task for that.
 - Functions do single things. Functions are verbs.
 - Classes are single things. Classes are nouns.
+- Instead of hasattr check the type of the object.
 
 ## Testing
 - Create unit tests for each package, verifying the public methods

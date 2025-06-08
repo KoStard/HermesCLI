@@ -109,7 +109,7 @@ class ApplicationInitializer:
         stt_input_handler = self._create_stt_input_handler(cli_args)
         markdown_highlighter = None if cli_args.no_markdown else MarkdownHighlighter()
 
-        user_control_panel.is_deep_research_mode = bool(cli_args.research_repo)
+        user_control_panel.is_deep_research_mode = cli_args.execution_mode == "research"
 
         user_interface = UserOrchestrator(
             control_panel=user_control_panel,
@@ -168,9 +168,9 @@ class ApplicationInitializer:
 
         if cli_args.debug:
             return self._create_debug_participant(model, llm_control_panel)
-        if cli_args.research_repo:
+        if cli_args.execution_mode == "research":
             return self._create_deep_research_participant(cli_args, model, extension_deep_research_commands, mcp_manager)
-        return self._create_chat_participant(model, llm_control_panel)
+        return self._create_chat_participant(model, llm_control_panel, cli_args.execution_mode == "simple-agent")
 
     def _create_debug_participant(self, model, llm_control_panel) -> DebugParticipant:
         debug_interface = DebugInterface(control_panel=llm_control_panel, model=model)
@@ -206,8 +206,10 @@ class ApplicationInitializer:
         )
         return LLMParticipant(deep_research_interface)
 
-    def _create_chat_participant(self, model, llm_control_panel) -> LLMParticipant:
+    def _create_chat_participant(self, model, llm_control_panel, is_agent: bool) -> LLMParticipant:
         llm_interface = ChatAssistantOrchestrator(model, control_panel=llm_control_panel)
+        if is_agent:
+            llm_control_panel.enable_agent_mode()
         return LLMParticipant(llm_interface)
 
     def _validate_model_info_string(self, model_info_string: str | None) -> str:

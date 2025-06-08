@@ -11,11 +11,15 @@ class CLIParser:
         subparsers = self._parser.add_subparsers(dest="execution_mode", required=True)
 
         self._chat_parser = self._build_chat_parser(subparsers)
+        self._simple_agent_parser = self._build_simple_agent_parser(subparsers)
+        self._research_parser = self._build_research_parser(subparsers)
         self._utils_subparsers = self._build_utils_parser(subparsers)
         self._build_info_parser(subparsers)
 
     def add_user_control_panel_arguments(self, user_control_panel: UserControlPanel):
         user_control_panel.build_cli_arguments(self._chat_parser)
+        user_control_panel.build_cli_arguments(self._simple_agent_parser)
+        user_control_panel.build_cli_arguments(self._research_parser)
 
     def register_utility_extensions_and_get_executor_visitors(self, extension_utils_builders: list) -> list:
         extension_visitors = []
@@ -27,7 +31,7 @@ class CLIParser:
         return self._parser.parse_args()
 
     def _build_chat_parser(self, subparsers):
-        chat_parser = subparsers.add_parser("chat", help="Get command information")
+        chat_parser = subparsers.add_parser("chat", help="Regular chat mode")
         chat_parser.add_argument("--debug", action="store_true")
 
         suggested_models = ", ".join(f"{provider.lower()}/{model_tag}" for provider, model_tag in self._provider_model_pairs)
@@ -36,15 +40,6 @@ class CLIParser:
             "--model",
             type=str,
             help=f"Model for the LLM (suggested models: {suggested_models})",
-        )
-        chat_parser.add_argument(
-            "--research-repo",
-            metavar="PATH",
-            help=(
-                "Use the Research Assistant interface with path to research folder. "
-                "You can specify the initial research name with :research-name"
-            ),
-            type=str,
         )
         chat_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
         chat_parser.add_argument(
@@ -59,6 +54,72 @@ class CLIParser:
         )
 
         return chat_parser
+
+    def _build_simple_agent_parser(self, subparsers):
+        simple_agent_parser = subparsers.add_parser("simple-agent", help="Simple agent mode")
+        simple_agent_parser.add_argument("--debug", action="store_true")
+
+        suggested_models = ", ".join(f"{provider.lower()}/{model_tag}" for provider, model_tag in self._provider_model_pairs)
+
+        simple_agent_parser.add_argument(
+            "--model",
+            type=str,
+            help=f"Model for the LLM (suggested models: {suggested_models})",
+        )
+        simple_agent_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
+        simple_agent_parser.add_argument(
+            "--no-markdown",
+            action="store_true",
+            help="Disable markdown highlighting for output",
+        )
+        simple_agent_parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Enable verbose logging (DEBUG level)",
+        )
+
+        return simple_agent_parser
+
+    def _build_research_parser(self, subparsers):
+        research_parser = subparsers.add_parser("research", help="Deep research mode")
+        research_parser.add_argument("--debug", action="store_true")
+
+        suggested_models = ", ".join(f"{provider.lower()}/{model_tag}" for provider, model_tag in self._provider_model_pairs)
+
+        research_parser.add_argument(
+            "--model",
+            type=str,
+            help=f"Model for the LLM (suggested models: {suggested_models})",
+        )
+        research_parser.add_argument(
+            "--research-repo",
+            metavar="PATH",
+            help=(
+                "Path to research folder. "
+                "You can specify the initial research name with :research-name"
+            ),
+            type=str,
+            required=True,
+        )
+        research_parser.add_argument(
+            "--budget",
+            type=int,
+            help="Budget for research cycles (default: 30, set to 0 for unlimited)",
+            default=30,
+        )
+        research_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
+        research_parser.add_argument(
+            "--no-markdown",
+            action="store_true",
+            help="Disable markdown highlighting for output",
+        )
+        research_parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Enable verbose logging (DEBUG level)",
+        )
+
+        return research_parser
 
     def _build_utils_parser(self, subparsers):
         utils_parser = subparsers.add_parser("utils", help="Utility commands")

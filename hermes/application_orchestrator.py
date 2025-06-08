@@ -3,6 +3,8 @@ from argparse import Namespace
 from hermes.application_initializer import ApplicationInitializer
 from hermes.chat.conversation_orchestrator import ConversationOrchestrator
 from hermes.chat.history import History
+from hermes.chat.interface.assistant.chat.assistant_orchestrator import ChatAssistantOrchestrator
+from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 from hermes.chat.interface.control_panel.commands_lister import CommandsLister
 from hermes.chat.participants import Participant
 from hermes.cli_parser import CLIParser
@@ -30,14 +32,59 @@ class ApplicationOrchestrator:
             self._execute_info_mode(cli_args, components)
         elif cli_args.execution_mode == "utils":
             self._execute_utils_mode(cli_args, extension_utils_visitors)
-        else:
+        elif cli_args.execution_mode == "chat":
             self._execute_chat_mode(cli_args, components)
+        elif cli_args.execution_mode == "simple-agent":
+            self._execute_simple_agent_mode(cli_args, components)
+        elif cli_args.execution_mode == "research":
+            self._execute_research_mode(cli_args, components)
 
     def _register_extensions(self, extension_builders, utils_subparsers):
         extension_visitors = []
         for builder in extension_builders:
             extension_visitors.append(builder(utils_subparsers))
         return extension_visitors
+
+    def _execute_simple_agent_mode(self, cli_args: Namespace, components: CoreComponents):
+        # For now, simple agent mode uses the chat mode
+        # TODO: Implement actual agent mode functionality
+        self._execute_chat_mode(cli_args, components)
+
+    def _execute_research_mode(self, cli_args: Namespace, components: CoreComponents):
+        # For research mode, we need to set budget and run deep research
+        model_info_string = self._get_model_info_string(cli_args.model)
+        participants = self.app_initializer.create_participants(
+            cli_args=cli_args,
+            user_control_panel=components.user_control_panel,
+            model_factory=components.model_factory,
+            llm_control_panel=components.llm_control_panel,
+            extension_deep_research_commands=components.extension_deep_research_commands,
+            mcp_manager=components.mcp_manager,
+            model_info_string=model_info_string,
+        )
+        self.app_initializer.print_welcome_message(model_info_string)
+
+        # Wait for MCP clients to load, then update the available commands.
+        components.mcp_manager.wait_for_initial_load()
+        assistant_interface = participants.assistant.orchestrator
+        if isinstance(assistant_interface, DeepResearchAssistantOrchestrator):
+            assistant_interface.update_mcp_commands()
+        elif isinstance(assistant_interface, ChatAssistantOrchestrator):
+            assistant_interface.control_panel.update_mcp_commands()
+
+        # Set budget if specified
+        if hasattr(assistant_interface, "_engine") and hasattr(assistant_interface._engine, "budget_manager"):
+            budget_value = None if cli_args.budget == 0 else cli_args.budget
+            assistant_interface._engine.budget_manager.set_budget(budget_value)
+
+        history = History()
+        conversation_orchestrator = ConversationOrchestrator(
+            user_participant=participants.user,
+            assistant_participant=participants.assistant,
+            history=history,
+            mcp_manager=components.mcp_manager,
+        )
+        self._run_conversation(conversation_orchestrator, participants.assistant)
 
     def _execute_info_mode(self, cli_args, components):
         lister = CommandsLister()
@@ -66,11 +113,9 @@ class ApplicationOrchestrator:
         # Wait for MCP clients to load, then update the available commands.
         components.mcp_manager.wait_for_initial_load()
         assistant_interface = participants.assistant.orchestrator
-        if hasattr(assistant_interface, "update_mcp_commands"):
-            # This branch is for DeepResearchAssistantInterface
+        if isinstance(assistant_interface, DeepResearchAssistantOrchestrator):
             assistant_interface.update_mcp_commands()
-        elif hasattr(assistant_interface, "control_panel") and hasattr(assistant_interface.control_panel, "update_mcp_commands"):
-            # This branch is for ChatAssistantInterface and DebugInterface
+        elif isinstance(assistant_interface, ChatAssistantOrchestrator):
             assistant_interface.control_panel.update_mcp_commands()
 
         history = History()

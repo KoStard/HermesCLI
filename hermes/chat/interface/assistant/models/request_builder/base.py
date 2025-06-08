@@ -86,8 +86,9 @@ class RequestBuilder(ABC):
         message_type_map = self._get_message_type_handler_map()
 
         # Check direct type matches first
-        if type(message) in message_type_map:
-            return message_type_map[type(message)]
+        for message_type in message_type_map:
+            if isinstance(message, message_type):
+                return message_type_map[message_type]
 
         # Check for grouped message types
         for types, handler in message_type_map.items():
