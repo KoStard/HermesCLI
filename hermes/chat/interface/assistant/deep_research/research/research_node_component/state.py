@@ -167,10 +167,17 @@ class StateManager:
 
             # Load problem status
             status_value = data.get("problem_status", ProblemStatus.CREATED.value)
+
             try:
-                self._state.problem_status = ProblemStatus(status_value)
+                problem_status = ProblemStatus(status_value)
             except ValueError:
-                self._state.problem_status = ProblemStatus.CREATED
+                problem_status = ProblemStatus.CREATED
+
+            # If was interrupted while in progress, we consider it to be failed.
+            if problem_status == ProblemStatus.IN_PROGRESS:
+                problem_status = ProblemStatus.FAILED
+
+            self._state.problem_status = problem_status
 
             self._state.resolution_message = data.get("resolution_message")
             self._state.pending_child_node_ids = set(data.get("pending_child_node_ids"))
