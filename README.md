@@ -88,10 +88,17 @@ Replace `YOUR_API_KEY` with your actual API keys for each provider.
 
 ### Basic Usage
 
-Start a conversation with your default model:
+Hermes offers three main modes:
 
 ```bash
+# Standard chat mode
 hermes chat
+
+# Simple agent mode (for automated tasks)
+hermes simple-agent
+
+# Research mode for complex problem-solving
+hermes research /path/to/research/folder
 ```
 
 **Advanced Usage:**
@@ -99,9 +106,6 @@ hermes chat
 ```bash
 # Use a specific model
 hermes chat --model ANTHROPIC/claude-3-5-sonnet-20241022
-
-# Enable Research mode for complex problem-solving
-hermes chat --research-repo /path/to/research/folder
 
 # Debug mode (see what the LLM receives)
 hermes chat --debug
@@ -111,6 +115,12 @@ hermes chat --stt
 
 # Pass files and commands directly
 hermes chat file1.txt file2.py --image_url "https://example.com/image.jpg" --text "Analyze these files"
+
+# Simple agent mode with specific model
+hermes simple-agent --model OPENAI/gpt-4o
+
+# Research mode with custom budget (default is 30)
+hermes research /path/to/research/folder --budget 50
 ```
 
 ### User Commands
@@ -313,7 +323,17 @@ hermes utils exa_search "AI research papers"
 For complex research tasks, use the Research Assistant:
 
 ```bash
-hermes chat --research-repo /path/to/research/folder
+hermes research /path/to/research/folder
+```
+
+By default, research mode has a budget of 30 message cycles that limits how much computation is used. You can customize this with `--budget`:
+
+```bash
+# Set a larger budget for complex research
+hermes research /path/to/research/folder --budget 50
+
+# Remove budget limit
+hermes research /path/to/research/folder --budget 0
 ```
 
 **Features:**

@@ -16,6 +16,7 @@ from hermes.chat.interface.user.interface.command_completer.command_completer im
 from hermes.chat.interface.user.interface.markdown_highlighter import MarkdownHighlighter
 from hermes.chat.interface.user.interface.user_interface import UserOrchestrator
 from hermes.chat.participants import DebugParticipant, LLMParticipant, UserParticipant
+from hermes.cli_parser import ExecutionMode
 from hermes.components_container import CoreComponents, Participants
 from hermes.extensions_loader import Extensions, ExtensionsLoader
 from hermes.mcp.mcp_manager import McpManager
@@ -93,23 +94,21 @@ class ApplicationInitializer:
         mcp_manager: "McpManager",
         model_info_string: str | None,
     ) -> Participants:
-        user_participant = self._create_user_participant(cli_args, user_control_panel)
+        execution_mode = ExecutionMode.get_from_cli_args(cli_args)
+        user_participant = self._create_user_participant(cli_args, user_control_panel, execution_mode)
         assistant_participant = self._create_assistant_participant(
-            cli_args,
-            model_factory,
-            llm_control_panel,
-            extension_deep_research_commands,
-            mcp_manager,
-            model_info_string,
+            cli_args, model_factory, llm_control_panel, extension_deep_research_commands, mcp_manager, model_info_string, execution_mode
         )
         return Participants(user=user_participant, assistant=assistant_participant)
 
-    def _create_user_participant(self, cli_args: Namespace, user_control_panel: UserControlPanel) -> UserParticipant:
+    def _create_user_participant(
+        self, cli_args: Namespace, user_control_panel: UserControlPanel, execution_mode: ExecutionMode
+    ) -> UserParticipant:
         user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(None, cli_args)
         stt_input_handler = self._create_stt_input_handler(cli_args)
         markdown_highlighter = None if cli_args.no_markdown else MarkdownHighlighter()
 
-        user_control_panel.is_deep_research_mode = cli_args.execution_mode == "research"
+        user_control_panel.is_deep_research_mode = execution_mode == ExecutionMode.RESEARCH
 
         user_interface = UserOrchestrator(
             control_panel=user_control_panel,
@@ -158,6 +157,7 @@ class ApplicationInitializer:
         extension_deep_research_commands: list,
         mcp_manager: "McpManager",
         model_info_string: str | None,
+        execution_mode: ExecutionMode,
     ):
         model_info_string = self._validate_model_info_string(model_info_string)
 
@@ -168,9 +168,9 @@ class ApplicationInitializer:
 
         if cli_args.debug:
             return self._create_debug_participant(model, llm_control_panel)
-        if cli_args.execution_mode == "research":
+        if execution_mode == ExecutionMode.RESEARCH:
             return self._create_deep_research_participant(cli_args, model, extension_deep_research_commands, mcp_manager)
-        return self._create_chat_participant(model, llm_control_panel, cli_args.execution_mode == "simple-agent")
+        return self._create_chat_participant(model, llm_control_panel, execution_mode == ExecutionMode.SIMPLE_AGENT)
 
     def _create_debug_participant(self, model, llm_control_panel) -> DebugParticipant:
         debug_interface = DebugInterface(control_panel=llm_control_panel, model=model)

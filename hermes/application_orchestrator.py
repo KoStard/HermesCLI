@@ -72,11 +72,6 @@ class ApplicationOrchestrator:
         elif isinstance(assistant_interface, ChatAssistantOrchestrator):
             assistant_interface.control_panel.update_mcp_commands()
 
-        # Set budget if specified
-        if hasattr(assistant_interface, "_engine") and hasattr(assistant_interface._engine, "budget_manager"):
-            budget_value = None if cli_args.budget == 0 else cli_args.budget
-            assistant_interface._engine.budget_manager.set_budget(budget_value)
-
         history = History()
         conversation_orchestrator = ConversationOrchestrator(
             user_participant=participants.user,

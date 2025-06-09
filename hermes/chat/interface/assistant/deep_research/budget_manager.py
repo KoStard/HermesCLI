@@ -7,21 +7,20 @@ if TYPE_CHECKING:
 class BudgetManager:
     """Manages the message cycle budget for the research process."""
 
-    def __init__(self):
-        self.budget: int | None = None  # No budget by default
+    def __init__(self, initial_budget: int | None = None):
+        self.budget: int | None = initial_budget
         self.message_cycles_used: int = 0
         self.budget_warning_shown: bool = False
 
     def set_budget(self, budget_value: int | None):
         """Set the budget for the Deep Research Assistant.
         None means no budget.
+        Negative values remove the budget as well.
         """
+        if budget_value and budget_value < 0:
+            budget_value = None
         self.budget = budget_value
         self.budget_warning_shown = False  # Reset warning when budget is set/changed
-        if budget_value is not None:
-            print(f"Budget set to {budget_value} message cycles.")
-        else:
-            print("Budget has been cleared (unlimited cycles).")
 
     def increment_message_cycles(self):
         """Increment the message cycles counter"""

@@ -1,6 +1,27 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
+from enum import Enum, auto
 
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
+
+
+class ExecutionMode(Enum):
+    CHAT = auto()
+    SIMPLE_AGENT = auto()
+    RESEARCH = auto()
+    UTILS = auto()
+
+    @staticmethod
+    def get_from_cli_args(cli_args: Namespace) -> "ExecutionMode":
+        execution_mode_str = cli_args.execution_mode
+        if execution_mode_str == "chat":
+            return ExecutionMode.CHAT
+        if execution_mode_str == "simple-agent":
+            return ExecutionMode.SIMPLE_AGENT
+        if execution_mode_str == "research":
+            return ExecutionMode.RESEARCH
+        if execution_mode_str == "utils":
+            return ExecutionMode.UTILS
+        raise ValueError("Unknown Execution Mode " + execution_mode_str)
 
 
 class CLIParser:
@@ -17,9 +38,9 @@ class CLIParser:
         self._build_info_parser(subparsers)
 
     def add_user_control_panel_arguments(self, user_control_panel: UserControlPanel):
-        user_control_panel.build_cli_arguments(self._chat_parser)
-        user_control_panel.build_cli_arguments(self._simple_agent_parser)
-        user_control_panel.build_cli_arguments(self._research_parser)
+        user_control_panel.build_cli_arguments_for_chat(self._chat_parser)
+        user_control_panel.build_cli_arguments_for_simple_agent(self._simple_agent_parser)
+        user_control_panel.build_cli_arguments_for_research(self._research_parser)
 
     def register_utility_extensions_and_get_executor_visitors(self, extension_utils_builders: list) -> list:
         extension_visitors = []
@@ -87,25 +108,14 @@ class CLIParser:
         suggested_models = ", ".join(f"{provider.lower()}/{model_tag}" for provider, model_tag in self._provider_model_pairs)
 
         research_parser.add_argument(
+            "research_repo",
+            help=("Path to research folder. " "You can specify the initial research name with :research-name"),
+            type=str,
+        )
+        research_parser.add_argument(
             "--model",
             type=str,
             help=f"Model for the LLM (suggested models: {suggested_models})",
-        )
-        research_parser.add_argument(
-            "--research-repo",
-            metavar="PATH",
-            help=(
-                "Path to research folder. "
-                "You can specify the initial research name with :research-name"
-            ),
-            type=str,
-            required=True,
-        )
-        research_parser.add_argument(
-            "--budget",
-            type=int,
-            help="Budget for research cycles (default: 30, set to 0 for unlimited)",
-            default=30,
         )
         research_parser.add_argument("--stt", action="store_true", help="Use Speech to Text mode for input")
         research_parser.add_argument(

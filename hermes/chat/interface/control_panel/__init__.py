@@ -32,7 +32,7 @@ class ControlPanelCommand:
 
 class ControlPanel(ABC):
     def __init__(self):
-        self.commands = {}
+        self.commands: dict[str, ControlPanelCommand] = {}
         self.help_contents = []
 
     @abstractmethod

@@ -306,11 +306,16 @@ class UserControlPanel(ControlPanel):
 
         self._register_command(
             ControlPanelCommand(
-                command_id="set_deep_research_budget",
-                command_label="/set_deep_research_budget",
-                description="Set a soft budget limit for Deep Research Assistant (number of message cycles)",
+                command_id="budget",
+                command_label="/budget",
+                description=(
+                    "Set a hard budget limit for Deep Research Assistant (number of message cycles). "
+                    "Set negative number to remove the budget. "
+                    "Default is 30. "
+                    "You'll be asked if you want to continue if the assistant exhausts the budget."
+                ),
                 short_description="Set Deep Research budget",
-                parser=self._parse_set_deep_research_budget_command,
+                parser=self._parse_budget_command,
                 is_deep_research=True,
             ),
         )
@@ -396,8 +401,8 @@ class UserControlPanel(ControlPanel):
 
         return
 
-    def _parse_set_deep_research_budget_command(self, content: str) -> Event | None:
-        """Parse the /set_deep_research_budget command"""
+    def _parse_budget_command(self, content: str) -> Event | None:
+        """Parse the /budget command"""
         try:
             budget = int(content.strip())
             if budget <= 0:
@@ -531,37 +536,59 @@ class UserControlPanel(ControlPanel):
     def get_command_labels(self) -> list[str]:
         return [command_label for command_label in self.commands]
 
-    def build_cli_arguments(self, parser: ArgumentParser):
+    def build_cli_arguments_for_chat(self, parser: ArgumentParser):
         for command_label in self.get_command_labels():
-            if self.commands[command_label].visible_from_cli:
-                if self.commands[command_label].with_argument:
-                    if self.commands[command_label].default_on_cli:
-                        parser.add_argument(
-                            command_label[1:],
-                            type=str,
-                            nargs="*",
-                            help=self.commands[command_label].description,
-                        )
-                        self._cli_arguments.add(command_label[1:])
-                    else:
-                        parser.add_argument(
-                            "--" + command_label[1:],
-                            type=str,
-                            action="append",
-                            help=self.commands[command_label].description,
-                        )
-                        self._cli_arguments.add(command_label[1:])
-                else:
-                    # Add flag-only arguments (no values)
-                    parser.add_argument(
-                        "--" + command_label[1:],
-                        action="store_true",
-                        help=self.commands[command_label].description,
-                    )
-                    self._cli_arguments.add(command_label[1:])
+            command = self.commands[command_label]
+            if not command.visible_from_cli:
+                continue
+            if command.is_agent_command or command.is_deep_research:
+                continue
+            self._add_command_to_cli_parser(command_label, command, parser, command.default_on_cli)
 
-        parser.add_argument("--prompt", type=str, action="append", help="Prompt for the LLM")
-        self._cli_arguments.add("prompt")
+    def build_cli_arguments_for_simple_agent(self, parser: ArgumentParser):
+        for command_label in self.get_command_labels():
+            command = self.commands[command_label]
+            if not command.visible_from_cli:
+                continue
+            if command.is_deep_research and not command.is_agent_command:
+                continue
+            self._add_command_to_cli_parser(command_label, command, parser, command.default_on_cli)
+
+    def build_cli_arguments_for_research(self, parser: ArgumentParser):
+        for command_label in self.get_command_labels():
+            command = self.commands[command_label]
+            if not command.visible_from_cli:
+                continue
+            if command.is_agent_command and not command.is_deep_research:
+                continue
+            self._add_command_to_cli_parser(command_label, command, parser, command.default_on_cli)
+
+    def _add_command_to_cli_parser(self, command_label: str, command: ControlPanelCommand, parser: ArgumentParser, is_default: bool):
+        if command.with_argument:
+            if is_default:
+                parser.add_argument(
+                    command_label[1:],
+                    type=str,
+                    nargs="*",
+                    help=command.description,
+                )
+                self._cli_arguments.add(command_label[1:])
+            else:
+                parser.add_argument(
+                    "--" + command_label[1:],
+                    type=str,
+                    action="append",
+                    help=command.description,
+                )
+                self._cli_arguments.add(command_label[1:])
+        else:
+            # Add flag-only arguments (no values)
+            parser.add_argument(
+                "--" + command_label[1:],
+                action="store_true",
+                help=command.description,
+            )
+            self._cli_arguments.add(command_label[1:])
 
     def _format_boolean_arg(self, arg: str, value: bool) -> list[str]:
         """Format a boolean CLI argument into command text."""

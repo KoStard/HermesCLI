@@ -66,7 +66,7 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
         # Initialize other components
         self.command_parser = CommandParser(self.command_registry)
         self.llm_interface = llm_interface
-        self.budget_manager = BudgetManager()
+        self.budget_manager = BudgetManager(initial_budget=30)
 
     def has_root_problem_defined(self) -> bool:
         """Check if the research has a root problem defined"""
