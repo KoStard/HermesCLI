@@ -1,7 +1,12 @@
+import logging
+import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hermes.chat.interface.assistant.deep_research.research import ResearchNode
+
+
+logger = logging.getLogger(__name__)
 
 
 class BudgetManager:
@@ -10,7 +15,9 @@ class BudgetManager:
     def __init__(self, initial_budget: int | None = None):
         self.budget: int | None = initial_budget
         self.message_cycles_used: int = 0
-        self.budget_warning_shown: bool = False
+        self._budget_warning_shown: bool = False
+        self._budget_lock = threading.RLock()
+        self._budget_exhausted_and_extension_rejected = False
 
     def set_budget(self, budget_value: int | None):
         """Set the budget for the Deep Research Assistant.
@@ -20,58 +27,41 @@ class BudgetManager:
         if budget_value and budget_value < 0:
             budget_value = None
         self.budget = budget_value
-        self.budget_warning_shown = False  # Reset warning when budget is set/changed
-
-    def increment_message_cycles(self):
-        """Increment the message cycles counter"""
-        self.message_cycles_used += 1
+        self._budget_exhausted_and_extension_rejected = False
+        self._budget_warning_shown = False  # Reset warning when budget is set/changed
 
     def get_remaining_budget(self) -> int | None:
         """Get the remaining budget"""
-        if self.budget is None:
-            return None
-        return self.budget - self.message_cycles_used
+        with self._budget_lock:
+            if self.budget is None:
+                return None
+            return self.budget - self.message_cycles_used
 
     def is_budget_exhausted(self) -> bool:
         """Check if the budget is exhausted"""
-        if self.budget is None:
-            return False
-        return self.message_cycles_used >= self.budget
+        with self._budget_lock:
+            if self.budget is None:
+                return False
+            return self.message_cycles_used > self.budget
 
-    def is_approaching_budget_limit(self) -> bool:
-        """Check if we're approaching the budget limit (e.g., within 10 cycles)"""
-        if self.budget is None:
-            return False
-        remaining = self.get_remaining_budget()
-        # Ensure remaining is not None before comparison
-        return remaining is not None and 0 < remaining <= 10
-
-    def manage_budget(self, research_node: "ResearchNode") -> bool:
+    def increment_cycles_and_manage_budget(self, research_node: "ResearchNode") -> bool:
         """Checks budget and handles warnings/exhaustion.
         Returns True if budget constraints dictate that research should stop.
         """
-        if self.budget is None:
-            return False  # No budget set
+        with self._budget_lock:
+            self.message_cycles_used += 1
 
-        return self._handle_budget_state(research_node)
+            if self.budget is None:
+                return False  # No budget set
+
+            if self._budget_exhausted_and_extension_rejected:
+                return True
+
+            return self._handle_budget_state(research_node)
 
     def _handle_budget_state(self, research_node: "ResearchNode") -> bool:
         """Handle the current budget state and return if research should stop."""
         if self.is_budget_exhausted():
-            return self._handle_budget_exhaustion(research_node)
-        if self.is_approaching_budget_limit() and not self.budget_warning_shown:
-            self._handle_approaching_budget_warning(research_node)
-
-        return False
-
-    def _handle_budget_exhaustion(self, research_node: "ResearchNode") -> bool:
-        """Handle budget exhaustion cases."""
-        if not self.budget_warning_shown:
-            # First time hitting budget, add buffer
-            self._handle_initial_budget_depletion(research_node)
-            return False
-        if self.budget is not None and self.message_cycles_used >= self.budget:
-            # Budget truly exhausted after buffer
             return self._handle_final_budget_exhaustion(research_node)
 
         return False
@@ -83,51 +73,29 @@ class BudgetManager:
         print(
             f"Current usage: {self.message_cycles_used} cycles (Initial budget: {self.budget})",
         )
-        user_input = input("Would you like to add 20 more cycles to continue? (y/N): ").strip().lower()
+        user_input = self._get_confirmation("Would you like to add 20 more cycles to continue? (y/N): ", {'y', 'n'})
         if user_input == "y":
             additional_cycles = 20
             self.budget += additional_cycles
             # budget_warning_shown remains true as user opted to extend
             print(f"Added {additional_cycles} more cycles. New budget ceiling: {self.budget}")
-            research_node.get_history().get_auto_reply_aggregator().add_internal_message_from(
-                f"The budget has been extended with {additional_cycles} additional cycles. New total: {self.budget} cycles.",
-                "SYSTEM",
-            )
-            return False  # Continue with extended budget
+            return False
         print("Finishing research due to budget constraints.")
-        research_node.get_history().get_auto_reply_aggregator().add_internal_message_from(
-            "Research stopped due to budget exhaustion (user declined extension).",
-            "SYSTEM",
-        )
-        return True  # Signal to finish
+        self._budget_exhausted_and_extension_rejected = True
+        return True
 
-    def _handle_initial_budget_depletion(self, research_node: "ResearchNode") -> None:
-        """Handles logic when budget is first hit, adds a buffer."""
-        assert self.budget is not None
-        self.budget_warning_shown = True  # Mark that the initial depletion and buffer addition has occurred.
+    def _get_confirmation(self, message: str, options: set[str]) -> str:
+        response = input(message).strip().lower()
+        if response not in options:
+            print("Please choose one of the options")
+            return self._get_confirmation(message, options)
+        return response
 
-        print("\n===== BUDGET ALERT =====")
-        print(f"Budget of {self.budget} message cycles has been reached.")
-
-        buffer_cycles = 10
-        self.budget += buffer_cycles  # Add buffer to the current budget
-        print(f"Adding a one-time buffer of {buffer_cycles} cycles. New budget ceiling: {self.budget}")
-        print("The assistant will be notified to wrap up quickly.")
-        research_node.get_history().get_auto_reply_aggregator().add_internal_message_from(
-            f"⚠️ BUDGET ALERT: The initial message cycle budget has been reached. "
-            f"A buffer of {buffer_cycles} additional cycles has been added. New budget ceiling is {self.budget} cycles. "
-            "Please finalize your work as quickly as possible.",
-            "SYSTEM",
-        )
-
-    def _handle_approaching_budget_warning(self, research_node: "ResearchNode") -> None:
-        """Handles logic when nearing the budget limit."""
-        self.budget_warning_shown = True  # Warning shown, so next exhaustion will be final.
-        print("\n===== BUDGET WARNING =====")
-        remaining_budget = self.get_remaining_budget()
-        print(f"Approaching budget limit. {remaining_budget} cycles remaining out of {self.budget}.")
-        research_node.get_history().get_auto_reply_aggregator().add_internal_message_from(
-            f"⚠️ BUDGET WARNING: Only {remaining_budget} message cycles remaining out of {self.budget}. "
-            "Please prioritize the most important tasks and consider wrapping up soon.",
-            "SYSTEM",
-        )
+    def _is_approaching_budget_limit(self) -> bool:
+        """Check if we're approaching the budget limit (e.g., within 10 cycles)"""
+        with self._budget_lock:
+            if self.budget is None:
+                return False
+            remaining = self.get_remaining_budget()
+            # Ensure remaining is not None before comparison
+            return remaining is not None and 0 < remaining <= 10

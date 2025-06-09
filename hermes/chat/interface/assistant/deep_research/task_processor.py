@@ -89,6 +89,12 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
 
     def _execute_task_processing_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Execute a single task processing cycle."""
+
+        # Handle budget updates
+        budget_outcome = self._manage_budget_during_cycle(research_node)
+        if budget_outcome:
+            return budget_outcome
+
         # Increment iteration counter for auto-close functionality
         research_node.increment_iteration()
 
@@ -97,11 +103,6 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
 
         # Process commands from response
         self._process_llm_response_commands(full_llm_response)
-
-        # Handle budget updates
-        budget_outcome = self._manage_budget_after_cycle(research_node)
-        if budget_outcome:
-            return budget_outcome
 
         # Update history and status
         self._perform_post_cycle_updates(research_node)
@@ -159,10 +160,9 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
         )
         command_processor.process(full_llm_response, self.current_node)
 
-    def _manage_budget_after_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
+    def _manage_budget_during_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Checks budget; if exhausted and stop is dictated, returns ENGINE_STOP_REQUESTED."""
-        self.budget_manager.increment_message_cycles()
-        budget_finish_signal = self.budget_manager.manage_budget(research_node)
+        budget_finish_signal = self.budget_manager.increment_cycles_and_manage_budget(research_node)
         if budget_finish_signal:
             if research_node.get_problem_status() not in [ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED]:
                 research_node.set_problem_status(ProblemStatus.FAILED)
