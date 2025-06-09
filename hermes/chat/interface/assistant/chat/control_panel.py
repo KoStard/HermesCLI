@@ -168,6 +168,7 @@ class ChatAssistantControlPanel:
         self.notifications_printer.print_notification(f"LLM used command: {result.command_name}")
         try:
             yield from command.execute(self.command_context, result.args)
+            self.command_context.add_command_output(result.command_name, result.args, "Successfully executed")
         except Exception as e:
             self._record_command_error(result.command_name, result.args, str(e))
 
