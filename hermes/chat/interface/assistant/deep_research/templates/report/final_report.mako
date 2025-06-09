@@ -21,15 +21,11 @@ ${'##'} Summary of Generated Artifacts
 
 The research has been completed and the following artifacts have been created:
 
-% for problem_title, artifact_names in sorted(artifacts_by_problem.items()):
+% for problem_title, artifacts in sorted(artifacts_by_problem.items()):
 ${'###'} ${problem_title}
 
-%   for name in sorted(artifact_names):
-    <%
-        # Construct the relative filepath, ensuring .md extension
-        filepath = f"Artifacts/{name}.md"
-    %>
-- `${filepath}`: ${name}
+%   for artifact in sorted(artifacts, key=lambda x: x['name']):
+- `${artifact['relative_path']}`: ${artifact['name']}
 %   endfor
 
 % endfor

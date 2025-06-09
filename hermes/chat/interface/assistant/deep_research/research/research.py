@@ -143,3 +143,7 @@ class ResearchImpl(Research):
             List of (research_name, node, artifact) tuples
         """
         return self._repo.search_artifacts_across_all(name)
+
+    def get_dual_directory_fs(self) -> DualDirectoryFileSystem:
+        """Get the dual directory file system instance"""
+        return self.dual_directory_file_system

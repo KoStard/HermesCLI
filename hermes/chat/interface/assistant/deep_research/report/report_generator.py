@@ -1,7 +1,11 @@
+from typing import TYPE_CHECKING, Any
+
 from hermes.chat.interface.assistant.deep_research.context import AssistantInterface
 from hermes.chat.interface.assistant.deep_research.report import ReportGenerator
-from hermes.chat.interface.assistant.deep_research.research import Research
 from hermes.chat.interface.templates.template_manager import TemplateManager
+
+if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.deep_research.research import Research, ResearchNode
 
 
 class ReportGeneratorImpl(ReportGenerator):
@@ -16,7 +20,7 @@ class ReportGeneratorImpl(ReportGenerator):
         """
         self.template_manager = template_manager
 
-    def generate_final_report(self, research: Research, interface: AssistantInterface, root_completion_message: str | None = None) -> str:
+    def generate_final_report(self, research: "Research", interface: AssistantInterface, root_completion_message: str | None = None) -> str:
         """Generate a summary of all artifacts created during the research using a template.
 
         Args:
@@ -29,13 +33,18 @@ class ReportGeneratorImpl(ReportGenerator):
             A string containing the formatted final report.
         """
         root_node = research.get_root_node()
-        artifacts_by_problem = self._collect_artifacts_by_problem(root_node, interface)
+        artifacts_by_problem = self._collect_artifacts_by_problem(root_node, research, interface)
         context = self._build_template_context(root_node, artifacts_by_problem, root_completion_message)
-        return self._render_report_with_fallback(context, root_node, artifacts_by_problem)
+        return self._render_report_with_fallback(context)
 
-    def _collect_artifacts_by_problem(self, root_node, interface: AssistantInterface) -> dict[str, list[str]]:
+    def _collect_artifacts_by_problem(
+        self,
+        root_node: "ResearchNode",
+        research: "Research",
+        interface: AssistantInterface
+    ) -> dict[str, list[dict[str, str]]]:
         """Collect and group artifacts by problem title"""
-        artifacts_by_problem: dict[str, list[str]] = {}
+        artifacts_by_problem: dict[str, list[dict[str, str]]] = {}
 
         if not root_node:
             return artifacts_by_problem
@@ -48,11 +57,40 @@ class ReportGeneratorImpl(ReportGenerator):
             owner_title = node.get_title()
             if owner_title not in artifacts_by_problem:
                 artifacts_by_problem[owner_title] = []
-            artifacts_by_problem[owner_title].append(artifact.name)
+
+            # Get the relative path from Results directory for this artifact
+            artifact_info = {
+                "name": artifact.name,
+                "relative_path": self._get_artifact_relative_path(node, research, artifact.name)
+            }
+            artifacts_by_problem[owner_title].append(artifact_info)
 
         return artifacts_by_problem
 
-    def _build_template_context(self, root_node, artifacts_by_problem: dict, root_completion_message: str | None) -> dict:
+    def _get_artifact_relative_path(self, node: "ResearchNode", research: "Research", artifact_name: str) -> str:
+        """Get the relative path from project root for the artifact"""
+        node_path = node.get_path()
+        if not node_path:
+            # Root level artifact
+            return f"Results/{artifact_name}.md"
+
+        # Use the dual directory file system to get the correct artifact directory
+        dual_fs = research.get_dual_directory_fs()
+
+        artifact_dir = dual_fs.get_artifact_directory_for_node_path(node_path)
+
+        # Get relative path from the project root
+        project_root = dual_fs.root_directory
+        relative_dir = artifact_dir.relative_to(project_root)
+
+        return f"{relative_dir}/{artifact_name}.md"
+
+    def _build_template_context(
+        self,
+        root_node: "ResearchNode",
+        artifacts_by_problem: dict[str, list[dict[str, str]]],
+        root_completion_message: str | None
+    ) -> dict[str, Any]:
         """Build context dictionary for template rendering"""
         return {
             "root_node": root_node,
@@ -60,22 +98,9 @@ class ReportGeneratorImpl(ReportGenerator):
             "root_completion_message": root_completion_message,
         }
 
-    def _render_report_with_fallback(self, context: dict, root_node, artifacts_by_problem: dict) -> str:
+    def _render_report_with_fallback(
+        self,
+        context: dict[str, Any],
+    ) -> str:
         """Render report template with fallback error handling"""
-        try:
-            return self.template_manager.render_template("report/final_report.mako", **context)
-        except Exception as e:
-            return self._create_fallback_report(e, root_node, artifacts_by_problem)
-
-    def _create_fallback_report(self, error: Exception, root_node, artifacts_by_problem: dict) -> str:
-        """Create fallback report when template rendering fails"""
-        print(f"Error generating final report: {error}")
-        fallback_report = "# Deep Research Report Generation Failed\n\n"
-        fallback_report += f"An error occurred while generating the final report: {error}\n"
-
-        if root_node:
-            fallback_report += f"Root Problem: {root_node.get_title()}\n"
-        if artifacts_by_problem:
-            fallback_report += f"Found artifacts for {len(artifacts_by_problem)} problems.\n"
-
-        return fallback_report
+        return self.template_manager.render_template("report/final_report.mako", **context)

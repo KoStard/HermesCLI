@@ -23,6 +23,7 @@ from hermes.chat.interface.assistant.deep_research.research.research_project_com
 from hermes.chat.interface.assistant.deep_research.research.research_project_component.permanent_log import NodePermanentLogs
 
 if TYPE_CHECKING:
+    from hermes.chat.interface.assistant.deep_research.research.file_system.dual_directory_file_system import DualDirectoryFileSystem
     from hermes.chat.interface.assistant.deep_research.research.repo import Repo
     from hermes.chat.interface.assistant.deep_research.task_tree import TaskTree
 
@@ -203,4 +204,8 @@ class Research(ABC):
 
     @abstractmethod
     def get_repo(self) -> "Repo | None":
+        pass
+
+    @abstractmethod
+    def get_dual_directory_fs(self) -> "DualDirectoryFileSystem":
         pass
