@@ -9,7 +9,7 @@ from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
 from hermes.chat.file_operations_handler import FileOperationsHandler
 from hermes.chat.history import History
 from hermes.chat.interface.helpers.cli_notifications import CLIColors, CLINotificationsPrinter
-from hermes.chat.messages import TextMessage
+from hermes.chat.messages.text import InvisibleMessage
 from hermes.chat.participants import DebugParticipant, LLMParticipant, Participant
 
 if TYPE_CHECKING:
@@ -110,10 +110,19 @@ class ConversationOrchestrator:
             yield from self.assistant_participant.get_input_and_run_commands()
 
     def _get_agent_continuation_event_from_user(self) -> Event:
-        continuation_msg = TextMessage(
+        continuation_msg = InvisibleMessage(
             author="user",
-            text="AUTOMATIC RESPONSE: No ///done command found in your response. "
-            "Please continue, and use ///done command when you finish with the whole task.",
+            text="""AUTOMATIC RESPONSE: I see you're still working on this task. Please continue with your next steps.
+
+A few reminders to help you:
+- When you've completed the entire task, use the done command with your final report
+- You can run multiple commands in a single response for better efficiency
+- If you need to split complex work, consider creating subtasks
+- Remember to always verify your results before marking the task as done
+
+If you encounter any system issues or need to halt execution for any reason, you can use the emergency code "SHUT_DOWN_DEEP_RESEARCHER".
+
+I'll wait for your next steps or completion message.""",
             is_directly_entered=True,
         )
         return MessageEvent(continuation_msg)
