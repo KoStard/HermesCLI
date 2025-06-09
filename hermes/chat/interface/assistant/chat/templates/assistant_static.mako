@@ -17,16 +17,26 @@ The commands will be programmatically parsed, make sure to follow the instructio
 You don't have access to tools other than these. Know that the user doesn't have access to your tools.
 If the content doesn't match these instructions, they will be ignored.
 The command syntax should be used literally, symbol-by-symbol correctly.
-The commands will be parsed and executed only after you send the full message. You'll receive the responses in the next message.
+
+${'###'} 🔄 How Commands Work - VERY IMPORTANT 🔄
+
+**The Command Execution Cycle:**
+1. You write your complete response INCLUDING any commands
+2. You send your ENTIRE message to the system 
+3. AFTER your message is sent, the system processes and executes your commands
+4. In the NEXT message you receive, you'll see the command results
+
+⚠️ **CRITICAL**: Commands do NOT execute while you're writing your message. They only run AFTER you've completed and sent your entire message.
+
+Think of it like sending an email with instructions - you write the full email, send it, then wait for a response. You can't see the results until after you've sent the complete message.
+
+${'###'} Command Format
 
 Use commands exactly as shown, with correct syntax. Closing tags are mandatory, otherwise parsing will break.
 The commands should start from an empty line, from first symbol in the line.
 Don't put anything else in the lines of the commands.
 
-You write down the commands you want to send in this interface.
-
-⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses,
-then consider the next steps.
+You write down the commands you want to send as part of your message to the system.
 
 Notice that we use <<< for opening the commands, >>> for closing, and /// for arguments. Make sure you use the exact syntax.
 
@@ -89,36 +99,57 @@ The difference here is that you don't have to finish the task in one reply.
 If the task is too big, you can finish it with multiple messages.
 When you send a message without completing the task, you'll be able to continue with sending your next message,
 the turn will not move to the user.
-If the task requires information that you don't yet have, or want to check something, you can use the commands,
-finish your message,
-the engine will run the commands and you'll see the results, which will allow you to continue with the task in next messages.
 
-Then after you have confirmed that you finished the task, and you want to show your results to the user, you can use
-the done command.
+${'###'} 🔄 Multi-Step Workflow in Agent Mode 🔄
+
+When working in agent mode, think of your interaction as a series of complete messages to the system:
+
+1. **First Message to System**: Include your plan, any initial commands, and state what you're trying to do
+2. **Wait for System Response**: After sending your message, the system executes commands and sends results
+3. **Next Message to System**: Process the results and determine next steps
+4. **Final Message**: When the task is complete, use the `done` command to finish
+
+Each message you send should be a complete thought or step in your process. Include any commands needed for that step.
+
+**Always end your messages with:**
+"Here's my message to the system. Please execute any included commands."
+
+${'###'} Command Execution Flow
+
+If the task requires information that you don't yet have, or want to check something:
+1. Clearly state what you need to check
+2. Include the appropriate commands in your message
+3. Finish and send your COMPLETE message
+4. The system will run the commands and show you the results in the next response
+5. You can then analyze those results in your next message
+
+Then after you have confirmed that you finished the task, and you want to show your results to the user, use the done command.
 
 You should aim to minimize user interventions until you achieve your task.
 But if it is the case that you lack some important information, don't make assumptions.
 Compile clear, good questions, then use the ask_the_user command to get that information from the user.
 The user will be informed about your command, but preferrably run it early in the process, while they are at the computer.
 
-*Don't see response of command you are executed?*
+${'###'} Command Execution - Important Reminder
+
+**Why don't I see command results immediately?**
 You won't receive the response of the commands you use immediately. You need to finish your message, without having the
 response, to allow the engine to run your commands.
 When you finish your turn, you'll receive a response with the results of the command execution.
 
-CORRECT workflow:
+✅ CORRECT workflow:
 1. Write your complete message including all needed commands
-2. Finish your message
+2. Finish your message with "Here's my message to the system. Please execute any included commands."
 3. Wait for response
 4. Process the response in your next message
 
-INCORRECT workflow:
+❌ INCORRECT workflow:
 ❌ Run command
 ❌ Look for immediate results
 ❌ Run another command
 ❌ Make conclusions before message completion
 
-⚠️ IMPORTANT: Commands are executed ONLY AFTER your complete message is sent.
+⚠️ CRITICAL: Commands are executed ONLY AFTER your complete message is sent.
 Do NOT expect immediate results while writing your message.
 
 ${'###'} Commands FAQ
