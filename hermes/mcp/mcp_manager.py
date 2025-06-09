@@ -190,7 +190,7 @@ class McpManager:
         from hermes.chat.events import Event
 
         class McpChatToolCommand(Command[Any, Generator[Event, None, None]]):
-            def execute(self, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
+            def execute(tool_self, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
                 tool_args = self._parse_tool_args(args)
                 output = self._call_tool_and_get_output(client, tool_name, tool_args)
 
@@ -211,7 +211,7 @@ class McpManager:
         """Create a command for deep research mode."""
 
         class McpDeepResearchToolCommand(Command[Any, None]):
-            def execute(self, context: Any, args: dict[str, Any]) -> None:
+            def execute(tool_self, context: Any, args: dict[str, Any]) -> None:
                 tool_args = self._parse_tool_args(args)
                 output = self._call_tool_and_get_output(client, tool_name, tool_args)
                 if hasattr(context, "add_command_output"):
