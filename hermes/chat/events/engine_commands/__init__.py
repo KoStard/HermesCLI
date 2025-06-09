@@ -8,6 +8,7 @@ from hermes.chat.events.engine_commands.create_research import CreateResearchEve
 from hermes.chat.events.engine_commands.deep_research_budget import DeepResearchBudgetEvent
 from hermes.chat.events.engine_commands.exit import ExitEvent
 from hermes.chat.events.engine_commands.file_edit import FileEditEvent
+from hermes.chat.events.engine_commands.focus_subproblem import FocusSubproblemEvent
 from hermes.chat.events.engine_commands.list_research import ListResearchEvent
 from hermes.chat.events.engine_commands.llm_commands_execution import LLMCommandsExecutionEvent
 from hermes.chat.events.engine_commands.load_history import LoadHistoryEvent
@@ -32,4 +33,5 @@ __all__ = [
     "CreateResearchEvent",
     "SwitchResearchEvent",
     "ListResearchEvent",
+    "FocusSubproblemEvent",
 ]

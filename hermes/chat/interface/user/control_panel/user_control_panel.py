@@ -12,6 +12,7 @@ from hermes.chat.events import (
     DeepResearchBudgetEvent,
     Event,
     ExitEvent,
+    FocusSubproblemEvent,
     ListResearchEvent,
     LLMCommandsExecutionEvent,
     LoadHistoryEvent,
@@ -363,6 +364,18 @@ class UserControlPanel(ControlPanel):
             ),
         )
 
+        self._register_command(
+            ControlPanelCommand(
+                command_id="focus_subproblem",
+                command_label="/focus_subproblem",
+                description="Change focus to a specific subproblem in the research tree (Deep Research mode only)",
+                short_description="Focus on a subproblem",
+                parser=self._parse_focus_subproblem_command,
+                with_argument=False,
+                is_deep_research=True,
+            ),
+        )
+
     def _parse_set_assistant_command_status(self, content: str) -> None:
         """Set the status of an assistant command"""
         if not self.llm_control_panel:
@@ -645,6 +658,18 @@ class UserControlPanel(ControlPanel):
     def _parse_list_research_command(self, _: str) -> Event | None:
         """Parse the /list_research command"""
         return ListResearchEvent()
+
+    def _parse_focus_subproblem_command(self, _: str) -> Event | None:
+        """Parse the /focus_subproblem command"""
+        try:
+
+            # This will need to get the root node from the current research
+            # For now, we'll create a simple event that will be handled by the research engine
+            # The actual TUI will be shown when the event is processed
+            return FocusSubproblemEvent(node_id="SHOW_SELECTOR")
+        except Exception as e:
+            self.notifications_printer.print_notification(f"Error: {e}", CLIColors.RED)
+            return None
 
     def _parse_exa_url_command(self, content: str) -> MessageEvent:
         """Parse and execute the /exa_url command"""

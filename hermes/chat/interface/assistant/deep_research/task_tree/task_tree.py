@@ -9,6 +9,7 @@ class TaskTreeImpl(TaskTree):
     def __init__(self, research: Research):
         self._research = research
         self._events_queue = Queue()
+        self._focused_subtree_root: ResearchNode | None = None
 
     def next(self) -> ResearchNode | None:
         """Should lock the thread until at least one node becomes
@@ -21,13 +22,15 @@ class TaskTreeImpl(TaskTree):
                 return None
 
     def _is_finished(self) -> bool:
-        """Check if all nodes are in terminal states."""
-        root = self._research.get_root_node()
-        if not root:
+        """Check if all nodes in the focused subtree are in terminal states."""
+        # Determine the root to check
+        check_root = self._focused_subtree_root if self._focused_subtree_root else self._research.get_root_node()
+
+        if not check_root:
             return True
 
-        # Check all nodes in the tree
-        stack = [root]
+        # Check all nodes in the subtree
+        stack = [check_root]
         while stack:
             node = stack.pop()
             status = node.get_problem_status()
@@ -38,12 +41,14 @@ class TaskTreeImpl(TaskTree):
 
     def _find_next_available(self) -> ResearchNode | None:
         """Depth-first search for first available node that's ready to start."""
-        root = self._research.get_root_node()
-        if not root:
+        # Determine the root to search from
+        search_root = self._focused_subtree_root if self._focused_subtree_root else self._research.get_root_node()
+
+        if not search_root:
             return None
 
         # Use depth-first search to find deepest available node first
-        stack = [root]
+        stack = [search_root]
         while stack:
             node = stack.pop()
             if node.get_problem_status() == ProblemStatus.READY_TO_START:
@@ -54,3 +59,11 @@ class TaskTreeImpl(TaskTree):
 
     def register_node(self, node: ResearchNode):
         node.set_events_queue(self._events_queue)
+
+    def set_focused_subtree(self, root_node: ResearchNode | None):
+        """Set the focused subtree. Only nodes within this subtree will be processed."""
+        self._focused_subtree_root = root_node
+
+    def get_focused_subtree(self) -> ResearchNode | None:
+        """Get the current focused subtree root node."""
+        return self._focused_subtree_root

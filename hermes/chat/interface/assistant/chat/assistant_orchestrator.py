@@ -37,6 +37,9 @@ class ChatAssistantOrchestrator(Orchestrator):
         self.control_panel = control_panel
         self.assistant_prompt_factory = AssistantPromptFactory()
 
+    def prepare(self):
+        self._ensure_model_readiness()
+
     def render(self, events: Generator[Event, None, None]):
         logger.debug("Asked to render on LLM", self.control_panel)
         self._ensure_model_readiness()
@@ -72,8 +75,8 @@ class ChatAssistantOrchestrator(Orchestrator):
 
     def _ensure_model_readiness(self):
         if not self._initialized:
-            self._initialized = True
             self.model.initialize()
+            self._initialized = True
 
     def _send_request(self) -> ThinkingAndResponseGeneratorMessage:
         llm_responses_generator = self._handle_string_output(self.model.send_request(self.request))

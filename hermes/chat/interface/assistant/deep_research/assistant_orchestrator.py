@@ -88,6 +88,11 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         self._instruction: str | None = None
         self._history_has_been_imported = False
 
+    def prepare(self):
+        if not self._initialized:
+            self.model.initialize()
+            self._initialized = True
+
     def render(self, events: Generator[Event, None, None]):
         """Render the interface with the given history and events"""
         logger.debug("Rendering Deep Research Assistant interface")
@@ -176,9 +181,7 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         Yields status messages based on the engine's state.
         """
         logger.debug("Processing instruction in Deep Research Assistant")
-        if not self._initialized:
-            self._initialized = True
-            self.model.initialize()
+        self.prepare()
 
         if error_event := self._check_engine_initialized():
             yield error_event
@@ -319,3 +322,6 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
             Name of current research instance
         """
         return self._engine.current_research_name
+
+    def get_engine(self) -> ResearchEngine:
+        return self._engine

@@ -187,3 +187,6 @@ LLM commands in Hermes follow a specific structure:
 
 ## Core Philosophy
 - Don't focus on backwards compatibility. We are in active development, we shouldn't aim to support every previous decision we have made. Focus on great product and great code quality.
+
+## Memories
+- Instead of hasattr check the type of the object.

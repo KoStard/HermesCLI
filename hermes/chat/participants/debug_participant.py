@@ -45,3 +45,6 @@ class DebugParticipant(Participant):
 
         is_chat_interface = isinstance(self.orchestrator, ChatAssistantOrchestrator)
         return is_chat_interface and self.orchestrator.control_panel._agent_mode
+
+    def prepare(self):
+        self.orchestrator.prepare()

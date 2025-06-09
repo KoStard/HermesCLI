@@ -80,6 +80,9 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
                 return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
         return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
 
+    def get_engine(self) -> "ResearchEngine":
+        return self._engine
+
     @property
     def _is_interrupted(self) -> bool:
         return self.current_node.get_problem_status() in {ProblemStatus.CANCELLED} or self._engine.engine_interrupted

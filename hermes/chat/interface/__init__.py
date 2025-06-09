@@ -32,3 +32,7 @@ class Orchestrator(ABC):
 
     def initialize_from_history(self, history: "History"):  # noqa: B027
         pass
+
+    @abstractmethod
+    def prepare(self):
+        pass

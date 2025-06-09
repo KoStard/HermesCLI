@@ -49,3 +49,6 @@ class UserOrchestrator(Orchestrator):
 
     def initialize_from_history(self, history: History):
         pass
+
+    def prepare(self):
+        pass

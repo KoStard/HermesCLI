@@ -87,6 +87,7 @@ class ConversationOrchestrator:
         return self.user_participant.get_input_and_run_commands()
 
     def _consume_events_from_user_and_render_assistant(self, events: Generator[Event, None, None]):
+        self.assistant_participant.prepare()
         all_events = list(self._swallow_engine_commands_from_stream(events))
         history_recovery_event = HistoryRecoveryEvent(self.history.get_history_for(self.assistant_participant.get_name()))
         all_events = list(self._track_events_in_history(all_events))

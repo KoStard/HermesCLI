@@ -283,16 +283,20 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         research_node.add_child_node_to_wait(target_child)
 
     def finish_node(self, message: str | None, research_node: "ResearchNode") -> bool:
-        """Mark task as finished and focus up to parent node."""
+        """Mark task as finished and handle focus appropriately."""
         parent_node = research_node.get_parent()
+
+        # Check if we're focused on this specific node
+        focused_node = self.task_processor.get_engine().get_focused_node()
+        is_focused_node = focused_node is not None and focused_node.get_id() == research_node.get_id()
 
         research_node.set_problem_status(ProblemStatus.FINISHED)
 
-        if not parent_node:
-            # Handle root node case
+        if not parent_node or is_focused_node:
+            # Handle root node case OR focused node case - just finish without going to parent
             research_node.set_resolution_message(message)
         else:
-            # Add messages to parent's auto-reply
+            # Add messages to parent's auto-reply (normal behavior for non-focused nodes)
             self._add_status_message_to_parent(
                 parent_node,
                 research_node,
@@ -304,18 +308,22 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         return True
 
     def fail_node(self, message: str | None, current_node: "ResearchNode") -> bool:
-        """Mark task as failed and focus up to parent node."""
+        """Mark task as failed and handle focus appropriately."""
         research_node = current_node
         parent_node = research_node.get_parent()
+
+        # Check if we're focused on this specific node
+        focused_node = self.task_processor.get_engine().get_focused_node()
+        is_focused_node = focused_node is not None and focused_node.get_id() == research_node.get_id()
 
         # Mark task as failed
         research_node.set_problem_status(ProblemStatus.FAILED)
 
-        if not parent_node:
-            # Handle root node case
+        if not parent_node or is_focused_node:
+            # Handle root node case OR focused node case - just finish without going to parent
             research_node.set_resolution_message(message)
         else:
-            # Add messages to parent's auto-reply
+            # Add messages to parent's auto-reply (normal behavior for non-focused nodes)
             self._add_status_message_to_parent(
                 parent_node,
                 research_node,

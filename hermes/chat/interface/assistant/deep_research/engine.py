@@ -96,12 +96,16 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
             print("Error: Cannot prepare for new instruction without an active node.")
             return
 
-        root_node = self.research.get_root_node()
+        # Use the focused node if one is set, otherwise use the root node
+        target_node = self.get_effective_root_node()
+        if not target_node:
+            print("Error: No active node found.")
+            return
 
-        self._create_and_add_new_instruction_message(instruction, root_node)
+        self._create_and_add_new_instruction_message(instruction, target_node)
 
-        # Mark the root problem as in progress
-        root_node.set_problem_status(ProblemStatus.READY_TO_START)
+        # Mark the target node as ready to start
+        target_node.set_problem_status(ProblemStatus.READY_TO_START)
 
     def _create_and_add_new_instruction_message(self, instruction: str, root_node: ResearchNode):
         """Formats the instruction and adds it to the root node's history."""
@@ -232,3 +236,64 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
             List of research instance names
         """
         return self.repo.list_research_instances()
+
+    def set_focused_node(self, node_id: str) -> None:
+        """Set the focused node that will act as the virtual root.
+
+        Args:
+            node_id: ID of the node to focus on
+
+        Raises:
+            ValueError: If node with given ID doesn't exist
+        """
+        if not self.research.has_root_problem_defined():
+            raise ValueError("No research project is active")
+
+        # Find the node with the given ID
+        target_node = self._find_node_by_id(self.research.get_root_node(), node_id)
+        if not target_node:
+            raise ValueError(f"Node with ID '{node_id}' not found")
+
+        # Set the focused subtree in the task tree
+        task_tree = self._get_task_tree_for_current_research()
+        task_tree.set_focused_subtree(target_node)
+
+    def get_focused_node(self) -> ResearchNode | None:
+        """Get the currently focused node, or None if focusing on root."""
+        if not self.research.has_root_problem_defined():
+            return None
+
+        task_tree = self._get_task_tree_for_current_research()
+        return task_tree.get_focused_subtree()
+
+    def get_root_node(self) -> ResearchNode | None:
+        """Get the actual root node of the research."""
+        if not self.research.has_root_problem_defined():
+            return None
+        return self.research.get_root_node()
+
+    def get_effective_root_node(self) -> ResearchNode | None:
+        """Get the effective root node (focused node if set, otherwise actual root)."""
+        focused_node = self.get_focused_node()
+        return focused_node if focused_node else self.get_root_node()
+
+    def clear_focus(self) -> None:
+        """Clear the current focus, returning to the actual root."""
+        if not self.research.has_root_problem_defined():
+            return
+
+        task_tree = self._get_task_tree_for_current_research()
+        task_tree.set_focused_subtree(None)
+
+    def _find_node_by_id(self, node: ResearchNode, target_id: str) -> ResearchNode | None:
+        """Recursively find a node by its ID."""
+        if node.get_id() == target_id:
+            return node
+
+        for child in node.list_child_nodes():
+            result = self._find_node_by_id(child, target_id)
+            if result:
+                return result
+
+        return None
+

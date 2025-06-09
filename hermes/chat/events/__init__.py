@@ -12,6 +12,7 @@ from hermes.chat.events.engine_commands import (
     EngineCommandEvent,
     ExitEvent,
     FileEditEvent,
+    FocusSubproblemEvent,
     ListResearchEvent,
     LLMCommandsExecutionEvent,
     LoadHistoryEvent,
@@ -42,4 +43,5 @@ __all__ = [
     "CreateResearchEvent",
     "SwitchResearchEvent",
     "ListResearchEvent",
+    "FocusSubproblemEvent",
 ]
