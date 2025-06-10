@@ -136,6 +136,8 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
         node_history = research_node.get_history()
         if not node_history._has_initial_interface():
             node_history.set_initial_interface_content(static_interface_content, current_dynamic_data)
+        else:
+            node_history.update_static_content_in_initial_interface(static_interface_content)
 
         current_auto_reply_aggregator = node_history.get_auto_reply_aggregator()
         current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)

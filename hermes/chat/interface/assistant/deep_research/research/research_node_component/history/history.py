@@ -53,6 +53,13 @@ class ResearchNodeHistory:
             self._compiled_blocks.insert(0, initial_block)
             self.save()
 
+    def update_static_content_in_initial_interface(self, static_content: str):
+        if not isinstance(self._compiled_blocks[0], InitialInterface):
+            print("No initial interface, not updating")
+            return
+        self._compiled_blocks[0].static_content = static_content
+        self.save()
+
     def get_initial_interface_content(self) -> str | None:
         """Get the initial interface content - for backward compatibility, returns None if using new system"""
         # Return None to indicate we're using the new InitialInterface block system
