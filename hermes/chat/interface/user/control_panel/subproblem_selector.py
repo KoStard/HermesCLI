@@ -51,7 +51,7 @@ class SubproblemSelector:
             "CANCELLED": "⏹️",
             "PENDING": "⏳",
         }
-        return status_map.get(status.name if hasattr(status, 'name') else str(status), "⚪")
+        return status_map.get(status.name if hasattr(status, "name") else str(status), "⚪")
 
     def _get_display_text(self):
         """Generate the display text for the selector."""
@@ -95,6 +95,7 @@ class SubproblemSelector:
 
     def _register_navigation_keys(self, kb: KeyBindings):
         """Register navigation key bindings."""
+
         @kb.add("up")
         def move_up(event):
             if self.selected_index > 0:
@@ -107,6 +108,7 @@ class SubproblemSelector:
 
     def _register_action_keys(self, kb: KeyBindings):
         """Register action key bindings."""
+
         @kb.add("enter")
         def select(event):
             self.result = self.nodes[self.selected_index][0]
@@ -120,20 +122,24 @@ class SubproblemSelector:
 
     def _create_style(self) -> Style:
         """Create the visual style for the selector."""
-        return Style.from_dict({
-            "title": "#ffffff bold",
-            "selection": "#00aa00 bold",
-            "normal": "#ffffff",
-        })
+        return Style.from_dict(
+            {
+                "title": "#ffffff bold",
+                "selection": "#00aa00 bold",
+                "normal": "#ffffff",
+            }
+        )
 
     def _create_layout(self) -> Layout:
         """Create the layout for the selector."""
         return Layout(
-            HSplit([
-                Window(
-                    FormattedTextControl(lambda: self._get_display_text()),
-                    height=len(self.nodes) + 5,
-                    wrap_lines=True,
-                )
-            ])
+            HSplit(
+                [
+                    Window(
+                        FormattedTextControl(lambda: self._get_display_text()),
+                        height=len(self.nodes) + 5,
+                        wrap_lines=True,
+                    )
+                ]
+            )
         )

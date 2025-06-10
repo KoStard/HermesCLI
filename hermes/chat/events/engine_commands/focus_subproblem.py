@@ -17,6 +17,7 @@ class FocusSubproblemEvent(EngineCommandEvent):
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         """Change focus to the specified subproblem"""
         from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
+
         assistant_orchestrator = orchestrator.assistant_participant.orchestrator
         if not isinstance(assistant_orchestrator, DeepResearchAssistantOrchestrator):
             orchestrator.notifications_printer.print_notification("Focus management is not available in this mode", CLIColors.RED)
@@ -39,6 +40,7 @@ class FocusSubproblemEvent(EngineCommandEvent):
             return
 
         from hermes.chat.interface.user.control_panel.subproblem_selector import SubproblemSelector
+
         selector = SubproblemSelector(root_node)
         selected_node = selector.select_subproblem()
 

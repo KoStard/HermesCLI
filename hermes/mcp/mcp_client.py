@@ -72,7 +72,7 @@ class McpClient:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env=self._env,
-                limit = 1024 * 128
+                limit=1024 * 128,
             )
             self.reader = self.process.stdout
             self.writer = self.process.stdin

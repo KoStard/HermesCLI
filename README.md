@@ -30,7 +30,7 @@ pip install --upgrade git+https://github.com/KoStard/HermesCLI.git
 
 ### Configuration
 
-Before using Hermes, you'll need to configure your API keys. Hermes looks for its configuration file (`config.ini`) and `extensions` directory in a specific location based on your operating system.
+Before using Hermes, you'll need to configure your API keys. Hermes supports both JSON and INI configuration formats, with JSON being the preferred format for new features like MCP integration. We strongly recommend using JSON format for all new installations.
 
 **Configuration Directory Locations:**
 
@@ -45,7 +45,65 @@ First, ensure the configuration directory for your OS exists:
 *   **Linux & macOS:** `mkdir -p ~/.config/hermes/`
 *   **Windows:** Create the `hermes` folder in your `%APPDATA%` directory (e.g., `C:\Users\<YourUsername>\AppData\Roaming\hermes\`)
 
-Then, inside that directory, create a file named `config.ini` with the following format:
+**JSON Configuration (Recommended):**
+
+Create a file named `config.json` in your configuration directory:
+
+```json
+{
+  "model": "OPENAI/gpt-4o",
+  "openai": {
+    "api_key": "YOUR_OPENAI_API_KEY"
+  },
+  "anthropic": {
+    "api_key": "YOUR_ANTHROPIC_API_KEY"
+  },
+  "gemini": {
+    "api_key": "YOUR_GEMINI_API_KEY"
+  },
+  "groq": {
+    "api_key": "YOUR_GROQ_API_KEY"
+  },
+  "deepseek": {
+    "api_key": "YOUR_DEEPSEEK_API_KEY"
+  },
+  "sambanova": {
+    "api_key": "YOUR_SAMBANOVA_API_KEY"
+  },
+  "openrouter": {
+    "api_key": "YOUR_OPENROUTER_API_KEY"
+  },
+  "bedrock": {
+    "aws_region": "YOUR_AWS_REGION",
+    "aws_profile_name": "YOUR_AWS_PROFILE_NAME"
+  },
+  "xai": {
+    "api_key": "YOUR_XAI_API_KEY"
+  },
+  "exa": {
+    "api_key": "YOUR_EXA_API_KEY"
+  },
+  "llm_command_status_overrides": {
+    "command_name": "ENABLED"
+  },
+  "mcp_chat_assistant": {
+    "my_weather_tool": "/path/to/weather_server.py",
+    "github_mcp": {
+      "command": ["docker", "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_pat_here"
+      }
+    }
+  },
+  "mcp_deep_research": {
+    "my_database_tool": "/path/to/db_server.sh"
+  }
+}
+```
+
+**INI Configuration (Legacy):**
+
+Alternatively, create a file named `config.ini` with the following format. Note that the INI format has limited support for newer features and may be deprecated in future versions:
 
 ```ini
 [BASE]
@@ -85,6 +143,21 @@ api_key = YOUR_EXA_API_KEY  ; Optional: for enhanced web search
 ```
 
 Replace `YOUR_API_KEY` with your actual API keys for each provider.
+
+**Migrating from INI to JSON:**
+
+If you're currently using the INI configuration format and want to migrate to JSON, Hermes provides a migration script:
+
+```bash
+# Run the migration script
+uv run python scripts/migrate_config.py
+```
+
+This will:
+1. Read your existing `config.ini` file
+2. Convert it to JSON format
+3. Save it as `config.json`
+4. Create a backup of your original INI file as `config.ini.bak`
 
 ### Basic Usage
 

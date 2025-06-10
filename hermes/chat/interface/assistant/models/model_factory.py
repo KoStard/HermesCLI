@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+from typing import Any
 
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 from hermes.chat.interface.assistant.models.chat_models.bedrock import BedrockModel
@@ -12,6 +13,7 @@ from hermes.chat.interface.assistant.models.chat_models.openai import OpenAIMode
 from hermes.chat.interface.assistant.models.chat_models.sambanova import SambanovaModel
 from hermes.chat.interface.assistant.models.chat_models.xai import XAIModel
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
+from hermes.utils.config_utils import extract_config_section
 
 
 class ModelFactory:
@@ -48,7 +50,7 @@ class ModelFactory:
         """
         return self.provider_and_model_tag_pairs
 
-    def get_model(self, provider: str, model_tag: str, config: ConfigParser) -> ChatModel:
+    def get_model(self, provider: str, model_tag: str, config: ConfigParser | dict[str, Any]) -> ChatModel:
         """Creates and returns an appropriate chat model instance based on the provider and model tag.
 
         Args:
@@ -68,7 +70,7 @@ class ModelFactory:
         model_class = self.provider_model_map.get((provider, model_tag))
         if model_class:
             config_section_name = model_class.get_config_section_name()
-            config_section = get_config_section(config, config_section_name)
+            config_section = extract_config_section(config, config_section_name)
             return model_class(config_section, model_tag, self.notifications_printer)
 
         # If no exact match, find all classes for this provider
@@ -87,15 +89,6 @@ class ModelFactory:
 
         model_class = matching_classes[0]
         config_section_name = model_class.get_config_section_name()
-        config_section = get_config_section(config, config_section_name)
+        config_section = extract_config_section(config, config_section_name)
         # Use first matching class
         return model_class(config_section, model_tag, self.notifications_printer)
-
-
-def get_config_section(config: ConfigParser, provider: str):
-    if provider not in config.sections():
-        raise ValueError(
-            f"Config section {provider} is not found. Please double check it and specify "
-            "it in the config file ~/.config/hermes/config.ini. You might need to specify the api_key there.",
-        )
-    return config[provider]

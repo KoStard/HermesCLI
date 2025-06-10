@@ -73,7 +73,7 @@ class BudgetManager:
         print(
             f"Current usage: {self.message_cycles_used} cycles (Initial budget: {self.budget})",
         )
-        user_input = self._get_confirmation("Would you like to add 20 more cycles to continue? (y/N): ", {'y', 'n'})
+        user_input = self._get_confirmation("Would you like to add 20 more cycles to continue? (y/N): ", {"y", "n"})
         if user_input == "y":
             additional_cycles = 20
             self.budget += additional_cycles

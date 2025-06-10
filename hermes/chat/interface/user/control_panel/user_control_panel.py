@@ -662,7 +662,6 @@ class UserControlPanel(ControlPanel):
     def _parse_focus_subproblem_command(self, _: str) -> Event | None:
         """Parse the /focus_subproblem command"""
         try:
-
             # This will need to get the root node from the current research
             # For now, we'll create a simple event that will be handled by the research engine
             # The actual TUI will be shown when the event is processed

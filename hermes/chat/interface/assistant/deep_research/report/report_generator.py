@@ -38,10 +38,7 @@ class ReportGeneratorImpl(ReportGenerator):
         return self._render_report_with_fallback(context)
 
     def _collect_artifacts_by_problem(
-        self,
-        root_node: "ResearchNode",
-        research: "Research",
-        interface: AssistantInterface
+        self, root_node: "ResearchNode", research: "Research", interface: AssistantInterface
     ) -> dict[str, list[dict[str, str]]]:
         """Collect and group artifacts by problem title"""
         artifacts_by_problem: dict[str, list[dict[str, str]]] = {}
@@ -59,10 +56,7 @@ class ReportGeneratorImpl(ReportGenerator):
                 artifacts_by_problem[owner_title] = []
 
             # Get the relative path from Results directory for this artifact
-            artifact_info = {
-                "name": artifact.name,
-                "relative_path": self._get_artifact_relative_path(node, research, artifact.name)
-            }
+            artifact_info = {"name": artifact.name, "relative_path": self._get_artifact_relative_path(node, research, artifact.name)}
             artifacts_by_problem[owner_title].append(artifact_info)
 
         return artifacts_by_problem
@@ -86,10 +80,7 @@ class ReportGeneratorImpl(ReportGenerator):
         return f"{relative_dir}/{artifact_name}.md"
 
     def _build_template_context(
-        self,
-        root_node: "ResearchNode",
-        artifacts_by_problem: dict[str, list[dict[str, str]]],
-        root_completion_message: str | None
+        self, root_node: "ResearchNode", artifacts_by_problem: dict[str, list[dict[str, str]]], root_completion_message: str | None
     ) -> dict[str, Any]:
         """Build context dictionary for template rendering"""
         return {

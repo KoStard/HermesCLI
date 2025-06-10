@@ -190,3 +190,4 @@ LLM commands in Hermes follow a specific structure:
 
 ## Memories
 - Instead of hasattr check the type of the object.
+- Verify the prod readiness of your changes by running uv run ruff check. Also run uv run ruff format to format the code.

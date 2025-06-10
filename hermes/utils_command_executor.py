@@ -1,12 +1,14 @@
 import configparser
 import os
 from argparse import Namespace
+from typing import Any
 
 from hermes.chat.interface.user.control_panel.exa_client import ExaClient
+from hermes.utils.config_utils import extract_config_section
 
 
 class UtilsCommandExecutor:
-    def __init__(self, config: configparser.ConfigParser):
+    def __init__(self, config: configparser.ConfigParser | dict[str, Any]):
         self.config = config
 
     def execute(self, cli_args: Namespace, extension_utils_visitors: list):
@@ -68,7 +70,8 @@ class UtilsCommandExecutor:
         print(markdown_content)
 
     def _get_url_exa(self, cli_args: Namespace):
-        client = ExaClient(self.config["EXA"]["api_key"])
+        exa_config = extract_config_section(self.config, "EXA")
+        client = ExaClient(exa_config.get("api_key"))
         result = client.get_contents(cli_args.url)
 
         if not result:
@@ -80,7 +83,8 @@ class UtilsCommandExecutor:
         print("Last updated:", result[0].published_date)
 
     def _exa_search(self, cli_args: Namespace):
-        client = ExaClient(self.config["EXA"]["api_key"])
+        exa_config = extract_config_section(self.config, "EXA")
+        client = ExaClient(exa_config.get("api_key"))
         results = client.search(cli_args.query, cli_args.num_results)
 
         if not results:
@@ -100,4 +104,6 @@ class UtilsCommandExecutor:
 
     def _execute_extension_utils(self, cli_args: Namespace, extension_utils_visitors: list):
         for extension_util_visitor in extension_utils_visitors:
+            # Pass the config as is - extensions should use the extract_config_section function
+            # to handle both ConfigParser and dictionary configs
             extension_util_visitor(cli_args, self.config)

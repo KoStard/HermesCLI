@@ -109,7 +109,7 @@ class CLIParser:
 
         research_parser.add_argument(
             "research_repo",
-            help=("Path to research folder. " "You can specify the initial research name with :research-name"),
+            help=("Path to research folder. You can specify the initial research name with :research-name"),
             type=str,
         )
         research_parser.add_argument(

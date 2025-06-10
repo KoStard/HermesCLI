@@ -29,7 +29,6 @@ if TYPE_CHECKING:
 class ApplicationInitializer:
     def __init__(self, config_manager: "ConfigManager", command_status_overrides: dict[str, ChatAssistantCommandStatusOverride]):
         self.config_manager = config_manager
-        self.config = config_manager.get_config()
         self.command_status_overrides = command_status_overrides
         self.notifications_printer = CLINotificationsPrinter()
 
@@ -62,9 +61,7 @@ class ApplicationInitializer:
         return ModelFactory(self.notifications_printer)
 
     def _create_exa_client(self) -> ExaClient:
-        api_key = None
-        if "EXA" in self.config and "api_key" in self.config["EXA"]:
-            api_key = self.config["EXA"]["api_key"]
+        api_key = self.config_manager.get_exa_api_key()
         return ExaClient(api_key)
 
     def _create_llm_control_panel(self, llm_commands, exa_client, mcp_manager: McpManager) -> ChatAssistantControlPanel:
@@ -144,10 +141,11 @@ class ApplicationInitializer:
 
         from hermes.chat.interface.user.interface.stt_input_handler.stt_input_handler import STTInputHandler
 
-        if "GROQ" not in self.config or "api_key" not in self.config["GROQ"]:
-            raise ValueError("Please set the GROQ api key in ~/.config/hermes/config.ini")
+        groq_api_key = self.config_manager.get_groq_api_key()
+        if not groq_api_key:
+            raise ValueError("Please set the GROQ api key in ~/.config/hermes/config.json")
 
-        return STTInputHandler(api_key=self.config["GROQ"]["api_key"])
+        return STTInputHandler(api_key=groq_api_key)
 
     def _create_assistant_participant(
         self,
@@ -164,7 +162,7 @@ class ApplicationInitializer:
         provider, model_tag = model_info_string.split("/", 1)
         provider = provider.upper()
 
-        model = model_factory.get_model(provider, model_tag, self.config)
+        model = model_factory.get_model(provider, model_tag, self.config_manager.get_config())
 
         if cli_args.debug:
             return self._create_debug_participant(model, llm_control_panel)
@@ -216,7 +214,7 @@ class ApplicationInitializer:
         if not model_info_string:
             raise ValueError(
                 "No model specified. Please specify a model using the --model argument or add a default model in the config "
-                "file ~/.config/hermes/config.ini.",
+                "file ~/.config/hermes/config.json.",
             )
         if "/" not in model_info_string:
             raise ValueError("Model info string should be in the format provider/model_tag")

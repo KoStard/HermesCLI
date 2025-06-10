@@ -296,4 +296,3 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
                 return result
 
         return None
-
