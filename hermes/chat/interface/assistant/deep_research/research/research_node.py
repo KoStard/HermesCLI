@@ -299,7 +299,16 @@ class ResearchNodeImpl(ResearchNode):
                 self.set_problem_status(ProblemStatus.READY_TO_START)
 
     def _get_child_node_ids_to_wait(self) -> set[str]:
-        return self._state_manager.get_state().pending_child_node_ids
+        pending_child_node_ids = self._state_manager.get_state().pending_child_node_ids
+        children_map = {c.get_id(): c for c in self.children}
+        final_list = set()
+        for pending_child_node_id in pending_child_node_ids:
+            if pending_child_node_id not in children_map:
+                continue
+            if children_map[pending_child_node_id].get_problem_status() in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}:
+                continue
+            final_list.add(pending_child_node_id)
+        return final_list
 
     def get_resolution_message(self) -> str | None:
         """Get the resolution message for this node from the state manager."""
