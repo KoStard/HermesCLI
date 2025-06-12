@@ -300,7 +300,7 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
             self._add_status_message_to_parent(
                 parent_node,
                 research_node,
-                "Task marked FINISHED, focusing back up.",
+                "Task marked FINISHED",
                 message,
                 "[Completion Message]: ",
             )
@@ -327,7 +327,7 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
             self._add_status_message_to_parent(
                 parent_node,
                 research_node,
-                "Task marked FAILED, focusing back up.",
+                "Task marked FAILED",
                 message,
                 "[Failure Message]: ",
             )
