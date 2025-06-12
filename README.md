@@ -248,35 +248,82 @@ The LLM can interact with files using structured commands with `<<<command>>>` b
 
 Hermes can be extended with tools from [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers. This allows seamless integration with a growing ecosystem of external tools and data sources.
 
-You can configure MCP servers separately for the regular chat assistant and the Deep Research mode in your `config.ini` file.
+You can configure MCP servers separately for the regular chat assistant and the Deep Research mode in your `config.json` file. The INI configuration format has limited support for MCP features.
+
+#### Configuration Options
 
 **Simple Configuration:**
 
 For simple cases, you can provide the command directly.
 
-```ini
-[MCP_CHAT_ASSISTANT]
-# name = command_to_run_server
-my_weather_tool = /path/to/weather_server.py
+```json
+{
+  "mcp_chat_assistant": {
+    "my_weather_tool": "/path/to/weather_server.py"
+  }
+}
 ```
 
 **Advanced Configuration (with Environment Variables):**
 
 For more complex setups, such as running a Docker container or passing environment variables, you can use a JSON object.
 
-```ini
-[MCP_DEEP_RESEARCH]
-# Add servers for the deep research mode
-my_database_tool = /path/to/db_server.sh
-# Example using a JSON object for advanced configuration:
-github_mcp = {"command": ["docker", "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"], "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_pat_here"}}
+```json
+{
+  "mcp_deep_research": {
+    "github_mcp": {
+      "command": ["docker", "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_pat_here"
+      }
+    }
+  }
+}
 ```
 
-In the example above:
-- `command`: A list containing the executable and its arguments.
-- `env`: A dictionary of environment variables to set for the server process. These are added to the environment Hermes runs in.
+**Tool Filtering Configuration:**
 
-Hermes will start these servers in the background. Tools provided by connected MCP servers will be available as `<<<command>>>` blocks for the assistant to use.
+You can selectively enable or disable specific tools from MCP servers using the `tools` configuration:
+
+1. **Enable specific tools (whitelist)** - Only the listed tools will be available:
+
+```json
+{
+  "mcp_chat_assistant": {
+    "github_mcp": {
+      "command": "path/to/github_mcp_server.py",
+      "tools": ["search_issues", "list_repositories"]
+    }
+  }
+}
+```
+
+2. **Enable/disable individual tools** - Explicitly enable or disable specific tools:
+
+```json
+{
+  "mcp_chat_assistant": {
+    "github_mcp": {
+      "command": ["docker", "run", "-i", "--rm", "ghcr.io/github/github-mcp-server"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_pat_here"
+      },
+      "tools": {
+        "search_issues": true,
+        "create_issue": true,
+        "delete_repository": false
+      }
+    }
+  }
+}
+```
+
+In this configuration:
+- `command`: A string or list containing the executable and its arguments.
+- `env`: A dictionary of environment variables to set for the server process.
+- `tools`: A list of tool names to enable, or a dictionary mapping tool names to boolean values. If provided, but a tool name is not specified, default will be to disable the tool.
+
+Hermes will start these servers in the background. Tools provided by connected MCP servers will be available as `<<<command>>>` blocks for the assistant to use based on the specified tool configuration.
 
 ## Extending Hermes
 
