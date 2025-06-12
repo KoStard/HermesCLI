@@ -49,7 +49,7 @@ class McpClient:
         if isinstance(cmd, list):
             return cmd
         if isinstance(cmd, str) and isinstance(args, list):
-            return [cmd] + args
+            return list(shlex.split(cmd)) + args
         if isinstance(cmd, str):
             return shlex.split(cmd)
         raise ValueError(f"Invalid command configuration for MCP server '{self.name}'")

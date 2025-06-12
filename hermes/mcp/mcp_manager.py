@@ -6,6 +6,7 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING, Any
 
 from hermes.chat.interface.commands.command import Command
+from hermes.json_config_manager import JsonConfigManager
 from hermes.mcp.mcp_client import McpClient
 
 if TYPE_CHECKING:
@@ -24,6 +25,18 @@ class McpManager:
         self.chat_servers_config = chat_mcp_servers
         self.deep_research_servers_config = deep_research_mcp_servers
         self.notifications_printer = notifications_printer
+        self.config_manager = JsonConfigManager()  # Used for tool configuration access
+
+        # Store server tool configurations
+        self.chat_server_tool_configs: dict[str, dict[str, bool]] = {}
+        self.deep_research_server_tool_configs: dict[str, dict[str, bool]] = {}
+
+        # Initialize tool configurations
+        for server_name, server_config in chat_mcp_servers.items():
+            self.chat_server_tool_configs[server_name] = self.config_manager.get_mcp_server_tool_config(server_name, server_config)
+
+        for server_name, server_config in deep_research_mcp_servers.items():
+            self.deep_research_server_tool_configs[server_name] = self.config_manager.get_mcp_server_tool_config(server_name, server_config)
 
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self.loop.run_forever, daemon=True)
@@ -95,12 +108,32 @@ class McpManager:
 
     def create_commands_for_mode(self, mode: str) -> list[Command]:
         commands = []
-        clients = self.chat_clients if mode == "chat" else self.deep_research_clients
+        if mode == "chat":
+            clients = self.chat_clients
+            server_tool_configs = self.chat_server_tool_configs
+        else:  # deep_research mode
+            clients = self.deep_research_clients
+            server_tool_configs = self.deep_research_server_tool_configs
+
         for client in clients:
             if client.status != "connected":
+                print("Skipping MCP client, as it's not connected", client)
                 continue
+
+            # Get tool configuration for this client
+            tool_config = server_tool_configs.get(client.name, {})
+
             for tool_schema in client.tools:
-                commands.append(self._create_command_from_schema(client, tool_schema, mode))
+                tool_name = tool_schema.get("name", "unknown_mcp_tool")
+
+                # Check if this tool is enabled
+                # If tool_config is empty, all tools are enabled (default behavior)
+                # Otherwise, check if the tool is explicitly enabled or not mentioned (default to disabled)
+                if not tool_config or tool_config.get(tool_name, False):
+                    commands.append(self._create_command_from_schema(client, tool_schema, mode))
+                else:
+                    logger.debug(f"Skipping disabled MCP tool '{tool_name}' from server '{client.name}'")
+
         return commands
 
     def _parse_tool_args(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -190,7 +223,7 @@ class McpManager:
         from hermes.chat.events import Event
 
         class McpChatToolCommand(Command[Any, Generator[Event, None, None]]):
-            def execute(tool_self, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:
+            def execute(tool_self, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:  # noqa: N805
                 tool_args = self._parse_tool_args(args)
                 output = self._call_tool_and_get_output(client, tool_name, tool_args)
 
@@ -211,7 +244,7 @@ class McpManager:
         """Create a command for deep research mode."""
 
         class McpDeepResearchToolCommand(Command[Any, None]):
-            def execute(tool_self, context: Any, args: dict[str, Any]) -> None:
+            def execute(tool_self, context: Any, args: dict[str, Any]) -> None:  # noqa: N805
                 tool_args = self._parse_tool_args(args)
                 output = self._call_tool_and_get_output(client, tool_name, tool_args)
                 if hasattr(context, "add_command_output"):

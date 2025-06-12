@@ -64,6 +64,30 @@ class JsonConfigManager:
     def get_mcp_deep_research_servers(self) -> dict[str, dict[str, Any] | str]:
         return self.config.get("mcp_deep_research", {})
 
+    def get_mcp_server_tool_config(self, server_name: str, server_config: dict[str, Any] | str) -> dict[str, bool]:
+        """
+        Extract tool configuration from MCP server configuration.
+        Returns a dictionary mapping tool names to boolean values (True for enabled, False for disabled).
+        An empty dict means no filtering (all tools enabled).
+        """
+        if isinstance(server_config, str):
+            return {}  # No tool configuration for simple string configs
+
+        # Check for tools configuration section
+        tools_config = server_config.get("tools", {})
+        if not tools_config:
+            return {}
+
+        # Handle different configuration formats
+        if isinstance(tools_config, list):
+            # List of tool names to enable
+            return {tool_name: True for tool_name in tools_config}
+        if isinstance(tools_config, dict):
+            # Dictionary mapping tool names to enable/disable status
+            return tools_config
+
+        return {}
+
     def get_exa_api_key(self) -> str | None:
         exa_config = self.config.get("exa", {})
         return exa_config.get("api_key")
