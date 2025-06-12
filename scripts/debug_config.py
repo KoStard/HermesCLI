@@ -11,9 +11,9 @@ This script will:
 3. Extract key settings that might be causing issues
 """
 
+import json
 import os
 import sys
-import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -40,7 +40,7 @@ def main():
         config_manager = ConfigManager()
         model_info = config_manager.get_default_model_info_string()
         print(f"  Default model: {model_info}")
-        
+
         overrides = config_manager.get_command_status_overrides()
         print(f"  Command overrides: {overrides}")
         print("  Config type:", type(config_manager.get_config()).__name__)
@@ -54,17 +54,17 @@ def main():
         print(f"Direct JSON config testing ({json_path}):")
         try:
             json_manager = JsonConfigManager()
-            
+
             # Get and print the full config (formatted)
             full_config = json_manager.get_config()
             print("  Full config content:")
             print(json.dumps(full_config, indent=2))
             print()
-            
+
             # Test model extraction
             model_info = json_manager.get_default_model_info_string()
             print(f"  Default model: {model_info}")
-            
+
             # Check both locations for the model setting
             top_level_model = full_config.get("model")
             base_model = full_config.get("base", {}).get("model") if isinstance(full_config.get("base"), dict) else None

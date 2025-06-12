@@ -5,6 +5,22 @@ ${'#'} Deep Research Completed
 
 ${'##'} Problem: ${root_node.get_title()}
 
+% if budget_info:
+${'##'} Budget Usage
+
+% if budget_info.get('budget') is None:
+No budget limits were set for this research.
+% else:
+- Initial budget: ${budget_info.get('budget')} message cycles
+- Used: ${budget_info.get('used')} message cycles
+- Remaining: ${budget_info.get('remaining')} message cycles
+% if budget_info.get('since_last_start'):
+- Used since last start: ${budget_info.get('since_last_start')} message cycles
+% endif
+% endif
+
+% endif
+
 % if root_completion_message:
 ${'##'} Final Message from Root Task
 

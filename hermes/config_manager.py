@@ -4,7 +4,7 @@ from typing import Any
 
 from hermes.chat.interface.assistant.chat.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.json_config_manager import JsonConfigManager
-from hermes.utils.config_utils import get_legacy_config_path, get_json_config_path
+from hermes.utils.config_utils import get_json_config_path, get_legacy_config_path
 
 
 class ConfigManager:

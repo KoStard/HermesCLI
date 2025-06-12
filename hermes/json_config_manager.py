@@ -15,7 +15,7 @@ class JsonConfigManager:
 
     def get_command_status_overrides(self) -> dict[str, ChatAssistantCommandStatusOverride]:
         command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] = {}
-        
+
         # Check for overrides in top level
         if "llm_command_status_overrides" in self.config:
             try:
@@ -23,7 +23,7 @@ class JsonConfigManager:
                 command_status_overrides.update(self._parse_overrides(overrides_config))
             except Exception as e:
                 print(f"Warning: Failed to parse top-level llm_command_status_overrides from config: {e}")
-        
+
         # Check for overrides in base section
         base_config = self.config.get("base", {})
         if "llm_command_status_overrides" in base_config:
@@ -32,9 +32,9 @@ class JsonConfigManager:
                 command_status_overrides.update(self._parse_overrides(overrides_config))
             except Exception as e:
                 print(f"Warning: Failed to parse base section llm_command_status_overrides from config: {e}")
-                
+
         return command_status_overrides
-        
+
     def _parse_overrides(self, overrides_config) -> dict[str, ChatAssistantCommandStatusOverride]:
         result = {}
         if isinstance(overrides_config, dict):
@@ -53,7 +53,7 @@ class JsonConfigManager:
         model = self.config.get("model")
         if model:
             return model
-            
+
         # Check in base section
         base_config = self.config.get("base", {})
         return base_config.get("model")

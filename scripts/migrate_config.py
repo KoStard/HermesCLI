@@ -21,8 +21,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hermes.utils.config_utils import (
     convert_ini_to_json,
-    get_legacy_config_path,
     get_json_config_path,
+    get_legacy_config_path,
 )
 
 

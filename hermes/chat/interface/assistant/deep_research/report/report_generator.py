@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
 from hermes.chat.interface.assistant.deep_research.context import AssistantInterface
-from hermes.chat.interface.assistant.deep_research.report import ReportGenerator
+from hermes.chat.interface.assistant.deep_research.report import BudgetInfo, ReportGenerator
 from hermes.chat.interface.templates.template_manager import TemplateManager
 
 if TYPE_CHECKING:
@@ -20,21 +20,33 @@ class ReportGeneratorImpl(ReportGenerator):
         """
         self.template_manager = template_manager
 
-    def generate_final_report(self, research: "Research", interface: AssistantInterface, root_completion_message: str | None = None) -> str:
+    def generate_final_report(
+        self,
+        research: "Research",
+        interface: AssistantInterface,
+        root_completion_message: str | None = None,
+        budget_info: BudgetInfo | None = None,
+    ) -> str:
         """Generate a summary of all artifacts created during the research using a template.
 
         Args:
+            research: The Research instance containing the research data.
             interface: The DeepResearcherInterface instance (needed for _collect_artifacts_recursively).
                        Consider refactoring _collect_artifacts_recursively into FileSystem or a utility
                        to remove this dependency if possible in the future.
             root_completion_message: Optional final message from the root node.
+            budget_info: Optional budget information to include in the report.
 
         Returns:
             A string containing the formatted final report.
         """
         root_node = research.get_root_node()
         artifacts_by_problem = self._collect_artifacts_by_problem(root_node, research, interface)
-        context = self._build_template_context(root_node, artifacts_by_problem, root_completion_message)
+
+        # Convert budget info to dictionary if provided, otherwise use empty dict
+        budget_data = budget_info.to_dict() if budget_info else {}
+
+        context = self._build_template_context(root_node, artifacts_by_problem, root_completion_message, budget_data)
         return self._render_report_with_fallback(context)
 
     def _collect_artifacts_by_problem(
@@ -80,13 +92,18 @@ class ReportGeneratorImpl(ReportGenerator):
         return f"{relative_dir}/{artifact_name}.md"
 
     def _build_template_context(
-        self, root_node: "ResearchNode", artifacts_by_problem: dict[str, list[dict[str, str]]], root_completion_message: str | None
+        self,
+        root_node: "ResearchNode",
+        artifacts_by_problem: dict[str, list[dict[str, str]]],
+        root_completion_message: str | None,
+        budget_info: dict[str, int | None] = None,
     ) -> dict[str, Any]:
         """Build context dictionary for template rendering"""
         return {
             "root_node": root_node,
             "artifacts_by_problem": artifacts_by_problem if artifacts_by_problem else None,
             "root_completion_message": root_completion_message,
+            "budget_info": budget_info,
         }
 
     def _render_report_with_fallback(

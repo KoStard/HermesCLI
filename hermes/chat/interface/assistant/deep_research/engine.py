@@ -180,9 +180,20 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
 
     def _generate_final_report(self) -> str | None:
         """Generate final report for current research."""
+        from hermes.chat.interface.assistant.deep_research.report import BudgetInfo
+
         root_node = self.research.get_root_node()
         final_root_completion_message = root_node.get_resolution_message()
-        return self.report_generator.generate_final_report(self.research, self.interface, final_root_completion_message)
+
+        # Create budget information object
+        budget_info = BudgetInfo(
+            budget=self.budget_manager.budget,
+            used=self.budget_manager.message_cycles_used,
+            remaining=self.budget_manager.get_remaining_budget(),
+            since_last_start=self.budget_manager.cycles_used_since_last_start,
+        )
+
+        return self.report_generator.generate_final_report(self.research, self.interface, final_root_completion_message, budget_info)
 
     def _run_node(self, research_node: ResearchNode | None):
         if research_node is None:  # All tasks in the tree are done

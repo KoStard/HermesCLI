@@ -15,6 +15,7 @@ class BudgetManager:
     def __init__(self, initial_budget: int | None = None):
         self.budget: int | None = initial_budget
         self.message_cycles_used: int = 0
+        self.cycles_used_since_last_start: int = 0
         self._budget_warning_shown: bool = False
         self._budget_lock = threading.RLock()
         self._budget_exhausted_and_extension_rejected = False
@@ -29,6 +30,8 @@ class BudgetManager:
         self.budget = budget_value
         self._budget_exhausted_and_extension_rejected = False
         self._budget_warning_shown = False  # Reset warning when budget is set/changed
+        # Reset cycles used since last start when budget is set/changed
+        self.cycles_used_since_last_start = 0
 
     def get_remaining_budget(self) -> int | None:
         """Get the remaining budget"""
@@ -50,6 +53,7 @@ class BudgetManager:
         """
         with self._budget_lock:
             self.message_cycles_used += 1
+            self.cycles_used_since_last_start += 1
 
             if self.budget is None:
                 return False  # No budget set
