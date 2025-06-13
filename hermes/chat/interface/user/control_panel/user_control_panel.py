@@ -56,7 +56,7 @@ class UserControlPanel(ControlPanel):
         super().__init__()
         self.tree_generator = TreeGenerator()
         self.llm_control_panel = llm_control_panel
-        self._cli_arguments = set()  # Track which arguments were added to CLI
+        self._cli_arguments: set[str] = set()  # Track which arguments were added to CLI
         self.notifications_printer = notifications_printer
         self.exa_client = exa_client
         self.is_deep_research_mode = is_deep_research_mode
@@ -434,7 +434,7 @@ class UserControlPanel(ControlPanel):
         try:
             fuzzy_selector = FuzzyFilesSelector()
             absolute_file_paths = fuzzy_selector.select_files(multi=True)
-            result_events = []
+            result_events: list[Event] = []
             for absolute_file_path in absolute_file_paths:
                 result_events.append(
                     MessageEvent(
@@ -464,7 +464,7 @@ class UserControlPanel(ControlPanel):
     def extract_and_execute_commands(self, message: Message) -> Generator[Event, None, None]:
         """Extract commands from a message and execute them, yielding resulting events."""
         peekable_generator = PeekableGenerator(self._lines_from_message(message))
-        prioritised_backlog = []
+        prioritised_backlog: list[tuple[int, Event]] = []
         current_message_text = ""
 
         # Process each line from the message
@@ -679,12 +679,16 @@ class UserControlPanel(ControlPanel):
         result = self.exa_client.get_contents(url)[0]
         result_text = result.text
         result_title = result.title
-        content_age = (datetime.now(timezone.utc) - datetime.fromisoformat(result.published_date).astimezone(timezone.utc)).days
+        content_age = None
+        if result.published_date:
+            content_age = (datetime.now(timezone.utc) - datetime.fromisoformat(result.published_date).astimezone(timezone.utc)).days
 
         if not result_text:
             raise ValueError(f"No content found for URL: {url}")
 
-        if content_age > 7:
+        if content_age is None:
+            result_text += "\n\n---\n\nWarning! No information available about the age of the content."
+        elif content_age > 7:
             result_text += (
                 f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, "
                 "it might not be fully up to date"

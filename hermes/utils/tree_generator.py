@@ -8,7 +8,7 @@ class TreeGenerator:
             exclusions = [lambda x: x.startswith("."), lambda x: x == "__pycache__"]
         self.exclusions = exclusions
 
-    def generate_tree(self, root_path: str, depth: int) -> str:
+    def generate_tree(self, root_path: str, depth: int | None) -> str:
         """Generates a text-based tree representation of a directory structure.
 
         Args:
@@ -20,7 +20,7 @@ class TreeGenerator:
         """
         return self._build_tree(root_path, "", depth, 0)
 
-    def _build_tree(self, current_path: str, prefix: str, depth: int, current_depth: int) -> str:
+    def _build_tree(self, current_path: str, prefix: str, depth: int | None, current_depth: int) -> str:
         """Recursively builds the tree string.
 
         Args:
