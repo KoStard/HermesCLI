@@ -305,7 +305,11 @@ class ResearchNodeImpl(ResearchNode):
         for pending_child_node_id in pending_child_node_ids:
             if pending_child_node_id not in children_map:
                 continue
-            if children_map[pending_child_node_id].get_problem_status() in {ProblemStatus.FINISHED, ProblemStatus.FAILED, ProblemStatus.CANCELLED}:
+            if children_map[pending_child_node_id].get_problem_status() in {
+                ProblemStatus.FINISHED,
+                ProblemStatus.FAILED,
+                ProblemStatus.CANCELLED,
+            }:
                 continue
             final_list.add(pending_child_node_id)
         return final_list

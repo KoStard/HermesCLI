@@ -50,7 +50,7 @@ class McpManager:
         asyncio.run_coroutine_threadsafe(self._load_clients(), self.loop)
 
     async def _load_clients(self):
-        logger.info("Starting MCP client loading in background.")
+        logger.debug("Starting MCP client loading in background.")
         chat_tasks = [self._create_and_start_client(name, config, self.chat_clients) for name, config in self.chat_servers_config.items()]
         dr_tasks = [
             self._create_and_start_client(name, config, self.deep_research_clients)
@@ -58,7 +58,7 @@ class McpManager:
         ]
         await asyncio.gather(*chat_tasks, *dr_tasks)
         self.initial_load_complete = True
-        logger.info("Finished loading all MCP clients.")
+        logger.debug("Finished loading all MCP clients.")
 
     async def _create_and_start_client(self, name: str, config: dict | str, client_list: list[McpClient]):
         client = McpClient(name, config, self.loop)
@@ -88,6 +88,9 @@ class McpManager:
 
     def has_errors(self) -> bool:
         return any(client.status == "error" for client in self.chat_clients + self.deep_research_clients)
+
+    def are_errors_acknowledged(self) -> bool:
+        return self._errors_acknowledged
 
     def acknowledge_errors(self) -> None:
         self._errors_acknowledged = True

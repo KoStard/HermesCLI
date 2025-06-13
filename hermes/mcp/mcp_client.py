@@ -80,7 +80,7 @@ class McpClient:
             asyncio.create_task(self._read_stderr())
             await self._initialize()
             self.status = "connected"
-            logger.info(f"MCP client '{self.name}' connected successfully.")
+            logger.debug(f"MCP client '{self.name}' connected successfully.")
         except Exception as e:
             self.status = "error"
             self.error_message = f"Failed to start or initialize MCP server '{self.name}': {e}"
@@ -165,7 +165,7 @@ class McpClient:
         response = await self._send_request("tools/list")
         if response:
             self.tools = response.get("tools", [])
-            logger.info(f"Loaded {len(self.tools)} tools from MCP server '{self.name}'")
+            logger.debug(f"Loaded {len(self.tools)} tools from MCP server '{self.name}'")
         else:
             logger.warning(f"MCP server '{self.name}' returned no tools.")
 

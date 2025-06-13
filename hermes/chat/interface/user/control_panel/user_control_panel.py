@@ -617,7 +617,7 @@ class UserControlPanel(ControlPanel):
         """Format a standard CLI argument into command text."""
         return [f"/{arg} {v}" for v in values]
 
-    def convert_cli_arguments_to_text(self, parser: ArgumentParser, args: Namespace) -> str:
+    def convert_cli_arguments_to_text(self, args: Namespace) -> str:
         """Convert CLI arguments to text commands for processing."""
         lines = []
         args_dict = vars(args)

@@ -109,3 +109,6 @@ class ChatAssistantOrchestrator(Orchestrator):
     def change_thinking_level(self, level: int):
         if hasattr(self.model, "set_thinking_level"):
             self.model.set_thinking_level(level)
+
+    def update_mcp_commands(self):
+        self.control_panel.update_mcp_commands()

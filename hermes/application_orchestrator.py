@@ -64,14 +64,6 @@ class ApplicationOrchestrator:
         )
         self.app_initializer.print_welcome_message(model_info_string)
 
-        # Wait for MCP clients to load, then update the available commands.
-        components.mcp_manager.wait_for_initial_load()
-        assistant_interface = participants.assistant.orchestrator
-        if isinstance(assistant_interface, DeepResearchAssistantOrchestrator):
-            assistant_interface.update_mcp_commands()
-        elif isinstance(assistant_interface, ChatAssistantOrchestrator):
-            assistant_interface.control_panel.update_mcp_commands()
-
         history = History()
         conversation_orchestrator = ConversationOrchestrator(
             user_participant=participants.user,
@@ -105,13 +97,8 @@ class ApplicationOrchestrator:
         )
         self.app_initializer.print_welcome_message(model_info_string)
 
-        # Wait for MCP clients to load, then update the available commands.
-        components.mcp_manager.wait_for_initial_load()
-        assistant_interface = participants.assistant.orchestrator
-        if isinstance(assistant_interface, DeepResearchAssistantOrchestrator):
-            assistant_interface.update_mcp_commands()
-        elif isinstance(assistant_interface, ChatAssistantOrchestrator):
-            assistant_interface.control_panel.update_mcp_commands()
+        # MCP clients are loading in the background
+        # We'll update the commands when they're ready in conversation_orchestrator
 
         history = History()
         conversation_orchestrator = ConversationOrchestrator(
