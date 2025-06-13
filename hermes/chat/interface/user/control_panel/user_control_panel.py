@@ -22,6 +22,7 @@ from hermes.chat.events import (
     SwitchResearchEvent,
     ThinkingLevelEvent,
 )
+from hermes.chat.interface.assistant.chat.control_panel import ChatAssistantControlPanel
 from hermes.chat.interface.control_panel import ControlPanel, ControlPanelCommand
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.chat.interface.helpers.peekable_generator import PeekableGenerator
@@ -50,7 +51,7 @@ class UserControlPanel(ControlPanel):
         notifications_printer: CLINotificationsPrinter,
         extra_commands: list[ControlPanelCommand],
         exa_client: ExaClient,
-        llm_control_panel,
+        llm_control_panel: ChatAssistantControlPanel,
         is_deep_research_mode=False,
     ):
         super().__init__()
@@ -87,6 +88,9 @@ class UserControlPanel(ControlPanel):
                 description="Add text to the conversation",
                 short_description="Send a text message",
                 parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directly_entered=True)),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=True,
             ),
         )
 
@@ -98,6 +102,9 @@ class UserControlPanel(ControlPanel):
                 short_description="Exit Hermes",
                 parser=lambda _: ExitEvent(),
                 priority=-100,  # Run exit after running any other command
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=True,
             ),
         )
 
@@ -110,6 +117,9 @@ class UserControlPanel(ControlPanel):
                 description="Add image to the conversation",
                 short_description="Share an image file",
                 parser=lambda line: MessageEvent(ImageMessage(author="user", image_path=line)),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -120,6 +130,9 @@ class UserControlPanel(ControlPanel):
                 description="Add image from url to the conversation",
                 short_description="Share an image via URL",
                 parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line)),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -130,6 +143,9 @@ class UserControlPanel(ControlPanel):
                 description="Add audio to the conversation",
                 short_description="Share an audio file",
                 parser=lambda line: MessageEvent(AudioFileMessage(author="user", audio_filepath=line)),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -140,6 +156,9 @@ class UserControlPanel(ControlPanel):
                 description="Add video to the conversation",
                 short_description="Share a video file",
                 parser=lambda line: MessageEvent(VideoMessage(author="user", video_filepath=line)),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -151,6 +170,9 @@ class UserControlPanel(ControlPanel):
                 "{<page_number>, <page_number>:<page_number>, ...} to specify pages.",
                 short_description="Share a PDF file",
                 parser=lambda line: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line)),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -161,6 +183,9 @@ class UserControlPanel(ControlPanel):
                 description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
                 short_description="Share a text-based document",
                 parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=True,
             ),
         )
 
@@ -173,6 +198,9 @@ class UserControlPanel(ControlPanel):
                 parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
                 visible_from_interface=False,
                 default_on_cli=True,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=True,
             ),
         )
 
@@ -184,6 +212,9 @@ class UserControlPanel(ControlPanel):
                 short_description="Share a text-based document",
                 parser=lambda line: self._parse_fuzzy_select_command(line),
                 with_argument=False,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=True,
             ),
         )
 
@@ -194,6 +225,9 @@ class UserControlPanel(ControlPanel):
                 description="Add url to the conversation",
                 short_description="Share a URL",
                 parser=lambda line: MessageEvent(UrlMessage(author="user", url=line)),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -205,6 +239,9 @@ class UserControlPanel(ControlPanel):
                 short_description="Fetch URL content with Exa",
                 parser=self._parse_exa_url_command,
                 visible_from_cli=True,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -219,6 +256,9 @@ class UserControlPanel(ControlPanel):
                 parser=lambda _: ClearHistoryEvent(),
                 priority=99,  # Clear history should be first
                 visible_from_cli=False,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -230,6 +270,9 @@ class UserControlPanel(ControlPanel):
                 short_description="Save chat history",
                 parser=lambda line: SaveHistoryEvent(line),
                 visible_from_cli=False,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -241,6 +284,9 @@ class UserControlPanel(ControlPanel):
                 short_description="Load chat history",
                 parser=lambda line: LoadHistoryEvent(line),
                 priority=98,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -253,6 +299,9 @@ class UserControlPanel(ControlPanel):
                 description="Enable or disable execution of LLM commands (on/off)",
                 short_description="Toggle LLM command execution",
                 parser=lambda line: LLMCommandsExecutionEvent(enabled=line.strip().lower() == "on"),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
         self._register_command(
@@ -262,6 +311,9 @@ class UserControlPanel(ControlPanel):
                 description="Generate a directory tree",
                 short_description="Show directory structure",
                 parser=self._parse_tree_command,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=True,
             ),
         )
 
@@ -272,6 +324,9 @@ class UserControlPanel(ControlPanel):
                 description="Enable or disable agent mode (on/off)",
                 short_description="Toggle agent mode",
                 parser=lambda line: AgentModeEvent(enabled=line.strip().lower() == "on"),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -282,6 +337,9 @@ class UserControlPanel(ControlPanel):
                 description="Enable or disable once mode - exit after completing current cycle (on/off)",
                 short_description="Toggle once mode",
                 parser=lambda line: OnceEvent(enabled=line.strip().lower() == "on"),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=True,
             ),
         )
 
@@ -292,6 +350,9 @@ class UserControlPanel(ControlPanel):
                 description="List all assistant commands and their current status",
                 short_description="Show assistant commands",
                 parser=self._parse_list_assistant_commands,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -302,6 +363,9 @@ class UserControlPanel(ControlPanel):
                 description="Set the thinking tokens (number)",
                 short_description="Set thinking tokens",
                 parser=lambda line: ThinkingLevelEvent(count=int(line.strip().lower())),
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=True,
             ),
         )
 
@@ -317,7 +381,9 @@ class UserControlPanel(ControlPanel):
                 ),
                 short_description="Set Deep Research budget",
                 parser=self._parse_budget_command,
-                is_deep_research=True,
+                is_research_command=True,
+                is_chat_command=False,
+                is_agent_command=False,
             ),
         )
         self._register_command(
@@ -327,6 +393,9 @@ class UserControlPanel(ControlPanel):
                 description="Set the status of an assistant command (ON/OFF/AGENT_ONLY)",
                 short_description="Set assistant command status",
                 parser=self._parse_set_assistant_command_status,
+                is_chat_command=True,
+                is_agent_command=True,
+                is_research_command=False,
             ),
         )
 
@@ -337,7 +406,9 @@ class UserControlPanel(ControlPanel):
                 description="Create a new research instance and switch to it (Deep Research mode only)",
                 short_description="Create new research instance",
                 parser=self._parse_create_research_command,
-                is_deep_research=True,
+                is_research_command=True,
+                is_chat_command=False,
+                is_agent_command=False,
             ),
         )
 
@@ -348,7 +419,9 @@ class UserControlPanel(ControlPanel):
                 description="Switch to a different research instance (Deep Research mode only)",
                 short_description="Switch research instance",
                 parser=self._parse_switch_research_command,
-                is_deep_research=True,
+                is_research_command=True,
+                is_chat_command=False,
+                is_agent_command=False,
             ),
         )
 
@@ -360,7 +433,9 @@ class UserControlPanel(ControlPanel):
                 short_description="List research instances",
                 parser=self._parse_list_research_command,
                 with_argument=False,
-                is_deep_research=True,
+                is_research_command=True,
+                is_chat_command=False,
+                is_agent_command=False,
             ),
         )
 
@@ -372,7 +447,9 @@ class UserControlPanel(ControlPanel):
                 short_description="Focus on a subproblem",
                 parser=self._parse_focus_subproblem_command,
                 with_argument=False,
-                is_deep_research=True,
+                is_research_command=True,
+                is_chat_command=False,
+                is_agent_command=False,
             ),
         )
 
@@ -452,14 +529,25 @@ class UserControlPanel(ControlPanel):
 
     def render(self):
         results = []
-        for command in self.commands:
-            if self.commands[command].is_deep_research and not self.is_deep_research_mode:
+        for command_name in self.commands:
+            command = self.commands[command_name]
+            if not self._is_command_visible(command):
                 continue
-            if not self.commands[command].visible_from_interface:
-                continue
-            results.append(self._render_command_in_control_panel(command))
+            results.append(self._render_command_in_control_panel(command_name))
 
         return "\n".join(results)
+
+    def _is_command_visible(self, command: ControlPanelCommand) -> bool:
+        is_agent_mode = self.llm_control_panel.is_agent_mode
+        if not command.visible_from_interface:
+            return False
+        if self.is_deep_research_mode and not command.is_research_command:
+            return False
+        if is_agent_mode and not command.is_agent_command:
+            return False
+        if not is_agent_mode and not command.is_chat_command:
+            return False
+        return True
 
     def extract_and_execute_commands(self, message: Message) -> Generator[Event, None, None]:
         """Extract commands from a message and execute them, yielding resulting events."""
@@ -554,7 +642,7 @@ class UserControlPanel(ControlPanel):
             command = self.commands[command_label]
             if not command.visible_from_cli:
                 continue
-            if command.is_agent_command or command.is_deep_research:
+            if not command.is_chat_command:
                 continue
             self._add_command_to_cli_parser(command_label, command, parser, command.default_on_cli)
 
@@ -563,7 +651,7 @@ class UserControlPanel(ControlPanel):
             command = self.commands[command_label]
             if not command.visible_from_cli:
                 continue
-            if command.is_deep_research and not command.is_agent_command:
+            if not command.is_agent_command:
                 continue
             self._add_command_to_cli_parser(command_label, command, parser, command.default_on_cli)
 
@@ -572,7 +660,7 @@ class UserControlPanel(ControlPanel):
             command = self.commands[command_label]
             if not command.visible_from_cli:
                 continue
-            if command.is_agent_command and not command.is_deep_research:
+            if not command.is_research_command:
                 continue
             self._add_command_to_cli_parser(command_label, command, parser, command.default_on_cli)
 

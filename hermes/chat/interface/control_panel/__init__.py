@@ -24,10 +24,11 @@ class ControlPanelCommand:
     visible_from_cli: bool = True
     visible_from_interface: bool = True
     default_on_cli: bool = False
+    is_chat_command: bool = True
     # For assistant commands
     is_agent_command: bool = False
     # For deep research
-    is_deep_research: bool = False
+    is_research_command: bool = False
 
 
 class ControlPanel(ABC):
