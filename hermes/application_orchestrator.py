@@ -3,8 +3,6 @@ from argparse import Namespace
 from hermes.application_initializer import ApplicationInitializer
 from hermes.chat.conversation_orchestrator import ConversationOrchestrator
 from hermes.chat.history import History
-from hermes.chat.interface.assistant.chat.assistant_orchestrator import ChatAssistantOrchestrator
-from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 from hermes.chat.interface.control_panel.commands_lister import CommandsLister
 from hermes.chat.participants import Participant
 from hermes.cli_parser import CLIParser
@@ -96,9 +94,6 @@ class ApplicationOrchestrator:
             model_info_string=model_info_string,
         )
         self.app_initializer.print_welcome_message(model_info_string)
-
-        # MCP clients are loading in the background
-        # We'll update the commands when they're ready in conversation_orchestrator
 
         history = History()
         conversation_orchestrator = ConversationOrchestrator(
