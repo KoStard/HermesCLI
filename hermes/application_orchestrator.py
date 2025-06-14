@@ -5,6 +5,8 @@ from hermes.chat.conversation_orchestrator import ConversationOrchestrator
 from hermes.chat.history import History
 from hermes.chat.interface.control_panel.commands_lister import CommandsLister
 from hermes.chat.participants import Participant
+from hermes.chat.participants.debug_participant import DebugParticipant
+from hermes.chat.participants.llm_participant import LLMParticipant
 from hermes.cli_parser import CLIParser
 from hermes.components_container import CoreComponents
 from hermes.config_manager import ConfigManager
@@ -109,7 +111,7 @@ class ApplicationOrchestrator:
     def _get_model_info_string(self, cli_model: str | None) -> str | None:
         return cli_model or self.config_manager.get_default_model_info_string()
 
-    def _run_conversation(self, conversation_orchestrator: ConversationOrchestrator, assistant: Participant):
+    def _run_conversation(self, conversation_orchestrator: ConversationOrchestrator, assistant: LLMParticipant | DebugParticipant):
         try:
             conversation_orchestrator.start_conversation()
         except EOFError:
@@ -120,7 +122,6 @@ class ApplicationOrchestrator:
         finally:
             self._cleanup_if_needed(assistant)
 
-    def _cleanup_if_needed(self, assistant_participant):
-        if assistant_participant and hasattr(assistant_participant, "interface") and hasattr(assistant_participant.orchestrator, "cleanup"):
-            print("Cleaning up debug interface")
+    def _cleanup_if_needed(self, assistant_participant: LLMParticipant | DebugParticipant):
+        if isinstance(assistant_participant, DebugParticipant):
             assistant_participant.orchestrator.cleanup()

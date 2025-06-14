@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from hermes.chat.events.engine_commands.base import EngineCommandEvent
+from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 from hermes.chat.interface.helpers.terminal_coloring import CLIColors
 
 if TYPE_CHECKING:
@@ -16,7 +17,7 @@ class CreateResearchEvent(EngineCommandEvent):
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         """Create a new research instance and switch to it"""
-        if hasattr(orchestrator.assistant_participant.orchestrator, "create_new_research"):
+        if isinstance(orchestrator.assistant_participant.orchestrator, DeepResearchAssistantOrchestrator):
             try:
                 orchestrator.assistant_participant.orchestrator.create_new_research(self.name)
                 orchestrator.notifications_printer.print_notification(f"Created and switched to new research instance: {self.name}")

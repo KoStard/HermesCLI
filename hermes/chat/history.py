@@ -8,6 +8,7 @@ from hermes.chat.messages import (
     DESERIALIZATION_KEYMAP,
     Message,
 )
+from hermes.chat.messages.text import TextMessage
 
 
 @dataclass
@@ -95,7 +96,7 @@ class History:
             return True
 
         # For messages from the target author, exclude directly entered ones
-        return not (hasattr(item.message, "is_directly_entered") and item.message.is_directly_entered)
+        return not (isinstance(item.message, TextMessage) and item.message.is_directly_entered)
 
     def clear(self):
         self._committed_items = []

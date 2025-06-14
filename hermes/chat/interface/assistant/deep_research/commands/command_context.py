@@ -47,35 +47,7 @@ class ResearchCommandContextImpl(ResearchCommandContext):
         return self._command_processor.fail_node(message, self.current_node)
 
     def search_artifacts(self, artifact_name: str) -> list[tuple["ResearchNode", "Artifact"]]:
-        # First search in current research
-        results = self.research_project.search_artifacts(artifact_name)
-
-        # If using repo structure, also search in sibling research instances
-        if hasattr(self.research_project, "search_artifacts_including_siblings"):
-            # Get results from all research instances
-            all_results = self.research_project.search_artifacts_including_siblings(artifact_name)
-
-            # Filter to only include results from current research
-            for _name, node, artifact in all_results:
-                # Find current research name
-                if any((n, a) == (node, artifact) for n, a in results):
-                    break
-
-            # Return results from current research
-            return results
-
-        return results
-
-    def search_all_research_artifacts(self, artifact_name: str) -> list[tuple[str, "ResearchNode", "Artifact"]]:
-        """Search for artifacts across all research instances (when using repo structure).
-
-        Returns:
-            List of (research_name, node, artifact) tuples
-        """
-        if hasattr(self.research_project, "search_artifacts_including_siblings"):
-            return self.research_project.search_artifacts_including_siblings(artifact_name)
-        # Fallback to current research only
-        return [("current", node, artifact) for node, artifact in self.research_project.search_artifacts(artifact_name)]
+        return self.research_project.search_artifacts(artifact_name)
 
     def add_knowledge_entry(self, entry: Any) -> None:
         self.research_project.get_knowledge_base().add_entry(entry)

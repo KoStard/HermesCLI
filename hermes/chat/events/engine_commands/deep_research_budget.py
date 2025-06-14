@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from hermes.chat.events.engine_commands.base import EngineCommandEvent
+from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
 
 if TYPE_CHECKING:
@@ -15,8 +16,9 @@ class DeepResearchBudgetEvent(EngineCommandEvent):
     budget: int
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
-        if hasattr(orchestrator.assistant_participant.get_interface(), "set_budget"):
-            orchestrator.assistant_participant.get_interface().set_budget(self.budget)
+        assistant_interface = orchestrator.assistant_participant.get_interface()
+        if isinstance(assistant_interface, DeepResearchAssistantOrchestrator):
+            assistant_interface.set_budget(self.budget)
             orchestrator.notifications_printer.print_notification(f"Deep Research budget set to {self.budget} message cycles")
         else:
             orchestrator.notifications_printer.print_notification(

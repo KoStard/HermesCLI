@@ -75,6 +75,7 @@ class DebugInterface(ChatAssistantOrchestrator):
         return self.connection.recv(1024).decode()
 
     def cleanup(self):
+        print("Cleaning up debug interface")
         if self.connection:
             self.connection.close()
         if self.socket:
