@@ -23,6 +23,7 @@ class PrimitiveArtifactData:
     is_external: bool
     is_fully_visible: bool  # Added to track visibility state directly
     owner_title: str | None = None  # Added to track ownership for node artifacts
+    research_name: str | None = None  # from which research is this node from
 
     @staticmethod
     def from_artifact(

@@ -82,11 +82,11 @@ class ArtifactManager:
             return [artifacts_manager]
 
         artifacts_dir = dual_directory_fs.get_artifact_directory_for_node_path(node_path)
-        artifacts_manager._load_artifacts_from_directory(artifacts_dir)
+        artifacts_manager.load_artifacts_from_directory(artifacts_dir)
 
         return [artifacts_manager]
 
-    def _load_artifacts_from_directory(self, artifacts_dir: Path) -> None:
+    def load_artifacts_from_directory(self, artifacts_dir: Path) -> None:
         """Load all artifacts from a directory into the artifacts manager"""
         if not artifacts_dir.exists():
             return

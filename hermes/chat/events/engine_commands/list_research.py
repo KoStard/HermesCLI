@@ -28,8 +28,9 @@ class ListResearchEvent(EngineCommandEvent):
         except ValueError as e:
             orchestrator.notifications_printer.print_notification(str(e), CLIColors.RED)
 
-
-    def _list_research_instances(self, orchestrator: "ConversationOrchestrator", assistant_orchestrator: DeepResearchAssistantOrchestrator) -> None:
+    def _list_research_instances(
+        self, orchestrator: "ConversationOrchestrator", assistant_orchestrator: DeepResearchAssistantOrchestrator
+    ) -> None:
         """List all available research instances"""
         instances = assistant_orchestrator.get_engine().list_research_instances()
         current = self._get_current_research_name(orchestrator, assistant_orchestrator)
@@ -40,7 +41,9 @@ class ListResearchEvent(EngineCommandEvent):
 
         self._display_research_instances(orchestrator, instances, current)
 
-    def _get_current_research_name(self, orchestrator: "ConversationOrchestrator", assistant_orchestrator: DeepResearchAssistantOrchestrator) -> str | None:
+    def _get_current_research_name(
+        self, orchestrator: "ConversationOrchestrator", assistant_orchestrator: DeepResearchAssistantOrchestrator
+    ) -> str | None:
         """Get name of current research if available"""
         return assistant_orchestrator.get_engine().current_research_name
 
