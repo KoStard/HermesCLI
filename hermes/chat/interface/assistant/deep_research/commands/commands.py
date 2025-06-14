@@ -2,8 +2,6 @@ from hermes.chat.interface.commands.command import CommandRegistry
 
 from .activate_subproblems_command import ActivateSubproblems
 from .add_artifact_command import AddArtifactCommand
-
-# Import all commands
 from .add_criteria_command import AddCriteriaCommand
 from .add_criteria_to_subproblem_command import AddCriteriaToSubproblemCommand
 from .add_knowledge_command import AddKnowledgeCommand

@@ -3,7 +3,6 @@ import os
 from collections.abc import Generator, Sequence
 from pathlib import Path
 
-# Import other necessary types
 from hermes.chat.events import Event, MessageEvent
 from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
 from hermes.chat.history import History
@@ -22,8 +21,6 @@ from hermes.chat.interface.assistant.framework.llm_interface_impl import (
     ChatModelLLMInterface,
 )
 from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
-
-# Import core command components
 from hermes.chat.interface.commands.command import CommandRegistry
 from hermes.chat.interface.commands.help_generator import CommandHelpGenerator
 from hermes.chat.interface.templates.template_manager import TemplateManager

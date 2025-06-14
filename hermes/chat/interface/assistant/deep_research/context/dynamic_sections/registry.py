@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 
 def get_data_type_to_renderer_instance_map(template_manager: "TemplateManager") -> DynamicDataTypeToRendererMap:
     """Creates and populates the registry mapping data types to renderer instances."""
-    # Import Data and Renderer classes from their respective section modules
     from .artifacts import ArtifactsSectionData, ArtifactsSectionRenderer
     from .budget import BudgetSectionData, BudgetSectionRenderer
     from .criteria import CriteriaSectionData, CriteriaSectionRenderer
