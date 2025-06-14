@@ -19,7 +19,7 @@ class SwitchResearchEvent(EngineCommandEvent):
         """Switch to a different research instance"""
         if isinstance(orchestrator.assistant_participant.orchestrator, DeepResearchAssistantOrchestrator):
             try:
-                orchestrator.assistant_participant.orchestrator.switch_research(self.name)
+                orchestrator.assistant_participant.orchestrator.get_engine().switch_research(self.name)
                 orchestrator.notifications_printer.print_notification(f"Switched to research instance: {self.name}")
             except ValueError as e:
                 orchestrator.notifications_printer.print_notification(str(e), CLIColors.RED)

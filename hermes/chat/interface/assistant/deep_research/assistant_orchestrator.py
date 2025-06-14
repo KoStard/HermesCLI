@@ -283,29 +283,5 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         if hasattr(self.model, "set_thinking_level"):
             self.model.set_thinking_level(level)
 
-    def switch_research(self, name: str):
-        """Switch to a different research instance.
-
-        Args:
-            name: Name of the research instance to switch to
-        """
-        self._engine.switch_research(name)
-
-    def list_research_instances(self) -> list[str]:
-        """List all available research instances.
-
-        Returns:
-            List of research instance names
-        """
-        return self._engine.list_research_instances()
-
-    def get_current_research_name(self) -> str | None:
-        """Get the name of the current research instance.
-
-        Returns:
-            Name of current research instance
-        """
-        return self._engine.current_research_name
-
     def get_engine(self) -> ResearchEngine:
         return self._engine

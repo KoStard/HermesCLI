@@ -31,7 +31,7 @@ class ListResearchEvent(EngineCommandEvent):
 
     def _list_research_instances(self, orchestrator: "ConversationOrchestrator", assistant_orchestrator: DeepResearchAssistantOrchestrator) -> None:
         """List all available research instances"""
-        instances = assistant_orchestrator.list_research_instances()
+        instances = assistant_orchestrator.get_engine().list_research_instances()
         current = self._get_current_research_name(orchestrator, assistant_orchestrator)
 
         if not instances:
@@ -42,7 +42,7 @@ class ListResearchEvent(EngineCommandEvent):
 
     def _get_current_research_name(self, orchestrator: "ConversationOrchestrator", assistant_orchestrator: DeepResearchAssistantOrchestrator) -> str | None:
         """Get name of current research if available"""
-        return assistant_orchestrator.get_current_research_name()
+        return assistant_orchestrator.get_engine().current_research_name
 
     def _display_research_instances(self, orchestrator: "ConversationOrchestrator", instances: list[str], current: str | None) -> None:
         """Format and display the list of research instances"""
