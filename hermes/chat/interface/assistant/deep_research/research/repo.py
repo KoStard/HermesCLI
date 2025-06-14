@@ -36,7 +36,6 @@ class Repo:
             The created Research instance
         """
         if name in self._research_instances:
-            print(f"Research instance '{name}' already exists")
             return self._research_instances[name]
 
         # Create a subdirectory for this research

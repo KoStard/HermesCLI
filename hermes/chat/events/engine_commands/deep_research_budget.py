@@ -17,11 +17,11 @@ class DeepResearchBudgetEvent(EngineCommandEvent):
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         assistant_interface = orchestrator.assistant_participant.get_interface()
-        if isinstance(assistant_interface, DeepResearchAssistantOrchestrator):
-            assistant_interface.set_budget(self.budget)
-            orchestrator.notifications_printer.print_notification(f"Deep Research budget set to {self.budget} message cycles")
-        else:
+        if not isinstance(assistant_interface, DeepResearchAssistantOrchestrator):
             orchestrator.notifications_printer.print_notification(
                 "Budget setting is only available for Deep Research Assistant",
                 CLIColors.YELLOW,
             )
+            return
+        assistant_interface.get_engine().set_budget(self.budget)
+        orchestrator.notifications_printer.print_notification(f"Deep Research budget set to {self.budget} message cycles")

@@ -224,10 +224,6 @@ class ResearchEngine(Generic[ResearchCommandContextType]):
         """Set the budget for the Deep Research Assistant. Delegates to BudgetManager."""
         self.budget_manager.set_budget(budget_value)
 
-    def create_new_research(self, name: str) -> Research:
-        """Create a new research instance under the repo."""
-        return self.repo.create_research(name)
-
     def switch_research(self, name: str):
         """Switch to a different research instance.
 

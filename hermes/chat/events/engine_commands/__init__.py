@@ -4,7 +4,6 @@ from hermes.chat.events.engine_commands.agent_mode import AgentModeEvent
 from hermes.chat.events.engine_commands.assistant_done import AssistantDoneEvent
 from hermes.chat.events.engine_commands.base import EngineCommandEvent
 from hermes.chat.events.engine_commands.clear_history import ClearHistoryEvent
-from hermes.chat.events.engine_commands.create_research import CreateResearchEvent
 from hermes.chat.events.engine_commands.deep_research_budget import DeepResearchBudgetEvent
 from hermes.chat.events.engine_commands.exit import ExitEvent
 from hermes.chat.events.engine_commands.file_edit import FileEditEvent
@@ -30,7 +29,6 @@ __all__ = [
     "OnceEvent",
     "ThinkingLevelEvent",
     "DeepResearchBudgetEvent",
-    "CreateResearchEvent",
     "SwitchResearchEvent",
     "ListResearchEvent",
     "FocusSubproblemEvent",

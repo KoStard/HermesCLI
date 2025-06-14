@@ -8,7 +8,6 @@ from typing import Any
 from hermes.chat.events import (
     AgentModeEvent,
     ClearHistoryEvent,
-    CreateResearchEvent,
     DeepResearchBudgetEvent,
     Event,
     ExitEvent,
@@ -401,22 +400,9 @@ class UserControlPanel(ControlPanel):
 
         self._register_command(
             ControlPanelCommand(
-                command_id="create_research",
-                command_label="/create_research",
-                description="Create a new research instance and switch to it (Deep Research mode only)",
-                short_description="Create new research instance",
-                parser=self._parse_create_research_command,
-                is_research_command=True,
-                is_chat_command=False,
-                is_agent_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
                 command_id="switch_research",
                 command_label="/switch_research",
-                description="Switch to a different research instance (Deep Research mode only)",
+                description="Switch to a different research instance. If the name doesn't exist, it will be created.",
                 short_description="Switch research instance",
                 parser=self._parse_switch_research_command,
                 is_research_command=True,
@@ -724,15 +710,6 @@ class UserControlPanel(ControlPanel):
                 lines.extend(self._format_standard_arg(arg, value))
 
         return "\n".join(lines)
-
-    def _parse_create_research_command(self, content: str) -> Event | None:
-        """Parse the /create_research command"""
-        name = content.strip()
-        if not name:
-            self.notifications_printer.print_notification("Please provide a name for the new research instance", CLIColors.RED)
-            return None
-
-        return CreateResearchEvent(name=name)
 
     def _parse_switch_research_command(self, content: str) -> Event | None:
         """Parse the /switch_research command"""

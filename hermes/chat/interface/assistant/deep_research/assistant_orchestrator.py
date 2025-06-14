@@ -283,19 +283,6 @@ class DeepResearchAssistantOrchestrator(Orchestrator):
         if hasattr(self.model, "set_thinking_level"):
             self.model.set_thinking_level(level)
 
-    def set_budget(self, budget: int | None):
-        """Set the budget for the Deep Research Assistant"""
-        self._engine.set_budget(budget)
-
-    def create_new_research(self, name: str):
-        """Create a new research instance under the repo and switch to it.
-
-        Args:
-            name: Name for the new research instance
-        """
-        self._engine.create_new_research(name)
-        self._engine.switch_research(name)
-
     def switch_research(self, name: str):
         """Switch to a different research instance.
 
