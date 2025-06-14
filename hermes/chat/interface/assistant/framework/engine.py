@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator
 
-from hermes.chat.events import Event
+from hermes.chat.events.base import Event
 from hermes.chat.interface.assistant.framework.llm_interface import LLMInterface
 
 

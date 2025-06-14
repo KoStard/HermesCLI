@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from hermes.chat.events import Event
+from hermes.chat.events.base import Event
 from hermes.chat.messages import Message
 
 

@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from hermes.chat.conversation_orchestrator import ConversationOrchestrator
-from hermes.chat.events import MessageEvent
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.history import History
 from hermes.chat.messages.text import TextMessage
 

@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Generator
 
 if typing.TYPE_CHECKING:
-    from hermes.chat.events import Event
+    from hermes.chat.events.base import Event
     from hermes.chat.history import History
 
 

@@ -230,7 +230,7 @@ class McpManager:
 
     def _create_chat_command(self, client: McpClient, tool_name: str, help_text: str) -> Command:
         """Create a command for chat assistant mode."""
-        from hermes.chat.events import Event
+        from hermes.chat.events.base import Event
 
         class McpChatToolCommand(Command[Any, Generator[Event, None, None]]):
             def execute(tool_self, context: Any, args: dict[str, Any]) -> Generator[Event, None, None]:  # noqa: N805

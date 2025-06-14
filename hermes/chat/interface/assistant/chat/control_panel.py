@@ -2,7 +2,8 @@ import logging
 from collections.abc import Generator
 from typing import TYPE_CHECKING, Any
 
-from hermes.chat.events import Event, MessageEvent
+from hermes.chat.events.base import Event
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.interface.assistant.chat.command_status_override import ChatAssistantCommandStatusOverride
 from hermes.chat.interface.commands.command import Command, CommandRegistry
 from hermes.chat.interface.commands.command_parser import CommandParser

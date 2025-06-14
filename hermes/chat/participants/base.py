@@ -3,7 +3,7 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from hermes.chat.events import Event
+    from hermes.chat.events.base import Event
     from hermes.chat.history import History
     from hermes.chat.interface import Orchestrator
 

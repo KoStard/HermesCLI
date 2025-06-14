@@ -8,7 +8,8 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 
-from hermes.chat.events import Event, MessageEvent
+from hermes.chat.events.base import Event
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
 from hermes.chat.interface.helpers.terminal_coloring import print_colored_text
 from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel

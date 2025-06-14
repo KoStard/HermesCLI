@@ -3,8 +3,8 @@ import os
 from collections.abc import Generator
 from typing import TYPE_CHECKING
 
-from hermes.chat.events import MessageEvent
 from hermes.chat.events.base import Event
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.interface.assistant.framework.commands import CommandContext
 from hermes.chat.interface.helpers.cli_notifications import CLIColors
 from hermes.chat.interface.markdown.document_updater import (

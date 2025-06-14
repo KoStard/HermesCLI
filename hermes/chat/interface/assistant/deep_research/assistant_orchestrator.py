@@ -3,8 +3,9 @@ import os
 from collections.abc import Generator, Sequence
 from pathlib import Path
 
-from hermes.chat.events import Event, MessageEvent
+from hermes.chat.events.base import Event
 from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.history import History
 from hermes.chat.interface import Orchestrator
 from hermes.chat.interface.assistant.deep_research.commands.command_context_factory import ResearchCommandContextFactoryImpl

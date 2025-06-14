@@ -2,11 +2,11 @@ import logging
 from collections.abc import Generator, Iterable
 from typing import Any
 
-from hermes.chat.events import (
+from hermes.chat.events.base import (
     Event,
-    MessageEvent,
 )
 from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.interface import Orchestrator
 from hermes.chat.interface.assistant.chat.assistant_prompt import AssistantPromptFactory
 from hermes.chat.interface.assistant.chat.control_panel import (

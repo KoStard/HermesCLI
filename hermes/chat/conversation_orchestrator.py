@@ -4,8 +4,11 @@ from collections.abc import Generator, Iterable
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from hermes.chat.events import EngineCommandEvent, Event, MessageEvent, SaveHistoryEvent
+from hermes.chat.events.base import Event
+from hermes.chat.events.engine_commands.base import EngineCommandEvent
+from hermes.chat.events.engine_commands.save_history import SaveHistoryEvent
 from hermes.chat.events.history_recovery_event import HistoryRecoveryEvent
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.file_operations_handler import FileOperationsHandler
 from hermes.chat.history import History
 from hermes.chat.interface.assistant.chat.assistant_orchestrator import ChatAssistantOrchestrator

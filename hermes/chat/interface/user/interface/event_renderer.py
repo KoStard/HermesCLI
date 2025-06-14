@@ -1,6 +1,8 @@
 from collections.abc import Generator, Iterable
 
-from hermes.chat.events import Event, MessageEvent, NotificationEvent
+from hermes.chat.events.base import Event
+from hermes.chat.events.message_event import MessageEvent
+from hermes.chat.events.notification_event import NotificationEvent
 from hermes.chat.interface.helpers.cli_notifications import (
     CLIColors,
     CLINotificationsPrinter,

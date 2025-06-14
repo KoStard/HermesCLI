@@ -5,22 +5,22 @@ from collections.abc import Generator
 from datetime import datetime, timezone
 from typing import Any
 
-from hermes.chat.events import (
+from hermes.chat.events.base import Event
+from hermes.chat.events.engine_commands import (
     AgentModeEvent,
     ClearHistoryEvent,
     DeepResearchBudgetEvent,
-    Event,
     ExitEvent,
     FocusSubproblemEvent,
     ListResearchEvent,
     LLMCommandsExecutionEvent,
     LoadHistoryEvent,
-    MessageEvent,
     OnceEvent,
     SaveHistoryEvent,
     SwitchResearchEvent,
     ThinkingLevelEvent,
 )
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.interface.assistant.chat.control_panel import ChatAssistantControlPanel
 from hermes.chat.interface.control_panel import ControlPanel, ControlPanelCommand
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter

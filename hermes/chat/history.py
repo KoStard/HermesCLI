@@ -3,7 +3,8 @@
 import json
 from dataclasses import dataclass
 
-from hermes.chat.events import Event, MessageEvent
+from hermes.chat.events.base import Event
+from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.messages import (
     DESERIALIZATION_KEYMAP,
     Message,

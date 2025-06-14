@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
 
-from hermes.chat.events import Event
+from hermes.chat.events.base import Event
 from hermes.chat.interface.helpers.chunks_to_lines import chunks_to_lines
 from hermes.chat.messages import Message
 
