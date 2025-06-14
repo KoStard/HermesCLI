@@ -125,19 +125,27 @@ class McpManager:
 
             # Get tool configuration for this client
             tool_config = server_tool_configs.get(client.name, {})
-
-            for tool_schema in client.tools:
-                tool_name = tool_schema.get("name", "unknown_mcp_tool")
-
-                # Check if this tool is enabled
-                # If tool_config is empty, all tools are enabled (default behavior)
-                # Otherwise, check if the tool is explicitly enabled or not mentioned (default to disabled)
-                if not tool_config or tool_config.get(tool_name, False):
-                    commands.append(self._create_command_from_schema(client, tool_schema, mode))
-                else:
-                    logger.debug(f"Skipping disabled MCP tool '{tool_name}' from server '{client.name}'")
+            commands.extend(self._create_commands_for_client(client, tool_config, mode))
 
         return commands
+
+    def _create_commands_for_client(self, client: McpClient, tool_config: dict[str, bool], mode: str) -> list[Command]:
+        commands = []
+        for tool_schema in client.tools:
+            tool_name = tool_schema.get("name")
+            if not tool_name:
+                continue
+
+            # Check if this tool is enabled
+            # If tool_config is empty, all tools are enabled (default behavior)
+            # Otherwise, check if the tool is explicitly enabled or not mentioned (default to disabled)
+            if not tool_config or tool_config.get(tool_name, False):
+                commands.append(self._create_command_from_schema(client, tool_schema, mode))
+            else:
+                logger.debug(f"Skipping disabled MCP tool '{tool_name}' from server '{client.name}'")
+
+        return commands
+
 
     def _parse_tool_args(self, args: dict[str, Any]) -> dict[str, Any]:
         """Parse command arguments, handling both direct args and JSON blob."""

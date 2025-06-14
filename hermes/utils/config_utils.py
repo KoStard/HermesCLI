@@ -55,20 +55,23 @@ def convert_ini_to_json(ini_config: ConfigParser) -> dict[str, Any]:
     for section in ini_config.sections():
         json_config[section.lower()] = {}
         for key, value in ini_config[section].items():
-            # Try to parse to appropriate types
-            if value.lower() == "true":
-                json_config[section.lower()][key] = True
-            elif value.lower() == "false":
-                json_config[section.lower()][key] = False
-            elif value.isdigit():
-                json_config[section.lower()][key] = int(value)
-            elif "," in value and "[" not in value and "{" not in value:
-                # Simple comma-separated list
-                json_config[section.lower()][key] = [item.strip() for item in value.split(",")]
-            else:
-                json_config[section.lower()][key] = value
+            _add_value_to_json(json_config, section.lower(), key, value)
 
     return json_config
+
+def _add_value_to_json(json_config: dict, section_name: str, key: str, value: Any):
+    # Try to parse to appropriate types
+    if value.lower() == "true":
+        json_config[section_name][key] = True
+    elif value.lower() == "false":
+        json_config[section_name][key] = False
+    elif value.isdigit():
+        json_config[section_name][key] = int(value)
+    elif "," in value and "[" not in value and "{" not in value:
+        # Simple comma-separated list
+        json_config[section_name][key] = [item.strip() for item in value.split(",")]
+    else:
+        json_config[section_name][key] = value
 
 
 def extract_config_section(config: ConfigParser | dict[str, Any], section: str) -> dict[str, Any]:

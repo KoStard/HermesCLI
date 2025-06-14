@@ -36,16 +36,24 @@ class JsonConfigManager:
         return command_status_overrides
 
     def _parse_overrides(self, overrides_config) -> dict[str, ChatAssistantCommandStatusOverride]:
-        result = {}
         if isinstance(overrides_config, dict):
-            for command_id, status in overrides_config.items():
-                result[command_id] = ChatAssistantCommandStatusOverride(status.upper())
-        elif isinstance(overrides_config, str) and overrides_config.strip():
-            # Support legacy string format
-            for override in overrides_config.split(","):
-                if ":" in override:
-                    command_id, status = override.split(":")
-                    result[command_id.strip()] = ChatAssistantCommandStatusOverride(status.strip().upper())
+            return self._parse_command_overrides_as_dict(overrides_config)
+        if isinstance(overrides_config, str) and overrides_config.strip():
+            return self._parse_command_overrides_as_string(overrides_config)
+        raise Exception("Invalid command overrides format in the config. Should be either dictionary or a string.")
+
+    def _parse_command_overrides_as_dict(self, overrides_config: dict) -> dict[str, ChatAssistantCommandStatusOverride]:
+        result = {}
+        for command_id, status in overrides_config.items():
+            result[command_id] = ChatAssistantCommandStatusOverride(status.upper())
+        return result
+
+    def _parse_command_overrides_as_string(self, overrides_config: str) -> dict[str, ChatAssistantCommandStatusOverride]:
+        result = {}
+        for override in overrides_config.split(","):
+            if ":" in override:
+                command_id, status = override.split(":")
+                result[command_id.strip()] = ChatAssistantCommandStatusOverride(status.strip().upper())
         return result
 
     def get_default_model_info_string(self) -> str | None:

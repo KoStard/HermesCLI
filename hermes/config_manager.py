@@ -43,7 +43,9 @@ class ConfigManager:
     def get_command_status_overrides(self) -> dict[str, ChatAssistantCommandStatusOverride]:
         if self._json_config_manager:
             return self._json_config_manager.get_command_status_overrides()
+        return self._extract_ini_command_overrides()
 
+    def _extract_ini_command_overrides(self) -> dict[str, ChatAssistantCommandStatusOverride]:
         command_status_overrides: dict[str, ChatAssistantCommandStatusOverride] = {}
         if (
             self._ini_config_manager
@@ -52,13 +54,17 @@ class ConfigManager:
         ):
             try:
                 raw_overrides = self._ini_config_manager["BASE"]["llm_command_status_overrides"].strip()
-                if raw_overrides:
-                    for override in raw_overrides.split(","):
-                        command_id, status = override.split(":")
-                        command_status_overrides[command_id.strip()] = ChatAssistantCommandStatusOverride(status.strip().upper())
+                self._add_command_overrides_string(raw_overrides, command_status_overrides)
             except Exception as e:
                 print(f"Warning: Failed to parse llm_command_status_overrides from config: {e}")
         return command_status_overrides
+
+    def _add_command_overrides_string(self, raw_overrides: str, command_status_overrides: dict[str, ChatAssistantCommandStatusOverride]):
+        if not raw_overrides:
+            return
+        for override in raw_overrides.split(","):
+            command_id, status = override.split(":")
+            command_status_overrides[command_id.strip()] = ChatAssistantCommandStatusOverride(status.strip().upper())
 
     def get_default_model_info_string(self) -> str | None:
         if self._json_config_manager:

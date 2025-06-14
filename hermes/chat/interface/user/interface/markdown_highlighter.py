@@ -67,7 +67,7 @@ class MarkdownHighlighter:
                 yield tok
 
         # Apply the custom render function
-        ast._iter_render = _iter_render
+        ast._iter_render = _iter_render # noqa: SLF001
         return ast
 
     def _process_parsed_elements(self, parsed_elements):
