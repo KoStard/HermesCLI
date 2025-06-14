@@ -59,6 +59,7 @@ def convert_ini_to_json(ini_config: ConfigParser) -> dict[str, Any]:
 
     return json_config
 
+
 def _add_value_to_json(json_config: dict, section_name: str, key: str, value: Any):
     # Try to parse to appropriate types
     if value.lower() == "true":

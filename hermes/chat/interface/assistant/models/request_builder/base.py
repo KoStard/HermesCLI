@@ -25,14 +25,29 @@ from hermes.utils.file_reader import FileReader
 
 logger = logging.getLogger(__name__)
 
-"""
-RequestBuilder is responsible for building the actual API request to the LLM provider.
-It should be able to handle all the model details, the API requirements,
-translate the internal message format to the provider's message format.
-"""
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Accept": (
+        "text/html,application/xhtml+xml,application/xml;q=0.9,"
+        "image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+}
 
 
 class RequestBuilder(ABC):
+    """
+    RequestBuilder is responsible for building the actual API request to the LLM provider.
+    It should be able to handle all the model details, the API requirements,
+    translate the internal message format to the provider's message format.
+    """
+
     def __init__(
         self,
         model_tag: str,
@@ -183,19 +198,7 @@ class RequestBuilder(ABC):
             import requests
             from markitdown import MarkItDown
 
-            headers = {
-                "User-Agent":
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-                "Accept":
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Upgrade-Insecure-Requests": "1",
-                "Sec-Fetch-Dest": "document",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-Site": "none",
-                "Sec-Fetch-User": "?1",
-            }
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=HEADERS)
             response.raise_for_status()
             markitdown = MarkItDown()
             conversion_result = markitdown.convert(response)

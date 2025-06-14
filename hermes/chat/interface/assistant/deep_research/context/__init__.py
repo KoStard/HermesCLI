@@ -20,5 +20,7 @@ class AssistantInterface(ABC):
         pass
 
     @abstractmethod
-    def collect_artifacts_recursively(self, node: "ResearchNode", current_node: "ResearchNode") -> list[tuple["ResearchNode", "Artifact", bool]]:
+    def collect_artifacts_recursively(
+        self, node: "ResearchNode", current_node: "ResearchNode"
+    ) -> list[tuple["ResearchNode", "Artifact", bool]]:
         pass

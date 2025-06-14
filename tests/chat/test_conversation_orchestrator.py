@@ -76,7 +76,7 @@ class TestConversationOrchestrator:
         mock_user_participant.get_input_and_run_commands.return_value = [event]
 
         # Patch the _wait_for_mcps_and_update_commands method to check if it's called
-        with patch.object(conversation_orchestrator, '_wait_for_mcps_and_update_commands') as mock_wait:
+        with patch.object(conversation_orchestrator, "_wait_for_mcps_and_update_commands") as mock_wait:
             # Call the method that should ensure MCPs are loaded
             conversation_orchestrator._get_user_input_and_run_commands()
             conversation_orchestrator._consume_events_from_user_and_render_assistant(

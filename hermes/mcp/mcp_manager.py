@@ -146,7 +146,6 @@ class McpManager:
 
         return commands
 
-
     def _parse_tool_args(self, args: dict[str, Any]) -> dict[str, Any]:
         """Parse command arguments, handling both direct args and JSON blob."""
         tool_args = {}

@@ -78,6 +78,8 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
                 return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
             except TaskProcessorCancelledError:
                 return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
+
+        self._handle_interruption()
         return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
 
     def get_engine(self) -> "ResearchEngine":
@@ -86,6 +88,10 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
     @property
     def _is_interrupted(self) -> bool:
         return self.current_node.get_problem_status() in {ProblemStatus.CANCELLED} or self._engine.engine_interrupted
+
+    def _handle_interruption(self):
+        if self.current_node.get_problem_status() not in {ProblemStatus.CANCELLED, ProblemStatus.FAILED, ProblemStatus.FINISHED}:
+            self.current_node.set_problem_status(ProblemStatus.CANCELLED)
 
     def _execute_task_processing_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Execute a single task processing cycle."""
