@@ -14,6 +14,6 @@ class OnceEvent(EngineCommandEvent):
     enabled: bool
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
-        orchestrator._should_exit_after_one_cycle = self.enabled
+        orchestrator.set_should_exit_after_one_cycle(self.enabled)
         status = "enabled" if self.enabled else "disabled"
         orchestrator.notifications_printer.print_notification(f"Once mode {status}")

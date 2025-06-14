@@ -20,7 +20,7 @@ class Repo:
         self._task_trees: dict[str, TaskTreeImpl] = {}
 
         # Shared knowledge base for all research instances
-        self._shared_knowledge_base = KnowledgeBase(dual_directory_file_system._disk_fs, dual_directory_file_system.root_directory)
+        self._shared_knowledge_base = KnowledgeBase(dual_directory_file_system.disk_fs, dual_directory_file_system.root_directory)
         self._shared_knowledge_base.load_entries()
 
         # Load existing research instances from disk

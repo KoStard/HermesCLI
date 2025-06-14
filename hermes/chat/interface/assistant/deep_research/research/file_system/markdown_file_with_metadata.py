@@ -83,7 +83,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         """Set the user-friendly name and generate a filesystem-friendly filename."""
         self._user_friendly_name = user_friendly_name
         self.set_metadata_key("name", user_friendly_name)
-        self._filename = self._get_sanitizen_filename(user_friendly_name)
+        self._filename = self.get_sanitizen_filename(user_friendly_name)
 
     def get_user_friendly_name(self) -> str:
         """Get the user-friendly name."""
@@ -132,7 +132,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
         return directory_path / self._filename
 
     @staticmethod
-    def _get_sanitizen_filename(user_friendly_name: str) -> str:
+    def get_sanitizen_filename(user_friendly_name: str) -> str:
         """Convert a user-friendly name to a filesystem-safe filename."""
         filename_handler = MarkdownFilename(user_friendly_name)
         return filename_handler.get_os_aware_path()
@@ -140,7 +140,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
     @staticmethod
     def load_from_directory(directory_path: Path, user_friendly_name: str) -> "FileWithMetadata":
         """Load a markdown file with frontmatter using its user-friendly name."""
-        filename = MarkdownFileWithMetadataImpl._get_sanitizen_filename(user_friendly_name)
+        filename = MarkdownFileWithMetadataImpl.get_sanitizen_filename(user_friendly_name)
         filepath = directory_path / filename
 
         if not filepath.exists():
@@ -161,7 +161,7 @@ class MarkdownFileWithMetadataImpl(FileWithMetadata):
     @staticmethod
     def file_exists(directory_path: Path, user_friendly_name: str) -> bool:
         """Check if a file with the given user-friendly name exists in the directory."""
-        filename = MarkdownFileWithMetadataImpl._get_sanitizen_filename(user_friendly_name)
+        filename = MarkdownFileWithMetadataImpl.get_sanitizen_filename(user_friendly_name)
         filepath = directory_path / filename
         return filepath.exists()
 

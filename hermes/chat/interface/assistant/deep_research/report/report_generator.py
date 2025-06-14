@@ -58,7 +58,7 @@ class ReportGeneratorImpl(ReportGenerator):
         if not root_node:
             return artifacts_by_problem
 
-        all_artifacts = interface._collect_artifacts_recursively(root_node, root_node)
+        all_artifacts = interface.collect_artifacts_recursively(root_node, root_node)
         if not all_artifacts:
             return artifacts_by_problem
 

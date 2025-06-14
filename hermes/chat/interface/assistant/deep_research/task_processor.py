@@ -134,7 +134,7 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
             self.budget_manager.get_remaining_budget(),  # Get remaining from BudgetManager
         )
         node_history = research_node.get_history()
-        if not node_history._has_initial_interface():
+        if not node_history.has_initial_interface():
             node_history.set_initial_interface_content(static_interface_content, current_dynamic_data)
         else:
             node_history.update_static_content_in_initial_interface(static_interface_content)

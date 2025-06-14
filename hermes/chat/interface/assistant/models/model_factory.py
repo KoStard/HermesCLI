@@ -5,7 +5,6 @@ from hermes.chat.interface.assistant.models.chat_models.base import ChatModel
 from hermes.chat.interface.assistant.models.chat_models.bedrock import BedrockModel
 from hermes.chat.interface.assistant.models.chat_models.claude import ClaudeModel
 from hermes.chat.interface.assistant.models.chat_models.deepseek import DeepSeekModel
-from hermes.chat.interface.assistant.models.chat_models.gemini import GeminiModel
 from hermes.chat.interface.assistant.models.chat_models.gemini2 import Gemini2Model
 from hermes.chat.interface.assistant.models.chat_models.groq import GroqModel
 from hermes.chat.interface.assistant.models.chat_models.open_router import OpenRouterModel
@@ -22,7 +21,6 @@ class ModelFactory:
         self.model_classes: list[type[ChatModel]] = [
             OpenAIModel,
             ClaudeModel,
-            GeminiModel,
             Gemini2Model,
             GroqModel,
             DeepSeekModel,

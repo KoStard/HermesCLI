@@ -15,7 +15,7 @@ class DualDirectoryFileSystem(FileSystem):
         self.root_directory = repo_directory
         self._results_directory = repo_directory / "Results"
         self._repo_directory = repo_directory / "Researches"
-        self._disk_fs = DiskFileSystem()
+        self.disk_fs = DiskFileSystem()
 
         # Ensure both directories exist
         self.create_directory(self._results_directory)
@@ -47,28 +47,28 @@ class DualDirectoryFileSystem(FileSystem):
 
     # Delegate core file system operations to disk file system
     def read_file(self, path: Path) -> str:
-        return self._disk_fs.read_file(path)
+        return self.disk_fs.read_file(path)
 
     def write_file(self, path: Path, content: str, auto_create_directories: bool = True) -> None:
-        return self._disk_fs.write_file(path, content, auto_create_directories)
+        return self.disk_fs.write_file(path, content, auto_create_directories)
 
     def copy_file(self, origin_path: Path, destination_path: Path) -> None:
-        return self._disk_fs.copy_file(origin_path, destination_path)
+        return self.disk_fs.copy_file(origin_path, destination_path)
 
     def directory_exists(self, path: Path) -> bool:
-        return self._disk_fs.directory_exists(path)
+        return self.disk_fs.directory_exists(path)
 
     def file_exists(self, path: Path) -> bool:
-        return self._disk_fs.file_exists(path)
+        return self.disk_fs.file_exists(path)
 
     def create_directory(self, path: Path) -> None:
-        return self._disk_fs.create_directory(path)
+        return self.disk_fs.create_directory(path)
 
     def list_files(self, directory: Path, pattern: str | None = None) -> list[Path]:
-        return self._disk_fs.list_files(directory, pattern)
+        return self.disk_fs.list_files(directory, pattern)
 
     def is_empty(self, directory: Path) -> bool:
-        return self._disk_fs.is_empty(directory)
+        return self.disk_fs.is_empty(directory)
 
     def list_artifacts_recursive(self, node_relative_path: Path = Path()) -> list[Path]:
         """List all artifact files recursively from the Results directory.

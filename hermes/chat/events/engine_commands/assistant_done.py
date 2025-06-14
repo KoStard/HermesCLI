@@ -13,4 +13,4 @@ class AssistantDoneEvent(EngineCommandEvent):
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
         orchestrator.notifications_printer.print_notification("Assistant marked task as done")
-        orchestrator._received_assistant_done_event = True
+        orchestrator.set_received_assistant_done_event(True)

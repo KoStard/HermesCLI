@@ -49,7 +49,7 @@ class ResearchNodeHistory:
         initial_block = InitialInterface(static_content, dynamic_sections)
 
         # Insert at the beginning if no initial interface exists yet
-        if not self._has_initial_interface():
+        if not self.has_initial_interface():
             self._compiled_blocks.insert(0, initial_block)
             self.save()
 
@@ -65,7 +65,7 @@ class ResearchNodeHistory:
         # Return None to indicate we're using the new InitialInterface block system
         return None
 
-    def _has_initial_interface(self) -> bool:
+    def has_initial_interface(self) -> bool:
         """Check if an InitialInterface block already exists"""
         return len(self._compiled_blocks) > 0 and isinstance(self._compiled_blocks[0], InitialInterface)
 

@@ -120,7 +120,7 @@ class Gemini2Model(ChatModel):
 
     @staticmethod
     def get_provider() -> str:
-        return "GEMINI2"
+        return "GEMINI"
 
     @classmethod
     def get_config_section_name(cls):

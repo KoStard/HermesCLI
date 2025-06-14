@@ -185,7 +185,7 @@ class KnowledgeBase:
 
         # Delete the file
         try:
-            file_path = self._knowledge_base_dir / MarkdownFileWithMetadataImpl._get_sanitizen_filename(entry.title)
+            file_path = self._knowledge_base_dir / MarkdownFileWithMetadataImpl.get_sanitizen_filename(entry.title)
             if file_path.exists():
                 file_path.unlink()
         except Exception as e:

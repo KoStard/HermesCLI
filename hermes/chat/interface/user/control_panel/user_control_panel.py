@@ -27,7 +27,7 @@ from hermes.chat.interface.control_panel import ControlPanel, ControlPanelComman
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.chat.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.chat.interface.helpers.terminal_coloring import CLIColors
-from hermes.chat.interface.user.control_panel.exa_client import ExaClient
+from hermes.chat.interface.user.control_panel.exa_client import ExaClient, ExaContentResult
 from hermes.chat.interface.user.control_panel.fuzzy_selector import FuzzyFilesSelector
 from hermes.chat.messages import (
     AudioFileMessage,
@@ -545,7 +545,7 @@ class UserControlPanel(ControlPanel):
             return False
         if is_agent_mode and not command.is_agent_command:
             return False
-        if not is_agent_mode and not command.is_chat_command:
+        if not is_agent_mode and not command.is_chat_command:  # noqa: SIM103
             return False
         return True
 
@@ -758,21 +758,39 @@ class UserControlPanel(ControlPanel):
             self.notifications_printer.print_notification(f"Error: {e}", CLIColors.RED)
             return None
 
-    def _parse_exa_url_command(self, content: str) -> MessageEvent:
+    def _parse_exa_url_command(self, raw_input: str) -> MessageEvent:
         """Parse and execute the /exa_url command"""
         if not self.exa_client:
             raise ValueError("Exa integration not configured - missing EXA_API_KEY in config")
 
-        url = content.strip()
-        result = self.exa_client.get_contents(url)[0]
+        url = self._get_exa_url(raw_input)
+        result = self._get_exa_content(url)
+        content = self._build_exa_response_content(result)
+
+        return MessageEvent(
+            TextualFileMessage(
+                author="user",
+                name=result.title,
+                text_filepath=None,
+                file_role="url_content",
+                textual_content=content,
+            ),
+        )
+
+    def _get_exa_url(self, raw_input: str) -> str:
+        return raw_input.strip()
+
+    def _get_exa_content(self, url: str) -> ExaContentResult:
+        return self.exa_client.get_contents(url)[0]
+
+    def _build_exa_response_content(self, result: ExaContentResult) -> str:
         result_text = result.text
-        result_title = result.title
         content_age = None
         if result.published_date:
             content_age = (datetime.now(timezone.utc) - datetime.fromisoformat(result.published_date).astimezone(timezone.utc)).days
 
         if not result_text:
-            raise ValueError(f"No content found for URL: {url}")
+            result_text = "WARNING: No content found"
 
         if content_age is None:
             result_text += "\n\n---\n\nWarning! No information available about the age of the content."
@@ -781,16 +799,7 @@ class UserControlPanel(ControlPanel):
                 f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, "
                 "it might not be fully up to date"
             )
-
-        return MessageEvent(
-            TextualFileMessage(
-                author="user",
-                name=result_title,
-                text_filepath=None,
-                file_role="url_content",
-                textual_content=result_text,
-            ),
-        )
+        return result_text
 
     def _parse_tree_command(self, content: str) -> MessageEvent:
         """Parse the /tree command and generate a directory tree.

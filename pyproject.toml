@@ -9,12 +9,11 @@ description = "An extendable CLI interface for LLMs"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "appdirs>=1.4.4",             # Added for cross-platform config directory
+    "appdirs>=1.4.4",           # Added for cross-platform config directory
     "anthropic>=0.40.0",
     "boto3>=1.37.0",
     "exa-py>=1.7.3",
     "google-genai>=1.1.0",
-    "google-generativeai>=0.8.3",
     "groq>=0.13.1",
     "inquirerpy>=0.3.4",
     "mako>=1.3.10",

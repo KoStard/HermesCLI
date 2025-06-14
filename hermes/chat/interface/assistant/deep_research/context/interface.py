@@ -151,7 +151,7 @@ class DeepResearcherInterface(AssistantInterface):
     def _collect_node_artifacts(self, research: Research, target_node: ResearchNode) -> list:
         """Collect artifacts from the current research node tree"""
         root_node = research.get_root_node() if research.has_root_problem_defined() else target_node
-        return self._collect_artifacts_recursively(root_node, target_node) if root_node else []
+        return self.collect_artifacts_recursively(root_node, target_node) if root_node else []
 
     def _add_external_research_artifacts(self, node_artifacts_list: list, research: Research) -> None:
         """Add artifacts from other research instances"""
@@ -195,7 +195,7 @@ class DeepResearcherInterface(AssistantInterface):
 
         return ordered_data
 
-    def _collect_artifacts_recursively(self, node: ResearchNode, current_node: ResearchNode) -> list[tuple[ResearchNode, Artifact, bool]]:
+    def collect_artifacts_recursively(self, node: ResearchNode, current_node: ResearchNode) -> list[tuple[ResearchNode, Artifact, bool]]:
         """Recursively collect artifacts from a node and all its descendants.
 
         Args:
@@ -219,7 +219,7 @@ class DeepResearcherInterface(AssistantInterface):
 
         # Recursively collect artifacts from all child nodes
         for child_node in node.list_child_nodes():
-            artifacts.extend(self._collect_artifacts_recursively(child_node, current_node))
+            artifacts.extend(self.collect_artifacts_recursively(child_node, current_node))
 
         return artifacts
 

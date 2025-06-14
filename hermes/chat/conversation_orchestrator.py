@@ -209,6 +209,12 @@ I'll wait for your next steps or completion message.""",
     def received_assistant_done_event(self) -> bool:
         return self._received_assistant_done_event
 
+    def set_received_assistant_done_event(self, status: bool):
+        self._received_assistant_done_event = status
+
     @property
     def should_exit_after_one_cycle(self) -> bool:
         return self._should_exit_after_one_cycle
+
+    def set_should_exit_after_one_cycle(self, status: bool):
+        self._should_exit_after_one_cycle = status

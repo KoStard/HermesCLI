@@ -31,7 +31,7 @@ class ResearchImpl(Research):
     ):
         # Initialize without creating a new knowledge base
         self.root_directory = root_directory
-        self.file_system = dual_directory_file_system._disk_fs
+        self.file_system = dual_directory_file_system.disk_fs
         self.dual_directory_file_system = dual_directory_file_system
         self.root_node = None
         self._permanent_logs = NodePermanentLogs(root_directory / "_permanent_logs.txt")

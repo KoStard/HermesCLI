@@ -21,20 +21,22 @@ class ApplicationOrchestrator:
         provider_model_pairs = components.model_factory.get_provider_model_pairs()
         cli_parser = CLIParser(provider_model_pairs)
         cli_parser.add_user_control_panel_arguments(components.user_control_panel)
-
         extension_utils_visitors = cli_parser.register_utility_extensions_and_get_executor_visitors(components.extension_utils_builders)
+
         cli_args = cli_parser.parse_args()
         self.app_initializer.setup_logging(cli_args.verbose)
+        self._execute_based_on_mode(cli_args.execution_mode, cli_args, components, extension_utils_visitors)
 
-        if cli_args.execution_mode == "info":
+    def _execute_based_on_mode(self, execution_mode: str, cli_args: Namespace, components: CoreComponents, extension_utils_visitors: list):  # noqa: C901
+        if execution_mode == "info":
             self._execute_info_mode(cli_args, components)
-        elif cli_args.execution_mode == "utils":
+        if execution_mode == "utils":
             self._execute_utils_mode(cli_args, extension_utils_visitors)
-        elif cli_args.execution_mode == "chat":
+        if execution_mode == "chat":
             self._execute_chat_mode(cli_args, components)
-        elif cli_args.execution_mode == "simple-agent":
+        if execution_mode == "simple-agent":
             self._execute_simple_agent_mode(cli_args, components)
-        elif cli_args.execution_mode == "research":
+        if execution_mode == "research":
             self._execute_research_mode(cli_args, components)
 
     def _register_extensions(self, extension_builders, utils_subparsers):
