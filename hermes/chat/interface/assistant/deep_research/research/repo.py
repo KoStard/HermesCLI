@@ -142,20 +142,45 @@ class Repo:
         for child in node.list_child_nodes():
             self._collect_artifacts_recursive(child, artifacts)
 
-    def search_artifacts_across_all(self, name: str) -> list[tuple[str, ResearchNode, Artifact]]:
-        """Search for artifacts across all research instances.
+    def search_root_artifacts_from_specific_research(self, name: str, research_name: str) -> list[tuple[str, ResearchNode, Artifact]]:
+        """Search for root-level artifacts from a specific research instance.
 
         Args:
-            name: The name to search for in artifact names
+            name: The artifact name to search for
+            research_name: The specific research instance to search in
 
         Returns:
-            List of (research_name, node, artifact) tuples
+            List of (research_name, node, artifact) tuples where node is the root node
+        """
+        results = []
+        research = self._research_instances.get(research_name)
+        if research and research.has_root_problem_defined():
+            root_node = research.get_root_node()
+            # Only search in the root node, not its children
+            for artifact in root_node.get_artifacts():
+                if name.lower() in artifact.name.lower():
+                    results.append((research_name, root_node, artifact))
+        return results
+
+    def get_root_artifacts_from_other_research_instances(self, current_research: Research) -> list[tuple[str, ResearchNode, Artifact]]:
+        """Get root-level artifacts from all research instances except the current one.
+
+        Args:
+            current_research: The current research instance to exclude
+
+        Returns:
+            List of (research_name, root_node, artifact) tuples for root-level artifacts only
         """
         results = []
         for research_name, research in self._research_instances.items():
-            if research.has_root_problem_defined():
-                for node, artifact in research.search_artifacts(name):
-                    results.append((research_name, node, artifact))
+            if research == current_research or not research.has_root_problem_defined():
+                continue
+
+            root_node = research.get_root_node()
+            # Only collect artifacts from the root node, not its children
+            for artifact in root_node.get_artifacts():
+                results.append((research_name, root_node, artifact))
+
         return results
 
     def get_task_tree(self, research_name: str) -> TaskTreeImpl | None:

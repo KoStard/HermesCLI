@@ -136,7 +136,7 @@ class DeepResearcherInterface(AssistantInterface):
     def _add_artifacts_data(self, all_data: dict, research: Research, target_node: ResearchNode) -> None:
         """Add artifacts data to the section data collection"""
         node_artifacts_list = self._collect_node_artifacts(research, target_node)
-        self._add_external_research_artifacts(node_artifacts_list, research)
+        self._add_external_research_artifacts(node_artifacts_list, research, target_node)
         external_files = research.get_external_file_manager().get_external_files()
 
         all_data[ArtifactsSectionData] = ArtifactsSectionData.from_artifact_lists(
@@ -149,18 +149,18 @@ class DeepResearcherInterface(AssistantInterface):
         root_node = research.get_root_node() if research.has_root_problem_defined() else target_node
         return self.collect_artifacts_recursively(root_node, target_node) if root_node else []
 
-    def _add_external_research_artifacts(self, node_artifacts_list: list, research: Research) -> None:
-        """Add artifacts from other research instances"""
+    def _add_external_research_artifacts(self, node_artifacts_list: list, research: Research, target_node: ResearchNode) -> None:
+        """Add root-level artifacts from other research instances"""
         parent_repo = research.get_repo()
         if not parent_repo:
             return
 
-        all_research_artifacts = parent_repo.get_all_artifacts()
-        for research_name, artifacts in all_research_artifacts.items():
-            if parent_repo.get_research(research_name) == research:
-                continue
-            for node, artifact in artifacts:
-                node_artifacts_list.append((node, artifact, False))
+        # Only get root-level artifacts from other research instances
+        root_artifacts = parent_repo.get_root_artifacts_from_other_research_instances(research)
+        for research_name, root_node, artifact in root_artifacts:
+            is_fully_visible = target_node.get_artifact_status(artifact)
+            # Include research_name to distinguish cross-root artifacts
+            node_artifacts_list.append((root_node, artifact, is_fully_visible, research_name))
 
     def _add_hierarchy_and_criteria_data(self, all_data: dict, research: Research, target_node: ResearchNode) -> None:
         """Add hierarchy and criteria related data"""
@@ -191,7 +191,9 @@ class DeepResearcherInterface(AssistantInterface):
 
         return ordered_data
 
-    def collect_artifacts_recursively(self, node: ResearchNode, current_node: ResearchNode) -> list[tuple[ResearchNode, Artifact, bool]]:
+    def collect_artifacts_recursively(
+        self, node: ResearchNode, current_node: ResearchNode
+    ) -> list[tuple[ResearchNode, Artifact, bool, str | None]]:
         """Recursively collect artifacts from a node and all its descendants.
 
         Args:
@@ -199,7 +201,7 @@ class DeepResearcherInterface(AssistantInterface):
             current_node: The node currently being viewed (for visibility checks)
 
         Returns:
-            List of tuples: (owner ResearchNode, Artifact, is_visible_to_current_node)
+            List of tuples: (owner ResearchNode, Artifact, is_visible_to_current_node, research_name)
         """
         artifacts = []
         if not node:
@@ -211,7 +213,7 @@ class DeepResearcherInterface(AssistantInterface):
                 continue
             is_fully_visible = current_node.get_artifact_status(artifact)
 
-            artifacts.append((node, artifact, is_fully_visible))
+            artifacts.append((node, artifact, is_fully_visible, None))
 
         # Recursively collect artifacts from all child nodes
         for child_node in node.list_child_nodes():

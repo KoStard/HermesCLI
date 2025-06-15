@@ -51,3 +51,9 @@ class ResearchCommandContextImpl(ResearchCommandContext):
 
     def add_knowledge_entry(self, entry: Any) -> None:
         self.research_project.get_knowledge_base().add_entry(entry)
+
+    def search_cross_root_artifacts(self, artifact_name: str, root_problem: str) -> list[tuple[str, "ResearchNode", "Artifact"]]:
+        """Search for artifacts from a specific root problem across all research instances.
+        Only returns root-level artifacts from the specified root problem.
+        """
+        return self.research_project.search_root_artifacts_from_specific_research(artifact_name, root_problem)

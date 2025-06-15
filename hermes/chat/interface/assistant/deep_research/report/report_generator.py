@@ -62,7 +62,7 @@ class ReportGeneratorImpl(ReportGenerator):
         if not all_artifacts:
             return artifacts_by_problem
 
-        for node, artifact, _ in all_artifacts:
+        for node, artifact, _, _ in all_artifacts:
             owner_title = node.get_title()
             if owner_title not in artifacts_by_problem:
                 artifacts_by_problem[owner_title] = []

@@ -136,13 +136,17 @@ class ResearchImpl(Research):
     def get_repo(self) -> "Repo | None":
         return self._repo
 
-    def search_artifacts_including_siblings(self, name: str) -> list[tuple[str, ResearchNode, Artifact]]:
-        """Search for artifacts in this research and all sibling research instances.
+    def search_root_artifacts_from_specific_research(self, name: str, research_name: str) -> list[tuple[str, ResearchNode, Artifact]]:
+        """Search for root-level artifacts from a specific research instance.
+
+        Args:
+            name: The artifact name to search for
+            research_name: The specific research instance to search in
 
         Returns:
-            List of (research_name, node, artifact) tuples
+            List of (research_name, node, artifact) tuples where node is the root node
         """
-        return self._repo.search_artifacts_across_all(name)
+        return self._repo.search_root_artifacts_from_specific_research(name, research_name)
 
     def get_dual_directory_fs(self) -> DualDirectoryFileSystem:
         """Get the dual directory file system instance"""

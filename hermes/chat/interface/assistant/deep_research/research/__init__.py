@@ -203,6 +203,18 @@ class Research(ABC):
         pass
 
     @abstractmethod
+    def search_root_artifacts_from_specific_research(self, name: str, research_name: str) -> list[tuple[str, ResearchNode, Artifact]]:
+        """Search for root-level artifacts from a specific research instance.
+
+        Args:
+            name: The artifact name to search for
+            research_name: The specific research instance to search in
+
+        Returns:
+            List of (research_name, node, artifact) tuples where node is the root node
+        """
+
+    @abstractmethod
     def get_repo(self) -> "Repo | None":
         pass
 

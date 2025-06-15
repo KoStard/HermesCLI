@@ -30,6 +30,7 @@ class PrimitiveArtifactData:
         artifact: "Artifact",
         owner_title: str | None = None,
         is_fully_visible: bool = False,
+        research_name: str | None = None,
     ) -> "PrimitiveArtifactData":
         return PrimitiveArtifactData(
             name=artifact.name,
@@ -38,6 +39,7 @@ class PrimitiveArtifactData:
             short_summary=artifact.short_summary,
             is_fully_visible=is_fully_visible,
             owner_title=owner_title,
+            research_name=research_name,
         )
 
 
@@ -51,7 +53,7 @@ class ArtifactsSectionData(DynamicSectionData):
     @staticmethod
     def from_artifact_lists(
         external_files_dict: dict[str, "Artifact"],
-        node_artifacts_list: list[tuple["ResearchNode", "Artifact", bool]],
+        node_artifacts_list: list[tuple["ResearchNode", "Artifact", bool, str | None]],
     ) -> "ArtifactsSectionData":
         # Convert external files dict to primitive tuple
         external_primitives = tuple(
@@ -60,9 +62,10 @@ class ArtifactsSectionData(DynamicSectionData):
         )
 
         # Convert node artifacts list to primitive tuple
+        sorted_node_artifacts = sorted(node_artifacts_list, key=lambda x: (x[0].get_title(), x[1].name))
         node_primitives = tuple(
-            PrimitiveArtifactData.from_artifact(artifact, node.get_title(), is_fully_visible)
-            for node, artifact, is_fully_visible in sorted(node_artifacts_list, key=lambda x: (x[0].get_title(), x[1].name))
+            PrimitiveArtifactData.from_artifact(artifact, node.get_title(), is_fully_visible, research_name)
+            for node, artifact, is_fully_visible, research_name in sorted_node_artifacts
         )
 
         return ArtifactsSectionData(external_files=external_primitives, node_artifacts=node_primitives)
