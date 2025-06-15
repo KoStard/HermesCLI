@@ -67,6 +67,22 @@ class KnowledgeBase:
         self._knowledge_base_dir = repo_root_path / "Knowledgebase"
         self._entries: dict[str, KnowledgeEntry] = {}  # Map title to entry
 
+    def load_entries(self) -> None:
+        """Load knowledge base entries from individual files in /Knowledgebase/ folder."""
+        if not self._file_system.directory_exists(self._knowledge_base_dir):
+            return
+
+        self._process_knowledge_base_directory()
+
+    def _process_knowledge_base_directory(self) -> None:
+        """Process all files in the knowledge base directory."""
+        try:
+            # Get all files in the Knowledgebase directory
+            for file_path in self._knowledge_base_dir.iterdir():
+                self._load_single_entry(file_path)
+        except Exception as e:
+            print(f"Error loading knowledge base directory: {e}")
+
     def _load_single_entry(self, file_path: Path) -> bool:
         """Load a single knowledge base entry from a file.
 
@@ -92,22 +108,6 @@ class KnowledgeBase:
         except Exception as e:
             print(f"Warning: Error loading knowledge entry from {file_path}: {e}")
             return False
-
-    def _process_knowledge_base_directory(self) -> None:
-        """Process all files in the knowledge base directory."""
-        try:
-            # Get all files in the Knowledgebase directory
-            for file_path in self._knowledge_base_dir.iterdir():
-                self._load_single_entry(file_path)
-        except Exception as e:
-            print(f"Error loading knowledge base directory: {e}")
-
-    def load_entries(self) -> None:
-        """Load knowledge base entries from individual files in /Knowledgebase/ folder."""
-        if not self._file_system.directory_exists(self._knowledge_base_dir):
-            return
-
-        self._process_knowledge_base_directory()
 
     def save_entries(self) -> None:
         """Save knowledge base entries as individual files."""
@@ -198,7 +198,3 @@ class KnowledgeBase:
     def get_entries(self) -> list[KnowledgeEntry]:
         """Get all knowledge base entries."""
         return list(self._entries.values())
-
-    def list_titles(self) -> list[str]:
-        """Get a list of all entry titles."""
-        return list(self._entries.keys())
