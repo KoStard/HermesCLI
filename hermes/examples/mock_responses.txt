@@ -1,0 +1,11 @@
+<<< open_artifact
+///root_problem
+test
+///name
+SecretValueArtifact
+>>>
+$%%
+<<< finish_problem
+///message
+Completed sub-analysis X, results attached in artifact Y.asdasds
+>>>
