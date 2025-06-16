@@ -10,7 +10,7 @@ class AddSubproblemCommand(Command[ResearchCommandContextImpl, None]):
             "add_subproblem",
             "Add a subproblem to the current problem",
         )
-        self.add_section("title", True, "Title of the subproblem")
+        self.add_section("title", True, "Title of the subproblem. Should not contain special characters, only letters and numbers. No '/'.")
         self.add_section("content", True, "Content of the subproblem definition")
 
     def execute(self, context: ResearchCommandContextImpl, args: dict[str, Any]) -> None:
@@ -24,7 +24,7 @@ class AddSubproblemCommand(Command[ResearchCommandContextImpl, None]):
                 return
 
         # Create the child node using the encapsulated method
-        current_node.create_child_node(title=title, problem_content=args["content"])
+        child_node = current_node.create_child_node(title=title, problem_content=args["content"])
 
         # Add confirmation output
-        context.add_command_output(self.name, args, f"Subproblem '{title}' added.")
+        context.add_command_output(self.name, args, f"Subproblem '{child_node.get_title()}' added.")

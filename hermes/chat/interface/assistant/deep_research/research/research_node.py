@@ -48,7 +48,7 @@ class ResearchNodeImpl(ResearchNode):
         self.children: list[ResearchNode] = []
         self.parent: ResearchNode | None = parent
         self._path: Path = path
-        self._title = self._prepare_title(title)
+        self._title = title
 
         # Initialize history with proper file path
         history_path = path / "history.json"
@@ -71,10 +71,9 @@ class ResearchNodeImpl(ResearchNode):
         # Initialize file system components if path is set
         self._init_components()
 
-    def _prepare_title(self, title: str) -> str:
-        if len(title) > 200:
-            title = title[:200] + "..."
-        return title
+    @staticmethod
+    def prepare_title(title: str) -> str:
+        return title.replace('/', '_')
 
     def _init_components(self):
         """Initialize node components"""
@@ -180,7 +179,6 @@ class ResearchNodeImpl(ResearchNode):
 
     def add_child_node(self, child_node: ResearchNode):
         self.children.append(child_node)
-        # Each child node manages its own saving through its components
 
     def create_child_node(self, title: str, problem_content: str) -> ResearchNode:
         """Create a new child node with the given title and problem content.
@@ -196,6 +194,7 @@ class ResearchNodeImpl(ResearchNode):
         # Create problem definition
 
         problem_def = ProblemDefinition(content=problem_content)
+        title = ResearchNodeImpl.prepare_title(title)
 
         # Construct proper path within Subproblems directory
         subproblems_dir = self._path / "Subproblems"
