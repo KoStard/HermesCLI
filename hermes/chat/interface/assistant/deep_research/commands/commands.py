@@ -1,3 +1,4 @@
+from hermes.chat.interface.assistant.deep_research.commands.send_message_to_command import SendMessageToCommand
 from hermes.chat.interface.commands.command import CommandRegistry
 
 from .activate_subproblems_command import ActivateSubproblems
@@ -43,6 +44,7 @@ def register_deep_research_commands(registry: CommandRegistry):
         AppendKnowledgeCommand(),
         RewriteKnowledgeCommand(),
         DeleteKnowledgeCommand(),
+        SendMessageToCommand(),
     ]
     for cmd in commands_to_register:
         registry.register(cmd)

@@ -2,10 +2,10 @@ from typing import Any
 
 from hermes.chat.interface.assistant.deep_research.commands.command_context import ResearchCommandContextImpl
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.criteria_manager import Criterion
-from hermes.chat.interface.commands.command import Command as BaseCommand
+from hermes.chat.interface.commands.command import Command
 
 
-class AddCriteriaToSubproblemCommand(BaseCommand[ResearchCommandContextImpl, None]):
+class AddCriteriaToSubproblemCommand(Command[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_criteria_to_subproblem",

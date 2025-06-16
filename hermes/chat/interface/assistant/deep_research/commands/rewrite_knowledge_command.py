@@ -1,10 +1,10 @@
 from typing import Any
 
 from hermes.chat.interface.assistant.deep_research.commands.command_context import ResearchCommandContextImpl
-from hermes.chat.interface.commands.command import Command as BaseCommand
+from hermes.chat.interface.commands.command import Command
 
 
-class RewriteKnowledgeCommand(BaseCommand[ResearchCommandContextImpl, None]):
+class RewriteKnowledgeCommand(Command[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "rewrite_knowledge",

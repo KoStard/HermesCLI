@@ -1,10 +1,10 @@
 from typing import Any
 
 from hermes.chat.interface.assistant.deep_research.commands.command_context import ResearchCommandContextImpl
-from hermes.chat.interface.commands.command import Command as BaseCommand
+from hermes.chat.interface.commands.command import Command
 
 
-class DeleteKnowledgeCommand(BaseCommand[ResearchCommandContextImpl, None]):
+class DeleteKnowledgeCommand(Command[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "delete_knowledge",

@@ -9,12 +9,12 @@ if TYPE_CHECKING:
     from hermes.chat.conversation_orchestrator import ConversationOrchestrator
     from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 
+
 @dataclass
 class ImportKnowledgebaseEvent(EngineCommandEvent):
     knowledgebase_path: Path
 
     def execute(self, orchestrator: "ConversationOrchestrator") -> None:
-
         assistant_orchestrator = orchestrator.assistant_participant.orchestrator
         if not isinstance(assistant_orchestrator, DeepResearchAssistantOrchestrator):
             orchestrator.notifications_printer.print_notification("Knowledgebase import is not available in this mode", CLIColors.RED)
@@ -22,6 +22,8 @@ class ImportKnowledgebaseEvent(EngineCommandEvent):
 
         self._import_research_knowledgebase(assistant_orchestrator, orchestrator)
 
-    def _import_research_knowledgebase(self, assistant_orchestrator: "DeepResearchAssistantOrchestrator", orchestrator: "ConversationOrchestrator"):
+    def _import_research_knowledgebase(
+        self, assistant_orchestrator: "DeepResearchAssistantOrchestrator", orchestrator: "ConversationOrchestrator"
+    ):
         assistant_orchestrator.get_engine().research.get_knowledge_base().import_entries_from(self.knowledgebase_path)
         orchestrator.notifications_printer.print_notification(f"Knowledgebase imported from {self.knowledgebase_path}")

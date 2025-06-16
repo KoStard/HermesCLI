@@ -1,14 +1,18 @@
+import textwrap
 from typing import Any
 
 from hermes.chat.interface.assistant.deep_research.commands.command_context import ResearchCommandContextImpl
-from hermes.chat.interface.commands.command import Command as BaseCommand
+from hermes.chat.interface.commands.command import Command
 
 
-class ActivateSubproblems(BaseCommand[ResearchCommandContextImpl, None]):
+class ActivateSubproblems(Command[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "activate_subproblems",
-            "Activate subproblems to run in parallel. Multiple titles can be specified.",
+            textwrap.dedent("""
+            Activate subproblems to run in parallel. Multiple titles can be specified.
+            Can be executed on subproblems that previously have been executed as well.
+            """),
         )
         self.add_section("title", True, "Title of the subproblem to activate", allow_multiple=True)
 

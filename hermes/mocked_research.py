@@ -63,7 +63,6 @@ class MockedLLMInterface(LLMInterface):
         yield from response
 
 
-
 class MockedChatModel(ChatModel):
     """Minimal ChatModel implementation for mocked testing"""
 
