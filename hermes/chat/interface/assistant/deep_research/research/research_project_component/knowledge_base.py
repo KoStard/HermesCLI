@@ -58,6 +58,39 @@ class KnowledgeEntry:
         )
 
 
+class KnowledgeBaseLoader:
+    def __init__(self):
+        pass
+
+    def load_entries(self, knowledgebase_directory: Path) -> list[KnowledgeEntry]:
+        if knowledgebase_directory.is_file():
+            entry = self._load_entry(knowledgebase_directory)
+            if entry:
+                return [entry]
+            return []
+
+        entries = []
+        for file_path in knowledgebase_directory.iterdir():
+            entries.append(self._load_entry(file_path))
+        return entries
+
+    def _load_entry(self, entry_path: Path) -> KnowledgeEntry | None:
+        if entry_path.suffix != ".md":
+            return None
+
+        try:
+            # Load the file using MarkdownFileWithMetadata
+            file_with_metadata = MarkdownFileWithMetadataImpl.load_from_file(entry_path)
+            metadata = file_with_metadata.get_metadata()
+            content = file_with_metadata.get_content()
+
+            # Create KnowledgeEntry from the loaded data
+            return KnowledgeEntry.from_dict(metadata, content)
+        except Exception as e:
+            print(f"Warning: Error loading knowledge entry from {entry_path}: {e}")
+            return None
+
+
 class KnowledgeBase:
     """Manages the knowledge base entries for a research project using individual files."""
 
@@ -65,6 +98,7 @@ class KnowledgeBase:
         self._file_system = file_system
         self._repo_root_path = repo_root_path
         self._knowledge_base_dir = repo_root_path / "Knowledgebase"
+        self._loader = KnowledgeBaseLoader()
         self._entries: dict[str, KnowledgeEntry] = {}  # Map title to entry
 
     def load_entries(self) -> None:
@@ -72,67 +106,28 @@ class KnowledgeBase:
         if not self._file_system.directory_exists(self._knowledge_base_dir):
             return
 
-        self._process_knowledge_base_directory()
+        self._process_knowledge_base_directory(self._knowledge_base_dir)
 
-    def _process_knowledge_base_directory(self) -> None:
+    def import_entries_from(self, external_knowledge_base_dir: Path):
+        if not self._file_system.directory_exists(external_knowledge_base_dir):
+            return
+
+        entries = self._loader.load_entries(external_knowledge_base_dir)
+        for entry in entries:
+            if entry.title in self._entries:
+                print(f"A knowledge entry with title {entry.title} already exists, not importing.")
+                continue
+            self._entries[entry.title] = entry
+            self._save_entry(entry)
+
+    def _process_knowledge_base_directory(self, knowledge_base_dir: Path) -> None:
         """Process all files in the knowledge base directory."""
         try:
-            # Get all files in the Knowledgebase directory
-            for file_path in self._knowledge_base_dir.iterdir():
-                self._load_single_entry(file_path)
+            entries = self._loader.load_entries(knowledge_base_dir)
+            for entry in entries:
+                self._entries[entry.title] = entry
         except Exception as e:
             print(f"Error loading knowledge base directory: {e}")
-
-    def _load_single_entry(self, file_path: Path) -> bool:
-        """Load a single knowledge base entry from a file.
-
-        Args:
-            file_path: Path to the markdown file
-
-        Returns:
-            bool: True if loaded successfully, False otherwise
-        """
-        if file_path.suffix != ".md":
-            return False
-
-        try:
-            # Load the file using MarkdownFileWithMetadata
-            file_with_metadata = MarkdownFileWithMetadataImpl.load_from_file(file_path)
-            metadata = file_with_metadata.get_metadata()
-            content = file_with_metadata.get_content()
-
-            # Create KnowledgeEntry from the loaded data
-            entry = KnowledgeEntry.from_dict(metadata, content)
-            self._entries[entry.title] = entry
-            return True
-        except Exception as e:
-            print(f"Warning: Error loading knowledge entry from {file_path}: {e}")
-            return False
-
-    def save_entries(self) -> None:
-        """Save knowledge base entries as individual files."""
-        # Create the Knowledgebase directory if it doesn't exist
-        if not self._file_system.directory_exists(self._knowledge_base_dir):
-            self._file_system.create_directory(self._knowledge_base_dir)
-
-        try:
-            for entry in self._entries.values():
-                self._save_entry(entry)
-        except Exception as e:
-            print(f"Error saving knowledge base: {e}")
-
-    def _save_entry(self, entry: KnowledgeEntry) -> None:
-        """Save a single knowledge entry to its individual file."""
-        # Create a markdown file with metadata
-        file_with_metadata = MarkdownFileWithMetadataImpl(entry.title, entry.content)
-
-        # Set all metadata
-        metadata = entry.get_metadata_dict()
-        for key, value in metadata.items():
-            file_with_metadata.set_metadata_key(key, value)
-
-        # Save the file
-        file_with_metadata.save_file_in_directory(self._knowledge_base_dir)
 
     def add_entry(self, entry: KnowledgeEntry) -> None:
         """Add a new entry to the knowledge base and save."""
@@ -156,6 +151,19 @@ class KnowledgeBase:
         entry.timestamp = datetime.now()
         self._save_entry(entry)
         return True
+
+    def _save_entry(self, entry: KnowledgeEntry) -> None:
+        """Save a single knowledge entry to its individual file."""
+        # Create a markdown file with metadata
+        file_with_metadata = MarkdownFileWithMetadataImpl(entry.title, entry.content)
+
+        # Set all metadata
+        metadata = entry.get_metadata_dict()
+        for key, value in metadata.items():
+            file_with_metadata.set_metadata_key(key, value)
+
+        # Save the file
+        file_with_metadata.save_file_in_directory(self._knowledge_base_dir)
 
     def update_entry(self, title: str, new_content: str, new_title: str | None = None, new_tags: list[str] | None = None) -> bool:
         """Update an existing knowledge entry."""

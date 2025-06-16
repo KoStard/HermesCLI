@@ -3,6 +3,7 @@ import shlex
 from argparse import ArgumentParser, Namespace
 from collections.abc import Generator
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from hermes.chat.events.base import Event
@@ -20,6 +21,7 @@ from hermes.chat.events.engine_commands import (
     SwitchResearchEvent,
     ThinkingLevelEvent,
 )
+from hermes.chat.events.engine_commands.import_knowledgebase import ImportKnowledgebaseEvent
 from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.interface.assistant.chat.control_panel import ChatAssistantControlPanel
 from hermes.chat.interface.control_panel import ControlPanel, ControlPanelCommand
@@ -439,6 +441,19 @@ class UserControlPanel(ControlPanel):
             ),
         )
 
+        self._register_command(
+            ControlPanelCommand(
+                command_id="import_knowledgebase",
+                command_label="/import_knowledgebase",
+                description="Import knowledgebase from a directory (pass the knowledgebase directory, not the research)",
+                short_description="Import knowledgebase",
+                parser=self._parse_import_knowledgebase_command,
+                is_research_command=True,
+                is_chat_command=False,
+                is_agent_command=False,
+            ),
+        )
+
     def _parse_set_assistant_command_status(self, content: str) -> None:
         """Set the status of an assistant command"""
         if not self.llm_control_panel:
@@ -734,6 +749,9 @@ class UserControlPanel(ControlPanel):
         except Exception as e:
             self.notifications_printer.print_notification(f"Error: {e}", CLIColors.RED)
             return None
+
+    def _parse_import_knowledgebase_command(self, source_path_raw: str) -> Event | None:
+        return ImportKnowledgebaseEvent(knowledgebase_path=Path(source_path_raw))
 
     def _parse_exa_url_command(self, raw_input: str) -> MessageEvent:
         """Parse and execute the /exa_url command"""
