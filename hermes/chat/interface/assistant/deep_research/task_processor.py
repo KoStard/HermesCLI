@@ -1,3 +1,4 @@
+import logging
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Generic
 
@@ -21,10 +22,13 @@ if TYPE_CHECKING:
     from hermes.chat.interface.commands.command import CommandRegistry
     from hermes.chat.interface.templates.template_manager import TemplateManager
 
+logger = logging.getLogger(__name__)
+
 
 class TaskProcessorRunResult(Enum):
     TASK_COMPLETED_OR_PAUSED = auto()  # The task was processed, and is now finished, failed, or pending children
     ENGINE_STOP_REQUESTED = auto()  # The task processing led to a budget exhaustion or shutdown command
+    TASK_FAILED = auto()
 
 
 class TaskProcessorCancelledError(Exception):
@@ -70,14 +74,9 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
         (FINISHED, FAILED, PENDING), or budget/shutdown dictates a stop.
         """
         while not self._is_interrupted:
-            try:
-                state = self._execute_task_processing_cycle(self.current_node)
-                if state:
-                    return state
-            except EngineShutdownRequestedError:
-                return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
-            except TaskProcessorCancelledError:
-                return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
+            state = self._execute_task_processing_cycle_and_catch(self.current_node)
+            if state:
+                return state
 
         self._handle_interruption()
         return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
@@ -92,6 +91,21 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
     def _handle_interruption(self):
         if self.current_node.get_problem_status() not in {ProblemStatus.CANCELLED, ProblemStatus.FAILED, ProblemStatus.FINISHED}:
             self.current_node.set_problem_status(ProblemStatus.CANCELLED)
+
+    def _execute_task_processing_cycle_and_catch(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
+        try:
+            state = self._execute_task_processing_cycle(self.current_node)
+            if state:
+                return state
+        except EngineShutdownRequestedError:
+            return TaskProcessorRunResult.ENGINE_STOP_REQUESTED
+        except TaskProcessorCancelledError:
+            return TaskProcessorRunResult.TASK_COMPLETED_OR_PAUSED
+        except Exception as e:
+            error_message = f"Task execution failed for {research_node.get_title()}"
+            logger.warning(error_message, e)
+            self.current_node.set_problem_status(ProblemStatus.FAILED)
+            return TaskProcessorRunResult.TASK_FAILED
 
     def _execute_task_processing_cycle(self, research_node: "ResearchNode") -> TaskProcessorRunResult | None:
         """Execute a single task processing cycle."""
