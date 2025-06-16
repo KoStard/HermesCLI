@@ -42,7 +42,7 @@ class ResearchNodeHistoryAdapter:
     ) -> list[dict[str, str]]:
         """Process history blocks and convert them to message format."""
         history_messages = []
-        auto_reply_counter = 0
+        auto_reply_counter = 1
         iterative_auto_reply_max_length = 5000
 
         for i in range(len(compiled_blocks) - 1, -1, -1):
@@ -67,13 +67,13 @@ class ResearchNodeHistoryAdapter:
 
     def _update_auto_reply_counters(self, counter: int, max_length: int) -> tuple[int, int | None]:
         """Update auto reply counters and determine max length."""
-        counter += 1
         current_max_len = None
 
-        if counter > 3:
+        if counter >= 2:
             current_max_len = max_length
             max_length = max(max_length // 2, 300)
 
+        counter += 1
         return counter, current_max_len
 
     def _process_initial_interface(
