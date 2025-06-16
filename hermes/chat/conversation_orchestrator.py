@@ -41,6 +41,7 @@ class ConversationOrchestrator:
         self.file_operations_handler = FileOperationsHandler(self.notifications_printer)
         self._received_assistant_done_event = False
         self._should_exit_after_one_cycle = False
+        self._mcp_commands_added = False
 
     def start_conversation(self):
         try:
@@ -151,17 +152,20 @@ I'll wait for your next steps or completion message.""",
 
     def _wait_for_mcps_and_update_commands(self):
         """Wait for MCP clients to load and update commands."""
+        if self._mcp_commands_added:
+            return
+        self._mcp_commands_added = True
         if not self.mcp_manager.initial_load_complete:
             self.notifications_printer.print_notification("Waiting for MCP servers to finish loading...", CLIColors.YELLOW)
             self.mcp_manager.wait_for_initial_load()
 
-            # Update the available commands once loaded
-            assistant_interface = self.assistant_participant.orchestrator
-            if isinstance(assistant_interface, DeepResearchAssistantOrchestrator | ChatAssistantOrchestrator):
-                assistant_interface.update_mcp_commands()
+        # Update the available commands once loaded
+        assistant_interface = self.assistant_participant.orchestrator
+        if isinstance(assistant_interface, DeepResearchAssistantOrchestrator | ChatAssistantOrchestrator):
+            assistant_interface.update_mcp_commands()
 
-            # Check for errors after loading
-            self._handle_mcp_errors()
+        # Check for errors after loading
+        self._handle_mcp_errors()
 
     def _handle_mcp_status(self):
         """Checks and reports the status of MCP clients."""
