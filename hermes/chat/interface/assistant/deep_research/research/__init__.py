@@ -3,7 +3,7 @@ from pathlib import Path
 from queue import Queue
 from typing import TYPE_CHECKING, TypeVar
 
-from hermes.chat.interface.assistant.deep_research.research.research_node_component.artifact import Artifact
+from hermes.chat.interface.assistant.deep_research.research.research_node_component.artifact import Artifact, ArtifactManager
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.criteria_manager import Criterion
 from hermes.chat.interface.assistant.deep_research.research.research_node_component.history.history import (
     ResearchNodeHistory,
@@ -49,6 +49,10 @@ class ResearchNode(ABC):
 
     @abstractmethod
     def get_parent(self) -> "ResearchNode | None":
+        pass
+
+    @abstractmethod
+    def get_artifact_manager(self) -> "ArtifactManager":
         pass
 
     @abstractmethod

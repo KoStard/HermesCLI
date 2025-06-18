@@ -9,14 +9,17 @@ from .add_knowledge_command import AddKnowledgeCommand
 from .add_log_entry_command import AddLogEntryCommand
 from .add_subproblem_command import AddSubproblemCommand
 from .append_knowledge_command import AppendKnowledgeCommand
+from .append_to_artifact_command import AppendToArtifactCommand
 from .append_to_problem_definition_command import AppendToProblemDefinitionCommand
 from .cancel_subproblem_command import CancelSubproblemCommand
 from .close_artifact_command import CloseArtifactCommand
+from .delete_artifact_command import DeleteArtifactCommand
 from .delete_knowledge_command import DeleteKnowledgeCommand
 from .fail_command import FailCommand
 from .finish_command import FinishCommand
 from .mark_criteria_as_done_command import MarkCriteriaAsDoneCommand
 from .open_artifact_command import OpenArtifactCommand
+from .overwrite_artifact_command import OverwriteArtifactCommand
 from .rewrite_knowledge_command import RewriteKnowledgeCommand
 from .think_command import ThinkCommand
 from .wait_for_subproblems_command import WaitForSubproblems
@@ -29,6 +32,9 @@ def register_deep_research_commands(registry: CommandRegistry):
         MarkCriteriaAsDoneCommand(),
         AddSubproblemCommand(),
         AddArtifactCommand(),
+        OverwriteArtifactCommand(),
+        AppendToArtifactCommand(),
+        DeleteArtifactCommand(),
         AppendToProblemDefinitionCommand(),
         AddCriteriaToSubproblemCommand(),
         ActivateSubproblems(),

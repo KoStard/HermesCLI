@@ -18,6 +18,41 @@ class Artifact:
         self.is_external = is_external
         self._path: Path | None = path
 
+    def update_content(self, new_content: str) -> None:
+        """Update the content of the artifact.
+
+        Args:
+            new_content: The new content to set
+        """
+        self._content = new_content
+
+    def update_short_summary(self, new_summary: str) -> None:
+        """Update the short summary of the artifact.
+
+        Args:
+            new_summary: The new summary to set
+        """
+        self.short_summary = new_summary
+
+    def append_content(self, additional_content: str) -> None:
+        """Append content to the existing content of the artifact.
+
+        Args:
+            additional_content: Content to append
+        """
+        self._content = f"{self._content}\n\n{additional_content}"
+
+    def remove_file(self):
+        """Remove the artifact's file from the filesystem.
+
+        Returns:
+            True if the file was successfully deleted or didn't exist, False if deletion failed
+        """
+        if not self._path or not self._path.exists():
+            return
+
+        self._path.unlink()
+
     @property
     def content(self):
         if not self._path or not self._path.exists():
@@ -113,6 +148,23 @@ class ArtifactManager:
         assert directory
         artifact.set_directory(directory)
         artifact.save()
+
+    def remove_artifact(self, artifact: Artifact) -> bool:
+        """Remove an artifact from the manager and delete its file.
+
+        Args:
+            artifact: The artifact to remove
+
+        Returns:
+            True if successfully removed, False otherwise
+        """
+        if artifact not in self._artifacts:
+            return False
+
+        artifact.remove_file()
+        self._artifacts.remove(artifact)
+
+        return True
 
     def _get_directory(self) -> Path | None:
         node_path = self._node.get_path()

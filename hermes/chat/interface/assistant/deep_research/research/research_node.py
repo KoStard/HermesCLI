@@ -218,6 +218,9 @@ class ResearchNodeImpl(ResearchNode):
     def get_parent(self) -> ResearchNode | None:
         return self.parent
 
+    def get_artifact_manager(self) -> ArtifactManager:
+        return self.artifact_manager
+
     def get_artifacts(self) -> list[Artifact]:
         return self.artifact_manager.artifacts
 
