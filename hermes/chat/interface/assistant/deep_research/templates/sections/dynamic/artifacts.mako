@@ -17,7 +17,7 @@ No artifacts available.
     </external_files_intro>
 
     % for artifact_data in external_files_data: ## Already sorted by factory method
-    ${xml.artifact(artifact_data.name, artifact_data.content, type="external_file")}
+    ${xml.artifact(artifact_data.name, artifact_data.content, type="external_file", is_open="true")}
     % endfor
 
     % if node_artifacts_data:
@@ -34,7 +34,8 @@ No artifacts available.
     ${xml.artifact(
         artifact_data.name,
         artifact_data.content if artifact_data.is_fully_visible else "Summary: " + artifact_data.short_summary,
-        owner=artifact_data.owner_title
+        owner=artifact_data.owner_title,
+        is_open=artifact_data.is_fully_visible,
     )}
     % endfor
     % endif

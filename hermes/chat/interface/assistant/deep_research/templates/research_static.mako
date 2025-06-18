@@ -313,7 +313,7 @@ ${'###'} Key Features
 - **Auto-close**: Artifacts close after 5 messages (use `open_artifact` to reopen)
 - **Shared View**: All team members see artifact summaries
 - **Cross-Root Access**: View selected artifacts from other root problems via `open_artifact`
-- **Visibility Configuration**: Which artifacts are visible across root problems may vary based on organizational settings
+- **Visibility Configuration**: Which artifacts are visible across root problems may vary based on organizational settings. You can see if an artifact is open or not by checking its is_open attribute.
 
 ${'###'} Best Practices
 
