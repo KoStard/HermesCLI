@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 
 from hermes.chat.events.engine_commands.base import EngineCommandEvent
 from hermes.chat.interface.helpers.terminal_coloring import CLIColors
+from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 
 if TYPE_CHECKING:
     from hermes.chat.conversation_orchestrator import ConversationOrchestrator
-    from hermes.chat.interface.assistant.deep_research.assistant_orchestrator import DeepResearchAssistantOrchestrator
 
 
 @dataclass
