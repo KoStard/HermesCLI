@@ -23,7 +23,6 @@ class ResearchNodeHistoryAdapter:
         self,
         template_manager: "TemplateManager",
         renderer_registry: "DynamicDataTypeToRendererMap",
-        help_interface: str | None,
     ) -> list[dict[str, str]]:
         """Compiles and renders historical messages for LLM input."""
         compiled_blocks = self.research_node.get_history().get_compiled_blocks()

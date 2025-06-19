@@ -27,10 +27,9 @@ class ResearchNodeHistory:
         if os.path.exists(history_file_path):
             self.load()
 
-    def add_message(self, author: str, content: str) -> None:
+    def _add_message(self, author: str, content: str) -> None:
         """Add a message to the history"""
         self._compiled_blocks.append(ChatMessage(author=author, content=content))
-        self.save()
 
     def get_compiled_blocks(self) -> list:
         """Get all blocks in the history"""
@@ -48,22 +47,18 @@ class ResearchNodeHistory:
         # Create InitialInterface block
         initial_block = InitialInterface(static_content, dynamic_sections)
 
-        # Insert at the beginning if no initial interface exists yet
-        if not self.has_initial_interface():
-            self._compiled_blocks.insert(0, initial_block)
-            self.save()
+        self._compiled_blocks.insert(0, initial_block)
 
     def update_static_content_in_initial_interface(self, static_content: str):
         if not isinstance(self._compiled_blocks[0], InitialInterface):
             print("No initial interface, not updating")
             return
         self._compiled_blocks[0].static_content = static_content
-        self.save()
-
-    def get_initial_interface_content(self) -> str | None:
-        """Get the initial interface content - for backward compatibility, returns None if using new system"""
-        # Return None to indicate we're using the new InitialInterface block system
-        return None
+    
+    def get_initial_interface(self) -> InitialInterface:
+        if isinstance(self._compiled_blocks[0], InitialInterface):
+            return self._compiled_blocks[0]
+        raise Exception("Initial interface not configured")
 
     def has_initial_interface(self) -> bool:
         """Check if an InitialInterface block already exists"""
@@ -94,9 +89,10 @@ class ResearchNodeHistory:
         self._auto_reply_aggregator.clear()
 
         # add_message saves, so this covers saving the whole transaction.
-        self.add_message("assistant", llm_response_content)
+        self._add_message("assistant", llm_response_content)
+        self._save()
 
-    def save(self) -> None:
+    def _save(self) -> None:
         """Save history to file"""
         try:
             # Ensure directory exists

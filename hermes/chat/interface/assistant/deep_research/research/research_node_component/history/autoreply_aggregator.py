@@ -49,6 +49,10 @@ class AutoReplyAggregator:
                 changed_sections.append((i, current_data))
         return changed_sections
 
+    def set_initial_dynamic_interface(self, dynamic_sections: list[tuple[int, DynamicSectionData]]):
+        if not self.last_dynamic_sections_state:
+            self.last_dynamic_sections_state = [data for _, data in dynamic_sections]
+
     def update_dynamic_sections(self, new_sections_data: list[DynamicSectionData]):
         """Compare new dynamic section data with the last known state and track changes.
 

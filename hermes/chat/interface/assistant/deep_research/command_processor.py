@@ -36,8 +36,6 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
         if "SHUT_DOWN_DEEP_RESEARCHER".lower() in text.lower():
             return self._handle_shutdown_command()
 
-        self._add_message_to_history(text, current_node)
-
         parsing_report, commands = self._parse_commands(text)
 
         failed_commands, needs_confirmation, status = self._execute_valid_commands(commands, current_node, parsing_report)
@@ -50,11 +48,6 @@ class CommandProcessor(Generic[ResearchCommandContextType]):
     def _handle_shutdown_command(self):
         """Handle shutdown command and return updated state."""
         raise EngineShutdownRequestedError()
-
-    def _add_message_to_history(self, text: str, current_node: "ResearchNode") -> None:
-        """Add the assistant's message to history."""
-        history = current_node.get_history()
-        history.add_message("assistant", text)
 
     def _parse_commands(self, text: str) -> tuple[str, list[ParseResult]]:
         """Parse commands from text and generate error report."""

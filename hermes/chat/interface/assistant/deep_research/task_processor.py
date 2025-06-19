@@ -136,7 +136,6 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
         history_messages = ResearchNodeHistoryAdapter(research_node).get_history_messages(
             self.template_manager,
             self.renderer_registry,
-            research_node.get_history().get_initial_interface_content(),
         )
 
         # Get interface content and generate request
@@ -160,6 +159,7 @@ class TaskProcessor(Generic[ResearchCommandContextType]):
             node_history.update_static_content_in_initial_interface(static_interface_content)
 
         current_auto_reply_aggregator = node_history.get_auto_reply_aggregator()
+        current_auto_reply_aggregator.set_initial_dynamic_interface(node_history.get_initial_interface().dynamic_sections)
         current_auto_reply_aggregator.update_dynamic_sections(current_dynamic_data)
         node_history.prepare_and_add_auto_reply_block()
 

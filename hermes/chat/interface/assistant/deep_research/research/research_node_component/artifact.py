@@ -67,6 +67,9 @@ class Artifact:
     def set_directory(self, directory_path: Path):
         self._path = MarkdownFileWithMetadataImpl(self.name).get_path(directory_path)
 
+    def set_file_path(self, file_path: Path):
+        self._path = file_path
+
     @staticmethod
     def load_from_file(file_path: Path) -> "Artifact":
         """Load an artifact from a file"""
@@ -76,7 +79,9 @@ class Artifact:
         name = md_file.get_metadata().get("name", file_path.stem)
         summary = md_file.get_metadata().get("summary", "")
 
-        return Artifact(name=name, content=md_file.get_content(), short_summary=summary, is_external=False, path=file_path)
+        artifact = Artifact(name=name, content=md_file.get_content(), short_summary=summary, is_external=False, path=file_path)
+        artifact.set_file_path(file_path)
+        return artifact
 
     def save(self) -> None:
         """Save an artifact to a file with metadata"""
