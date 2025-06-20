@@ -9,7 +9,7 @@ class AddArtifactCommand(Command[ResearchCommandContextImpl, None]):
     def __init__(self):
         super().__init__(
             "add_artifact",
-            "Add an artifact to the current problem. Artifacts are closed by default and show only the summary. "
+            "Add an artifact to the current problem. Newly created artifacts will be visible by default."
             "Keep content ~1 page long unless specifically requested to be longer. "
             "Use descriptive names that clearly indicate purpose.",
         )
@@ -32,6 +32,7 @@ class AddArtifactCommand(Command[ResearchCommandContextImpl, None]):
             is_external=False,
         )
         current_node.add_artifact(artifact)
+        current_node.set_artifact_status(artifact, True)
 
         # Add confirmation output
         context.add_command_output(self.name, args, f"Artifact '{args['name']}' added.")
