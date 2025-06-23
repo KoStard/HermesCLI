@@ -102,7 +102,7 @@ SYSTEM RESPONSE: results...
 ```
 ⚠️ **IMPORTANT**: Commands are processed AFTER you send your message. Finish your message, read the responses, then consider the next steps.
 
-Notice that we use <<< for opening the commands, >>> for closing, and /// for arguments. Make sure you use the exact syntax.
+Notice that we use <<< for opening the commands, \\n>>> for closing, and /// for arguments. Make sure you use the exact syntax, each of these should be in a new and separate line.
 
 In case the interface has a bug and you are not able to navigate, you can use an escape code "SHUT_DOWN_DEEP_RESEARCHER". If the system detects this code anywhere in your response it will halt the system and the admin will check it.
 
@@ -263,5 +263,3 @@ Command output are temporary, so capture the important things in Knowledgebase.
 The artifacts are another permanent solution, but they can be closed, so at least put the summaries in knowledgebase to remember where to look at in case you need the details.
 
 **Important**: Each knowledge entry must have a unique title. Make it descriptive and unique across all knowledge entries in the repository.
-
-

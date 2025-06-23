@@ -507,7 +507,7 @@ class CommandParser:
         """Generate footer notes based on the types of errors found."""
         footer_lines = ["---"]
         if syntax_errors_found:
-            footer_lines.append("**Note:** Commands with block syntax errors (<<< >>> issues) were not parsed or executed.")
+            footer_lines.append("**Note:** Commands with block syntax errors (<<< \\n>>> issues) were not parsed or executed.")
         if other_errors_found:
             footer_lines.append(
                 "**Note:** Commands with other errors (e.g., unknown command, missing/invalid sections) might be skipped during execution.",
