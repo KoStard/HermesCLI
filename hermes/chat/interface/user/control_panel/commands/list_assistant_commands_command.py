@@ -49,7 +49,7 @@ def register() -> ControlPanelCommand:
         command_label="/list_assistant_commands",
         description="List all assistant commands and their current status",
         short_description="Show assistant commands",
-        parser=lambda line, control_panel=None: _parse_list_assistant_commands_wrapper(control_panel, line),
+        parser=lambda line, control_panel: _parse_list_assistant_commands_wrapper(control_panel, line),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=False,

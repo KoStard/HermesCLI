@@ -12,7 +12,7 @@ def register() -> ControlPanelCommand:
         command_label="/image_url",
         description="Add image from url to the conversation",
         short_description="Share an image via URL",
-        parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line)),
+        parser=lambda line, control_panel: MessageEvent(ImageUrlMessage(author="user", image_url=line)),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=False,

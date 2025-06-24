@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/load_history",
         description="Load history from a file",
         short_description="Load chat history",
-        parser=lambda line: LoadHistoryEvent(line),
+        parser=lambda line, control_panel: LoadHistoryEvent(line),
         priority=98,
         is_chat_command=True,
         is_agent_command=True,

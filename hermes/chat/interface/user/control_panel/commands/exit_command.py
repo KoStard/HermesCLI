@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/exit",
         description="Exit the application",
         short_description="Exit Hermes",
-        parser=lambda _: ExitEvent(),
+        parser=lambda line, control_panel: ExitEvent(),
         priority=-100,  # Run exit after running any other command
         is_chat_command=True,
         is_agent_command=True,

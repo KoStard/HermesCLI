@@ -12,7 +12,7 @@ def register() -> ControlPanelCommand:
         command_label="/video",
         description="Add video to the conversation",
         short_description="Share a video file",
-        parser=lambda line: MessageEvent(VideoMessage(author="user", video_filepath=line)),
+        parser=lambda line, control_panel: MessageEvent(VideoMessage(author="user", video_filepath=line)),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=False,

@@ -76,8 +76,4 @@ class OverwriteArtifactCommand(Command[ResearchCommandContextImpl, None]):
 
     def _add_confirmation(self, context: ResearchCommandContextImpl, args: dict, artifact_name: str, changes: list[str]) -> None:
         """Add a confirmation message about the changes made."""
-        context.add_command_output(
-            self.name,
-            args,
-            f"Artifact '{artifact_name}' updated with new {' and '.join(changes)}."
-        )
+        context.add_command_output(self.name, args, f"Artifact '{artifact_name}' updated with new {' and '.join(changes)}.")

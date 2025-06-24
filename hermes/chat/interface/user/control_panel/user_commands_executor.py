@@ -1,5 +1,5 @@
-from collections.abc import Generator
-from typing import Any
+from collections.abc import Callable, Generator
+from typing import TYPE_CHECKING, Any
 
 from hermes.chat.events.base import Event
 from hermes.chat.events.message_event import MessageEvent
@@ -9,16 +9,17 @@ from hermes.chat.interface.helpers.peekable_generator import PeekableGenerator
 from hermes.chat.interface.user.control_panel.user_commands_registry import UserCommandsRegistry
 from hermes.chat.messages import Message, TextMessage
 
+if TYPE_CHECKING:
+    from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
+
 
 class UserCommandsExecutor:
     def __init__(
-        self,
-        *,
-        notifications_printer: CLINotificationsPrinter,
-        commands_registry: UserCommandsRegistry,
+        self, *, notifications_printer: CLINotificationsPrinter, commands_registry: UserCommandsRegistry, control_panel: "UserControlPanel"
     ):
         self.notifications_printer = notifications_printer
         self.commands_registry = commands_registry
+        self.control_panel = control_panel
 
     def extract_and_execute_commands(self, message: Message) -> Generator[Event, None, None]:
         peekable_generator = PeekableGenerator(self._lines_from_message(message))
@@ -58,7 +59,7 @@ class UserCommandsExecutor:
         return None
 
     def _extract_command_content_in_line(self, command_label: str, line: str) -> str:
-        return line[len(command_label):].strip()
+        return line[len(command_label) :].strip()
 
     def _create_text_message_event(self, text_content: str) -> tuple[int, MessageEvent]:
         return (
@@ -72,9 +73,11 @@ class UserCommandsExecutor:
             ),
         )
 
-    def _parse_command_safely(self, command_label: str, command_parser, command_content: str) -> Any:
+    def _parse_command_safely(
+        self, command_label: str, command_parser: Callable[[str, "UserControlPanel"], Event | None], command_content: str
+    ) -> Any:
         try:
-            return command_parser(command_content)
+            return command_parser(command_content, self.control_panel)
         except Exception as e:
             self.notifications_printer.print_error(f"Command {command_label} failed: {e}")
             return None

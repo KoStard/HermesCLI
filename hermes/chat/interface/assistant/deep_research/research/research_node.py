@@ -73,7 +73,7 @@ class ResearchNodeImpl(ResearchNode):
 
     @staticmethod
     def prepare_title(title: str) -> str:
-        return title.replace('/', '_')
+        return title.replace("/", "_")
 
     def _init_components(self):
         """Initialize node components"""

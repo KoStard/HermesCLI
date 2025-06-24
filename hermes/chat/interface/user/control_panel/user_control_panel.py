@@ -36,6 +36,7 @@ class UserControlPanel:
         self.commands_executor = UserCommandsExecutor(
             notifications_printer=notifications_printer,
             commands_registry=self.commands_registry,
+            control_panel=self,
         )
 
         self.cli_adapter = CLIAdapter(

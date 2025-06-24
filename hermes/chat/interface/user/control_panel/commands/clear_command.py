@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/clear",
         description="Clear the conversation history",
         short_description="Clear chat history",
-        parser=lambda _: ClearHistoryEvent(),
+        parser=lambda line, control_panel: ClearHistoryEvent(),
         priority=99,  # Clear history should be first
         visible_from_cli=False,
         is_chat_command=True,

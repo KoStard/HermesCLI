@@ -27,8 +27,7 @@ def _parse_exa_url_command(control_panel, raw_input: str) -> MessageEvent:
         result_text += "\n\n---\n\nWarning! No information available about the age of the content."
     elif content_age > 7:
         result_text += (
-            f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, "
-            "it might not be fully up to date"
+            f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, " "it might not be fully up to date"
         )
 
     return MessageEvent(
@@ -49,7 +48,7 @@ def register() -> ControlPanelCommand:
         command_label="/exa_url",
         description="Fetch and add content from a URL using Exa",
         short_description="Fetch URL content with Exa",
-        parser=lambda line, control_panel=None: _parse_exa_url_command(control_panel, line),
+        parser=lambda line, control_panel: _parse_exa_url_command(control_panel, line),
         visible_from_cli=True,
         is_chat_command=True,
         is_agent_command=True,

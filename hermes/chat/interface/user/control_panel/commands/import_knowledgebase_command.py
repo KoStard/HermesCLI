@@ -13,7 +13,7 @@ def register() -> ControlPanelCommand:
         command_label="/import_knowledgebase",
         description="Import knowledgebase from a directory (pass the knowledgebase directory, not the research)",
         short_description="Import knowledgebase",
-        parser=lambda line: ImportKnowledgebaseEvent(knowledgebase_path=Path(line)),
+        parser=lambda line, control_panel: ImportKnowledgebaseEvent(knowledgebase_path=Path(line)),
         is_research_command=True,
         is_chat_command=False,
         is_agent_command=False,

@@ -33,7 +33,7 @@ def register() -> ControlPanelCommand:
             "You'll be asked if you want to continue if the assistant exhausts the budget."
         ),
         short_description="Set Deep Research budget",
-        parser=lambda line, control_panel=None: _parse_budget_command(control_panel, line),
+        parser=lambda line, control_panel: _parse_budget_command(control_panel, line),
         is_research_command=True,
         is_chat_command=False,
         is_agent_command=False,

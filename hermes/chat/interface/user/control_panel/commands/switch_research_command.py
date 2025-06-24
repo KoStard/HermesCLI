@@ -24,7 +24,7 @@ def register() -> ControlPanelCommand:
         command_label="/switch_research",
         description="Switch to a different research instance. If the name doesn't exist, it will be created.",
         short_description="Switch research instance",
-        parser=lambda line, control_panel=None: _parse_switch_research_command(control_panel, line),
+        parser=lambda line, control_panel: _parse_switch_research_command(control_panel, line),
         is_research_command=True,
         is_chat_command=False,
         is_agent_command=False,

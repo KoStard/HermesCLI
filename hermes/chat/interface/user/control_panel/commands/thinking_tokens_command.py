@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/thinking_tokens",
         description="Set the thinking tokens (number)",
         short_description="Set thinking tokens",
-        parser=lambda line: ThinkingLevelEvent(count=int(line.strip().lower())),
+        parser=lambda line, control_panel: ThinkingLevelEvent(count=int(line.strip().lower())),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=True,

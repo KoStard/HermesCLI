@@ -1,7 +1,11 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from hermes.chat.events.base import Event
+
+if TYPE_CHECKING:
+    from hermes.chat.interface.user.control_panel.user_control_panel import UserControlPanel
 
 
 @dataclass
@@ -10,7 +14,7 @@ class ControlPanelCommand:
     command_label: str
     description: str
     short_description: str
-    parser: Callable[[str], Event | None]
+    parser: Callable[[str, "UserControlPanel"], Event | None]
     priority: int = 0
     with_argument: bool = True
     # For user commands only

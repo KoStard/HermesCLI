@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/agent_mode",
         description="Enable or disable agent mode (on/off)",
         short_description="Toggle agent mode",
-        parser=lambda line: AgentModeEvent(enabled=line.strip().lower() == "on"),
+        parser=lambda line, control_panel: AgentModeEvent(enabled=line.strip().lower() == "on"),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=False,

@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/list_research",
         description="List all research instances (Deep Research mode only)",
         short_description="List research instances",
-        parser=lambda _: ListResearchEvent(),
+        parser=lambda line, control_panel: ListResearchEvent(),
         with_argument=False,
         is_research_command=True,
         is_chat_command=False,

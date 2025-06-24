@@ -52,7 +52,7 @@ def register() -> ControlPanelCommand:
         command_label="/fuzzy_select",
         description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
         short_description="Share a text-based document",
-        parser=lambda line, control_panel=None: _parse_fuzzy_select_command_wrapper(control_panel, line),
+        parser=lambda line, control_panel: _parse_fuzzy_select_command_wrapper(control_panel, line),
         with_argument=False,
         is_chat_command=True,
         is_agent_command=True,

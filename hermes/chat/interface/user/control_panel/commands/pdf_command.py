@@ -13,7 +13,7 @@ def register() -> ControlPanelCommand:
         description="Add pdf to the conversation. After the PDF path, optionally use "
         "{<page_number>, <page_number>:<page_number>, ...} to specify pages.",
         short_description="Share a PDF file",
-        parser=lambda line: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line)),
+        parser=lambda line, control_panel: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line)),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=False,

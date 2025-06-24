@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/save_history",
         description="Save history to a file",
         short_description="Save chat history",
-        parser=lambda line: SaveHistoryEvent(line),
+        parser=lambda line, control_panel: SaveHistoryEvent(line),
         visible_from_cli=False,
         is_chat_command=True,
         is_agent_command=True,

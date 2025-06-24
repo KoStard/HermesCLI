@@ -40,8 +40,4 @@ class AppendToArtifactCommand(Command[ResearchCommandContextImpl, None]):
         artifact.save()
 
         # Provide confirmation output
-        context.add_command_output(
-            self.name,
-            args,
-            f"Content successfully appended to artifact '{artifact_name}'."
-        )
+        context.add_command_output(self.name, args, f"Content successfully appended to artifact '{artifact_name}'.")

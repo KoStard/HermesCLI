@@ -12,7 +12,7 @@ def register() -> ControlPanelCommand:
         command_label="/text",
         description="Add text to the conversation",
         short_description="Send a text message",
-        parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directly_entered=True)),
+        parser=lambda line, control_panel: MessageEvent(TextMessage(author="user", text=line, is_directly_entered=True)),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=True,

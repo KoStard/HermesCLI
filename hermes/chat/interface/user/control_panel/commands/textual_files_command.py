@@ -12,7 +12,7 @@ def register() -> ControlPanelCommand:
         command_label="/textual_files",
         description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
         short_description="Share a text-based document",
-        parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
+        parser=lambda line, control_panel: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
         visible_from_interface=False,
         default_on_cli=True,
         is_chat_command=True,

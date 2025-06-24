@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/once",
         description="Enable or disable once mode - exit after completing current cycle (on/off)",
         short_description="Toggle once mode",
-        parser=lambda line: OnceEvent(enabled=line.strip().lower() == "on"),
+        parser=lambda line, control_panel: OnceEvent(enabled=line.strip().lower() == "on"),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=True,

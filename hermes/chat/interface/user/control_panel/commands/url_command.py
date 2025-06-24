@@ -12,7 +12,7 @@ def register() -> ControlPanelCommand:
         command_label="/url",
         description="Add url to the conversation",
         short_description="Share a URL",
-        parser=lambda line: MessageEvent(UrlMessage(author="user", url=line)),
+        parser=lambda line, control_panel: MessageEvent(UrlMessage(author="user", url=line)),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=False,

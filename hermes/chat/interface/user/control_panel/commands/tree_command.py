@@ -41,7 +41,7 @@ def register() -> ControlPanelCommand:
         command_label="/tree",
         description="Generate a directory tree",
         short_description="Show directory structure",
-        parser=lambda line, control_panel=None: _parse_tree_command(control_panel, line),
+        parser=lambda line, control_panel: _parse_tree_command(control_panel, line),
         is_chat_command=True,
         is_agent_command=True,
         is_research_command=True,

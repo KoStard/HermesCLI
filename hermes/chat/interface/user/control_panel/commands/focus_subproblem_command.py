@@ -11,7 +11,7 @@ def register() -> ControlPanelCommand:
         command_label="/focus_subproblem",
         description="Change focus to a specific subproblem in the research tree (Deep Research mode only)",
         short_description="Focus on a subproblem",
-        parser=lambda _: FocusSubproblemEvent(node_id="SHOW_SELECTOR"),
+        parser=lambda line, control_panel: FocusSubproblemEvent(node_id="SHOW_SELECTOR"),
         with_argument=False,
         is_research_command=True,
         is_chat_command=False,
