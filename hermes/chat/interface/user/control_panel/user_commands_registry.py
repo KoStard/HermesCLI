@@ -17,6 +17,7 @@ from hermes.chat.interface.user.control_panel.commands import (
     load_history_command,
     once_command,
     pdf_command,
+    print_research_status,
     save_history_command,
     set_assistant_command_status_command,
     switch_research_command,
@@ -70,6 +71,7 @@ class UserCommandsRegistry:
         self._register_command(tree_command.register())
         self._register_command(url_command.register())
         self._register_command(video_command.register())
+        self._register_command(print_research_status.register())
 
         # Add any extra commands provided
         if extra_commands:
