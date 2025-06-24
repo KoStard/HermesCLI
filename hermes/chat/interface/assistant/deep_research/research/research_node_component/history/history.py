@@ -54,7 +54,7 @@ class ResearchNodeHistory:
             print("No initial interface, not updating")
             return
         self._compiled_blocks[0].static_content = static_content
-    
+
     def get_initial_interface(self) -> InitialInterface:
         if isinstance(self._compiled_blocks[0], InitialInterface):
             return self._compiled_blocks[0]

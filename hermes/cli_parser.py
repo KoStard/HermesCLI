@@ -38,9 +38,9 @@ class CLIParser:
         self._build_info_parser(subparsers)
 
     def add_user_control_panel_arguments(self, user_control_panel: UserControlPanel):
-        user_control_panel.build_cli_arguments_for_chat(self._chat_parser)
-        user_control_panel.build_cli_arguments_for_simple_agent(self._simple_agent_parser)
-        user_control_panel.build_cli_arguments_for_research(self._research_parser)
+        user_control_panel.cli_adapter.build_cli_arguments_for_chat(self._chat_parser)
+        user_control_panel.cli_adapter.build_cli_arguments_for_simple_agent(self._simple_agent_parser)
+        user_control_panel.cli_adapter.build_cli_arguments_for_research(self._research_parser)
 
     def register_utility_extensions_and_get_executor_visitors(self, extension_utils_builders: list) -> list:
         extension_visitors = []

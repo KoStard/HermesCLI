@@ -58,7 +58,7 @@ class ParticipantsFactory:
     def _create_user_participant(
         self, cli_args: Namespace, user_control_panel: UserControlPanel, execution_mode: ExecutionMode
     ) -> UserParticipant:
-        user_input_from_cli = user_control_panel.convert_cli_arguments_to_text(cli_args)
+        user_input_from_cli = user_control_panel.cli_adapter.convert_cli_arguments_to_text(cli_args)
         stt_input_handler = self._create_stt_input_handler(cli_args)
         markdown_highlighter = None if cli_args.no_markdown else MarkdownHighlighter()
 
