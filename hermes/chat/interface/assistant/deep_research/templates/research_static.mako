@@ -158,6 +158,9 @@ ${commands_help_content}
 
 ${'###'} Command FAQ
 
+**Do I need to send a command with every message?**
+Yes, each message should contain a command. Otherwise it will have not effect. Even if thinking, use the thinking command.
+
 **No results appearing?**
 You likely didn't finish your message. Commands execute only after sending the complete message.
 

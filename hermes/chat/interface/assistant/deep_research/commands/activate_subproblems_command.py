@@ -12,6 +12,7 @@ class ActivateSubproblems(Command[ResearchCommandContextImpl, None]):
             textwrap.dedent("""
             Activate subproblems to run in parallel. Multiple titles can be specified.
             Can be executed on subproblems that previously have been executed as well.
+            Warning: If you want to also finish wait for the results before continuing, use wait_for_subproblems command immediately afterwards.
             """),
         )
         self.add_section("title", True, "Title of the subproblem to activate", allow_multiple=True)
