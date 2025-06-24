@@ -57,16 +57,13 @@ class UserControlPanel:
 
     def _is_command_visible(self, command: ControlPanelCommand) -> bool:
         """Determine if a command should be visible in the current mode."""
-        is_agent_mode = self.llm_control_panel.is_agent_mode
         if not command.visible_from_interface:
             return False
-        if self.is_deep_research_mode and not command.is_research_command:
-            return False
-        if is_agent_mode and not command.is_agent_command:
-            return False
-        if not is_agent_mode and not command.is_chat_command:  # noqa: SIM103
-            return False
-        return True
+        if self.is_deep_research_mode:
+            return command.is_research_command
+        if self.llm_control_panel.is_agent_mode:
+            return command.is_agent_command
+        return command.is_chat_command
 
     def _render_command_in_control_panel(self, command_label: str) -> str:
         """Format a command for display in the control panel."""

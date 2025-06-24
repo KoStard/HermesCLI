@@ -3,7 +3,6 @@ from hermes.chat.interface.control_panel import ControlPanelCommand
 
 
 def register() -> ControlPanelCommand:
-    print("HERE")
     return ControlPanelCommand(
         command_id="print_research_status",
         command_label="/print_research_status",
