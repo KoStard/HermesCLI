@@ -1,47 +1,44 @@
-import os
-import shlex
 from argparse import ArgumentParser, Namespace
 from collections.abc import Generator
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from hermes.chat.events.base import Event
-from hermes.chat.events.engine_commands import (
-    AgentModeEvent,
-    ClearHistoryEvent,
-    DeepResearchBudgetEvent,
-    ExitEvent,
-    FocusSubproblemEvent,
-    ListResearchEvent,
-    LLMCommandsExecutionEvent,
-    LoadHistoryEvent,
-    OnceEvent,
-    SaveHistoryEvent,
-    SwitchResearchEvent,
-    ThinkingLevelEvent,
-)
-from hermes.chat.events.engine_commands.import_knowledgebase import ImportKnowledgebaseEvent
 from hermes.chat.events.message_event import MessageEvent
 from hermes.chat.interface.assistant.chat.control_panel import ChatAssistantControlPanel
 from hermes.chat.interface.control_panel import ControlPanel, ControlPanelCommand
 from hermes.chat.interface.helpers.cli_notifications import CLINotificationsPrinter
 from hermes.chat.interface.helpers.peekable_generator import PeekableGenerator
-from hermes.chat.interface.helpers.terminal_coloring import CLIColors
-from hermes.chat.interface.user.control_panel.exa_client import ExaClient, ExaContentResult
-from hermes.chat.interface.user.control_panel.fuzzy_selector import FuzzyFilesSelector
-from hermes.chat.messages import (
-    AudioFileMessage,
-    EmbeddedPDFMessage,
-    ImageMessage,
-    ImageUrlMessage,
-    Message,
-    TextMessage,
-    TextualFileMessage,
-    UrlMessage,
-    VideoMessage,
+from hermes.chat.interface.user.control_panel.commands import (
+    agent_mode_command,
+    audio_command,
+    budget_command,
+    clear_command,
+    exa_url_command,
+    exit_command,
+    focus_subproblem_command,
+    fuzzy_select_command,
+    image_command,
+    image_url_command,
+    import_knowledgebase_command,
+    list_assistant_commands_command,
+    list_research_command,
+    llm_commands_execution_command,
+    load_history_command,
+    once_command,
+    pdf_command,
+    save_history_command,
+    set_assistant_command_status_command,
+    switch_research_command,
+    text_command,
+    textual_file_command,
+    textual_files_command,
+    thinking_tokens_command,
+    tree_command,
+    url_command,
+    video_command,
 )
-from hermes.utils.file_extension import remove_quotes
+from hermes.chat.interface.user.control_panel.exa_client import ExaClient
+from hermes.chat.messages import Message, TextMessage
 from hermes.utils.tree_generator import TreeGenerator
 
 
@@ -63,470 +60,47 @@ class UserControlPanel(ControlPanel):
         self.exa_client = exa_client
         self.is_deep_research_mode = is_deep_research_mode
 
-        # Register core commands
-        self._register_core_commands()
+        # Register commands
+        self._register_all_commands(extra_commands)
 
-        # Register file sharing commands
-        self._register_file_commands()
+    def _register_all_commands(self, extra_commands: list[ControlPanelCommand] | None = None) -> None:
+        """Register all commands.
 
-        # Register history management commands
-        self._register_history_commands()
-
-        # Register utility commands
-        self._register_utility_commands()
+        Args:
+            extra_commands: Extra commands to register.
+        """
+        self._register_command(agent_mode_command.register())
+        self._register_command(audio_command.register())
+        self._register_command(budget_command.register())
+        self._register_command(clear_command.register())
+        self._register_command(exa_url_command.register())
+        self._register_command(exit_command.register())
+        self._register_command(focus_subproblem_command.register())
+        self._register_command(fuzzy_select_command.register())
+        self._register_command(image_command.register())
+        self._register_command(image_url_command.register())
+        self._register_command(import_knowledgebase_command.register())
+        self._register_command(list_assistant_commands_command.register())
+        self._register_command(list_research_command.register())
+        self._register_command(llm_commands_execution_command.register())
+        self._register_command(load_history_command.register())
+        self._register_command(once_command.register())
+        self._register_command(pdf_command.register())
+        self._register_command(save_history_command.register())
+        self._register_command(set_assistant_command_status_command.register())
+        self._register_command(switch_research_command.register())
+        self._register_command(text_command.register())
+        self._register_command(textual_file_command.register())
+        self._register_command(textual_files_command.register())
+        self._register_command(thinking_tokens_command.register())
+        self._register_command(tree_command.register())
+        self._register_command(url_command.register())
+        self._register_command(video_command.register())
 
         # Add any extra commands provided
         if extra_commands:
             for command in extra_commands:
                 self._register_command(command)
-
-    def _register_core_commands(self):
-        """Register basic text and exit commands"""
-        self._register_command(
-            ControlPanelCommand(
-                command_id="text",
-                command_label="/text",
-                description="Add text to the conversation",
-                short_description="Send a text message",
-                parser=lambda line: MessageEvent(TextMessage(author="user", text=line, is_directly_entered=True)),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=True,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="exit",
-                command_label="/exit",
-                description="Exit the application",
-                short_description="Exit Hermes",
-                parser=lambda _: ExitEvent(),
-                priority=-100,  # Run exit after running any other command
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=True,
-            ),
-        )
-
-    def _register_file_commands(self):
-        """Register commands for sharing different file types"""
-        self._register_command(
-            ControlPanelCommand(
-                command_id="image",
-                command_label="/image",
-                description="Add image to the conversation",
-                short_description="Share an image file",
-                parser=lambda line: MessageEvent(ImageMessage(author="user", image_path=line)),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="image_url",
-                command_label="/image_url",
-                description="Add image from url to the conversation",
-                short_description="Share an image via URL",
-                parser=lambda line: MessageEvent(ImageUrlMessage(author="user", image_url=line)),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="audio",
-                command_label="/audio",
-                description="Add audio to the conversation",
-                short_description="Share an audio file",
-                parser=lambda line: MessageEvent(AudioFileMessage(author="user", audio_filepath=line)),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="video",
-                command_label="/video",
-                description="Add video to the conversation",
-                short_description="Share a video file",
-                parser=lambda line: MessageEvent(VideoMessage(author="user", video_filepath=line)),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="pdf",
-                command_label="/pdf",
-                description="Add pdf to the conversation. After the PDF path, optionally use "
-                "{<page_number>, <page_number>:<page_number>, ...} to specify pages.",
-                short_description="Share a PDF file",
-                parser=lambda line: MessageEvent(EmbeddedPDFMessage.build_from_line(author="user", raw_line=line)),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="textual_file",
-                command_label="/textual_file",
-                description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
-                short_description="Share a text-based document",
-                parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=True,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="textual_files",
-                command_label="/textual_files",
-                description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
-                short_description="Share a text-based document",
-                parser=lambda line: MessageEvent(TextualFileMessage(author="user", text_filepath=line, textual_content=None)),
-                visible_from_interface=False,
-                default_on_cli=True,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=True,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="fuzzy_select",
-                command_label="/fuzzy_select",
-                description="Add text file to the conversation. Supported: plain textual files, PDFs, DOCs, PowerPoint, Excel, etc.",
-                short_description="Share a text-based document",
-                parser=lambda line: self._parse_fuzzy_select_command(line),
-                with_argument=False,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=True,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="url",
-                command_label="/url",
-                description="Add url to the conversation",
-                short_description="Share a URL",
-                parser=lambda line: MessageEvent(UrlMessage(author="user", url=line)),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="exa_url",
-                command_label="/exa_url",
-                description="Fetch and add content from a URL using Exa",
-                short_description="Fetch URL content with Exa",
-                parser=self._parse_exa_url_command,
-                visible_from_cli=True,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-    def _register_history_commands(self):
-        """Register commands for managing conversation history"""
-        self._register_command(
-            ControlPanelCommand(
-                command_id="clear",
-                command_label="/clear",
-                description="Clear the conversation history",
-                short_description="Clear chat history",
-                parser=lambda _: ClearHistoryEvent(),
-                priority=99,  # Clear history should be first
-                visible_from_cli=False,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="save_history",
-                command_label="/save_history",
-                description="Save history to a file",
-                short_description="Save chat history",
-                parser=lambda line: SaveHistoryEvent(line),
-                visible_from_cli=False,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="load_history",
-                command_label="/load_history",
-                description="Load history from a file",
-                short_description="Load chat history",
-                parser=lambda line: LoadHistoryEvent(line),
-                priority=98,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-    def _register_utility_commands(self):
-        """Register utility commands like directory tree generation"""
-        self._register_command(
-            ControlPanelCommand(
-                command_id="llm_commands_execution",
-                command_label="/llm_commands_execution",
-                description="Enable or disable execution of LLM commands (on/off)",
-                short_description="Toggle LLM command execution",
-                parser=lambda line: LLMCommandsExecutionEvent(enabled=line.strip().lower() == "on"),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-        self._register_command(
-            ControlPanelCommand(
-                command_id="tree",
-                command_label="/tree",
-                description="Generate a directory tree",
-                short_description="Show directory structure",
-                parser=self._parse_tree_command,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=True,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="agent_mode",
-                command_label="/agent_mode",
-                description="Enable or disable agent mode (on/off)",
-                short_description="Toggle agent mode",
-                parser=lambda line: AgentModeEvent(enabled=line.strip().lower() == "on"),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="once",
-                command_label="/once",
-                description="Enable or disable once mode - exit after completing current cycle (on/off)",
-                short_description="Toggle once mode",
-                parser=lambda line: OnceEvent(enabled=line.strip().lower() == "on"),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=True,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="list_assistant_commands",
-                command_label="/list_assistant_commands",
-                description="List all assistant commands and their current status",
-                short_description="Show assistant commands",
-                parser=self._parse_list_assistant_commands,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="thinking_tokens",
-                command_label="/thinking_tokens",
-                description="Set the thinking tokens (number)",
-                short_description="Set thinking tokens",
-                parser=lambda line: ThinkingLevelEvent(count=int(line.strip().lower())),
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=True,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="budget",
-                command_label="/budget",
-                description=(
-                    "Set a hard budget limit for Deep Research Assistant (number of message cycles). "
-                    "Set negative number to remove the budget. "
-                    "Default is 30. "
-                    "You'll be asked if you want to continue if the assistant exhausts the budget."
-                ),
-                short_description="Set Deep Research budget",
-                parser=self._parse_budget_command,
-                is_research_command=True,
-                is_chat_command=False,
-                is_agent_command=False,
-            ),
-        )
-        self._register_command(
-            ControlPanelCommand(
-                command_id="set_assistant_command_status",
-                command_label="/set_assistant_command_status",
-                description="Set the status of an assistant command (ON/OFF/AGENT_ONLY)",
-                short_description="Set assistant command status",
-                parser=self._parse_set_assistant_command_status,
-                is_chat_command=True,
-                is_agent_command=True,
-                is_research_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="switch_research",
-                command_label="/switch_research",
-                description="Switch to a different research instance. If the name doesn't exist, it will be created.",
-                short_description="Switch research instance",
-                parser=self._parse_switch_research_command,
-                is_research_command=True,
-                is_chat_command=False,
-                is_agent_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="list_research",
-                command_label="/list_research",
-                description="List all research instances (Deep Research mode only)",
-                short_description="List research instances",
-                parser=self._parse_list_research_command,
-                with_argument=False,
-                is_research_command=True,
-                is_chat_command=False,
-                is_agent_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="focus_subproblem",
-                command_label="/focus_subproblem",
-                description="Change focus to a specific subproblem in the research tree (Deep Research mode only)",
-                short_description="Focus on a subproblem",
-                parser=self._parse_focus_subproblem_command,
-                with_argument=False,
-                is_research_command=True,
-                is_chat_command=False,
-                is_agent_command=False,
-            ),
-        )
-
-        self._register_command(
-            ControlPanelCommand(
-                command_id="import_knowledgebase",
-                command_label="/import_knowledgebase",
-                description="Import knowledgebase from a directory (pass the knowledgebase directory, not the research)",
-                short_description="Import knowledgebase",
-                parser=self._parse_import_knowledgebase_command,
-                is_research_command=True,
-                is_chat_command=False,
-                is_agent_command=False,
-            ),
-        )
-
-    def _parse_set_assistant_command_status(self, content: str) -> None:
-        """Set the status of an assistant command"""
-        if not self.llm_control_panel:
-            self.notifications_printer.print_notification("Error: LLM control panel not available", CLIColors.RED)
-            return
-
-        try:
-            command_id, status = content.strip().split()
-            self.llm_control_panel.set_command_override_status(command_id, status)
-        except ValueError:
-            self.notifications_printer.print_notification(
-                "Error: Invalid format. Use: /set_assistant_command_status <command_id> <status>",
-                CLIColors.RED,
-            )
-        return
-
-    def _parse_list_assistant_commands(self, _: str) -> None:
-        """List all assistant commands with their current status"""
-        if not self.llm_control_panel:
-            self.notifications_printer.print_notification("Error: LLM control panel not available", CLIColors.RED)
-            return
-
-        overrides = self.llm_control_panel.get_command_override_statuses()
-        commands = self.llm_control_panel.get_commands()
-
-        output = ["Assistant Commands:"]
-        for cmd in commands:
-            overridden_message = ""
-            status = "ON" if not cmd.is_agent_command else "AGENT_ONLY"
-            if cmd.command_id in overrides:
-                status = overrides[cmd.command_id]
-                overridden_message = " (Overridden)"
-            output.append(f"- {cmd.command_id}: {status}{overridden_message}")
-
-        self.notifications_printer.print_notification("\n".join(output))
-
-        return
-
-    def _parse_budget_command(self, content: str) -> Event | None:
-        """Parse the /budget command"""
-        try:
-            budget = int(content.strip())
-            if budget <= 0:
-                self.notifications_printer.print_notification("Budget must be a positive integer", CLIColors.RED)
-                return None
-            return DeepResearchBudgetEvent(budget=budget)
-        except ValueError:
-            self.notifications_printer.print_notification(
-                "Invalid budget value. Please provide a positive integer.",
-                CLIColors.RED,
-            )
-            return None
-
-    def _parse_fuzzy_select_command(self, content: str) -> list[Event]:
-        """Parse the /fuzzy_select command"""
-        try:
-            fuzzy_selector = FuzzyFilesSelector()
-            absolute_file_paths = fuzzy_selector.select_files(multi=True)
-            result_events: list[Event] = []
-            for absolute_file_path in absolute_file_paths:
-                result_events.append(
-                    MessageEvent(
-                        TextualFileMessage(
-                            author="user",
-                            text_filepath=absolute_file_path,
-                            textual_content=None,
-                        ),
-                    ),
-                )
-            return result_events
-        except Exception as e:
-            self.notifications_printer.print_notification(f"Error: {e}", CLIColors.RED)
-        return []
 
     def render(self):
         results = []
@@ -725,97 +299,3 @@ class UserControlPanel(ControlPanel):
                 lines.extend(self._format_standard_arg(arg, value))
 
         return "\n".join(lines)
-
-    def _parse_switch_research_command(self, content: str) -> Event | None:
-        """Parse the /switch_research command"""
-        name = content.strip()
-        if not name:
-            self.notifications_printer.print_notification("Please provide the name of the research instance to switch to", CLIColors.RED)
-            return None
-
-        return SwitchResearchEvent(name=name)
-
-    def _parse_list_research_command(self, _: str) -> Event | None:
-        """Parse the /list_research command"""
-        return ListResearchEvent()
-
-    def _parse_focus_subproblem_command(self, _: str) -> Event | None:
-        """Parse the /focus_subproblem command"""
-        try:
-            # This will need to get the root node from the current research
-            # For now, we'll create a simple event that will be handled by the research engine
-            # The actual TUI will be shown when the event is processed
-            return FocusSubproblemEvent(node_id="SHOW_SELECTOR")
-        except Exception as e:
-            self.notifications_printer.print_notification(f"Error: {e}", CLIColors.RED)
-            return None
-
-    def _parse_import_knowledgebase_command(self, source_path_raw: str) -> Event | None:
-        return ImportKnowledgebaseEvent(knowledgebase_path=Path(source_path_raw))
-
-    def _parse_exa_url_command(self, raw_input: str) -> MessageEvent:
-        """Parse and execute the /exa_url command"""
-        if not self.exa_client:
-            raise ValueError("Exa integration not configured - missing EXA_API_KEY in config")
-
-        url = self._get_exa_url(raw_input)
-        result = self._get_exa_content(url)
-        content = self._build_exa_response_content(result)
-
-        return MessageEvent(
-            TextualFileMessage(
-                author="user",
-                name=result.title,
-                text_filepath=None,
-                file_role="url_content",
-                textual_content=content,
-            ),
-        )
-
-    def _get_exa_url(self, raw_input: str) -> str:
-        return raw_input.strip()
-
-    def _get_exa_content(self, url: str) -> ExaContentResult:
-        return self.exa_client.get_contents(url)[0]
-
-    def _build_exa_response_content(self, result: ExaContentResult) -> str:
-        result_text = result.text
-        content_age = None
-        if result.published_date:
-            content_age = (datetime.now(timezone.utc) - datetime.fromisoformat(result.published_date).astimezone(timezone.utc)).days
-
-        if not result_text:
-            result_text = "WARNING: No content found"
-
-        if content_age is None:
-            result_text += "\n\n---\n\nWarning! No information available about the age of the content."
-        elif content_age > 7:
-            result_text += (
-                f"\n\n---\n\nWarning! The snapshot of this website has been last updated {content_age} ago, "
-                "it might not be fully up to date"
-            )
-        return result_text
-
-    def _parse_tree_command(self, content: str) -> MessageEvent:
-        """Parse the /tree command and generate a directory tree.
-
-        Args:
-            content: The command content after the label
-
-        Returns:
-            MessageEvent with the tree structure
-        """
-        # Handle quoted paths with spaces
-        parts = shlex.split(content)
-
-        path = os.getcwd() if not parts else remove_quotes(parts[0])
-        depth = int(parts[1]) if len(parts) > 1 else None
-
-        tree_string = self.tree_generator.generate_tree(path, depth)
-        tree_message = TextualFileMessage(
-            author="user",
-            textual_content=tree_string,
-            text_filepath=None,
-            file_role="tree_result",
-        )
-        return MessageEvent(tree_message)
