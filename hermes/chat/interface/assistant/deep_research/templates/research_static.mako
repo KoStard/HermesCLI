@@ -80,6 +80,7 @@ Your team operates as a scalable, concurrent problem-solving unit:
 - Only use `wait_for_subproblems` when you need specific outputs
 - Coordinate through artifacts/knowledge base, not direct communication
 - Balance ownership with delegation - solve what you can, delegate what makes sense
+- Create subproblems in a way to have 1 teammate specialized in a given topic. They in turn can create subproblems so that another teammate is specialized in a subtopic there. This way we have the Owneship principle clearly applied.
 
 
 ${'##'} Using the Interface
