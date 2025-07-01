@@ -104,6 +104,21 @@ class JsonConfigManager:
         groq_config = self.config.get("groq", {})
         return groq_config.get("api_key")
 
+    def get_mcp_connection_timeout(self) -> int:
+        """Get the timeout for MCP server connection in seconds."""
+        mcp_config = self.config.get("mcp", {})
+        return mcp_config.get("connection_timeout", 30)
+
+    def get_mcp_default_tool_timeout(self) -> int:
+        """Get the default timeout for MCP tool calls in seconds."""
+        mcp_config = self.config.get("mcp", {})
+        return mcp_config.get("default_tool_timeout", 60)
+
+    def get_mcp_tool_timeouts(self) -> dict[str, int]:
+        """Get the specific timeouts for MCP tools in seconds."""
+        mcp_config = self.config.get("mcp", {})
+        return mcp_config.get("tool_timeouts", {})
+
     def _load_config(self) -> dict[str, Any]:
         config_path = get_json_config_path()
 

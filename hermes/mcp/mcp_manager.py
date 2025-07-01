@@ -26,6 +26,9 @@ class McpManager:
         self.deep_research_servers_config = deep_research_mcp_servers
         self.notifications_printer = notifications_printer
         self.config_manager = JsonConfigManager()  # Used for tool configuration access
+        self.mcp_connection_timeout = self.config_manager.get_mcp_connection_timeout()
+        self.mcp_default_tool_timeout = self.config_manager.get_mcp_default_tool_timeout()
+        self.mcp_tool_timeouts = self.config_manager.get_mcp_tool_timeouts()
 
         # Store server tool configurations
         self.chat_server_tool_configs: dict[str, dict[str, bool]] = {}
@@ -61,7 +64,7 @@ class McpManager:
         logger.debug("Finished loading all MCP clients.")
 
     async def _create_and_start_client(self, name: str, config: dict | str, client_list: list[McpClient]):
-        client = McpClient(name, config, self.loop)
+        client = McpClient(name, config, self.loop, self.mcp_connection_timeout)
         client_list.append(client)
         await client.start()
 
@@ -178,8 +181,9 @@ class McpManager:
 
     def _execute_tool_call(self, client: McpClient, tool_name: str, tool_args: dict[str, Any]) -> Any:
         """Execute the tool call and return the raw result."""
-        future = asyncio.run_coroutine_threadsafe(client.call_tool(tool_name, tool_args), self.loop)
-        return future.result(timeout=60)
+        tool_timeout = self.mcp_tool_timeouts.get(tool_name, self.mcp_default_tool_timeout)
+        future = asyncio.run_coroutine_threadsafe(client.call_tool(tool_name, tool_args, float(tool_timeout)), self.loop)
+        return future.result(timeout=tool_timeout)
 
     def _extract_text_content(self, result_dict: dict) -> list[str]:
         """Extract text content from a dictionary result format."""
@@ -223,7 +227,8 @@ class McpManager:
         except McpError as e:
             return f"MCP Tool Error from '{tool_name}':\n{e.message}"
         except asyncio.TimeoutError:
-            return f"Error: MCP tool '{tool_name}' timed out after 60 seconds."
+            tool_timeout = self.mcp_tool_timeouts.get(tool_name, self.mcp_default_tool_timeout)
+            return f"Error: MCP tool '{tool_name}' timed out after {tool_timeout} seconds."
         except Exception as e:
             logger.error(f"Unexpected error calling MCP tool '{tool_name}': {e}", exc_info=True)
             return f"Error: An unexpected error occurred while running command '{tool_name}'."

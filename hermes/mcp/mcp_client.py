@@ -18,7 +18,7 @@ class McpError(Exception):
 
 
 class McpClient:
-    def __init__(self, name: str, config: dict | str, loop: asyncio.AbstractEventLoop):
+    def __init__(self, name: str, config: dict | str, loop: asyncio.AbstractEventLoop, connection_timeout: int = 30):
         self.name = name
 
         # Parse command configuration
@@ -29,6 +29,7 @@ class McpClient:
 
         # Initialize other attributes
         self.loop = loop
+        self.connection_timeout = float(connection_timeout)
         self.process: asyncio.subprocess.Process | None = None
         self.reader: StreamReader | None = None
         self.writer: StreamWriter | None = None
@@ -131,7 +132,7 @@ class McpClient:
                 self.status = "error"
                 self.error_message = f"Error from server '{self.name}': {line}"
 
-    async def _send_request(self, method: str, params: dict | None = None) -> Any:
+    async def _send_request(self, method: str, params: dict | None = None, timeout: float | None = None) -> Any:
         if not self.writer:
             raise ConnectionError(f"MCP client '{self.name}' is not connected.")
         self.request_id += 1
@@ -143,7 +144,8 @@ class McpClient:
         self.writer.write(json.dumps(request).encode() + b"\n")
         await self.writer.drain()
 
-        return await asyncio.wait_for(future, timeout=30.0)
+        request_timeout = timeout if timeout is not None else self.connection_timeout
+        return await asyncio.wait_for(future, timeout=request_timeout)
 
     async def _initialize(self):
         init_params = {
@@ -169,8 +171,8 @@ class McpClient:
         else:
             logger.warning(f"MCP server '{self.name}' returned no tools.")
 
-    async def call_tool(self, tool_name: str, args: dict) -> dict:
-        return await self._send_request("tools/call", {"name": tool_name, "arguments": args})
+    async def call_tool(self, tool_name: str, args: dict, timeout: float) -> dict:
+        return await self._send_request("tools/call", {"name": tool_name, "arguments": args}, timeout=timeout)
 
     async def stop(self):
         if self.process:

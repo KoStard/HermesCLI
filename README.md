@@ -86,6 +86,13 @@ Create a file named `config.json` in your configuration directory:
   "llm_command_status_overrides": {
     "command_name": "ENABLED"
   },
+  "mcp": {
+    "connection_timeout": 30,
+    "default_tool_timeout": 60,
+    "tool_timeouts": {
+      "my_slow_tool": 120
+    }
+  },
   "mcp_chat_assistant": {
     "my_weather_tool": "/path/to/weather_server.py",
     "github_mcp": {
@@ -248,7 +255,7 @@ The LLM can interact with files using structured commands with `<<<command>>>` b
 
 Hermes can be extended with tools from [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers. This allows seamless integration with a growing ecosystem of external tools and data sources.
 
-You can configure MCP servers separately for the regular chat assistant and the Deep Research mode in your `config.json` file. The INI configuration format has limited support for MCP features.
+You can configure MCP servers separately for the regular chat assistant and the Deep Research mode in your `config.json` file. You can also configure timeouts for server connections and individual tool calls. The INI configuration format has limited support for MCP features.
 
 #### Configuration Options
 
